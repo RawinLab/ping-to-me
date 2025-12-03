@@ -42,6 +42,12 @@ export class AuthController {
     return { accessToken };
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me')
+  getProfile(@Req() req) {
+    return req.user;
+  }
+
   @Post('logout')
   async logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('refresh_token');
