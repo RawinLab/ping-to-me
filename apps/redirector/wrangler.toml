@@ -1,0 +1,11 @@
+name = "pingtome-redirector"
+compatibility_date = "2024-02-08"
+main = "src/index.ts"
+
+[[kv_namespaces]]
+binding = "LINKS_KV"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Placeholder ID
+preview_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Placeholder ID
+
+[vars]
+# Environment variables

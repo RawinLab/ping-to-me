@@ -1,0 +1,4 @@
+{
+  "extends": "@pingtome/config/tsconfig.json",
+  "include": ["src"]
+}

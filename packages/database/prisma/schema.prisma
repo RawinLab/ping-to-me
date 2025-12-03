@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String   @unique
+  name      String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+
+  memberships OrganizationMember[]
+}
+
+model Organization {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug      String   @unique
+  name      String
+  plan      PlanType @default(FREE)
+  createdAt DateTime @default(now())
+
+  members   OrganizationMember[]
+  links     Link[]
+  domains   Domain[]
+  bioPages  BioPage[]
+  apiKeys   ApiKey[]
+  webhooks  Webhook[]
+}
+
+model ApiKey {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  keyHash        String    @unique
+  name           String
+  organizationId String    @db.Uuid
+  lastUsedAt     DateTime?
+  createdAt      DateTime  @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+}
+
+model Webhook {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  url            String
+  events         String[]
+  secret         String
+  organizationId String    @db.Uuid
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+}
+
+model BioPage {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug           String    @unique
+  title          String
+  description    String?
+  avatarUrl      String?
+  theme          Json?
+  content        Json?
+  organizationId String    @db.Uuid
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+}
+
+model OrganizationMember {
+  userId         String       @db.Uuid
+  organizationId String       @db.Uuid
+  role           MemberRole   @default(VIEWER)
+
+  user           User         @relation(fields: [userId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@id([userId, organizationId])
+}
+
+model Link {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug           String    @unique
+  destinationUrl String
+  organizationId String    @db.Uuid
+  creatorId      String    @db.Uuid
+  isActive       Boolean   @default(true)
+  expiresAt      DateTime?
+  tags           String[]
+  createdAt      DateTime  @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  clicks         ClickEvent[]
+}
+
+model ClickEvent {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  linkId    String   @db.Uuid
+  timestamp DateTime @default(now())
+  ip        String?
+  country   String?
+  city      String?
+  device    String?
+  browser   String?
+  os        String?
+  referrer  String?
+  userAgent String?
+
+  link      Link     @relation(fields: [linkId], references: [id])
+}
+
+model Domain {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hostname       String   @unique
+  organizationId String   @db.Uuid
+  isVerified     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum PlanType {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
