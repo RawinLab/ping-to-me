@@ -4,6 +4,8 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button, Alert, AlertDescription } from "@pingtome/ui";
 import Link from "next/link";
+import { AuthSidebar } from "@/components/auth/AuthSidebar";
+import { Loader2, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
@@ -51,34 +53,56 @@ function VerifyEmailContent() {
   }, [token, router]);
 
   return (
-    <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-      <div className="flex flex-col space-y-2 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Email Verification
-        </h1>
+    <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[400px]">
+      <div className="flex flex-col items-center space-y-4 text-center">
         {status === "loading" && (
-          <p className="text-sm text-muted-foreground">
-            Verifying your email...
-          </p>
+          <>
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-100">
+              <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Verifying your email
+            </h1>
+            <p className="text-muted-foreground">
+              Please wait while we verify your email address...
+            </p>
+          </>
         )}
+
         {status === "success" && (
-          <Alert className="bg-green-50 border-green-200 text-green-800">
-            <AlertDescription>
-              Email verified successfully! Redirecting to login...
-            </AlertDescription>
-          </Alert>
+          <>
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+              <CheckCircle2 className="h-10 w-10 text-green-600" />
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Email Verified!
+            </h1>
+            <Alert className="bg-green-50 border-green-200 text-green-800">
+              <AlertDescription>
+                Your email has been verified successfully. Redirecting to login...
+              </AlertDescription>
+            </Alert>
+          </>
         )}
+
         {status === "error" && (
-          <div className="grid gap-4">
+          <>
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-100">
+              <XCircle className="h-10 w-10 text-red-600" />
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Verification Failed
+            </h1>
             <Alert variant="destructive">
               <AlertDescription>{message}</AlertDescription>
             </Alert>
-            <Link href="/login">
-              <Button variant="outline" className="w-full">
+            <Link href="/login" className="w-full">
+              <Button variant="outline" className="w-full gap-2">
+                <ArrowLeft className="h-4 w-4" />
                 Back to Login
               </Button>
             </Link>
-          </div>
+          </>
         )}
       </div>
     </div>
@@ -87,15 +111,20 @@ function VerifyEmailContent() {
 
 export default function VerifyEmailPage() {
   return (
-    <div className="container relative h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
-      <div className="relative hidden h-full flex-col bg-muted p-10 text-white dark:border-r lg:flex">
-        <div className="absolute inset-0 bg-zinc-900" />
-        <div className="relative z-20 flex items-center text-lg font-medium">
-          <Link href="/">PingTO.Me</Link>
-        </div>
-      </div>
-      <div className="lg:p-8">
-        <Suspense fallback={<div>Loading...</div>}>
+    <div className="container relative min-h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
+      <AuthSidebar
+        variant="success"
+        title="Email Verification"
+        description="We're confirming your email address to keep your account secure."
+      />
+      <div className="flex items-center justify-center py-12 lg:p-8">
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          }
+        >
           <VerifyEmailContent />
         </Suspense>
       </div>
