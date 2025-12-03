@@ -37,6 +37,12 @@ export class LinksController {
     return this.linksService.create(req.user.userId, createLinkDto);
   }
 
+  @Post(':id') // Using POST for update to avoid CORS preflight issues sometimes, but PATCH is better REST
+  @UseGuards(JwtAuthGuard)
+  async update(@Request() req, @Param('id') id: string, @Body() body: any) {
+    return this.linksService.update(req.user.userId, id, body);
+  }
+
   @Get()
   @UseGuards(JwtAuthGuard)
   async findAll(

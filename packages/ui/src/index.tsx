@@ -14,3 +14,4 @@ export * from "./popover";
 export * from "./tabs";
 export * from "./textarea";
 export * from "./avatar";
+export * from "./scroll-area";

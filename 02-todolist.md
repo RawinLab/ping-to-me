@@ -85,15 +85,15 @@ Derived from `plan.md` and current project status.
 
 - [x] **Backend**: Support `ACTIVE`, `DISABLED`, `BANNED` status.
 - [x] **Frontend**: Display status in `LinksTable`.
-- [ ] **Frontend**: Add toggle to Enable/Disable links.
-- [ ] **Frontend**: Implement "Archive" functionality.
-- [ ] **Backend**: Implement Expiration Date check in Redirector.
+- [x] **Frontend**: Add toggle to Enable/Disable links.
+- [x] **Frontend**: Implement "Archive" functionality.
+- [x] **Backend**: Implement Expiration Date check in Redirector.
 
 ### 1.11 Notifications
 
-- [ ] **Backend**: Implement Notification Service.
-- [ ] **Frontend**: Add Notification Bell in Header.
-- [ ] **Frontend**: Create Notification Center UI.
+- [x] **Backend**: Implement Notification Service.
+- [x] **Frontend**: Add Notification Bell in Header.
+- [x] **Frontend**: Create Notification Center UI.
 
 ### 1.12 Plan Upgrade / Payment
 

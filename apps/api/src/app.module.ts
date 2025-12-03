@@ -11,6 +11,7 @@ import { DeveloperModule } from './developer/developer.module';
 import { MailModule } from './mail/mail.module';
 import { TagsModule } from './tags/tags.module';
 import { CampaignsModule } from './campaigns/campaigns.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
@@ -33,6 +34,7 @@ import { APP_GUARD } from '@nestjs/core';
     MailModule,
     TagsModule,
     CampaignsModule,
+    NotificationsModule,
   ],
   controllers: [],
   providers: [

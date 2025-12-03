@@ -48,10 +48,10 @@ Focus on the essential functionality for individual users to create and track li
 - [x] **1.9 Link-in-Bio / Mini-Page**
   - Page Creation & Customization
   - Link Management on Page
-- [ ] **1.10 Link Status Control**
+- [x] **1.10 Link Status Control**
   - Active/Disabled/Archived states
   - Expiration Dates
-- [ ] **1.11 Notifications**
+- [x] **1.11 Notifications**
   - In-app & Email alerts (Quota, Expiry)
 - [ ] **1.12 Plan Upgrade / Payment**
   - Stripe Integration

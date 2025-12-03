@@ -21,6 +21,7 @@ import { Download, Upload } from "lucide-react";
 export default function DashboardPage() {
   const [url, setUrl] = useState("");
   const [slug, setSlug] = useState("");
+  const [expirationDate, setExpirationDate] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
   const [metrics, setMetrics] = useState<any>(null);
 
@@ -42,10 +43,15 @@ export default function DashboardPage() {
     try {
       await apiRequest("/links", {
         method: "POST",
-        body: JSON.stringify({ originalUrl: url, slug }),
+        body: JSON.stringify({
+          originalUrl: url,
+          slug,
+          expirationDate: expirationDate || undefined,
+        }),
       });
       setUrl("");
       setSlug("");
+      setExpirationDate("");
       setRefreshKey((prev) => prev + 1); // Trigger table refresh
     } catch (err) {
       alert("Failed to create link");
@@ -152,23 +158,40 @@ export default function DashboardPage() {
       <div className="border p-6 rounded-lg bg-white shadow-sm">
         <h2 className="text-xl font-semibold mb-4">Create New Link</h2>
         <form onSubmit={handleCreate} className="space-y-4">
-          <div className="flex gap-4">
-            <input
-              type="url"
-              placeholder="Destination URL"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              className="flex-1 p-2 border rounded"
-              required
-            />
-            <input
-              type="text"
-              placeholder="Slug (Optional)"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              className="w-48 p-2 border rounded"
-            />
-            <Button>Create Link</Button>
+          <div className="flex gap-4 items-end">
+            <div className="flex-1 space-y-2">
+              <label className="text-sm font-medium">Destination URL</label>
+              <input
+                type="url"
+                placeholder="https://example.com"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                className="w-full p-2 border rounded"
+                required
+              />
+            </div>
+            <div className="w-48 space-y-2">
+              <label className="text-sm font-medium">Slug (Optional)</label>
+              <input
+                type="text"
+                placeholder="custom-slug"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                className="w-full p-2 border rounded"
+              />
+            </div>
+            <div className="w-48 space-y-2">
+              <label className="text-sm font-medium">
+                Expiration (Optional)
+              </label>
+              <input
+                type="datetime-local"
+                className="w-full p-2 border rounded"
+                value={expirationDate}
+                onChange={(e) => setExpirationDate(e.target.value)}
+              />
+            </div>
+            <Button className="mb-0.5">Create Link</Button>
           </div>
         </form>
       </div>

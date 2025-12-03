@@ -185,12 +185,39 @@ export class LinksService {
       throw new ForbiddenException('Link is not active');
     }
 
+    if (link.expirationDate && new Date() > link.expirationDate) {
+      throw new ForbiddenException('Link has expired');
+    }
+
     return {
       originalUrl: link.originalUrl,
       passwordHash: link.passwordHash,
       expirationDate: link.expirationDate,
       deepLinkFallback: link.deepLinkFallback,
     };
+  }
+
+  async update(userId: string, id: string, data: Partial<CreateLinkDto> & { status?: LinkStatus }) {
+    const link = await this.prisma.link.findUnique({ where: { id } });
+    if (!link || link.userId !== userId) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    const updated = await this.prisma.link.update({
+      where: { id },
+      data: {
+        title: data.title,
+        description: data.description,
+        tags: data.tags,
+        expirationDate: data.expirationDate ? new Date(data.expirationDate) : undefined,
+        status: data.status,
+        passwordHash: data.password,
+        deepLinkFallback: data.deepLinkFallback,
+      },
+    });
+
+    await this.syncToKv(updated);
+    return this.mapToResponse(updated);
   }
 
   private async mapToResponse(link: any): Promise<LinkResponse> {

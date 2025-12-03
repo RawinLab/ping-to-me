@@ -30,6 +30,9 @@ import {
   QrCode,
   Trash2,
   BarChart2,
+  PauseCircle,
+  PlayCircle,
+  Archive,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -118,6 +121,19 @@ export function LinksTable() {
       fetchLinks();
     } catch (error) {
       alert("Failed to delete links");
+    }
+  };
+
+  const handleStatusChange = async (id: string, status: string) => {
+    try {
+      await apiRequest(`/links/${id}`, {
+        method: "POST", // Using POST as per controller update
+        body: JSON.stringify({ status }),
+      });
+      fetchLinks();
+    } catch (error) {
+      console.error("Failed to update status", error);
+      alert("Failed to update status");
     }
   };
 
@@ -288,6 +304,31 @@ export function LinksTable() {
                             <BarChart2 className="mr-2 h-4 w-4" />
                             Analytics
                           </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            handleStatusChange(
+                              link.id,
+                              link.status === "ACTIVE" ? "DISABLED" : "ACTIVE"
+                            )
+                          }
+                        >
+                          {link.status === "ACTIVE" ? (
+                            <>
+                              <PauseCircle className="mr-2 h-4 w-4" /> Disable
+                            </>
+                          ) : (
+                            <>
+                              <PlayCircle className="mr-2 h-4 w-4" /> Enable
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            handleStatusChange(link.id, "ARCHIVED")
+                          }
+                        >
+                          <Archive className="mr-2 h-4 w-4" /> Archive
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-red-600"
