@@ -22,7 +22,7 @@ export class AuthGuard implements CanActivate {
       // request['user'] = data.user;
 
       // Mock implementation for Phase 2
-      request['user'] = { id: 'mock-user-id', email: 'mock@example.com' };
+      request['user'] = { id: '123e4567-e89b-12d3-a456-426614174000', email: 'mock@example.com' };
     } catch {
       throw new UnauthorizedException();
     }
