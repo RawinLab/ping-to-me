@@ -70,3 +70,28 @@ export const setAccessToken = (token: string | null) => {
 };
 
 export const getAccessToken = () => accessToken;
+
+export const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
+  const method = options.method || 'GET';
+  let data: any = undefined;
+
+  if (options.body && typeof options.body === 'string') {
+    try {
+      data = JSON.parse(options.body);
+    } catch (e) {
+      data = options.body;
+    }
+  }
+
+  try {
+    const response = await api({
+      url: endpoint,
+      method,
+      data,
+      headers: options.headers as any,
+    });
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || error;
+  }
+};

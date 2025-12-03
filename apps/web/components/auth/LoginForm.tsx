@@ -117,19 +117,6 @@ export function LoginForm() {
           variant="outline"
           type="button"
           disabled={isLoading}
-          onClick={() => handleSocialLogin("github")}
-        >
-          {isLoading ? (
-            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Icons.gitHub className="mr-2 h-4 w-4" />
-          )}{" "}
-          Github
-        </Button>
-        <Button
-          variant="outline"
-          type="button"
-          disabled={isLoading}
           onClick={() => handleSocialLogin("google")}
         >
           {isLoading ? (
@@ -138,6 +125,19 @@ export function LoginForm() {
             <Icons.google className="mr-2 h-4 w-4" />
           )}{" "}
           Google
+        </Button>
+        <Button
+          variant="outline"
+          type="button"
+          disabled={isLoading}
+          onClick={() => handleSocialLogin("github")}
+        >
+          {isLoading ? (
+            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Icons.gitHub className="mr-2 h-4 w-4" />
+          )}{" "}
+          Github
         </Button>
         <Link
           href="/register"

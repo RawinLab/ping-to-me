@@ -1,13 +1,6 @@
-import {
-  Loader2,
-  LucideProps,
-  Moon,
-  SunMedium,
-  Twitter,
-  type Icon as LucideIcon,
-} from "lucide-react";
+import { Loader2, LucideProps, Moon, SunMedium, Twitter } from "lucide-react";
 
-export type Icon = LucideIcon;
+export type Icon = React.ComponentType<LucideProps>;
 
 export const Icons = {
   sun: SunMedium,
