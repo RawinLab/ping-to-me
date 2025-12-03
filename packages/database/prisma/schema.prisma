@@ -21,6 +21,7 @@ model User {
   memberships OrganizationMember[]
   accounts      Account[]
   sessions      Session[]
+  links         Link[]
 }
 
 model Account {
@@ -123,18 +124,50 @@ model OrganizationMember {
 }
 
 model Link {
-  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug           String    @unique
-  destinationUrl String
-  organizationId String    @db.Uuid
-  creatorId      String    @db.Uuid
-  isActive       Boolean   @default(true)
-  expiresAt      DateTime?
-  tags           String[]
-  createdAt      DateTime  @default(now())
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  originalUrl      String    @db.VarChar(2048)
+  slug             String    @unique
+  title            String?   @db.VarChar(200)
+  description      String?   @db.Text
+  tags             String[]
+  
+  // Metadata
+  expirationDate   DateTime?
+  passwordHash     String?
+  redirectType     Int       @default(301) // 301 or 302
+  deepLinkFallback String?   @db.VarChar(2048)
+  
+  // Relations
+  userId           String    @db.Uuid
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Organization/Campaign placeholders (future)
+  organizationId   String?   @db.Uuid
+  organization     Organization? @relation(fields: [organizationId], references: [id])
+  // folderId      String?
 
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  clicks         ClickEvent[]
+  status           LinkStatus @default(ACTIVE)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+
+  clicks           ClickEvent[]
+
+  @@index([userId])
+  @@index([tags])
+}
+
+model BlockedDomain {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  domain    String   @unique
+  reason    String?
+  createdAt DateTime @default(now())
+}
+
+enum LinkStatus {
+  ACTIVE
+  EXPIRED
+  DISABLED
+  BANNED
 }
 
 model ClickEvent {

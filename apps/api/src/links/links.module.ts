@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
+import { LinksService } from './links.service';
 import { LinksController } from './links.controller';
-import { LinkService } from './links.service';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
+  imports: [PrismaModule],
   controllers: [LinksController],
-  providers: [LinkService],
+  providers: [LinksService],
+  exports: [LinksService],
 })
 export class LinksModule { }

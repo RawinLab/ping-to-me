@@ -34,8 +34,33 @@ app.get('/:slug', async (c) => {
   }
 
   // 1. Check KV for Link
-  const destination = await kv.get(slug)
-  if (destination) {
+  const value = await kv.get(slug)
+  if (value) {
+    let destination = value;
+    let metadata: any = {};
+
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && typeof parsed === 'object' && parsed.url) {
+        destination = parsed.url;
+        metadata = parsed;
+      }
+    } catch (e) {
+      // Legacy string value, treat as destination
+    }
+
+    // Check expiration
+    if (metadata.expirationDate && new Date(metadata.expirationDate) < new Date()) {
+      return c.text('Link Expired', 410);
+    }
+
+    // Check password (placeholder)
+    if (metadata.passwordHash) {
+      // In a real app, we would check for a session cookie or render a password form
+      // For MVP, we'll just return a 403
+      return c.text('Password Protected', 403);
+    }
+
     // Async analytics (fire and forget)
     c.executionCtx.waitUntil(
       fetch('https://api.pingto.me/analytics/track', {

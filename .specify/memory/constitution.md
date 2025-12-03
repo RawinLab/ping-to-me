@@ -69,7 +69,7 @@ The system is inherently multi-tenant (Organizations/Workspaces). Data isolation
 <!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
 
 - **Branching**: Feature branch workflow (git flow or trunk-based).
-- **Testing**: Unit tests for business logic, Integration tests for API endpoints.
+- **Testing**: Unit tests for business logic, Integration tests for API endpoints. Using playwright or playwright-mcp for E2E testing.
 - **Documentation**: API documentation (OpenAPI/Swagger) must be generated and kept up to date with code changes.
 - **Design**: All major features must go through a Planning phase (Plan -> Spec -> Tasks) before implementation.
 

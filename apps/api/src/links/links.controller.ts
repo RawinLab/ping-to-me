@@ -1,37 +1,32 @@
-import { Body, Controller, Post, UseGuards, Request, Get, Patch, Delete, Param, Query } from '@nestjs/common';
-import { LinkService } from './links.service';
-import { AuthGuard } from '../auth/auth.guard';
+import { Controller, Post, Body, UseGuards, Request, Get, Query } from '@nestjs/common';
+import { LinksService } from './links.service';
+import { CreateLinkDto, LinkResponse } from '@pingtome/types';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('links')
 export class LinksController {
-  constructor(private readonly linkService: LinkService) { }
+  constructor(private readonly linksService: LinksService) { }
 
-  @UseGuards(AuthGuard)
   @Post()
-  async create(@Request() req, @Body() body: { url: string; slug?: string; orgId: string }) {
-    return this.linkService.createShortLink(req.user.id, body.orgId, body.url, body.slug);
+  @UseGuards(JwtAuthGuard)
+  async create(@Request() req, @Body() createLinkDto: CreateLinkDto): Promise<LinkResponse> {
+    return this.linksService.create(req.user.userId, createLinkDto);
   }
 
-  @UseGuards(AuthGuard)
   @Get()
-  async list(@Request() req, @Query('orgId') orgId: string) {
-    // In real app, validate orgId access
-    return this.linkService.listLinks(req.user.id, orgId);
-  }
-
-  @UseGuards(AuthGuard)
-  @Patch(':id')
-  async update(
+  @UseGuards(JwtAuthGuard)
+  async findAll(
     @Request() req,
-    @Param('id') id: string,
-    @Body() body: { destinationUrl?: string; isActive?: boolean },
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Query('tag') tag?: string,
+    @Query('search') search?: string,
   ) {
-    return this.linkService.updateLink(id, req.user.id, body);
-  }
-
-  @UseGuards(AuthGuard)
-  @Delete(':id')
-  async delete(@Request() req, @Param('id') id: string) {
-    return this.linkService.deleteLink(id, req.user.id);
+    return this.linksService.findAll(req.user.userId, {
+      page: Number(page),
+      limit: Number(limit),
+      tag,
+      search,
+    });
   }
 }

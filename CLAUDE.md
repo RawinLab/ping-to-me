@@ -22,6 +22,7 @@ npm test && npm run lint
 TypeScript 5.3, Node.js 20+: Follow standard conventions
 
 ## Recent Changes
+- 004-shorten-url: Added TypeScript 5.3, Node.js 20+
 
 - 003-user-auth: Added TypeScript 5.3, Node.js 20+
 

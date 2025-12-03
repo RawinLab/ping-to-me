@@ -18,7 +18,7 @@ export class AnalyticsService {
     return this.prisma.clickEvent.create({
       data: {
         linkId: link.id,
-        timestamp: data.timestamp,
+        timestamp: new Date(data.timestamp),
         userAgent: data.userAgent,
         ip: data.ip,
         country: data.country,
@@ -30,7 +30,7 @@ export class AnalyticsService {
   async getLinkAnalytics(linkId: string, userId: string) {
     // Verify ownership
     const link = await this.prisma.link.findUnique({ where: { id: linkId } });
-    if (!link || link.creatorId !== userId) {
+    if (!link || link.userId !== userId) {
       throw new Error('Link not found or access denied');
     }
 
