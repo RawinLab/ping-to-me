@@ -33,10 +33,10 @@ Focus on the essential functionality for individual users to create and track li
 - [x] **1.4 QR Code Generation**
   - Generate QR for links
   - Customization (Color, Logo)
-- [ ] **1.5 Bulk Link Management**
+- [x] **1.5 Bulk Link Management**
   - CSV Import/Export
   - Bulk Edit/Delete
-- [ ] **1.6 Link Organization**
+- [x] **1.6 Link Organization**
   - Tags, Folders, Campaigns
   - Advanced Search & Filtering
 - [x] **1.7 Link Analytics (Per-Link)**

@@ -69,6 +69,8 @@ model Organization {
   members   OrganizationMember[]
   links     Link[]
   domains   Domain[]
+  tags      Tag[]
+  campaigns Campaign[]
   bioPages  BioPage[]
   apiKeys   ApiKey[]
   webhooks  Webhook[]
@@ -141,9 +143,11 @@ model Link {
   userId           String    @db.Uuid
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  // Organization/Campaign placeholders (future)
+  // Organization/Campaign placeholders
   organizationId   String?   @db.Uuid
   organization     Organization? @relation(fields: [organizationId], references: [id])
+  campaignId       String?   @db.Uuid
+  campaign         Campaign? @relation(fields: [campaignId], references: [id])
   // folderId      String?
 
   status           LinkStatus @default(ACTIVE)
@@ -216,3 +220,27 @@ enum Role {
   MEMBER
 }
 
+
+model Tag {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String
+  color          String?
+  organizationId String   @db.Uuid
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, name])
+}
+
+model Campaign {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String
+  description    String?
+  organizationId String   @db.Uuid
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  links          Link[]
+}

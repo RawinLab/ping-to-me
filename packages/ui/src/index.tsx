@@ -9,3 +9,6 @@ export * from "./dropdown-menu";
 export * from "./utils";
 export * from "./dialog";
 export * from "./checkbox";
+export * from "./select";
+export * from "./popover";
+export * from "./tabs";

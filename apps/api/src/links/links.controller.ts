@@ -44,12 +44,14 @@ export class LinksController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Query('tag') tag?: string,
+    @Query('campaignId') campaignId?: string,
     @Query('search') search?: string,
   ) {
     return this.linksService.findAll(req.user.userId, {
       page: Number(page),
       limit: Number(limit),
       tag,
+      campaignId,
       search,
     });
   }

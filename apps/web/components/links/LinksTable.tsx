@@ -17,6 +17,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   Checkbox,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@pingtome/ui";
 import {
   ExternalLink,
@@ -39,14 +44,45 @@ export function LinksTable() {
     slug: string;
   } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [tags, setTags] = useState<{ id: string; name: string }[]>([]);
+  const [campaigns, setCampaigns] = useState<{ id: string; name: string }[]>(
+    []
+  );
+  const [selectedTag, setSelectedTag] = useState<string>("all");
+  const [selectedCampaign, setSelectedCampaign] = useState<string>("all");
 
   useEffect(() => {
+    fetchFilters();
     fetchLinks();
   }, []);
 
-  const fetchLinks = async () => {
+  useEffect(() => {
+    fetchLinks();
+  }, [selectedTag, selectedCampaign]);
+
+  const fetchFilters = async () => {
     try {
-      const response = await apiRequest("/links");
+      const [tagsRes, campaignsRes] = await Promise.all([
+        apiRequest("/tags"),
+        apiRequest("/campaigns"),
+      ]);
+      setTags(tagsRes);
+      setCampaigns(campaignsRes);
+    } catch (error) {
+      console.error("Failed to fetch filters");
+    }
+  };
+
+  const fetchLinks = async () => {
+    setLoading(true);
+    try {
+      const query = new URLSearchParams();
+      if (selectedTag && selectedTag !== "all")
+        query.append("tag", selectedTag);
+      if (selectedCampaign && selectedCampaign !== "all")
+        query.append("campaignId", selectedCampaign);
+
+      const response = await apiRequest(`/links?${query.toString()}`);
       setLinks(response.data);
       setSelectedIds(new Set()); // Clear selection on refresh
     } catch (error) {
@@ -103,142 +139,180 @@ export function LinksTable() {
     setSelectedIds(newSelected);
   };
 
-  if (loading) {
-    return <div>Loading links...</div>;
-  }
-
   return (
-    <div className="rounded-md border bg-white">
-      {selectedIds.size > 0 && (
-        <div className="p-4 bg-muted flex justify-between items-center border-b">
-          <span className="text-sm font-medium">
-            {selectedIds.size} selected
-          </span>
-          <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
-            <Trash2 className="mr-2 h-4 w-4" /> Delete Selected
-          </Button>
-        </div>
-      )}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[50px]">
-              <Checkbox
-                checked={links.length > 0 && selectedIds.size === links.length}
-                onCheckedChange={toggleSelectAll}
-              />
-            </TableHead>
-            <TableHead>Short Link</TableHead>
-            <TableHead>Original URL</TableHead>
-            <TableHead>Visits</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {links.length === 0 ? (
+    <div className="space-y-4">
+      <div className="flex gap-4">
+        <Select value={selectedTag} onValueChange={setSelectedTag}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by Tag" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Tags</SelectItem>
+            {tags.map((t) => (
+              <SelectItem key={t.id} value={t.name}>
+                {t.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by Campaign" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Campaigns</SelectItem>
+            {campaigns.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="rounded-md border bg-white">
+        {selectedIds.size > 0 && (
+          <div className="p-4 bg-muted flex justify-between items-center border-b">
+            <span className="text-sm font-medium">
+              {selectedIds.size} selected
+            </span>
+            <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
+              <Trash2 className="mr-2 h-4 w-4" /> Delete Selected
+            </Button>
+          </div>
+        )}
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={7} className="text-center h-24">
-                No links found. Create one to get started.
-              </TableCell>
+              <TableHead className="w-[50px]">
+                <Checkbox
+                  checked={
+                    links.length > 0 && selectedIds.size === links.length
+                  }
+                  onCheckedChange={toggleSelectAll}
+                />
+              </TableHead>
+              <TableHead>Short Link</TableHead>
+              <TableHead>Original URL</TableHead>
+              <TableHead>Visits</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
-          ) : (
-            links.map((link) => (
-              <TableRow
-                key={link.id}
-                data-state={selectedIds.has(link.id) && "selected"}
-              >
-                <TableCell>
-                  <Checkbox
-                    checked={selectedIds.has(link.id)}
-                    onCheckedChange={() => toggleSelectOne(link.id)}
-                  />
-                </TableCell>
-                <TableCell className="font-medium relative">
-                  <div className="flex items-center space-x-2">
-                    <a
-                      href={link.shortUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline text-primary"
-                    >
-                      {link.slug}
-                    </a>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => copyToClipboard(link.shortUrl)}
-                    >
-                      <Copy className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => setQrModalLink(link)}
-                    >
-                      <QrCode className="h-3 w-3" />
-                    </Button>
-                  </div>
-                  {link.title && (
-                    <div className="text-xs text-muted-foreground">
-                      {link.title}
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell className="max-w-[200px] truncate">
-                  <span title={link.originalUrl}>{link.originalUrl}</span>
-                </TableCell>
-                <TableCell>0</TableCell> {/* TODO: Add click count */}
-                <TableCell>
-                  {format(new Date(link.createdAt), "MMM d, yyyy")}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={link.status === "ACTIVE" ? "default" : "secondary"}
-                  >
-                    {link.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/dashboard/analytics/${link.id}`}>
-                          <BarChart2 className="mr-2 h-4 w-4" />
-                          Analytics
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-red-600"
-                        onClick={() => handleDelete(link.id)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center h-24">
+                  Loading links...
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : links.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center h-24">
+                  No links found. Create one to get started.
+                </TableCell>
+              </TableRow>
+            ) : (
+              links.map((link) => (
+                <TableRow
+                  key={link.id}
+                  data-state={selectedIds.has(link.id) && "selected"}
+                >
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedIds.has(link.id)}
+                      onCheckedChange={() => toggleSelectOne(link.id)}
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium relative">
+                    <div className="flex items-center space-x-2">
+                      <a
+                        href={link.shortUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline text-primary"
+                      >
+                        {link.slug}
+                      </a>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => copyToClipboard(link.shortUrl)}
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => setQrModalLink(link)}
+                      >
+                        <QrCode className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    {link.title && (
+                      <div className="text-xs text-muted-foreground">
+                        {link.title}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell className="max-w-[200px] truncate">
+                    <span title={link.originalUrl}>{link.originalUrl}</span>
+                  </TableCell>
+                  <TableCell>0</TableCell> {/* TODO: Add click count */}
+                  <TableCell>
+                    {format(new Date(link.createdAt), "MMM d, yyyy")}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        link.status === "ACTIVE" ? "default" : "secondary"
+                      }
+                    >
+                      {link.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/dashboard/analytics/${link.id}`}>
+                            <BarChart2 className="mr-2 h-4 w-4" />
+                            Analytics
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => handleDelete(link.id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
 
-      {qrModalLink && (
-        <QrCodeModal
-          isOpen={!!qrModalLink}
-          onClose={() => setQrModalLink(null)}
-          link={qrModalLink}
-        />
-      )}
+        {qrModalLink && (
+          <QrCodeModal
+            isOpen={!!qrModalLink}
+            onClose={() => setQrModalLink(null)}
+            link={qrModalLink}
+          />
+        )}
+      </div>
     </div>
   );
 }

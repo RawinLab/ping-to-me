@@ -125,9 +125,9 @@ export class LinksService {
 
   async findAll(
     userId: string,
-    params: { page: number; limit: number; tag?: string; search?: string },
+    params: { page: number; limit: number; tag?: string; campaignId?: string; search?: string },
   ): Promise<{ data: LinkResponse[]; meta: { total: number; page: number; limit: number; totalPages: number } }> {
-    const { page, limit, tag, search } = params;
+    const { page, limit, tag, campaignId, search } = params;
     const skip = (page - 1) * limit;
 
     const where: any = {
@@ -137,6 +137,10 @@ export class LinksService {
 
     if (tag) {
       where.tags = { has: tag };
+    }
+
+    if (campaignId) {
+      where.campaignId = campaignId;
     }
 
     if (search) {

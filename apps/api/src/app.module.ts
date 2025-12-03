@@ -9,6 +9,8 @@ import { BioPageModule } from './biopages/biopages.module';
 import { OrganizationModule } from './organizations/organization.module';
 import { DeveloperModule } from './developer/developer.module';
 import { MailModule } from './mail/mail.module';
+import { TagsModule } from './tags/tags.module';
+import { CampaignsModule } from './campaigns/campaigns.module';
 
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
@@ -29,6 +31,8 @@ import { APP_GUARD } from '@nestjs/core';
     OrganizationModule,
     DeveloperModule,
     MailModule,
+    TagsModule,
+    CampaignsModule,
   ],
   controllers: [],
   providers: [

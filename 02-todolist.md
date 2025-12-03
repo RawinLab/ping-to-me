@@ -49,11 +49,11 @@ Derived from `plan.md` and current project status.
 
 ### 1.6 Link Organization
 
-- [ ] **Backend**: Implement Tags CRUD.
-- [ ] **Backend**: Implement Campaigns CRUD.
-- [ ] **Frontend**: Add Tag management UI (Create, Assign to Link).
-- [ ] **Frontend**: Add Campaign management UI.
-- [ ] **Frontend**: Add Filters to `LinksTable` (by Tag, Campaign, Date).
+- [x] **Backend**: Implement Tags CRUD.
+- [x] **Backend**: Implement Campaigns CRUD.
+- [x] **Frontend**: Add Tag management UI (Create, Assign to Link).
+- [x] **Frontend**: Add Campaign management UI.
+- [x] **Frontend**: Add Filters to `LinksTable` (by Tag, Campaign, Date).
 
 ### 1.7 Link Analytics (Per-Link)
 

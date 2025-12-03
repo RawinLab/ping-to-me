@@ -32,6 +32,20 @@ export class AuthService {
       },
     });
 
+    // Create Default Organization
+    await this.prisma.organization.create({
+      data: {
+        name: `${name || email}'s Workspace`,
+        slug: randomUUID(),
+        members: {
+          create: {
+            userId: user.id,
+            role: 'OWNER',
+          },
+        },
+      },
+    });
+
     // Generate Verification Token
     const token = randomUUID();
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
@@ -157,6 +171,20 @@ export class AuthService {
               provider,
               providerAccountId: id,
               type: 'oauth',
+            },
+          },
+        },
+      });
+
+      // Create Default Organization
+      await this.prisma.organization.create({
+        data: {
+          name: `${displayName || email}'s Workspace`,
+          slug: randomUUID(),
+          members: {
+            create: {
+              userId: user.id,
+              role: 'OWNER',
             },
           },
         },
