@@ -12,3 +12,5 @@ export * from "./checkbox";
 export * from "./select";
 export * from "./popover";
 export * from "./tabs";
+export * from "./textarea";
+export * from "./avatar";

@@ -12,6 +12,12 @@ export class AnalyticsController {
     // In real app, secure with a shared secret or API key
     return this.analyticsService.trackClick(body);
   }
+
+  @UseGuards(AuthGuard)
+  @Get('dashboard')
+  async getDashboardMetrics(@Request() req) {
+    return this.analyticsService.getDashboardMetrics(req.user.id);
+  }
 }
 
 @Controller('links')

@@ -45,7 +45,7 @@ Focus on the essential functionality for individual users to create and track li
 - [x] **1.8 Dashboard Overview**
   - Aggregate Metrics
   - Recent Activity
-- [ ] **1.9 Link-in-Bio / Mini-Page**
+- [x] **1.9 Link-in-Bio / Mini-Page**
   - Page Creation & Customization
   - Link Management on Page
 - [ ] **1.10 Link Status Control**

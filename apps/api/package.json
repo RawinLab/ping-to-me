@@ -40,7 +40,8 @@
     "passport-local": "^1.0.0",
     "qrcode": "^1.5.4",
     "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "ua-parser-js": "^1.0.37"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240208.0",
@@ -56,6 +57,7 @@
     "@types/nodemailer": "^7.0.4",
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.3",
+    "@types/ua-parser-js": "^0.7.39",
     "@typescript-eslint/eslint-plugin": "^8.48.1",
     "@typescript-eslint/parser": "^8.48.1",
     "jest": "^30.2.0",

@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient, BioPage } from '@pingtome/database';
+import { PrismaService } from '../prisma/prisma.service';
+import { BioPage } from '@prisma/client';
 
 @Injectable()
 export class BioPageService {
-  private prisma = new PrismaClient();
+  constructor(private readonly prisma: PrismaService) { }
 
   async createBioPage(userId: string, orgId: string, data: { slug: string; title: string }): Promise<BioPage> {
     // Check slug availability
@@ -23,6 +24,26 @@ export class BioPageService {
 
   async getBioPage(slug: string): Promise<BioPage | null> {
     return this.prisma.bioPage.findUnique({ where: { slug } });
+  }
+
+  async getPublicBioPage(slug: string): Promise<any | null> {
+    const page = await this.prisma.bioPage.findUnique({ where: { slug } });
+    if (!page) return null;
+
+    const linkIds = (page.content as any)?.links || [];
+    const links = await this.prisma.link.findMany({
+      where: { id: { in: linkIds }, status: 'ACTIVE' },
+    });
+
+    // Sort links to match the order in linkIds
+    const sortedLinks = linkIds
+      .map((id: string) => links.find((l) => l.id === id))
+      .filter((l) => l !== undefined);
+
+    return {
+      ...page,
+      links: sortedLinks,
+    };
   }
 
   async updateBioPage(id: string, userId: string, data: any): Promise<BioPage> {

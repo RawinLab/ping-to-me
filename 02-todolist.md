@@ -62,23 +62,23 @@ Derived from `plan.md` and current project status.
 - [x] **Frontend**: Create Analytics Page (`/dashboard/analytics/[id]`).
 - [x] **Frontend**: Implement Charts (Clicks over time).
 - [x] **Frontend**: Implement Recent Activity Table.
-- [ ] **Frontend**: Add Device and Referrer breakdown charts.
-- [ ] **Frontend**: Add Geographic map visualization.
+- [x] **Frontend**: Add Device and Referrer breakdown charts.
+- [x] **Frontend**: Add Geographic map visualization.
 
 ### 1.8 Dashboard Overview
 
 - [x] **Frontend**: Create Dashboard Layout.
 - [x] **Frontend**: Display Recent Links.
-- [ ] **Backend**: Implement `DashboardService.getOverviewMetrics`.
-- [ ] **Frontend**: Add Aggregate Metrics Cards (Total Clicks, Active Links).
-- [ ] **Frontend**: Add "Clicks over time" chart for _all_ links.
+- [x] **Backend**: Implement `DashboardService.getOverviewMetrics`.
+- [x] **Frontend**: Add Aggregate Metrics Cards (Total Clicks, Active Links).
+- [x] **Frontend**: Add "Clicks over time" chart for _all_ links.
 
 ### 1.9 Link-in-Bio / Mini-Page
 
-- [ ] **Backend**: Define `BioPage` schema (already in Prisma).
-- [ ] **Backend**: Implement Bio Page CRUD endpoints.
-- [ ] **Frontend**: Create Bio Page Builder UI (Drag & Drop).
-- [ ] **Frontend**: Create Public Bio Page renderer (`/bio/[slug]`).
+- [x] **Backend**: Define `BioPage` schema (already in Prisma).
+- [x] **Backend**: Implement Bio Page CRUD endpoints.
+- [x] **Frontend**: Create Bio Page Builder UI.
+- [x] **Frontend**: Create Public Bio Page renderer (`/bio/[slug]`).
 - [ ] **Frontend**: Add Theme customization options.
 
 ### 1.10 Link Status Control

@@ -1,7 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@pingtome/ui";
+import { useState, useEffect } from "react";
+import { Button, Card, CardContent, CardHeader, CardTitle } from "@pingtome/ui";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import { apiRequest } from "../../lib/api";
 import { LinksTable } from "../../components/links/LinksTable";
 import { QrCodeModal } from "../../components/QrCodeModal";
@@ -13,6 +22,20 @@ export default function DashboardPage() {
   const [url, setUrl] = useState("");
   const [slug, setSlug] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [metrics, setMetrics] = useState<any>(null);
+
+  useEffect(() => {
+    fetchMetrics();
+  }, [refreshKey]);
+
+  const fetchMetrics = async () => {
+    try {
+      const res = await apiRequest("/analytics/dashboard");
+      setMetrics(res);
+    } catch (err) {
+      console.error("Failed to fetch dashboard metrics");
+    }
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,8 +74,8 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-8 max-w-6xl mx-auto space-y-8">
+      <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <div className="flex gap-2">
           <ImportLinksModal onSuccess={() => setRefreshKey((prev) => prev + 1)}>
@@ -66,7 +89,67 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="border p-6 rounded-lg mb-8 bg-white shadow-sm">
+      {metrics && (
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Links</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metrics.totalLinks}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total Clicks
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{metrics.totalClicks}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Recent Clicks
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {metrics.recentClicks.length}
+              </div>
+              <p className="text-xs text-muted-foreground">in last 10 events</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {metrics && metrics.clicksByDate.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Overview (Last 30 Days)</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={metrics.clicksByDate}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Line
+                  type="monotone"
+                  dataKey="count"
+                  stroke="#8884d8"
+                  strokeWidth={2}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="border p-6 rounded-lg bg-white shadow-sm">
         <h2 className="text-xl font-semibold mb-4">Create New Link</h2>
         <form onSubmit={handleCreate} className="space-y-4">
           <div className="flex gap-4">

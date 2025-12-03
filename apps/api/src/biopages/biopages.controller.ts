@@ -1,18 +1,36 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Request, UseGuards, Query, BadRequestException } from '@nestjs/common';
 import { BioPageService } from './biopages.service';
 import { AuthGuard } from '../auth/auth.guard';
-import { BioPage } from '@pingtome/database';
+import { BioPage } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('biopages')
 export class BioPageController {
-  constructor(private readonly bioPageService: BioPageService) { }
+  constructor(
+    private readonly bioPageService: BioPageService,
+    private readonly prisma: PrismaService,
+  ) { }
 
   @UseGuards(AuthGuard)
   @Post()
   async create(@Request() req, @Body() body: { slug: string; title: string; orgId: string }): Promise<BioPage> {
-    return this.bioPageService.createBioPage(req.user.id, body.orgId, body);
+    let orgId = body.orgId;
+    if (!orgId || orgId === 'default') {
+      const member = await this.prisma.organizationMember.findFirst({
+        where: { userId: req.user.id },
+      });
+      if (!member) throw new BadRequestException('User has no organization');
+      orgId = member.organizationId;
+    }
+    return this.bioPageService.createBioPage(req.user.id, orgId, body);
   }
 
+  @Get('public/:slug')
+  async getPublic(@Param('slug') slug: string): Promise<any | null> {
+    return this.bioPageService.getPublicBioPage(slug);
+  }
+
+  @UseGuards(AuthGuard)
   @Get(':slug')
   async get(@Param('slug') slug: string): Promise<BioPage | null> {
     return this.bioPageService.getBioPage(slug);
@@ -32,7 +50,14 @@ export class BioPageController {
 
   @UseGuards(AuthGuard)
   @Get()
-  async list(@Request() req, @Body() body: { orgId: string }): Promise<BioPage[]> {
-    return this.bioPageService.listBioPages(req.user.id, body.orgId);
+  async list(@Request() req, @Query('orgId') orgId: string): Promise<BioPage[]> {
+    if (!orgId || orgId === 'default') {
+      const member = await this.prisma.organizationMember.findFirst({
+        where: { userId: req.user.id },
+      });
+      if (!member) return [];
+      orgId = member.organizationId;
+    }
+    return this.bioPageService.listBioPages(req.user.id, orgId);
   }
 }
