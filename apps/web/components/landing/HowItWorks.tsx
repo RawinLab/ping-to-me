@@ -46,7 +46,7 @@ export function HowItWorks() {
   const [activeStep, setActiveStep] = useState(1);
 
   return (
-    <section id="demo" className="section-padding gradient-bg-soft">
+    <section id="how-it-works" className="section-padding gradient-bg-soft">
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center justify-center space-y-4 text-center mb-16">
           <div className="inline-block rounded-full bg-blue-100 px-4 py-1.5 text-sm font-medium text-blue-700">
