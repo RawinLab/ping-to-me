@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { AnalyticsView } from "../../../components/AnalyticsView";
-import { apiRequest } from "../../../lib/api";
+import { AnalyticsView } from "../../../../components/AnalyticsView";
+import { apiRequest } from "../../../../lib/api";
 
 export default function AnalyticsPage() {
   const params = useParams();

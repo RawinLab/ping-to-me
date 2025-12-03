@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@pingtome/ui";
-import { apiRequest } from "../../lib/api";
+import { apiRequest } from "../../../lib/api";
 
 export default function BioPagesList() {
   const [pages, setPages] = useState<any[]>([]);
@@ -64,7 +64,7 @@ export default function BioPagesList() {
               className="w-48 p-2 border rounded"
               required
             />
-            <Button />
+            <Button>Create Page</Button>
           </div>
         </form>
       </div>

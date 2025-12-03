@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@pingtome/ui";
-import { apiRequest } from "../../../lib/api";
+import { apiRequest } from "../../../../lib/api";
 
 export default function DeveloperSettingsPage() {
   const [apiKeys, setApiKeys] = useState<any[]>([]);

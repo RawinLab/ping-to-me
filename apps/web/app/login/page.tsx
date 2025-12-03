@@ -38,7 +38,7 @@ export default function LoginPage() {
           className="w-full p-2 border rounded"
           required
         />
-        <Button />
+        <Button>Login</Button>
       </form>
     </div>
   );

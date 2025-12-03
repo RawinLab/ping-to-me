@@ -85,7 +85,7 @@ export default function DashboardPage() {
               onChange={(e) => setSlug(e.target.value)}
               className="w-48 p-2 border rounded"
             />
-            <Button />
+            <Button>Create Link</Button>
           </div>
         </form>
       </div>

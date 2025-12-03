@@ -45,7 +45,7 @@ export default function RegisterPage() {
           className="w-full p-2 border rounded"
           required
         />
-        <Button />
+        <Button>Register</Button>
       </form>
     </div>
   );

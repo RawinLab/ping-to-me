@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@pingtome/ui";
-import { apiRequest } from "../../../lib/api";
-import { InviteMemberModal } from "../../../components/InviteMemberModal";
+import { apiRequest } from "../../../../lib/api";
+import { InviteMemberModal } from "../../../../components/InviteMemberModal";
 
 export default function TeamSettingsPage() {
   const [members, setMembers] = useState<any[]>([]);

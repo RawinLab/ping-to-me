@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@pingtome/ui";
-import { apiRequest } from "../../../../lib/api";
+import { apiRequest } from "../../../../../lib/api";
 
 export default function BioPageBuilder() {
   const params = useParams();
