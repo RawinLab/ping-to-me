@@ -1,25 +1,185 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@pingtome/database';
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
+import { MailService } from '../mail/mail.service';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class AuthService {
-  private prisma = new PrismaClient();
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+    private mailService: MailService,
+  ) { }
 
-  async register(email: string, name?: string) {
-    // In real app: Hash password, create user in Supabase Auth
-    // Here: Create user in DB directly for MVP simulation
-    return this.prisma.user.create({
+  async register(email: string, password?: string, name?: string) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException('User already exists');
+    }
+
+    const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
+
+    const user = await this.prisma.user.create({
       data: {
         email,
+        password: hashedPassword,
         name,
       },
     });
+
+    // Generate Verification Token
+    const token = randomUUID();
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    await this.prisma.verificationToken.create({
+      data: {
+        identifier: email,
+        token,
+        expires,
+      },
+    });
+
+    // Send Email
+    await this.mailService.sendVerificationEmail(email, token);
+
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+    };
   }
 
-  async login(email: string) {
-    // In real app: Validate credentials with Supabase Auth
+  async verifyEmail(token: string) {
+    const verificationToken = await this.prisma.verificationToken.findUnique({
+      where: { token },
+    });
+
+    if (!verificationToken || verificationToken.expires < new Date()) {
+      throw new BadRequestException('Invalid or expired token');
+    }
+
+    await this.prisma.user.update({
+      where: { email: verificationToken.identifier },
+      data: { emailVerified: new Date() },
+    });
+
+    await this.prisma.verificationToken.delete({ where: { token } });
+
+    return { message: 'Email verified successfully' };
+  }
+
+  async forgotPassword(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) return null;
-    return { accessToken: 'mock-jwt-token', user };
+    if (!user) return; // Silent return for security
+
+    const token = randomUUID();
+    const expires = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
+
+    await this.prisma.verificationToken.create({
+      data: {
+        identifier: email,
+        token,
+        expires,
+      },
+    });
+
+    await this.mailService.sendPasswordResetEmail(email, token);
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const verificationToken = await this.prisma.verificationToken.findUnique({
+      where: { token },
+    });
+
+    if (!verificationToken || verificationToken.expires < new Date()) {
+      throw new BadRequestException('Invalid or expired token');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.user.update({
+      where: { email: verificationToken.identifier },
+      data: { password: hashedPassword },
+    });
+
+    await this.prisma.verificationToken.delete({ where: { token } });
+
+    return { message: 'Password reset successfully' };
+  }
+
+  async validateUser(email: string, pass: string): Promise<any> {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (user && user.password && (await bcrypt.compare(pass, user.password))) {
+      const { password, ...result } = user;
+      return result;
+    }
+    return null;
+  }
+
+  async login(user: any) {
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    return {
+      accessToken: this.jwtService.sign(payload),
+      refreshToken: this.jwtService.sign(payload, { expiresIn: '7d' }),
+    };
+  }
+
+  async refresh(user: any) {
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    return {
+      accessToken: this.jwtService.sign(payload),
+    };
+  }
+
+  async validateOAuthUser(profile: any, provider: 'google' | 'github') {
+    const { id, emails, photos, displayName } = profile;
+    const email = emails[0].value;
+    const avatarUrl = photos[0].value;
+
+    let user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      user = await this.prisma.user.create({
+        data: {
+          email,
+          name: displayName,
+          image: avatarUrl,
+          emailVerified: new Date(),
+          accounts: {
+            create: {
+              provider,
+              providerAccountId: id,
+              type: 'oauth',
+            },
+          },
+        },
+      });
+    } else {
+      // Link account if not already linked
+      const account = await this.prisma.account.findFirst({
+        where: { userId: user.id, provider },
+      });
+
+      if (!account) {
+        await this.prisma.account.create({
+          data: {
+            userId: user.id,
+            provider,
+            providerAccountId: id,
+            type: 'oauth',
+          },
+        });
+      }
+    }
+
+    const { password, ...result } = user;
+    return result;
   }
 }

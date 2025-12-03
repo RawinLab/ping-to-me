@@ -8,10 +8,18 @@ import { QrCodeModule } from './qr/qr.module';
 import { BioPageModule } from './biopages/biopages.module';
 import { OrganizationModule } from './organizations/organization.module';
 import { DeveloperModule } from './developer/developer.module';
+import { MailModule } from './mail/mail.module';
+
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 10,
+    }]),
     AuthModule,
     LinksModule,
     AnalyticsModule,
@@ -20,8 +28,14 @@ import { DeveloperModule } from './developer/developer.module';
     BioPageModule,
     OrganizationModule,
     DeveloperModule,
+    MailModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule { }

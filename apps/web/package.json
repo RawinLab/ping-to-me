@@ -9,16 +9,21 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@pingtome/types": "workspace:*",
     "@pingtome/ui": "workspace:*",
+    "axios": "^1.13.2",
     "lucide-react": "^0.330.0",
     "next": "14.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "recharts": "^3.5.1"
+    "react-hook-form": "^7.67.0",
+    "recharts": "^3.5.1",
+    "zod": "^4.1.13"
   },
   "devDependencies": {
     "@pingtome/config": "workspace:*",
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "^20.11.17",
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",

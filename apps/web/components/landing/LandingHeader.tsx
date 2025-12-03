@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@pingtome/ui";
 import { Menu, X, ChevronDown } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
 
 const navigation = [
   { name: "Features", href: "#features" },
@@ -42,16 +43,7 @@ export function LandingHeader() {
         </div>
 
         <div className="hidden md:flex items-center gap-4">
-          <Link href="/login">
-            <Button variant="ghost" size="sm" className="font-medium">
-              Log in
-            </Button>
-          </Link>
-          <Link href="/register">
-            <Button size="sm" className="font-medium gradient-bg">
-              Get Started Free
-            </Button>
-          </Link>
+          <UserMenu />
         </div>
 
         <button
@@ -104,5 +96,46 @@ export function LandingHeader() {
         </div>
       )}
     </header>
+  );
+}
+
+function UserMenu() {
+  const { user, isLoading, logout } = useAuth();
+
+  if (isLoading) return null;
+
+  if (user) {
+    return (
+      <div className="flex items-center gap-4">
+        <Link href="/dashboard">
+          <Button variant="ghost" size="sm" className="font-medium">
+            Dashboard
+          </Button>
+        </Link>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => logout()}
+          className="font-medium"
+        >
+          Sign out
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Link href="/login">
+        <Button variant="ghost" size="sm" className="font-medium">
+          Log in
+        </Button>
+      </Link>
+      <Link href="/register">
+        <Button size="sm" className="font-medium gradient-bg">
+          Get Started Free
+        </Button>
+      </Link>
+    </>
   );
 }

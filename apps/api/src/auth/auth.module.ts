@@ -1,9 +1,41 @@
 import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { JwtStrategy } from './jwt.strategy';
+import { PassportModule } from '@nestjs/passport';
+import { JwtModule } from '@nestjs/jwt';
+import { PrismaModule } from '../prisma/prisma.module'; // Ensure PrismaModule is imported if not global
+import { LocalStrategy } from './strategies/local.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
+import { GithubStrategy } from './strategies/github.strategy';
+import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
+  imports: [
+    PrismaModule,
+    PassportModule,
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get('JWT_SECRET'),
+        signOptions: { expiresIn: '15m' }, // Short-lived access token
+      }),
+      inject: [ConfigService],
+    }),
+    MailModule,
+    ConfigModule,
+  ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    LocalStrategy,
+    GoogleStrategy,
+    GithubStrategy,
+    JwtRefreshStrategy,
+  ],
+  exports: [AuthService],
 })
 export class AuthModule { }

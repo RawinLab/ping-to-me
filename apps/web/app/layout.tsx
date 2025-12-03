@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Sans, Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/context/auth-context";
 
 const notoSans = Noto_Sans({
   subsets: ["latin"],
@@ -30,7 +31,7 @@ export default function RootLayout({
       <body
         className={`${notoSans.variable} ${notoSansThai.variable} font-sans antialiased`}
       >
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
