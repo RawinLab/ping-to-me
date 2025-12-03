@@ -1,70 +1,70 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@pingtome/ui";
 import { apiRequest } from "../../lib/api";
+import { LinksTable } from "../../components/links/LinksTable";
 import { QrCodeModal } from "../../components/QrCodeModal";
+
+import { ImportLinksModal } from "../../components/links/ImportLinksModal";
+import { Download, Upload } from "lucide-react";
 
 export default function DashboardPage() {
   const [url, setUrl] = useState("");
   const [slug, setSlug] = useState("");
-  const [links, setLinks] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadLinks();
-  }, []);
-
-  const loadLinks = async () => {
-    try {
-      const res = await apiRequest("/links?orgId=mock-org-id");
-      setLinks(res);
-    } catch (err) {
-      console.error("Failed to load links");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await apiRequest("/links", {
         method: "POST",
-        body: JSON.stringify({ url, slug, orgId: "mock-org-id" }),
+        body: JSON.stringify({ originalUrl: url, slug }),
       });
       setUrl("");
       setSlug("");
-      loadLinks(); // Refresh list
+      setRefreshKey((prev) => prev + 1); // Trigger table refresh
     } catch (err) {
       alert("Failed to create link");
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure?")) return;
+  const handleExport = async () => {
     try {
-      await apiRequest(`/links/${id}`, { method: "DELETE" });
-      loadLinks();
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/links/export`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "links.csv";
+      a.click();
     } catch (err) {
-      alert("Failed to delete link");
+      alert("Failed to export links");
     }
   };
 
-  const [qrModalOpen, setQrModalOpen] = useState(false);
-  const [selectedLink, setSelectedLink] = useState<{
-    url: string;
-    slug: string;
-  } | null>(null);
-
-  const openQrModal = (link: any) => {
-    setSelectedLink({ url: link.destinationUrl, slug: link.slug });
-    setQrModalOpen(true);
-  };
-
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
+    <div className="p-8 max-w-6xl mx-auto">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <div className="flex gap-2">
+          <ImportLinksModal onSuccess={() => setRefreshKey((prev) => prev + 1)}>
+            <Button variant="outline">
+              <Upload className="mr-2 h-4 w-4" /> Import
+            </Button>
+          </ImportLinksModal>
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" /> Export
+          </Button>
+        </div>
+      </div>
 
       <div className="border p-6 rounded-lg mb-8 bg-white shadow-sm">
         <h2 className="text-xl font-semibold mb-4">Create New Link</h2>
@@ -92,55 +92,8 @@ export default function DashboardPage() {
 
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Your Links</h2>
-        {loading ? (
-          <p>Loading...</p>
-        ) : (
-          <div className="grid gap-4">
-            {links.map((link) => (
-              <div
-                key={link.id}
-                className="border p-4 rounded-lg bg-white shadow-sm flex justify-between items-center"
-              >
-                <div>
-                  <p className="font-medium text-lg">/{link.slug}</p>
-                  <p className="text-gray-500 text-sm truncate max-w-md">
-                    {link.destinationUrl}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => openQrModal(link)}
-                    className="text-gray-600 hover:bg-gray-50 px-3 py-1 rounded border"
-                  >
-                    QR
-                  </button>
-                  <a
-                    href={`/dashboard/analytics/${link.id}`}
-                    className="text-blue-600 hover:underline px-3 py-1"
-                  >
-                    Analytics
-                  </a>
-                  <button
-                    onClick={() => handleDelete(link.id)}
-                    className="text-red-600 hover:bg-red-50 px-3 py-1 rounded"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <LinksTable key={refreshKey} />
       </div>
-
-      {selectedLink && (
-        <QrCodeModal
-          isOpen={qrModalOpen}
-          onClose={() => setQrModalOpen(false)}
-          linkUrl={selectedLink.url}
-          slug={selectedLink.slug}
-        />
-      )}
     </div>
   );
 }

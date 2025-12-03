@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 
 type Bindings = {
   LINKS_KV: KVNamespace
+  API_URL: string
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
@@ -12,6 +13,7 @@ app.get('/:slug', async (c) => {
   const slug = url.pathname.slice(1) // remove leading slash
 
   const kv = c.env.LINKS_KV
+  const apiUrl = c.env.API_URL || 'http://localhost:3000'
 
   // Check for custom domain
   if (hostname !== 'localhost' && hostname !== 'pingto.me' && !hostname.endsWith('.pingto.me')) {
@@ -34,7 +36,28 @@ app.get('/:slug', async (c) => {
   }
 
   // 1. Check KV for Link
-  const value = await kv.get(slug)
+  let value = await kv.get(slug)
+
+  // 2. Fallback to API if not in KV
+  if (!value) {
+    try {
+      const res = await fetch(`${apiUrl}/links/${slug}/lookup`)
+      if (res.ok) {
+        const data = await res.json() as any
+        value = JSON.stringify({
+          url: data.originalUrl,
+          passwordHash: data.passwordHash,
+          expirationDate: data.expirationDate,
+          deepLinkFallback: data.deepLinkFallback,
+        })
+        // Cache in KV for next time
+        c.executionCtx.waitUntil(kv.put(slug, value, { expirationTtl: 3600 })) // Cache for 1 hour
+      }
+    } catch (e) {
+      console.error('API lookup failed:', e)
+    }
+  }
+
   if (value) {
     let destination = value;
     let metadata: any = {};
@@ -63,7 +86,7 @@ app.get('/:slug', async (c) => {
 
     // Async analytics (fire and forget)
     c.executionCtx.waitUntil(
-      fetch('https://api.pingto.me/analytics/track', {
+      fetch(`${apiUrl}/analytics/track`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -79,10 +102,6 @@ app.get('/:slug', async (c) => {
     console.log(`Redirecting ${slug} to ${destination}`)
     return c.redirect(destination, 301)
   }
-
-  // 2. Fallback to DB (Mock for MVP)
-  // In real implementation, call API or Supabase directly
-  // const res = await fetch(`https://api.pingto.me/links/${slug}`)
 
   return c.text('Link not found', 404)
 })

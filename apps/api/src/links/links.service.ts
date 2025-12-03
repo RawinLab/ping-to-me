@@ -168,6 +168,27 @@ export class LinksService {
     };
   }
 
+  async lookup(slug: string) {
+    const link = await this.prisma.link.findUnique({
+      where: { slug },
+    });
+
+    if (!link) {
+      throw new BadRequestException('Link not found');
+    }
+
+    if (link.status !== LinkStatus.ACTIVE) {
+      throw new ForbiddenException('Link is not active');
+    }
+
+    return {
+      originalUrl: link.originalUrl,
+      passwordHash: link.passwordHash,
+      expirationDate: link.expirationDate,
+      deepLinkFallback: link.deepLinkFallback,
+    };
+  }
+
   private async mapToResponse(link: any): Promise<LinkResponse> {
     const shortUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${link.slug}`;
     let qrCode: string | undefined;
@@ -189,5 +210,105 @@ export class LinksService {
       status: link.status as any,
       createdAt: link.createdAt.toISOString(),
     };
+  }
+  async importLinks(userId: string, fileBuffer: Buffer) {
+    const { parse } = await import('csv-parse/sync');
+
+    const records = parse(fileBuffer, {
+      columns: true,
+      skip_empty_lines: true,
+      trim: true,
+    });
+
+    const results = {
+      total: records.length,
+      success: 0,
+      failed: 0,
+      errors: [] as any[],
+    };
+
+    for (const rawRecord of records) {
+      const record = rawRecord as any;
+      try {
+        // Map CSV columns to DTO
+        const dto: CreateLinkDto = {
+          originalUrl: record.originalUrl || record.url,
+          slug: record.slug || undefined,
+          title: record.title || undefined,
+          description: record.description || undefined,
+          tags: record.tags ? record.tags.split(',').map((t: string) => t.trim()) : [],
+        };
+
+        if (!dto.originalUrl) {
+          throw new Error('Missing originalUrl');
+        }
+
+        await this.create(userId, dto);
+        results.success++;
+      } catch (error) {
+        results.failed++;
+        results.errors.push({
+          row: record,
+          error: (error as any).message,
+        });
+      }
+    }
+
+    return results;
+  }
+
+  async exportLinks(userId: string) {
+    const links = await this.prisma.link.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const { stringify } = await import('csv-stringify/sync');
+
+    const csv = stringify(links.map(link => ({
+      originalUrl: link.originalUrl,
+      slug: link.slug,
+      title: link.title || '',
+      description: link.description || '',
+      tags: link.tags.join(', '),
+      status: link.status,
+      createdAt: link.createdAt.toISOString(),
+      clicks: 0, // TODO: Add click count if available
+    })), {
+      header: true,
+      columns: ['originalUrl', 'slug', 'title', 'description', 'tags', 'status', 'createdAt', 'clicks'],
+    });
+
+    return csv;
+  }
+
+  async deleteMany(userId: string, ids: string[]) {
+    // Verify ownership
+    const count = await this.prisma.link.count({
+      where: {
+        userId,
+        id: { in: ids },
+      },
+    });
+
+    if (count !== ids.length) {
+      // Some links might not belong to user, but we can just delete what matches
+      // or throw error. For safety, let's just delete matching.
+    }
+
+    // Delete from KV (need to fetch slugs first)
+    const links = await this.prisma.link.findMany({
+      where: { userId, id: { in: ids } },
+      select: { slug: true },
+    });
+
+    // TODO: Delete from KV (implement deleteFromKv)
+
+    return this.prisma.link.deleteMany({
+      where: {
+        userId,
+        id: { in: ids },
+      },
+    });
   }
 }

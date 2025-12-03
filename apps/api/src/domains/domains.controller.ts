@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Request, UseGuards, Query, Delete, ParseUUIDPipe } from '@nestjs/common';
 import { DomainService } from './domains.service';
 import { AuthGuard } from '../auth/auth.guard';
 
@@ -13,13 +13,17 @@ export class DomainsController {
   }
 
   @Post(':id/verify')
-  async verify(@Request() req, @Param('id') id: string) {
+  async verify(@Request() req, @Param('id', ParseUUIDPipe) id: string) {
     return this.domainService.verifyDomain(req.user.id, id);
   }
 
   @Get()
-  async list(@Request() req, @Body() body: { orgId: string }) {
-    // Note: Usually orgId comes from query or context, using body for simplicity here matching previous patterns
-    return this.domainService.listDomains(req.user.id, body.orgId);
+  async list(@Request() req, @Query('orgId') orgId: string) {
+    return this.domainService.listDomains(req.user.id, orgId);
+  }
+
+  @Delete(':id')
+  async remove(@Request() req, @Param('id', ParseUUIDPipe) id: string) {
+    return this.domainService.removeDomain(req.user.id, id);
   }
 }

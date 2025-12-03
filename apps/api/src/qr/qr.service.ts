@@ -25,4 +25,23 @@ export class QrCodeService {
       throw new Error('Failed to generate QR code');
     }
   }
+
+  async generateCustomQr(url: string, options: { color?: string; bgcolor?: string }) {
+    try {
+      const { color = '#000000', bgcolor = '#ffffff' } = options;
+
+      const dataUrl = await QRCode.toDataURL(url, {
+        color: {
+          dark: color,
+          light: bgcolor,
+        },
+        margin: 1,
+      });
+
+      return { dataUrl };
+    } catch (err) {
+      console.error('QR Generation Error:', err);
+      throw new Error('Failed to generate QR code');
+    }
+  }
 }

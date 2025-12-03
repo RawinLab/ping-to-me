@@ -11,4 +11,12 @@ export class QrCodeController {
   async generate(@Request() req, @Body() body: { url: string; slug: string }) {
     return this.qrService.generateQrCode(body.url, body.slug);
   }
+
+  @Post('custom')
+  async custom(@Body() body: { url: string; color?: string; bgcolor?: string }) {
+    return this.qrService.generateCustomQr(body.url, {
+      color: body.color,
+      bgcolor: body.bgcolor,
+    });
+  }
 }
