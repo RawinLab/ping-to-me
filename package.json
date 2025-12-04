@@ -4,6 +4,8 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "dev:clean": "trap 'kill $(jobs -p) 2>/dev/null; lsof -ti:3001,3010,3011 | xargs kill -9 2>/dev/null' EXIT; turbo run dev",
+    "kill-ports": "lsof -ti:3001,3010,3011 | xargs kill -9 2>/dev/null || true",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
