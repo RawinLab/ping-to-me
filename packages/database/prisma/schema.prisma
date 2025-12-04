@@ -18,11 +18,23 @@ model User {
   avatarUrl     String?
   createdAt     DateTime  @default(now())
 
+  // Stripe subscription fields
+  stripeCustomerId   String?
+  subscriptionId     String?
+  subscriptionStatus String?
+  plan               String   @default("free")
+  planExpiresAt      DateTime?
+
+  // Two-Factor Authentication
+  twoFactorEnabled   Boolean  @default(false)
+  twoFactorSecret    String?
+
   memberships OrganizationMember[]
   accounts      Account[]
   sessions      Session[]
   links         Link[]
   notifications Notification[]
+  folders       Folder[]
 }
 
 model Account {
@@ -157,12 +169,13 @@ model Link {
   userId           String    @db.Uuid
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  // Organization/Campaign placeholders
+  // Organization/Campaign/Folder
   organizationId   String?   @db.Uuid
   organization     Organization? @relation(fields: [organizationId], references: [id])
   campaignId       String?   @db.Uuid
   campaign         Campaign? @relation(fields: [campaignId], references: [id])
-  // folderId      String?
+  folderId         String?   @db.Uuid
+  folder           Folder?   @relation(fields: [folderId], references: [id])
 
   status           LinkStatus @default(ACTIVE)
   createdAt        DateTime   @default(now())
@@ -257,4 +270,36 @@ model Campaign {
 
   organization   Organization @relation(fields: [organizationId], references: [id])
   links          Link[]
+}
+
+model Folder {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String
+  color          String?
+  userId         String   @db.Uuid
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  links          Link[]
+
+  @@unique([userId, name])
+}
+
+model AuditLog {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String?  @db.Uuid
+  organizationId String?  @db.Uuid
+  action         String   // CREATE, UPDATE, DELETE, LOGIN, etc.
+  resource       String   // User, Link, Domain, etc.
+  resourceId     String?
+  details        Json?    // Additional context
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([action])
+  @@index([createdAt])
 }
