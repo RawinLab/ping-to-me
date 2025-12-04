@@ -240,7 +240,7 @@ Derived from `plan.md` and current project status.
 - [x] **Backend**: Define `Organization` schema.
 - [x] **Backend**: Implement Org CRUD.
 - [x] **Frontend**: Create Organization Settings page.
-- [ ] **Frontend**: Implement Org Switcher in Header.
+- [x] **Frontend**: Implement Org Switcher in Header.
 
 ### 2.2 Member Invite / Remove
 
