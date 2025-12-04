@@ -1,0 +1,171 @@
+"use client";
+
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import { apiRequest } from "@/lib/api";
+
+interface User {
+  id: string;
+  email: string;
+  name?: string;
+  role: string;
+  plan: string;
+  avatarUrl?: string;
+}
+
+interface OrgMembership {
+  orgId: string;
+  orgName: string;
+  role: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  memberships: OrgMembership[];
+  currentOrgId: string | null;
+  loading: boolean;
+  hasRole: (roles: string[]) => boolean;
+  hasOrgRole: (orgId: string, roles: string[]) => boolean;
+  canAccess: (feature: string) => boolean;
+  setCurrentOrg: (orgId: string) => void;
+  refresh: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [memberships, setMemberships] = useState<OrgMembership[]>([]);
+  const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  const refresh = async () => {
+    try {
+      const [userRes, orgsRes] = await Promise.all([
+        apiRequest("/auth/me").catch(() => null),
+        apiRequest("/organizations").catch(() => []),
+      ]);
+
+      if (userRes) {
+        setUser(userRes);
+      }
+
+      if (orgsRes && orgsRes.length > 0) {
+        const membershipData = orgsRes.map((org: any) => ({
+          orgId: org.id,
+          orgName: org.name,
+          role:
+            org.members?.find((m: any) => m.userId === userRes?.id)?.role ||
+            "MEMBER",
+        }));
+        setMemberships(membershipData);
+
+        // Set first org as current if none selected
+        if (!currentOrgId && orgsRes.length > 0) {
+          setCurrentOrgId(orgsRes[0].id);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch user data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const hasRole = (roles: string[]): boolean => {
+    if (!user) return false;
+    return roles.includes(user.role);
+  };
+
+  const hasOrgRole = (orgId: string, roles: string[]): boolean => {
+    const membership = memberships.find((m) => m.orgId === orgId);
+    if (!membership) return false;
+    return roles.includes(membership.role);
+  };
+
+  const canAccess = (feature: string): boolean => {
+    if (!user) return false;
+
+    // Feature access based on plan
+    const freePlanFeatures = ["links", "basic_analytics"];
+    const proPlanFeatures = [
+      ...freePlanFeatures,
+      "custom_domains",
+      "bio_pages",
+      "advanced_analytics",
+    ];
+    const businessPlanFeatures = [
+      ...proPlanFeatures,
+      "team",
+      "api",
+      "audit_logs",
+    ];
+
+    switch (user.plan) {
+      case "business":
+        return businessPlanFeatures.includes(feature);
+      case "pro":
+        return proPlanFeatures.includes(feature);
+      default:
+        return freePlanFeatures.includes(feature);
+    }
+  };
+
+  const setCurrentOrg = (orgId: string) => {
+    setCurrentOrgId(orgId);
+    localStorage.setItem("currentOrgId", orgId);
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        memberships,
+        currentOrgId,
+        loading,
+        hasRole,
+        hasOrgRole,
+        canAccess,
+        setCurrentOrg,
+        refresh,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+}
+
+// Helper hook for checking specific permissions
+export function usePermission(roles: string[]) {
+  const { hasRole } = useAuth();
+  return hasRole(roles);
+}
+
+// Helper hook for checking org permissions
+export function useOrgPermission(orgId: string, roles: string[]) {
+  const { hasOrgRole } = useAuth();
+  return hasOrgRole(orgId, roles);
+}
+
+// Helper hook for feature access
+export function useFeatureAccess(feature: string) {
+  const { canAccess } = useAuth();
+  return canAccess(feature);
+}
