@@ -22,6 +22,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@pingtome/ui";
 import {
   ExternalLink,
@@ -33,11 +39,14 @@ import {
   PauseCircle,
   PlayCircle,
   Archive,
+  Tags,
+  Pencil,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 
 import { QrCodeModal } from "./QrCodeModal";
+import { EditLinkModal } from "./EditLinkModal";
 
 export function LinksTable() {
   const [links, setLinks] = useState<LinkResponse[]>([]);
@@ -53,6 +62,8 @@ export function LinksTable() {
   );
   const [selectedTag, setSelectedTag] = useState<string>("all");
   const [selectedCampaign, setSelectedCampaign] = useState<string>("all");
+  const [bulkTagDialogOpen, setBulkTagDialogOpen] = useState(false);
+  const [bulkTagValue, setBulkTagValue] = useState<string>("");
 
   useEffect(() => {
     fetchFilters();
@@ -124,6 +135,25 @@ export function LinksTable() {
     }
   };
 
+  const handleBulkTag = async () => {
+    if (!bulkTagValue) return;
+    try {
+      await apiRequest("/links/bulk-tag", {
+        method: "POST",
+        body: JSON.stringify({
+          ids: Array.from(selectedIds),
+          tagName: bulkTagValue,
+        }),
+      });
+      setBulkTagDialogOpen(false);
+      setBulkTagValue("");
+      fetchLinks();
+      alert(`Added tag "${bulkTagValue}" to ${selectedIds.size} links`);
+    } catch (error) {
+      alert("Failed to add tags");
+    }
+  };
+
   const handleStatusChange = async (id: string, status: string) => {
     try {
       await apiRequest(`/links/${id}`, {
@@ -187,15 +217,65 @@ export function LinksTable() {
         </Select>
       </div>
 
+      {/* Bulk Tag Dialog */}
+      <Dialog open={bulkTagDialogOpen} onOpenChange={setBulkTagDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Tag to Links</DialogTitle>
+            <DialogDescription>
+              Add a tag to {selectedIds.size} selected link(s).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Select value={bulkTagValue} onValueChange={setBulkTagValue}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a tag" />
+              </SelectTrigger>
+              <SelectContent>
+                {tags.map((t) => (
+                  <SelectItem key={t.id} value={t.name}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setBulkTagDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleBulkTag} disabled={!bulkTagValue}>
+              Add Tag
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="rounded-md border bg-white">
         {selectedIds.size > 0 && (
           <div className="p-4 bg-muted flex justify-between items-center border-b">
             <span className="text-sm font-medium">
               {selectedIds.size} selected
             </span>
-            <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
-              <Trash2 className="mr-2 h-4 w-4" /> Delete Selected
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setBulkTagDialogOpen(true)}
+              >
+                <Tags className="mr-2 h-4 w-4" /> Tag Selected
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkDelete}
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Delete Selected
+              </Button>
+            </div>
           </div>
         )}
         <Table>
@@ -299,6 +379,22 @@ export function LinksTable() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <EditLinkModal
+                          link={{
+                            id: link.id,
+                            title: link.title,
+                            campaignId: link.campaignId,
+                            expirationDate: link.expirationDate,
+                          }}
+                          onSuccess={fetchLinks}
+                        >
+                          <DropdownMenuItem
+                            onSelect={(e) => e.preventDefault()}
+                          >
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                        </EditLinkModal>
                         <DropdownMenuItem asChild>
                           <Link href={`/dashboard/analytics/${link.id}`}>
                             <BarChart2 className="mr-2 h-4 w-4" />

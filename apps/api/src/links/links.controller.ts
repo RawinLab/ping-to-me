@@ -13,19 +13,25 @@ export class LinksController {
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async import(@Request() req, @UploadedFile() file: Express.Multer.File) {
-    return this.linksService.importLinks(req.user.userId, file.buffer);
+    return this.linksService.importLinks(req.user.id, file.buffer);
   }
 
   @Post('bulk-delete')
   @UseGuards(JwtAuthGuard)
   async bulkDelete(@Request() req, @Body() body: { ids: string[] }) {
-    return this.linksService.deleteMany(req.user.userId, body.ids);
+    return this.linksService.deleteMany(req.user.id, body.ids);
+  }
+
+  @Post('bulk-tag')
+  @UseGuards(JwtAuthGuard)
+  async bulkTag(@Request() req, @Body() body: { ids: string[]; tagName: string }) {
+    return this.linksService.addTagToMany(req.user.id, body.ids, body.tagName);
   }
 
   @Get('export')
   @UseGuards(JwtAuthGuard)
   async export(@Request() req, @Res() res: Response) {
-    const csv = await this.linksService.exportLinks(req.user.userId);
+    const csv = await this.linksService.exportLinks(req.user.id);
     res.header('Content-Type', 'text/csv');
     res.header('Content-Disposition', 'attachment; filename="links.csv"');
     res.send(csv);
@@ -34,13 +40,13 @@ export class LinksController {
   @Post()
   @UseGuards(JwtAuthGuard)
   async create(@Request() req, @Body() createLinkDto: CreateLinkDto): Promise<LinkResponse> {
-    return this.linksService.create(req.user.userId, createLinkDto);
+    return this.linksService.create(req.user.id, createLinkDto);
   }
 
   @Post(':id') // Using POST for update to avoid CORS preflight issues sometimes, but PATCH is better REST
   @UseGuards(JwtAuthGuard)
   async update(@Request() req, @Param('id') id: string, @Body() body: any) {
-    return this.linksService.update(req.user.userId, id, body);
+    return this.linksService.update(req.user.id, id, body);
   }
 
   @Get()
@@ -53,7 +59,7 @@ export class LinksController {
     @Query('campaignId') campaignId?: string,
     @Query('search') search?: string,
   ) {
-    return this.linksService.findAll(req.user.userId, {
+    return this.linksService.findAll(req.user.id, {
       page: Number(page),
       limit: Number(limit),
       tag,

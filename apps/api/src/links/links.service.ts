@@ -342,4 +342,33 @@ export class LinksService {
       },
     });
   }
+
+  async addTagToMany(userId: string, ids: string[], tagName: string) {
+    // Verify ownership and get links
+    const links = await this.prisma.link.findMany({
+      where: { userId, id: { in: ids } },
+      select: { id: true, tags: true },
+    });
+
+    // Add tag to each link (tags is String[])
+    const updatePromises = links.map((link) => {
+      const currentTags = link.tags || [];
+      // Only add if not already present
+      if (!currentTags.includes(tagName)) {
+        return this.prisma.link.update({
+          where: { id: link.id },
+          data: {
+            tags: [...currentTags, tagName],
+          },
+        });
+      }
+      return Promise.resolve(null);
+    });
+
+    await Promise.all(updatePromises);
+
+    return { success: true, count: links.length, tagName };
+  }
 }
+
+

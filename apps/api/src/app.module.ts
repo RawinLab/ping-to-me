@@ -12,6 +12,9 @@ import { MailModule } from './mail/mail.module';
 import { TagsModule } from './tags/tags.module';
 import { CampaignsModule } from './campaigns/campaigns.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { FoldersModule } from './folders/folders.module';
+import { PaymentsModule } from './payments/payments.module';
+import { AuditModule } from './audit/audit.module';
 
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
@@ -35,6 +38,9 @@ import { APP_GUARD } from '@nestjs/core';
     TagsModule,
     CampaignsModule,
     NotificationsModule,
+    FoldersModule,
+    PaymentsModule,
+    AuditModule,
   ],
   controllers: [],
   providers: [

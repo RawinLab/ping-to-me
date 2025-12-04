@@ -87,6 +87,12 @@ export default function BioPagesList() {
                 Edit
               </a>
               <a
+                href={`/dashboard/biopages/${page.slug}/analytics`}
+                className="text-purple-600 hover:underline px-3 py-1 border rounded"
+              >
+                Analytics
+              </a>
+              <a
                 href={`http://localhost:8787/${page.slug}`}
                 target="_blank"
                 className="text-gray-600 hover:underline px-3 py-1"

@@ -22,6 +22,8 @@ export default function DashboardPage() {
   const [url, setUrl] = useState("");
   const [slug, setSlug] = useState("");
   const [expirationDate, setExpirationDate] = useState("");
+  const [password, setPassword] = useState("");
+  const [tags, setTags] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
   const [metrics, setMetrics] = useState<any>(null);
 
@@ -47,14 +49,18 @@ export default function DashboardPage() {
           originalUrl: url,
           slug,
           expirationDate: expirationDate || undefined,
+          password: password || undefined,
+          tags: tags ? tags.split(",").map((t) => t.trim()) : [],
         }),
       });
       setUrl("");
       setSlug("");
       setExpirationDate("");
+      setPassword("");
+      setTags("");
       setRefreshKey((prev) => prev + 1); // Trigger table refresh
-    } catch (err) {
-      alert("Failed to create link");
+    } catch (err: any) {
+      alert(err.message || "Failed to create link");
     }
   };
 
@@ -131,6 +137,20 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {metrics && (
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold">Overview</h2>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm">
+              Last 30 Days
+            </Button>
+            <Button variant="outline" size="sm">
+              Last 7 Days
+            </Button>
+          </div>
+        </div>
+      )}
+
       {metrics && metrics.clicksByDate.length > 0 && (
         <Card>
           <CardHeader>
@@ -153,6 +173,39 @@ export default function DashboardPage() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
+      )}
+
+      {metrics && (
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Top Performing Links</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Mock data for now, or use metrics.topLinks if available */}
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium leading-none">/link-1</p>
+                    <p className="text-xs text-muted-foreground">
+                      https://example.com/1
+                    </p>
+                  </div>
+                  <div className="font-bold">50</div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium leading-none">/link-2</p>
+                    <p className="text-xs text-muted-foreground">
+                      https://example.com/2
+                    </p>
+                  </div>
+                  <div className="font-bold">30</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       <div className="border p-6 rounded-lg bg-white shadow-sm">
@@ -189,6 +242,28 @@ export default function DashboardPage() {
                 className="w-full p-2 border rounded"
                 value={expirationDate}
                 onChange={(e) => setExpirationDate(e.target.value)}
+              />
+            </div>
+            <div className="w-48 space-y-2">
+              <label className="text-sm font-medium">Password (Optional)</label>
+              <input
+                type="password"
+                placeholder="secret"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full p-2 border rounded"
+              />
+            </div>
+            <div className="w-48 space-y-2">
+              <label className="text-sm font-medium">
+                Tags (comma separated)
+              </label>
+              <input
+                type="text"
+                placeholder="tag1, tag2"
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                className="w-full p-2 border rounded"
               />
             </div>
             <Button className="mb-0.5">Create Link</Button>

@@ -30,6 +30,9 @@ import {
 } from "recharts";
 import { format } from "date-fns";
 
+import { Button } from "@pingtome/ui";
+import { Download } from "lucide-react";
+
 export default function AnalyticsPage() {
   const params = useParams();
   const id = params.id as string;
@@ -53,6 +56,27 @@ export default function AnalyticsPage() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/links/${id}/analytics/export`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "analytics.csv";
+      a.click();
+    } catch (err) {
+      alert("Failed to export analytics");
+    }
+  };
+
   if (loading) return <div>Loading analytics...</div>;
   if (!data) return <div>No data found</div>;
 
@@ -70,7 +94,12 @@ export default function AnalyticsPage() {
 
   return (
     <div className="p-8 max-w-6xl mx-auto space-y-8">
-      <h1 className="text-3xl font-bold">Link Analytics</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Link Analytics</h1>
+        <Button variant="outline" onClick={handleExport}>
+          <Download className="mr-2 h-4 w-4" /> Export Data
+        </Button>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
@@ -149,6 +178,29 @@ export default function AnalyticsPage() {
                 <YAxis dataKey="name" type="category" width={100} />
                 <Tooltip />
                 <Bar dataKey="value" fill="#82ca9d" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Referrers</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={Object.entries(data.referrers || {})
+                  .map(([name, value]) => ({ name, value }))
+                  .sort((a: any, b: any) => b.value - a.value)
+                  .slice(0, 5)}
+                layout="vertical"
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis dataKey="name" type="category" width={100} />
+                <Tooltip />
+                <Bar dataKey="value" fill="#ffc658" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

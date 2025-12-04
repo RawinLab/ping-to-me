@@ -25,7 +25,7 @@ export default function DomainsPage() {
   const [domains, setDomains] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   // Mock orgId for now, in real app get from context/auth
-  const orgId = "default-org-id";
+  const orgId = "123e4567-e89b-12d3-a456-426614174000";
 
   useEffect(() => {
     fetchDomains();
