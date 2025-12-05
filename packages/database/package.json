@@ -9,13 +9,21 @@
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "db:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts",
+    "db:seed:blocked": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed-blocked-domains.ts",
+    "db:reset": "prisma migrate reset --force && pnpm db:seed"
+  },
+  "prisma": {
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
   "dependencies": {
-    "@prisma/client": "^5.10.0"
+    "@prisma/client": "^5.10.0",
+    "bcrypt": "^5.1.1"
   },
   "devDependencies": {
     "@pingtome/config": "workspace:*",
+    "@types/bcrypt": "^5.0.2",
     "@types/node": "^24.10.1",
     "@typescript-eslint/eslint-plugin": "^8.48.1",
     "@typescript-eslint/parser": "^8.48.1",

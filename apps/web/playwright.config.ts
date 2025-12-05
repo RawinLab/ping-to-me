@@ -15,6 +15,17 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      // Default project uses mocked API
+      testIgnore: ['**/dashboard-real.spec.ts'],
+    },
+    {
+      name: 'real-db',
+      use: { ...devices['Desktop Chrome'] },
+      // Real database tests only
+      testMatch: ['**/dashboard-real.spec.ts'],
+      dependencies: [],
     },
   ],
+  // Global setup for database seeding (only runs for real-db project)
+  globalSetup: process.env.E2E_USE_REAL_DB === 'true' ? './e2e/global-setup.ts' : undefined,
 });

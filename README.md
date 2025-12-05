@@ -67,6 +67,72 @@ See the [Developer Quickstart](specs/001-core-platform/quickstart.md) guide for 
     pnpm dev
     ```
 
+## 🧪 Testing
+
+### E2E Tests
+
+The project uses Playwright for end-to-end testing with two modes:
+
+#### Mode 1: Mocked API (Default)
+Tests run with mocked API responses - fast and isolated.
+
+```bash
+cd apps/web
+npx playwright test
+```
+
+#### Mode 2: Real Database
+Tests run against a real database with seeded test data - more realistic.
+
+```bash
+# 1. Seed the database with test data
+pnpm --filter @pingtome/database db:seed
+
+# 2. Run tests with real database
+cd apps/web
+E2E_USE_REAL_DB=true npx playwright test --project=real-db
+```
+
+### Test Data Credentials
+
+After seeding, you can use these test accounts:
+
+| Role   | Email                        | Password          |
+|--------|------------------------------|-------------------|
+| Owner  | e2e-owner@pingtome.test      | TestPassword123!  |
+| Admin  | e2e-admin@pingtome.test      | TestPassword123!  |
+| Editor | e2e-editor@pingtome.test     | TestPassword123!  |
+| Viewer | e2e-viewer@pingtome.test     | TestPassword123!  |
+
+### Seeded Test Data Includes
+
+- 4 users with different roles
+- 2 organizations (PRO and FREE plans)
+- 10 links with various statuses (active, expired, password-protected)
+- 800+ click events with analytics data (countries, devices, referrers)
+- Custom domains, tags, campaigns, folders
+- Bio page, notifications, API keys, webhooks
+
+### View Test Report
+
+```bash
+cd apps/web
+npx playwright show-report
+```
+
+### Database Commands
+
+```bash
+# Seed E2E test data
+pnpm --filter @pingtome/database db:seed
+
+# Seed blocked domains
+pnpm --filter @pingtome/database db:seed:blocked
+
+# Reset database and re-seed
+pnpm --filter @pingtome/database db:reset
+```
+
 ## 📄 License
 
 This project is licensed under the MIT License.
