@@ -8,6 +8,10 @@ export interface CreateLinkDto {
   password?: string;
   redirectType?: 301 | 302;
   deepLinkFallback?: string;
+  // QR Code customization
+  qrColor?: string; // Hex color for QR code foreground
+  qrLogo?: string; // Base64 encoded image for logo overlay
+  generateQrCode?: boolean; // Whether to generate QR code (default: true)
 }
 
 export interface LinkResponse {

@@ -6,5 +6,6 @@ import { StorageService } from '../storage/storage.service';
 @Module({
   controllers: [QrCodeController],
   providers: [QrCodeService, StorageService],
+  exports: [QrCodeService],
 })
 export class QrCodeModule { }

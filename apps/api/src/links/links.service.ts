@@ -3,10 +3,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateLinkDto, LinkResponse, LinkStatus } from '@pingtome/types';
 import { nanoid } from 'nanoid';
 import { toDataURL } from 'qrcode';
+import { QrCodeService } from '../qr/qr.service';
 
 @Injectable()
 export class LinksService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private qrCodeService: QrCodeService,
+  ) { }
 
   async create(userId: string, dto: CreateLinkDto): Promise<LinkResponse> {
     // 1. Validate URL format (basic check, can be enhanced)
@@ -79,8 +83,12 @@ export class LinksService {
     // 5. Sync to Cloudflare KV
     await this.syncToKv(link);
 
-    // 6. Return response
-    return this.mapToResponse(link);
+    // 6. Return response with QR options
+    return this.mapToResponse(link, {
+      qrColor: dto.qrColor,
+      qrLogo: dto.qrLogo,
+      generateQrCode: dto.generateQrCode,
+    });
   }
 
   private async syncToKv(link: any) {
@@ -220,14 +228,42 @@ export class LinksService {
     return this.mapToResponse(updated);
   }
 
-  private async mapToResponse(link: any): Promise<LinkResponse> {
+  private async mapToResponse(
+    link: any,
+    qrOptions?: { qrColor?: string; qrLogo?: string; generateQrCode?: boolean },
+  ): Promise<LinkResponse> {
     const shortUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${link.slug}`;
     let qrCode: string | undefined;
 
-    try {
-      qrCode = await toDataURL(shortUrl);
-    } catch (e) {
-      console.error('Failed to generate QR code:', e);
+    // Check if QR code generation is disabled
+    const shouldGenerateQr = qrOptions?.generateQrCode !== false;
+
+    if (shouldGenerateQr) {
+      try {
+        // Use advanced QR generation if custom options provided
+        if (qrOptions?.qrColor || qrOptions?.qrLogo) {
+          const result = await this.qrCodeService.generateAdvancedQr({
+            url: shortUrl,
+            foregroundColor: qrOptions.qrColor || '#000000',
+            backgroundColor: '#FFFFFF',
+            logo: qrOptions.qrLogo,
+            logoSize: 20,
+            size: 300,
+          });
+          qrCode = result.dataUrl;
+        } else {
+          // Default simple QR code
+          qrCode = await toDataURL(shortUrl);
+        }
+      } catch (e) {
+        console.error('Failed to generate QR code:', e);
+        // Fallback to simple QR if advanced fails
+        try {
+          qrCode = await toDataURL(shortUrl);
+        } catch (e2) {
+          console.error('Failed to generate fallback QR code:', e2);
+        }
+      }
     }
 
     return {
