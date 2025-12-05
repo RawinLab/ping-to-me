@@ -5,13 +5,24 @@ export const api = axios.create({
   withCredentials: true, // Important for cookies
 });
 
+let accessToken: string | null = null;
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+// Subscribe to token refresh
+const subscribeTokenRefresh = (callback: (token: string) => void) => {
+  refreshSubscribers.push(callback);
+};
+
+// Notify all subscribers when refresh completes
+const onRefreshed = (token: string) => {
+  refreshSubscribers.forEach((callback) => callback(token));
+  refreshSubscribers = [];
+};
+
 // Request interceptor to attach access token
 api.interceptors.request.use(
   (config: any) => {
-    // We store access token in memory (e.g. a variable in this file or context)
-    // But context is React.
-    // A common pattern is to let the interceptor handle the refresh logic transparently.
-    // Or store the token in a closure variable here.
     const token = getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -35,41 +46,77 @@ api.interceptors.response.use(
 
     // If 401 and not already retrying
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // Skip refresh for the refresh endpoint itself
+      if (originalRequest.url?.includes('/auth/refresh')) {
+        return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
+
+      // If already refreshing, queue the request
+      if (isRefreshing) {
+        return new Promise((resolve) => {
+          subscribeTokenRefresh((token: string) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            resolve(api(originalRequest));
+          });
+        });
+      }
+
+      isRefreshing = true;
 
       try {
         // Call refresh endpoint
-        // We use a separate instance to avoid infinite loops if refresh fails
         const res = await axios.post(
           `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
           {},
           { withCredentials: true }
         );
 
-        const { accessToken } = res.data;
-        setAccessToken(accessToken);
+        const { accessToken: newToken } = res.data;
+        setAccessToken(newToken);
+
+        // Notify all queued requests
+        onRefreshed(newToken);
 
         // Retry original request
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh failed (e.g. token expired), redirect to login or clear state
-        // We can't access React Router here easily.
-        // We might need to broadcast an event or let the caller handle it.
+        // Refresh failed - clear token and reject all queued requests
+        setAccessToken(null);
+        refreshSubscribers = [];
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
     return Promise.reject(error);
   }
 );
 
-let accessToken: string | null = null;
-
 export const setAccessToken = (token: string | null) => {
   accessToken = token;
 };
 
 export const getAccessToken = () => accessToken;
+
+// Initialize auth - call this before any API requests
+export const initializeAuth = async (): Promise<boolean> => {
+  if (accessToken) return true;
+
+  try {
+    const res = await axios.post(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
+      {},
+      { withCredentials: true }
+    );
+    setAccessToken(res.data.accessToken);
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 export const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   const method = options.method || 'GET';

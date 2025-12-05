@@ -5,9 +5,10 @@ import {
   useContext,
   useState,
   useEffect,
+  useRef,
   ReactNode,
 } from "react";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, initializeAuth } from "@/lib/api";
 
 interface User {
   id: string;
@@ -43,9 +44,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [memberships, setMemberships] = useState<OrgMembership[]>([]);
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const initRef = useRef(false);
 
   useEffect(() => {
-    refresh();
+    // Prevent double initialization in strict mode
+    if (initRef.current) return;
+    initRef.current = true;
+
+    const init = async () => {
+      // First, try to get access token via refresh
+      const isAuthenticated = await initializeAuth();
+
+      if (isAuthenticated) {
+        // Only fetch user data if we have a valid token
+        await refresh();
+      } else {
+        setLoading(false);
+      }
+    };
+
+    init();
   }, []);
 
   const refresh = async () => {
@@ -57,6 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (userRes) {
         setUser(userRes);
+      } else {
+        setUser(null);
       }
 
       if (orgsRes && orgsRes.length > 0) {
@@ -73,9 +93,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!currentOrgId && orgsRes.length > 0) {
           setCurrentOrgId(orgsRes[0].id);
         }
+      } else {
+        setMemberships([]);
       }
     } catch (error) {
       console.error("Failed to fetch user data");
+      setUser(null);
+      setMemberships([]);
     } finally {
       setLoading(false);
     }
