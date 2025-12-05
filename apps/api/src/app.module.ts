@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { LinksModule } from './links/links.module';
 import { AnalyticsModule } from './analytics/analytics.module';
@@ -22,10 +22,28 @@ import { APP_GUARD } from '@nestjs/core';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 10,
-    }]),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const isDisabled = config.get('THROTTLE_DISABLED') === 'true';
+        const ttl = parseInt(config.get('THROTTLE_TTL') || '60000', 10);
+        const limit = parseInt(config.get('THROTTLE_LIMIT') || '100', 10);
+
+        if (isDisabled) {
+          // Return very high limits to effectively disable throttling
+          return [{
+            ttl: 1000,
+            limit: 10000,
+          }];
+        }
+
+        return [{
+          ttl,
+          limit,
+        }];
+      },
+    }),
     AuthModule,
     LinksModule,
     AnalyticsModule,
