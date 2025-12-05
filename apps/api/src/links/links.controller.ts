@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Query, Param, UseInterceptors, UploadedFile, Res } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Query, Param, UseInterceptors, UploadedFile, Res, Delete } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { LinksService } from './links.service';
@@ -58,6 +58,7 @@ export class LinksController {
     @Query('tag') tag?: string,
     @Query('campaignId') campaignId?: string,
     @Query('search') search?: string,
+    @Query('status') status?: string,
   ) {
     return this.linksService.findAll(req.user.id, {
       page: Number(page),
@@ -65,8 +66,21 @@ export class LinksController {
       tag,
       campaignId,
       search,
+      status,
     });
   }
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  async findOne(@Request() req, @Param('id') id: string) {
+    return this.linksService.findOne(req.user.id, id);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  async delete(@Request() req, @Param('id') id: string) {
+    return this.linksService.delete(req.user.id, id);
+  }
+
   @Get(':slug/lookup')
   async lookup(@Param('slug') slug: string) {
     return this.linksService.lookup(slug);

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, forwardRef, useImperativeHandle } from "react";
 import { LinkResponse } from "@pingtome/types";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, api, getAccessToken } from "@/lib/api";
 import {
   Button,
   Badge,
@@ -42,18 +42,30 @@ import {
   Link2,
   CheckCircle2,
   Sparkles,
+  Plus,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 
 import { QrCodeModal } from "./QrCodeModal";
 import { EditLinkModal } from "./EditLinkModal";
+import { FilterValues } from "./FiltersModal";
 
 interface LinksTableProps {
   limit?: number;
   hideFilters?: boolean;
   searchQuery?: string;
   viewMode?: "list" | "table" | "grid";
+  statusFilter?: string;
+  dateRange?: { start: Date | null; end: Date | null };
+  tagFilters?: FilterValues;
+  onSelectionChange?: (count: number) => void;
+}
+
+export interface LinksTableRef {
+  handleExport: () => Promise<void>;
+  openBulkTagDialog: () => void;
+  getSelectedCount: () => number;
 }
 
 // Get favicon URL for a domain
@@ -75,7 +87,21 @@ const getDomain = (url: string) => {
   }
 };
 
-export function LinksTable({ limit, hideFilters = false, searchQuery = "", viewMode = "list" }: LinksTableProps) {
+const defaultTagFilters: FilterValues = { tags: [], linkType: "all", hasQrCode: "all" };
+
+export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function LinksTable(
+  {
+    limit,
+    hideFilters = false,
+    searchQuery = "",
+    viewMode = "list",
+    statusFilter = "all",
+    dateRange,
+    tagFilters = defaultTagFilters,
+    onSelectionChange,
+  },
+  ref
+) {
   const [links, setLinks] = useState<LinkResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [qrModalLink, setQrModalLink] = useState<{
@@ -87,6 +113,8 @@ export function LinksTable({ limit, hideFilters = false, searchQuery = "", viewM
   const [bulkTagDialogOpen, setBulkTagDialogOpen] = useState(false);
   const [bulkTagValue, setBulkTagValue] = useState<string>("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [inlineTagLinkId, setInlineTagLinkId] = useState<string | null>(null);
+  const [inlineTagValue, setInlineTagValue] = useState<string>("");
 
   useEffect(() => {
     fetchFilters();
@@ -95,7 +123,12 @@ export function LinksTable({ limit, hideFilters = false, searchQuery = "", viewM
 
   useEffect(() => {
     fetchLinks();
-  }, [searchQuery]);
+  }, [searchQuery, statusFilter, dateRange, tagFilters]);
+
+  // Notify parent when selection changes
+  useEffect(() => {
+    onSelectionChange?.(selectedIds.size);
+  }, [selectedIds, onSelectionChange]);
 
   const fetchFilters = async () => {
     try {
@@ -112,6 +145,37 @@ export function LinksTable({ limit, hideFilters = false, searchQuery = "", viewM
       const query = new URLSearchParams();
       if (searchQuery) query.append("search", searchQuery);
       if (limit) query.append("limit", limit.toString());
+      // Map status filter to API values
+      if (statusFilter && statusFilter !== "all") {
+        const statusMap: Record<string, string> = {
+          active: "ACTIVE",
+          disabled: "DISABLED",
+          expired: "EXPIRED",
+          archived: "ARCHIVED",
+        };
+        if (statusMap[statusFilter]) {
+          query.append("status", statusMap[statusFilter]);
+        }
+      }
+      // Date range filter
+      if (dateRange?.start) {
+        query.append("startDate", dateRange.start.toISOString());
+      }
+      if (dateRange?.end) {
+        query.append("endDate", dateRange.end.toISOString());
+      }
+      // Tag filters
+      if (tagFilters.tags.length > 0) {
+        tagFilters.tags.forEach((tag) => query.append("tag", tag));
+      }
+      // Link type filter
+      if (tagFilters.linkType && tagFilters.linkType !== "all") {
+        query.append("linkType", tagFilters.linkType);
+      }
+      // QR code filter
+      if (tagFilters.hasQrCode && tagFilters.hasQrCode !== "all") {
+        query.append("hasQrCode", tagFilters.hasQrCode);
+      }
 
       const response = await apiRequest(`/links?${query.toString()}`);
       const linksData = response.data || response;
@@ -136,6 +200,7 @@ export function LinksTable({ limit, hideFilters = false, searchQuery = "", viewM
       await apiRequest(`/links/${id}`, { method: "DELETE" });
       fetchLinks();
     } catch (error) {
+      console.error("Failed to delete link:", error);
       alert("Failed to delete link");
     }
   };
@@ -171,6 +236,55 @@ export function LinksTable({ limit, hideFilters = false, searchQuery = "", viewM
       alert("Failed to add tags");
     }
   };
+
+  const handleExport = async () => {
+    try {
+      const token = getAccessToken();
+      const response = await api.get("/links/export", {
+        responseType: "blob",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const blob = new Blob([response.data], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "links.csv";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Export failed:", error);
+      alert("Failed to export links");
+    }
+  };
+
+  const openBulkTagDialog = () => {
+    setBulkTagDialogOpen(true);
+  };
+
+  const handleAddInlineTag = async (linkId: string, tagName: string) => {
+    if (!tagName.trim()) return;
+    try {
+      await apiRequest("/links/bulk-tag", {
+        method: "POST",
+        body: JSON.stringify({
+          ids: [linkId],
+          tagName: tagName.trim(),
+        }),
+      });
+      setInlineTagLinkId(null);
+      setInlineTagValue("");
+      fetchLinks();
+    } catch (error) {
+      console.error("Failed to add tag:", error);
+    }
+  };
+
+  // Expose methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    handleExport,
+    openBulkTagDialog,
+    getSelectedCount: () => selectedIds.size,
+  }));
 
   const handleStatusChange = async (id: string, status: string) => {
     try {
@@ -272,7 +386,7 @@ export function LinksTable({ limit, hideFilters = false, searchQuery = "", viewM
             </div>
 
             {/* Meta info */}
-            <div className="flex items-center gap-4 mt-3 text-sm text-slate-500">
+            <div className="flex items-center flex-wrap gap-4 mt-3 text-sm text-slate-500">
               <span className="flex items-center gap-1.5">
                 <BarChart2 className="h-4 w-4 text-emerald-500" />
                 <span className="text-emerald-600 font-medium">
@@ -283,32 +397,67 @@ export function LinksTable({ limit, hideFilters = false, searchQuery = "", viewM
                 <Calendar className="h-4 w-4" />
                 {format(new Date(link.createdAt), "MMM d, yyyy")}
               </span>
-              {link.tags && link.tags.length > 0 ? (
-                <span className="flex items-center gap-1.5">
-                  <Tags className="h-4 w-4" />
-                  {link.tags.join(", ")}
-                </span>
+              <span className="flex items-center gap-1.5">
+                <Tags className="h-4 w-4" />
+                {link.tags && link.tags.length > 0 ? link.tags.join(", ") : "No tags"}
+              </span>
+              {inlineTagLinkId === link.id ? (
+                <div className="flex items-center gap-1">
+                  <select
+                    value={inlineTagValue}
+                    onChange={(e) => setInlineTagValue(e.target.value)}
+                    className="text-xs border border-slate-200 rounded px-2 py-1"
+                    autoFocus
+                  >
+                    <option value="">Select tag</option>
+                    {tags.map((t) => (
+                      <option key={t.id} value={t.name}>{t.name}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => handleAddInlineTag(link.id, inlineTagValue)}
+                    className="text-xs text-blue-600 hover:text-blue-700 px-1"
+                  >
+                    Add
+                  </button>
+                  <button
+                    onClick={() => { setInlineTagLinkId(null); setInlineTagValue(""); }}
+                    className="text-xs text-slate-400 hover:text-slate-600 px-1"
+                  >
+                    Cancel
+                  </button>
+                </div>
               ) : (
-                <span className="flex items-center gap-1.5 text-slate-400">
-                  <Tags className="h-4 w-4" />
-                  No tags
-                </span>
+                <button
+                  onClick={() => setInlineTagLinkId(link.id)}
+                  className="flex items-center gap-1 text-blue-600 hover:text-blue-700"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add tag
+                </button>
               )}
             </div>
           </div>
 
           {/* Actions */}
           <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 text-slate-500 hover:text-slate-700 hover:bg-slate-100"
-              asChild
+            <EditLinkModal
+              link={{
+                id: link.id,
+                title: link.title,
+                campaignId: (link as any).campaignId,
+                expirationDate: (link as any).expirationDate,
+              }}
+              onSuccess={fetchLinks}
             >
-              <Link href={`/dashboard/links/${link.id}/edit`}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+              >
                 <Pencil className="h-4 w-4" />
-              </Link>
-            </Button>
+              </Button>
+            </EditLinkModal>
             <Button
               variant="ghost"
               size="icon"
@@ -398,6 +547,131 @@ export function LinksTable({ limit, hideFilters = false, searchQuery = "", viewM
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Render grid card
+  const renderGridCard = (link: LinkResponse) => {
+    const favicon = getFaviconUrl(link.originalUrl);
+    const domain = getDomain(link.originalUrl);
+    const shortDomain = link.shortUrl ? new URL(link.shortUrl).host : "pingto.me";
+
+    return (
+      <div
+        className={`bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow ${
+          selectedIds.has(link.id) ? "ring-2 ring-blue-500" : ""
+        }`}
+      >
+        {/* Header with checkbox and actions */}
+        <div className="flex items-start justify-between mb-3">
+          <Checkbox
+            checked={selectedIds.has(link.id)}
+            onCheckedChange={() => toggleSelectOne(link.id)}
+            className="border-slate-300"
+          />
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-slate-400 hover:text-slate-600"
+              onClick={() => setQrModalLink(link)}
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-slate-400 hover:text-slate-600"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href={`/dashboard/analytics/${link.id}`}>
+                    <BarChart2 className="mr-2 h-4 w-4" />
+                    View analytics
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setQrModalLink(link)}>
+                  <QrCode className="mr-2 h-4 w-4" />
+                  QR Code
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-600 focus:text-red-600"
+                  onClick={() => handleDelete(link.id)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        {/* Title */}
+        <h3 className="font-semibold text-slate-900 truncate mb-1">
+          {link.title || `${domain} – untitled`}
+        </h3>
+
+        {/* Short URL */}
+        <div className="flex items-center gap-2 mb-2">
+          <a
+            href={link.shortUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:text-blue-700 font-medium text-sm truncate"
+          >
+            {shortDomain}/{link.slug}
+          </a>
+          <button
+            onClick={() => copyToClipboard(link.shortUrl, link.id)}
+            className="p-1 hover:bg-slate-100 rounded transition-colors flex-shrink-0"
+          >
+            {copiedId === link.id ? (
+              <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+            ) : (
+              <Copy className="h-3.5 w-3.5 text-slate-400" />
+            )}
+          </button>
+        </div>
+
+        {/* Original URL */}
+        <p className="text-sm text-slate-500 truncate mb-3">
+          {link.originalUrl}
+        </p>
+
+        {/* Tags */}
+        <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
+          <Tags className="h-4 w-4" />
+          {link.tags && link.tags.length > 0 ? (
+            <span className="truncate">{link.tags.join(", ")}</span>
+          ) : (
+            <span className="text-slate-400">No tags</span>
+          )}
+          <button
+            onClick={() => setInlineTagLinkId(link.id)}
+            className="flex items-center gap-0.5 text-blue-600 hover:text-blue-700 ml-auto"
+          >
+            <Plus className="h-3 w-3" />
+            Add tag
+          </button>
+        </div>
+
+        {/* Stats */}
+        <div className="flex items-center justify-between text-sm border-t pt-3 mt-3">
+          <span className="flex items-center gap-1.5 text-emerald-600 font-medium">
+            <BarChart2 className="h-4 w-4" />
+            {(link as any).clicks || 0} engagements
+          </span>
+          <span className="text-slate-400">
+            {format(new Date(link.createdAt), "MMM d, yyyy")}
+          </span>
         </div>
       </div>
     );
@@ -510,6 +784,14 @@ export function LinksTable({ limit, hideFilters = false, searchQuery = "", viewM
             <Link href="/dashboard/links/new">Create link</Link>
           </Button>
         </div>
+      ) : viewMode === "grid" ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {links.map((link) => (
+            <div key={link.id}>
+              {renderGridCard(link)}
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="space-y-3">
           {links.map((link, index) => (
@@ -532,4 +814,4 @@ export function LinksTable({ limit, hideFilters = false, searchQuery = "", viewM
       )}
     </div>
   );
-}
+});

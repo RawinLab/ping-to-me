@@ -133,15 +133,20 @@ export class LinksService {
 
   async findAll(
     userId: string,
-    params: { page: number; limit: number; tag?: string; campaignId?: string; search?: string },
+    params: { page: number; limit: number; tag?: string; campaignId?: string; search?: string; status?: string },
   ): Promise<{ data: LinkResponse[]; meta: { total: number; page: number; limit: number; totalPages: number } }> {
-    const { page, limit, tag, campaignId, search } = params;
+    const { page, limit, tag, campaignId, search, status } = params;
     const skip = (page - 1) * limit;
 
     const where: any = {
       userId,
       status: { not: LinkStatus.BANNED },
     };
+
+    // Filter by status
+    if (status && status !== 'all') {
+      where.status = status;
+    }
 
     if (tag) {
       where.tags = { has: tag };
@@ -203,6 +208,50 @@ export class LinksService {
       expirationDate: link.expirationDate,
       deepLinkFallback: link.deepLinkFallback,
     };
+  }
+
+  async findOne(userId: string, id: string): Promise<LinkResponse> {
+    const link = await this.prisma.link.findUnique({ where: { id } });
+    if (!link || link.userId !== userId) {
+      throw new ForbiddenException('Access denied');
+    }
+    return this.mapToResponse(link);
+  }
+
+  async delete(userId: string, id: string) {
+    const link = await this.prisma.link.findUnique({ where: { id } });
+    if (!link || link.userId !== userId) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    // Delete from KV
+    await this.deleteFromKv(link.slug);
+
+    return this.prisma.link.delete({ where: { id } });
+  }
+
+  private async deleteFromKv(slug: string) {
+    const accountId = process.env.CF_ACCOUNT_ID;
+    const namespaceId = process.env.CF_NAMESPACE_ID;
+    const apiToken = process.env.CF_API_TOKEN;
+
+    if (!accountId || !namespaceId || !apiToken) {
+      return;
+    }
+
+    try {
+      await fetch(
+        `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces/${namespaceId}/values/${slug}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${apiToken}`,
+          },
+        },
+      );
+    } catch (error) {
+      console.error('Error deleting from KV:', error);
+    }
   }
 
   async update(userId: string, id: string, data: Partial<CreateLinkDto> & { status?: LinkStatus }) {
