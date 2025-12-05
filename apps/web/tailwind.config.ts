@@ -58,6 +58,13 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        chart: {
+          blue: "hsl(var(--chart-blue))",
+          indigo: "hsl(var(--chart-indigo))",
+          cyan: "hsl(var(--chart-cyan))",
+          purple: "hsl(var(--chart-purple))",
+          green: "hsl(var(--chart-green))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

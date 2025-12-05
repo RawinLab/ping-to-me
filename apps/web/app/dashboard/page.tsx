@@ -1,22 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@pingtome/ui";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 import { apiRequest } from "../../lib/api";
 import { LinksTable } from "../../components/links/LinksTable";
-import { QrCodeModal } from "../../components/QrCodeModal";
-
 import { ImportLinksModal } from "../../components/links/ImportLinksModal";
-import { Download, Upload } from "lucide-react";
+import {
+  Download,
+  Upload,
+  Link2,
+  MousePointerClick,
+  TrendingUp,
+  ArrowUpRight,
+  Plus,
+  BarChart3,
+  QrCode,
+  FileText,
+} from "lucide-react";
+import { StatsCard, EngagementsChart } from "@/components/dashboard";
 
 export default function DashboardPage() {
   const [url, setUrl] = useState("");
@@ -85,196 +87,159 @@ export default function DashboardPage() {
     }
   };
 
+  // Process chart data
+  const chartData =
+    metrics?.clicksByDate?.map((item: any) => ({
+      date: item.date,
+      clicks: item.count,
+    })) || [];
+
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-8">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <div className="flex gap-2">
+    <div className="p-6 lg:p-8 space-y-8">
+      {/* Welcome Section */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
+            Welcome back
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Here&apos;s what&apos;s happening with your links today.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
           <ImportLinksModal onSuccess={() => setRefreshKey((prev) => prev + 1)}>
-            <Button variant="outline">
-              <Upload className="mr-2 h-4 w-4" /> Import
+            <Button variant="outline" size="sm" className="gap-2">
+              <Upload className="h-4 w-4" />
+              Import
             </Button>
           </ImportLinksModal>
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="mr-2 h-4 w-4" /> Export
+          <Button variant="outline" size="sm" className="gap-2" onClick={handleExport}>
+            <Download className="h-4 w-4" />
+            Export
           </Button>
         </div>
       </div>
 
-      {metrics && (
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Links</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{metrics.totalLinks}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Clicks
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{metrics.totalClicks}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Recent Clicks
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {metrics.recentClicks.length}
-              </div>
-              <p className="text-xs text-muted-foreground">in last 10 events</p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {metrics && (
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Overview</h2>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              Last 30 Days
-            </Button>
-            <Button variant="outline" size="sm">
-              Last 7 Days
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {metrics && metrics.clicksByDate.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Overview (Last 30 Days)</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={metrics.clicksByDate}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="count"
-                  stroke="#8884d8"
-                  strokeWidth={2}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-
-      {metrics && (
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Top Performing Links</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Mock data for now, or use metrics.topLinks if available */}
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">/link-1</p>
-                    <p className="text-xs text-muted-foreground">
-                      https://example.com/1
-                    </p>
-                  </div>
-                  <div className="font-bold">50</div>
+      {/* Quick Actions */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Link href="/dashboard/links/new">
+          <Card className="group cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                  <Link2 className="h-6 w-6 text-white" />
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">/link-2</p>
-                    <p className="text-xs text-muted-foreground">
-                      https://example.com/2
-                    </p>
-                  </div>
-                  <div className="font-bold">30</div>
+                <div className="flex-1">
+                  <h3 className="font-semibold group-hover:text-primary transition-colors">
+                    Create Link
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Shorten a new URL
+                  </p>
                 </div>
+                <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
             </CardContent>
           </Card>
+        </Link>
+
+        <Link href="/dashboard/qr-codes">
+          <Card className="group cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                  <QrCode className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold group-hover:text-primary transition-colors">
+                    QR Codes
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Generate QR codes
+                  </p>
+                </div>
+                <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/dashboard/biopages">
+          <Card className="group cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center shadow-lg shadow-cyan-500/25">
+                  <FileText className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold group-hover:text-primary transition-colors">
+                    Bio Pages
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Create a bio page
+                  </p>
+                </div>
+                <ArrowUpRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+
+      {/* Stats Cards */}
+      {metrics && (
+        <div className="grid gap-4 md:grid-cols-4">
+          <StatsCard
+            title="Total Links"
+            value={metrics.totalLinks?.toLocaleString() || "0"}
+            icon={<Link2 className="h-5 w-5" />}
+          />
+          <StatsCard
+            title="Total Clicks"
+            value={metrics.totalClicks?.toLocaleString() || "0"}
+            icon={<MousePointerClick className="h-5 w-5" />}
+          />
+          <StatsCard
+            title="This Week"
+            value={
+              chartData.slice(-7).reduce((sum: number, d: any) => sum + (d.clicks || 0), 0).toLocaleString()
+            }
+            trend={{ value: 12, isPositive: true }}
+            icon={<TrendingUp className="h-5 w-5" />}
+          />
+          <StatsCard
+            title="Today"
+            value={chartData.length > 0 ? (chartData[chartData.length - 1]?.clicks || 0).toLocaleString() : "0"}
+            icon={<BarChart3 className="h-5 w-5" />}
+          />
         </div>
       )}
 
-      <div className="border p-6 rounded-lg bg-white shadow-sm">
-        <h2 className="text-xl font-semibold mb-4">Create New Link</h2>
-        <form onSubmit={handleCreate} className="space-y-4">
-          <div className="flex gap-4 items-end">
-            <div className="flex-1 space-y-2">
-              <label className="text-sm font-medium">Destination URL</label>
-              <input
-                type="url"
-                placeholder="https://example.com"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
-            <div className="w-48 space-y-2">
-              <label className="text-sm font-medium">Slug (Optional)</label>
-              <input
-                type="text"
-                placeholder="custom-slug"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                className="w-full p-2 border rounded"
-              />
-            </div>
-            <div className="w-48 space-y-2">
-              <label className="text-sm font-medium">
-                Expiration (Optional)
-              </label>
-              <input
-                type="datetime-local"
-                className="w-full p-2 border rounded"
-                value={expirationDate}
-                onChange={(e) => setExpirationDate(e.target.value)}
-              />
-            </div>
-            <div className="w-48 space-y-2">
-              <label className="text-sm font-medium">Password (Optional)</label>
-              <input
-                type="password"
-                placeholder="secret"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-2 border rounded"
-              />
-            </div>
-            <div className="w-48 space-y-2">
-              <label className="text-sm font-medium">
-                Tags (comma separated)
-              </label>
-              <input
-                type="text"
-                placeholder="tag1, tag2"
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-                className="w-full p-2 border rounded"
-              />
-            </div>
-            <Button className="mb-0.5">Create Link</Button>
-          </div>
-        </form>
-      </div>
+      {/* Engagements Chart */}
+      {metrics && chartData.length > 0 && (
+        <EngagementsChart data={chartData} onExport={handleExport} />
+      )}
 
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Your Links</h2>
-        <LinksTable key={refreshKey} />
-      </div>
+      {/* Recent Links */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-xl font-semibold">Recent Links</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Your most recently created links
+            </p>
+          </div>
+          <Link href="/dashboard/links">
+            <Button variant="outline" size="sm" className="gap-2">
+              View All
+              <ArrowUpRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        </CardHeader>
+        <CardContent>
+          <LinksTable key={refreshKey} limit={5} />
+        </CardContent>
+      </Card>
     </div>
   );
 }

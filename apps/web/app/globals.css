@@ -13,8 +13,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 214 32% 91%;
     --secondary-foreground: 222 47% 11%;
@@ -30,12 +30,19 @@
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 217 91% 60%;
+    --ring: 221 83% 53%;
 
     --radius: 0.75rem;
 
-    --gradient-start: 217 91% 60%;
-    --gradient-end: 199 89% 48%;
+    --gradient-start: 221 83% 53%;
+    --gradient-end: 239 84% 67%;
+
+    /* Chart colors - Blue theme */
+    --chart-blue: 221 83% 53%;
+    --chart-indigo: 239 84% 67%;
+    --chart-cyan: 188 94% 43%;
+    --chart-purple: 262 52% 47%;
+    --chart-green: 142 76% 36%;
   }
 
   .dark {
@@ -48,8 +55,8 @@
     --popover: 222 47% 8%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
@@ -65,7 +72,14 @@
 
     --border: 217 33% 17%;
     --input: 217 33% 17%;
-    --ring: 224 76% 48%;
+    --ring: 221 83% 53%;
+
+    /* Chart colors - Blue theme */
+    --chart-blue: 221 83% 53%;
+    --chart-indigo: 239 84% 67%;
+    --chart-cyan: 188 94% 43%;
+    --chart-purple: 262 52% 47%;
+    --chart-green: 142 76% 36%;
   }
 }
 
