@@ -53,9 +53,12 @@ export function CreateLinkForm({
         password: data.password || undefined,
       };
 
-      const link = await apiRequest<LinkResponse>("POST", "/links", payload);
+      const link = await apiRequest("/links", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
       reset();
-      if (onSuccess) onSuccess(link);
+      if (onSuccess) onSuccess(link as LinkResponse);
     } catch (err: any) {
       setError(err.message || "Failed to create link");
     } finally {

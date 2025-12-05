@@ -169,7 +169,7 @@ export default function ApiKeysPage() {
               Your New API Key
             </CardTitle>
             <CardDescription className="text-green-700">
-              Copy this key now. You won't be able to see it again!
+              Copy this key now. You won&apos;t be able to see it again!
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -190,7 +190,7 @@ export default function ApiKeysPage() {
               className="mt-4 text-green-700"
               onClick={() => setShowNewKey(false)}
             >
-              I've copied my key
+              I&apos;ve copied my key
             </Button>
           </CardContent>
         </Card>
@@ -276,7 +276,7 @@ export default function ApiKeysPage() {
                 header with each request.
               </p>
               <pre className="mt-2 bg-white p-2 rounded text-xs font-mono">
-                curl -H "x-api-key: YOUR_API_KEY" https://api.pingto.me/links
+                curl -H &quot;x-api-key: YOUR_API_KEY&quot; https://api.pingto.me/links
               </pre>
             </div>
           </div>

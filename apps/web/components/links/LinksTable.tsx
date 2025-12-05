@@ -48,7 +48,12 @@ import Link from "next/link";
 import { QrCodeModal } from "./QrCodeModal";
 import { EditLinkModal } from "./EditLinkModal";
 
-export function LinksTable() {
+interface LinksTableProps {
+  limit?: number;
+  hideFilters?: boolean;
+}
+
+export function LinksTable({ limit, hideFilters = false }: LinksTableProps) {
   const [links, setLinks] = useState<LinkResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [qrModalLink, setQrModalLink] = useState<{
@@ -95,9 +100,11 @@ export function LinksTable() {
         query.append("tag", selectedTag);
       if (selectedCampaign && selectedCampaign !== "all")
         query.append("campaignId", selectedCampaign);
+      if (limit) query.append("limit", limit.toString());
 
       const response = await apiRequest(`/links?${query.toString()}`);
-      setLinks(response.data);
+      const linksData = response.data || response;
+      setLinks(limit ? linksData.slice(0, limit) : linksData);
       setSelectedIds(new Set()); // Clear selection on refresh
     } catch (error) {
       console.error("Failed to fetch links:", error);
@@ -187,35 +194,37 @@ export function LinksTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-4">
-        <Select value={selectedTag} onValueChange={setSelectedTag}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by Tag" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Tags</SelectItem>
-            {tags.map((t) => (
-              <SelectItem key={t.id} value={t.name}>
-                {t.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {!hideFilters && !limit && (
+        <div className="flex gap-4">
+          <Select value={selectedTag} onValueChange={setSelectedTag}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by Tag" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Tags</SelectItem>
+              {tags.map((t) => (
+                <SelectItem key={t.id} value={t.name}>
+                  {t.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by Campaign" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Campaigns</SelectItem>
-            {campaigns.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+          <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by Campaign" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Campaigns</SelectItem>
+              {campaigns.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {/* Bulk Tag Dialog */}
       <Dialog open={bulkTagDialogOpen} onOpenChange={setBulkTagDialogOpen}>
@@ -383,8 +392,8 @@ export function LinksTable() {
                           link={{
                             id: link.id,
                             title: link.title,
-                            campaignId: link.campaignId,
-                            expirationDate: link.expirationDate,
+                            campaignId: (link as any).campaignId,
+                            expirationDate: (link as any).expirationDate,
                           }}
                           onSuccess={fetchLinks}
                         >

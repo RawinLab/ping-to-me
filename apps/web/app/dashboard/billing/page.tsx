@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import {
@@ -36,7 +36,7 @@ interface Invoice {
   pdfUrl?: string;
 }
 
-export default function BillingPage() {
+function BillingContent() {
   const searchParams = useSearchParams();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -86,9 +86,9 @@ export default function BillingPage() {
     return <div className="p-8">Loading...</div>;
   }
 
-  const planName =
-    subscription?.plan?.charAt(0).toUpperCase() +
-      subscription?.plan?.slice(1) || "Free";
+  const planName = subscription?.plan
+    ? subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)
+    : "Free";
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8">
@@ -208,5 +208,13 @@ export default function BillingPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function BillingPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Loading...</div>}>
+      <BillingContent />
+    </Suspense>
   );
 }

@@ -191,7 +191,7 @@ export default function TwoFactorPage() {
             )}
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-1">
-                Can't scan? Enter this code manually:
+                Can&apos;t scan? Enter this code manually:
               </p>
               <code className="bg-muted px-2 py-1 rounded text-sm font-mono">
                 {secret}
