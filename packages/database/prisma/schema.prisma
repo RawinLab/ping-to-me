@@ -132,12 +132,41 @@ model BioPage {
   description    String?
   avatarUrl      String?
   theme          Json?
-  content        Json?
+  content        Json?     // Legacy: will be migrated to BioPageLink
+  layout         String    @default("stacked") // 'stacked' | 'grid'
+  socialLinks    Json?     // SocialLink[] array
+  showBranding   Boolean   @default(true)
+  isPublished    Boolean   @default(true)
+  viewCount      Int       @default(0)
   organizationId String    @db.Uuid
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
   organization   Organization @relation(fields: [organizationId], references: [id])
+  bioLinks       BioPageLink[]
+}
+
+model BioPageLink {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bioPageId    String   @db.Uuid
+  linkId       String?  @db.Uuid    // Reference to Link model (optional)
+  externalUrl  String?              // For external URLs not in Link model
+  title        String
+  description  String?
+  icon         String?              // Emoji or icon name
+  thumbnailUrl String?
+  buttonColor  String?
+  textColor    String?
+  order        Int
+  isVisible    Boolean  @default(true)
+  clickCount   Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  bioPage      BioPage  @relation(fields: [bioPageId], references: [id], onDelete: Cascade)
+  link         Link?    @relation(fields: [linkId], references: [id])
+
+  @@index([bioPageId, order])
 }
 
 model OrganizationMember {
@@ -183,6 +212,7 @@ model Link {
 
   clicks           ClickEvent[]
   qrCode           QrCode?
+  bioPageLinks     BioPageLink[]
 
   @@index([userId])
   @@index([tags])

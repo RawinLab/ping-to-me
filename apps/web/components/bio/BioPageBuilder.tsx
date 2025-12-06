@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@pingtome/ui";
 import { Plus, Trash, GripVertical, Save, Loader2 } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
 
 const formSchema = z.object({
   slug: z
@@ -44,12 +45,14 @@ export function BioPageBuilder({
   existingPage?: any;
   onSuccess?: () => void;
 }) {
+  const { user } = useAuth();
   const [links, setLinks] = useState<LinkItem[]>([]);
   const [selectedLinks, setSelectedLinks] = useState<string[]>(
     existingPage?.content?.links || []
   );
   const [loading, setLoading] = useState(false);
   const [availableLinks, setAvailableLinks] = useState<any[]>([]);
+  const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -60,9 +63,26 @@ export function BioPageBuilder({
     },
   });
 
+  // Fetch user's organization on mount
   useEffect(() => {
-    fetchLinks();
+    const fetchOrg = async () => {
+      try {
+        const orgs = await apiRequest("/organizations");
+        if (orgs && orgs.length > 0) {
+          setCurrentOrgId(orgs[0].id);
+        }
+      } catch (err) {
+        console.error("Failed to fetch organizations");
+      }
+    };
+    fetchOrg();
   }, []);
+
+  useEffect(() => {
+    if (currentOrgId) {
+      fetchLinks();
+    }
+  }, [currentOrgId]);
 
   const fetchLinks = async () => {
     try {
@@ -74,12 +94,17 @@ export function BioPageBuilder({
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!currentOrgId) {
+      alert("No organization found. Please try again.");
+      return;
+    }
+
     setLoading(true);
     try {
       const payload = {
         ...values,
         content: { links: selectedLinks },
-        orgId: "default", // TODO: Handle orgId properly
+        orgId: currentOrgId,
       };
 
       if (existingPage) {

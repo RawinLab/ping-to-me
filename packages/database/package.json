@@ -12,7 +12,8 @@
     "db:push": "prisma db push",
     "db:seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed.ts",
     "db:seed:blocked": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/seed-blocked-domains.ts",
-    "db:reset": "prisma migrate reset --force && pnpm db:seed"
+    "db:reset": "prisma migrate reset --force && pnpm db:seed",
+    "db:migrate-bio-links": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' prisma/scripts/migrate-bio-links.ts"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"

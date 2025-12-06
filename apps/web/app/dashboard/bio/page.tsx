@@ -6,21 +6,43 @@ import { BioPageBuilder } from "@/components/bio/BioPageBuilder";
 import { Button, Card, CardContent, CardHeader, CardTitle } from "@pingtome/ui";
 import { Plus, Edit, ExternalLink, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/context/auth-context";
 
 export default function BioPagesDashboard() {
+  const { user } = useAuth();
   const [pages, setPages] = useState<any[]>([]);
   const [view, setView] = useState<"list" | "create" | "edit">("list");
   const [selectedPage, setSelectedPage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
 
+  // Fetch user's organization on mount
   useEffect(() => {
-    fetchPages();
+    const fetchOrg = async () => {
+      try {
+        const orgs = await apiRequest("/organizations");
+        if (orgs && orgs.length > 0) {
+          setCurrentOrgId(orgs[0].id);
+        }
+      } catch (err) {
+        console.error("Failed to fetch organizations");
+        setLoading(false);
+      }
+    };
+    fetchOrg();
   }, []);
 
+  useEffect(() => {
+    if (currentOrgId) {
+      fetchPages();
+    }
+  }, [currentOrgId]);
+
   const fetchPages = async () => {
+    if (!currentOrgId) return;
+
     try {
-      // TODO: Handle orgId properly
-      const res = await apiRequest("/biopages?orgId=default");
+      const res = await apiRequest(`/biopages?orgId=${currentOrgId}`);
       setPages(res);
     } catch (error) {
       console.error("Failed to fetch bio pages", error);
