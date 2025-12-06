@@ -449,13 +449,13 @@
 
 ---
 
-## Phase 4: Analytics Integration (Optional)
+## Phase 4: Analytics Integration ✅ COMPLETED
 
 **Priority: LOW** | **Estimated: 2-3 hours**
 
 ### 4.1 Database Update
 
-- [ ] **TASK-027**: เพิ่ม `source` field ใน ClickEvent model
+- [x] **TASK-027**: เพิ่ม `source` field ใน ClickEvent model
 
   ```prisma
   enum ClickSource {
@@ -470,11 +470,11 @@
   }
   ```
 
-- [ ] **TASK-028**: Generate และ push schema
+- [x] **TASK-028**: Generate และ push schema
 
 ### 4.2 Redirector Update
 
-- [ ] **TASK-029**: Update redirector ให้ detect QR scans
+- [x] **TASK-029**: Update redirector ให้ detect QR scans
 
   ```typescript
   // ถ้า URL มี ?utm_source=qr หรือ ?qr=1
@@ -483,7 +483,7 @@
 
 ### 4.3 Analytics Endpoint
 
-- [ ] **TASK-030**: เพิ่ม endpoint `/links/:id/analytics/qr`
+- [x] **TASK-030**: เพิ่ม endpoint `/links/:id/analytics/qr`
 
   ```typescript
   @Get(':id/analytics/qr')
@@ -498,7 +498,7 @@
 
 ### 4.4 Frontend Analytics
 
-- [ ] **TASK-031**: แสดง QR vs Direct ใน analytics page
+- [x] **TASK-031**: แสดง QR vs Direct ใน analytics page
 
 ---
 
@@ -596,7 +596,7 @@
 - [x] Border size slider works
 - [x] PDF download works
 - [x] (Optional) Batch download works (API implemented)
-- [ ] (Optional) QR analytics works (Phase 4 - deferred)
+- [x] (Optional) QR analytics works ✅
 
 ---
 
