@@ -506,7 +506,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
               className="h-9 w-9 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
               asChild
             >
-              <Link href={`/dashboard/analytics/${link.id}`}>
+              <Link href={`/dashboard/links/${link.id}/analytics`}>
                 <BarChart2 className="h-4 w-4" />
               </Link>
             </Button>
@@ -541,7 +541,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
                   QR Code
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href={`/dashboard/analytics/${link.id}`}>
+                  <Link href={`/dashboard/links/${link.id}/analytics`}>
                     <BarChart2 className="mr-2 h-4 w-4" />
                     View analytics
                   </Link>
@@ -658,7 +658,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
                   </DropdownMenuItem>
                 </EditLinkModal>
                 <DropdownMenuItem asChild>
-                  <Link href={`/dashboard/analytics/${link.id}`}>
+                  <Link href={`/dashboard/links/${link.id}/analytics`}>
                     <BarChart2 className="mr-2 h-4 w-4" />
                     View analytics
                   </Link>

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Request, UseGuards } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { AuthGuard } from '../auth/auth.guard';
 
@@ -15,8 +15,9 @@ export class AnalyticsController {
 
   @UseGuards(AuthGuard)
   @Get('dashboard')
-  async getDashboardMetrics(@Request() req) {
-    return this.analyticsService.getDashboardMetrics(req.user.id);
+  async getDashboardMetrics(@Request() req, @Query('days') days?: string) {
+    const daysNum = days ? parseInt(days, 10) : 30;
+    return this.analyticsService.getDashboardMetrics(req.user.id, daysNum);
   }
 }
 
@@ -26,7 +27,12 @@ export class LinkAnalyticsController {
 
   @UseGuards(AuthGuard)
   @Get(':id/analytics')
-  async getAnalytics(@Request() req, @Param('id') id: string) {
-    return this.analyticsService.getLinkAnalytics(id, req.user.id);
+  async getAnalytics(
+    @Request() req,
+    @Param('id') id: string,
+    @Query('days') days?: string,
+  ) {
+    const daysNum = days ? parseInt(days, 10) : 30;
+    return this.analyticsService.getLinkAnalytics(id, req.user.id, daysNum);
   }
 }

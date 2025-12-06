@@ -49,7 +49,7 @@ export class AnalyticsService {
     });
   }
 
-  async getLinkAnalytics(linkId: string, userId: string) {
+  async getLinkAnalytics(linkId: string, userId: string, days: number = 30) {
     // Verify ownership
     const link = await this.prisma.link.findUnique({ where: { id: linkId } });
     if (!link) {
@@ -59,16 +59,31 @@ export class AnalyticsService {
       throw new ForbiddenException('Access denied');
     }
 
+    // Calculate date range
+    const now = new Date();
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - days);
+
     const clicks = await this.prisma.clickEvent.findMany({
-      where: { linkId },
+      where: {
+        linkId,
+        timestamp: { gte: startDate },
+      },
       orderBy: { timestamp: 'desc' },
       take: 1000, // Increase limit for aggregation
     });
 
-    const totalClicks = await this.prisma.clickEvent.count({ where: { linkId } });
+    const totalClicks = await this.prisma.clickEvent.count({
+      where: {
+        linkId,
+        timestamp: { gte: startDate },
+      },
+    });
+
+    // Also get all-time total for display
+    const allTimeClicks = await this.prisma.clickEvent.count({ where: { linkId } });
 
     // Calculate weekly stats
-    const now = new Date();
     const sevenDaysAgo = new Date(now);
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const fourteenDaysAgo = new Date(now);
@@ -150,6 +165,7 @@ export class AnalyticsService {
 
     return {
       totalClicks,
+      allTimeClicks,
       clicksLast7Days,
       weeklyChange,
       recentClicks: clicks.slice(0, 50), // Return only recent 50 for table
@@ -160,21 +176,34 @@ export class AnalyticsService {
       browsers,
       os,
       referrers,
+      days, // Include days in response for frontend reference
     };
   }
 
-  async getDashboardMetrics(userId: string) {
+  async getDashboardMetrics(userId: string, days: number = 30) {
     // Get all links for user
     const links = await this.prisma.link.findMany({
       where: { userId, status: 'ACTIVE' },
-      select: { id: true, slug: true, originalUrl: true },
+      select: { id: true, slug: true, originalUrl: true, title: true, createdAt: true },
     });
 
     const linkIds = links.map(l => l.id);
     const totalLinks = links.length;
 
-    // Get total clicks across all links
+    // Calculate date range
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    // Get total clicks across all links (in date range)
     const totalClicks = await this.prisma.clickEvent.count({
+      where: {
+        linkId: { in: linkIds },
+        timestamp: { gte: startDate },
+      },
+    });
+
+    // Get all-time total
+    const allTimeClicks = await this.prisma.clickEvent.count({
       where: { linkId: { in: linkIds } },
     });
 
@@ -186,30 +215,82 @@ export class AnalyticsService {
       include: { link: true },
     });
 
-    // Get clicks over time (last 30 days)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const clicksLast30Days = await this.prisma.clickEvent.findMany({
+    // Get clicks over time for the date range
+    const clicksInRange = await this.prisma.clickEvent.findMany({
       where: {
         linkId: { in: linkIds },
-        timestamp: { gte: thirtyDaysAgo }
+        timestamp: { gte: startDate }
       },
-      select: { timestamp: true }
+      select: { timestamp: true, linkId: true, country: true, referrer: true, userAgent: true }
     });
 
     // Aggregate by date
     const clicksByDate: Record<string, number> = {};
-    clicksLast30Days.forEach(click => {
+    const countries: Record<string, number> = {};
+    const referrers: Record<string, number> = {};
+    const devices: Record<string, number> = {};
+
+    clicksInRange.forEach(click => {
+      // By date
       const date = click.timestamp.toISOString().split('T')[0];
       clicksByDate[date] = (clicksByDate[date] || 0) + 1;
+
+      // By country
+      const country = click.country || 'Unknown';
+      countries[country] = (countries[country] || 0) + 1;
+
+      // By referrer
+      const referrer = click.referrer || 'direct';
+      referrers[referrer] = (referrers[referrer] || 0) + 1;
+
+      // By device (parse UA)
+      if (click.userAgent) {
+        const parser = new UAParser(click.userAgent);
+        const result = parser.getResult();
+        const deviceType = result.device.type ?
+          (result.device.type.charAt(0).toUpperCase() + result.device.type.slice(1)) : 'Desktop';
+        devices[deviceType] = (devices[deviceType] || 0) + 1;
+      } else {
+        devices['Unknown'] = (devices['Unknown'] || 0) + 1;
+      }
+    });
+
+    // Get top performing links
+    const linkClickCounts = await this.prisma.clickEvent.groupBy({
+      by: ['linkId'],
+      where: {
+        linkId: { in: linkIds },
+        timestamp: { gte: startDate },
+      },
+      _count: { id: true },
+      orderBy: { _count: { id: 'desc' } },
+      take: 5,
+    });
+
+    const topLinks = linkClickCounts.map(lc => {
+      const link = links.find(l => l.id === lc.linkId);
+      return {
+        id: link?.id,
+        slug: link?.slug,
+        originalUrl: link?.originalUrl,
+        title: link?.title,
+        clicks: lc._count.id,
+      };
     });
 
     return {
       totalLinks,
       totalClicks,
+      allTimeClicks,
       recentClicks,
-      clicksByDate: Object.entries(clicksByDate).map(([date, count]) => ({ date, count })),
+      topLinks,
+      clicksByDate: Object.entries(clicksByDate)
+        .map(([date, count]) => ({ date, clicks: count }))
+        .sort((a, b) => a.date.localeCompare(b.date)),
+      countries,
+      referrers,
+      devices,
+      days,
     };
   }
 }

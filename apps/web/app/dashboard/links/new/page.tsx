@@ -481,7 +481,7 @@ export default function CreateLinkPage() {
               </Button>
               <Button
                 className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                onClick={() => router.push(`/dashboard/analytics/${createdLink.id}`)}
+                onClick={() => router.push(`/dashboard/links/${createdLink.id}/analytics`)}
               >
                 View Analytics
               </Button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import {
@@ -33,7 +33,6 @@ import {
   Check,
 } from "lucide-react";
 import {
-  StatsCard,
   EngagementsChart,
   LocationsChart,
   DevicesChart,
@@ -47,7 +46,7 @@ const DEVICE_COLORS = {
   Other: "#8B5CF6",
 };
 
-export default function AnalyticsPage() {
+export default function LinkAnalyticsPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -57,32 +56,41 @@ export default function AnalyticsPage() {
   const [dateRange, setDateRange] = useState<"7d" | "30d" | "90d">("30d");
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      fetchAnalytics();
-      fetchLinkDetails();
-    }
-  }, [id]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
-      const res = await apiRequest(`/links/${id}/analytics`);
+      setLoading(true);
+      const days = dateRange === "7d" ? 7 : dateRange === "30d" ? 30 : 90;
+      const res = await apiRequest(`/links/${id}/analytics?days=${days}`);
       setData(res);
     } catch (err) {
       console.error("Failed to load analytics");
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, dateRange]);
 
-  const fetchLinkDetails = async () => {
+  const fetchLinkDetails = useCallback(async () => {
     try {
       const res = await apiRequest(`/links/${id}`);
       setLink(res);
     } catch (err) {
       console.error("Failed to load link details");
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (id) {
+      fetchAnalytics();
+      fetchLinkDetails();
+    }
+  }, [id, fetchAnalytics, fetchLinkDetails]);
+
+  // Re-fetch when date range changes
+  useEffect(() => {
+    if (id && data) {
+      fetchAnalytics();
+    }
+  }, [dateRange]);
 
   const handleExport = async () => {
     try {
@@ -115,7 +123,7 @@ export default function AnalyticsPage() {
     return `${process.env.NEXT_PUBLIC_SHORT_URL || "pingto.me"}/${link?.slug}`;
   };
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-pulse text-muted-foreground">
@@ -138,6 +146,7 @@ export default function AnalyticsPage() {
 
   // Process location data
   const totalClicks = data.totalClicks || 0;
+  const allTimeClicks = data.allTimeClicks || totalClicks;
   const countriesData = Object.entries(data.countries || {})
     .map(([name, value]) => ({
       name,
@@ -181,7 +190,7 @@ export default function AnalyticsPage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => router.back()}
+          onClick={() => router.push("/dashboard/links")}
           className="gap-2 -ml-2 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -264,8 +273,13 @@ export default function AnalyticsPage() {
           <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-blue-600">Engagements</p>
-                <p className="text-4xl font-bold tracking-tight">{totalClicks.toLocaleString()}</p>
+                <p className="text-sm font-medium text-blue-600">Total Engagements</p>
+                <p className="text-4xl font-bold tracking-tight">{allTimeClicks.toLocaleString()}</p>
+                {dateRange !== "90d" && totalClicks !== allTimeClicks && (
+                  <p className="text-xs text-muted-foreground">
+                    {totalClicks.toLocaleString()} in last {dateRange === "7d" ? "7" : "30"} days
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -363,11 +377,12 @@ export default function AnalyticsPage() {
               <button
                 key={range}
                 onClick={() => setDateRange(range)}
+                disabled={loading}
                 className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
                   dateRange === range
                     ? "bg-white text-slate-900 shadow-sm"
                     : "text-slate-500 hover:text-slate-700"
-                }`}
+                } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 {range === "7d" ? "7 Days" : range === "30d" ? "30 Days" : "90 Days"}
               </button>
@@ -411,7 +426,7 @@ export default function AnalyticsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.recentClicks.slice(0, 10).map((click: any) => (
+                {data.recentClicks?.slice(0, 10).map((click: any) => (
                   <TableRow key={click.id} className="hover:bg-slate-50/50">
                     <TableCell className="font-medium">
                       {format(new Date(click.timestamp), "MMM d, HH:mm")}
@@ -428,7 +443,7 @@ export default function AnalyticsPage() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {data.recentClicks.length === 0 && (
+                {(!data.recentClicks || data.recentClicks.length === 0) && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-slate-500">
                       No recent activity
