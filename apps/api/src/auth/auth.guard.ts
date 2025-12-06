@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
+import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -15,14 +16,12 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException();
     }
     try {
-      // In a real implementation, verify the token with Supabase Auth
-      // For now, we'll just check if it exists and decode it if possible
-      // const { data, error } = await supabase.auth.getUser(token);
-      // if (error) throw new UnauthorizedException();
-      // request['user'] = data.user;
-
-      // Mock implementation for Phase 2
-      request['user'] = { id: '123e4567-e89b-12d3-a456-426614174000', email: 'mock@example.com' };
+      const secret = process.env.JWT_SECRET;
+      if (!secret) {
+        throw new Error('JWT_SECRET not configured');
+      }
+      const payload = jwt.verify(token, secret) as jwt.JwtPayload;
+      request['user'] = { id: payload.sub, email: payload.email };
     } catch {
       throw new UnauthorizedException();
     }

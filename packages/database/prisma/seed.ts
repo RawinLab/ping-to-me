@@ -72,39 +72,101 @@ function daysAgo(days: number): Date {
   return date;
 }
 
-// Helper function to generate random click data
-function generateClickEvents(linkId: string, count: number, daysSpread: number = 30) {
-  const countries = ['US', 'TH', 'JP', 'GB', 'DE', 'FR', 'CA', 'AU', 'BR', 'IN'];
+// Helper function to generate random click data with realistic distribution
+function generateClickEvents(linkId: string, count: number, daysSpread: number = 30, options?: {
+  trendDirection?: 'up' | 'down' | 'steady';  // Simulate growth or decline
+  weekendBoost?: boolean;  // More clicks on weekends
+  recentBoost?: boolean;   // More clicks in recent days
+}) {
+  const countries = ['US', 'TH', 'JP', 'GB', 'DE', 'FR', 'CA', 'AU', 'BR', 'IN', 'SG', 'KR', 'NL', 'ES', 'IT'];
+  const countryWeights = [25, 20, 10, 8, 7, 5, 5, 4, 4, 4, 3, 2, 1, 1, 1]; // More clicks from US and TH
   const cities = {
-    US: ['New York', 'Los Angeles', 'Chicago', 'San Francisco'],
-    TH: ['Bangkok', 'Chiang Mai', 'Phuket', 'Pattaya'],
-    JP: ['Tokyo', 'Osaka', 'Kyoto', 'Yokohama'],
-    GB: ['London', 'Manchester', 'Birmingham', 'Liverpool'],
-    DE: ['Berlin', 'Munich', 'Hamburg', 'Frankfurt'],
-    FR: ['Paris', 'Lyon', 'Marseille', 'Toulouse'],
-    CA: ['Toronto', 'Vancouver', 'Montreal', 'Calgary'],
-    AU: ['Sydney', 'Melbourne', 'Brisbane', 'Perth'],
-    BR: ['Sao Paulo', 'Rio de Janeiro', 'Brasilia', 'Salvador'],
-    IN: ['Mumbai', 'Delhi', 'Bangalore', 'Chennai'],
+    US: ['New York', 'Los Angeles', 'Chicago', 'San Francisco', 'Seattle', 'Miami', 'Boston', 'Austin'],
+    TH: ['Bangkok', 'Chiang Mai', 'Phuket', 'Pattaya', 'Nonthaburi', 'Khon Kaen'],
+    JP: ['Tokyo', 'Osaka', 'Kyoto', 'Yokohama', 'Nagoya', 'Sapporo'],
+    GB: ['London', 'Manchester', 'Birmingham', 'Liverpool', 'Edinburgh', 'Bristol'],
+    DE: ['Berlin', 'Munich', 'Hamburg', 'Frankfurt', 'Cologne', 'Stuttgart'],
+    FR: ['Paris', 'Lyon', 'Marseille', 'Toulouse', 'Nice', 'Bordeaux'],
+    CA: ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton'],
+    AU: ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide', 'Gold Coast'],
+    BR: ['Sao Paulo', 'Rio de Janeiro', 'Brasilia', 'Salvador', 'Fortaleza'],
+    IN: ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Hyderabad', 'Kolkata'],
+    SG: ['Singapore'],
+    KR: ['Seoul', 'Busan', 'Incheon'],
+    NL: ['Amsterdam', 'Rotterdam', 'The Hague'],
+    ES: ['Madrid', 'Barcelona', 'Valencia', 'Seville'],
+    IT: ['Rome', 'Milan', 'Naples', 'Turin'],
   };
   const devices = ['Mobile', 'Desktop', 'Tablet'];
-  const browsers = ['Chrome', 'Safari', 'Firefox', 'Edge', 'Opera'];
-  const os = ['Windows', 'macOS', 'iOS', 'Android', 'Linux'];
-  const referrers = ['google.com', 'facebook.com', 'twitter.com', 'linkedin.com', 'direct', 'instagram.com', 'youtube.com'];
+  const deviceWeights = [55, 40, 5]; // More mobile users
+  const browsers = ['Chrome', 'Safari', 'Firefox', 'Edge', 'Opera', 'Samsung Internet'];
+  const browserWeights = [60, 20, 8, 7, 3, 2];
+  const osList = ['Windows', 'macOS', 'iOS', 'Android', 'Linux'];
+  const osWeights = [30, 15, 25, 25, 5];
+  const referrers = ['direct', 'google.com', 'facebook.com', 'twitter.com', 'linkedin.com', 'instagram.com', 'youtube.com', 't.co', 'reddit.com', 'tiktok.com'];
+  const referrerWeights = [30, 25, 15, 8, 5, 7, 4, 3, 2, 1];
+
+  // Helper for weighted random selection
+  function weightedRandom<T>(items: T[], weights: number[]): T {
+    const totalWeight = weights.reduce((a, b) => a + b, 0);
+    let random = Math.random() * totalWeight;
+    for (let i = 0; i < items.length; i++) {
+      random -= weights[i];
+      if (random <= 0) return items[i];
+    }
+    return items[items.length - 1];
+  }
+
+  // Generate random hour with realistic distribution (more clicks during day)
+  function getRandomHour(): number {
+    const hourWeights = [1, 1, 1, 1, 1, 2, 3, 5, 8, 10, 10, 9, 8, 9, 10, 10, 9, 8, 7, 6, 5, 4, 3, 2];
+    const hours = Array.from({ length: 24 }, (_, i) => i);
+    return weightedRandom(hours, hourWeights);
+  }
 
   const events = [];
   for (let i = 0; i < count; i++) {
-    const country = countries[Math.floor(Math.random() * countries.length)];
-    const cityList = cities[country as keyof typeof cities];
+    // Calculate day with optional trend
+    let dayOffset: number;
+    if (options?.recentBoost) {
+      // More clicks in recent days (exponential distribution)
+      dayOffset = Math.floor(Math.pow(Math.random(), 2) * daysSpread);
+    } else if (options?.trendDirection === 'up') {
+      // Growing trend - more clicks recently
+      dayOffset = Math.floor(Math.pow(Math.random(), 1.5) * daysSpread);
+    } else if (options?.trendDirection === 'down') {
+      // Declining trend - more clicks in the past
+      dayOffset = Math.floor((1 - Math.pow(Math.random(), 1.5)) * daysSpread);
+    } else {
+      dayOffset = Math.floor(Math.random() * daysSpread);
+    }
+
+    // Weekend boost
+    const date = new Date();
+    date.setDate(date.getDate() - dayOffset);
+    if (options?.weekendBoost && (date.getDay() === 0 || date.getDay() === 6)) {
+      // 30% chance to generate another click on same day (effectively boosting weekend)
+      if (Math.random() < 0.3) {
+        dayOffset = dayOffset; // Keep same day
+      }
+    }
+
+    const country = weightedRandom(countries, countryWeights);
+    const cityList = cities[country as keyof typeof cities] || ['Unknown'];
     const city = cityList[Math.floor(Math.random() * cityList.length)];
-    const device = devices[Math.floor(Math.random() * devices.length)];
-    const browser = browsers[Math.floor(Math.random() * browsers.length)];
-    const osChoice = os[Math.floor(Math.random() * os.length)];
-    const referrer = referrers[Math.floor(Math.random() * referrers.length)];
+    const device = weightedRandom(devices, deviceWeights);
+    const browser = weightedRandom(browsers, browserWeights);
+    const osChoice = weightedRandom(osList, osWeights);
+    const referrer = weightedRandom(referrers, referrerWeights);
+
+    // Generate timestamp with realistic hour distribution
+    const timestamp = new Date();
+    timestamp.setDate(timestamp.getDate() - dayOffset);
+    timestamp.setHours(getRandomHour(), Math.floor(Math.random() * 60), Math.floor(Math.random() * 60));
 
     events.push({
       linkId,
-      timestamp: daysAgo(Math.floor(Math.random() * daysSpread)),
+      timestamp,
       ip: `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
       country,
       city,
@@ -112,7 +174,7 @@ function generateClickEvents(linkId: string, count: number, daysSpread: number =
       browser,
       os: osChoice,
       referrer: referrer === 'direct' ? null : `https://${referrer}`,
-      userAgent: `Mozilla/5.0 (${device}; ${osChoice}) ${browser}/100.0`,
+      userAgent: `Mozilla/5.0 (${device === 'Mobile' ? 'iPhone; CPU iPhone OS 17_0 like Mac OS X' : device === 'Tablet' ? 'iPad; CPU OS 17_0 like Mac OS X' : `${osChoice}; x64`}) AppleWebKit/537.36 (KHTML, like Gecko) ${browser}/${Math.floor(100 + Math.random() * 20)}.0.0.0`,
     });
   }
   return events;
@@ -474,18 +536,34 @@ async function main() {
   ]);
   console.log(`  Created ${links.length} links`);
 
-  // 11. Create click events for analytics
+  // 11. Create click events for analytics (90 days of data for comprehensive charts)
   console.log('Creating click events...');
   const clickData = [
-    ...generateClickEvents(TEST_IDS.links.popular, 500, 60), // 500 clicks over 60 days
-    ...generateClickEvents(TEST_IDS.links.marketing, 150, 30), // 150 clicks over 30 days
-    ...generateClickEvents(TEST_IDS.links.social, 80, 15), // 80 clicks over 15 days
-    ...generateClickEvents(TEST_IDS.links.expired, 25, 40), // 25 clicks before expiration
-    ...generateClickEvents(TEST_IDS.links.recent1, 20, 7), // Recent activity
-    ...generateClickEvents(TEST_IDS.links.recent2, 15, 5),
-    ...generateClickEvents(TEST_IDS.links.recent3, 10, 3),
-    ...generateClickEvents(TEST_IDS.links.recent4, 5, 2),
-    ...generateClickEvents(TEST_IDS.links.recent5, 3, 1),
+    // Popular link: 800+ clicks over 90 days with upward trend
+    ...generateClickEvents(TEST_IDS.links.popular, 850, 90, {
+      trendDirection: 'up',
+      weekendBoost: true,
+      recentBoost: true
+    }),
+    // Marketing link: 300 clicks over 90 days, steady pattern
+    ...generateClickEvents(TEST_IDS.links.marketing, 300, 90, {
+      trendDirection: 'steady',
+      weekendBoost: false
+    }),
+    // Social link: 200 clicks over 60 days, declining (old campaign)
+    ...generateClickEvents(TEST_IDS.links.social, 200, 60, {
+      trendDirection: 'down'
+    }),
+    // Expired link: 50 clicks before it expired
+    ...generateClickEvents(TEST_IDS.links.expired, 50, 45, {
+      trendDirection: 'down'
+    }),
+    // Recent links with fresh activity
+    ...generateClickEvents(TEST_IDS.links.recent1, 45, 14, { recentBoost: true }),
+    ...generateClickEvents(TEST_IDS.links.recent2, 30, 10, { recentBoost: true }),
+    ...generateClickEvents(TEST_IDS.links.recent3, 20, 7, { weekendBoost: true }),
+    ...generateClickEvents(TEST_IDS.links.recent4, 12, 5),
+    ...generateClickEvents(TEST_IDS.links.recent5, 8, 3),
   ];
 
   // Batch insert click events

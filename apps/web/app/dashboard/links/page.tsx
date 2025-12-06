@@ -3,7 +3,7 @@
 import { LinksTable, LinksTableRef } from "@/components/links/LinksTable";
 import { DateFilterModal } from "@/components/links/DateFilterModal";
 import { FiltersModal, FilterValues } from "@/components/links/FiltersModal";
-import { Button, Input } from "@pingtome/ui";
+import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@pingtome/ui";
 import Link from "next/link";
 import { Plus, Search, Calendar, SlidersHorizontal, List, Table2, LayoutGrid, Download, X } from "lucide-react";
 import { useState, useRef } from "react";
@@ -175,17 +175,18 @@ export default function LinksPage() {
             </div>
 
             {/* Status Filter */}
-            <select
-              className="h-10 px-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-sm transition-all cursor-pointer"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="all">Show: All</option>
-              <option value="active">Show: Active</option>
-              <option value="disabled">Show: Disabled</option>
-              <option value="expired">Show: Expired</option>
-              <option value="archived">Show: Archived</option>
-            </select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-10 w-[160px] bg-white border-slate-200 rounded-xl text-sm text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:ring-offset-0 shadow-sm">
+                <SelectValue placeholder="Show: All" />
+              </SelectTrigger>
+              <SelectContent className="bg-white border-slate-200 rounded-xl shadow-lg">
+                <SelectItem value="all" className="rounded-lg cursor-pointer">Show: All</SelectItem>
+                <SelectItem value="active" className="rounded-lg cursor-pointer">Show: Active</SelectItem>
+                <SelectItem value="disabled" className="rounded-lg cursor-pointer">Show: Disabled</SelectItem>
+                <SelectItem value="expired" className="rounded-lg cursor-pointer">Show: Expired</SelectItem>
+                <SelectItem value="archived" className="rounded-lg cursor-pointer">Show: Archived</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

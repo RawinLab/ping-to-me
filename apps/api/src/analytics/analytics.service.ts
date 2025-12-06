@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { UAParser } from 'ua-parser-js';
 import { PrismaService } from '../prisma/prisma.service';
@@ -52,8 +52,11 @@ export class AnalyticsService {
   async getLinkAnalytics(linkId: string, userId: string) {
     // Verify ownership
     const link = await this.prisma.link.findUnique({ where: { id: linkId } });
-    if (!link || link.userId !== userId) {
-      throw new Error('Link not found or access denied');
+    if (!link) {
+      throw new NotFoundException('Link not found');
+    }
+    if (link.userId !== userId) {
+      throw new ForbiddenException('Access denied');
     }
 
     const clicks = await this.prisma.clickEvent.findMany({
@@ -64,19 +67,64 @@ export class AnalyticsService {
 
     const totalClicks = await this.prisma.clickEvent.count({ where: { linkId } });
 
+    // Calculate weekly stats
+    const now = new Date();
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const fourteenDaysAgo = new Date(now);
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+    const clicksLast7Days = await this.prisma.clickEvent.count({
+      where: {
+        linkId,
+        timestamp: { gte: sevenDaysAgo },
+      },
+    });
+
+    const clicksPrevious7Days = await this.prisma.clickEvent.count({
+      where: {
+        linkId,
+        timestamp: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
+      },
+    });
+
+    // Calculate weekly change percentage
+    let weeklyChange = 0;
+    if (clicksPrevious7Days > 0) {
+      weeklyChange = Math.round(((clicksLast7Days - clicksPrevious7Days) / clicksPrevious7Days) * 100);
+    } else if (clicksLast7Days > 0) {
+      weeklyChange = 100;
+    }
+
     // Aggregate data
     const devices: Record<string, number> = {};
     const countries: Record<string, number> = {};
+    const cities: Record<string, number> = {};
     const browsers: Record<string, number> = {};
     const os: Record<string, number> = {};
+    const referrers: Record<string, number> = {};
+    const clicksByDate: Record<string, number> = {};
 
     clicks.forEach(click => {
       // Country
       const country = click.country || 'Unknown';
       countries[country] = (countries[country] || 0) + 1;
 
+      // City
+      const city = click.city || 'Unknown';
+      if (city !== 'Unknown') {
+        cities[city] = (cities[city] || 0) + 1;
+      }
+
+      // Referrer
+      const referrer = click.referrer || 'direct';
+      referrers[referrer] = (referrers[referrer] || 0) + 1;
+
+      // Clicks by date for chart
+      const date = click.timestamp.toISOString().split('T')[0];
+      clicksByDate[date] = (clicksByDate[date] || 0) + 1;
+
       // Parse UA for each click (since we didn't store it)
-      // This is inefficient but works for MVP without schema change
       if (click.userAgent) {
         const parser = new UAParser(click.userAgent);
         const result = parser.getResult();
@@ -95,13 +143,23 @@ export class AnalyticsService {
       }
     });
 
+    // Convert clicksByDate to sorted array
+    const clicksByDateArray = Object.entries(clicksByDate)
+      .map(([date, count]) => ({ date, clicks: count }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
     return {
       totalClicks,
+      clicksLast7Days,
+      weeklyChange,
       recentClicks: clicks.slice(0, 50), // Return only recent 50 for table
+      clicksByDate: clicksByDateArray,
       devices,
       countries,
+      cities,
       browsers,
       os,
+      referrers,
     };
   }
 

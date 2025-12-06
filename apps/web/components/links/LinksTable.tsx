@@ -436,17 +436,18 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
               ) : null}
               {inlineTagLinkId === link.id ? (
                 <div className="flex items-center gap-2 bg-slate-50 px-2 py-1 rounded-lg">
-                  <select
-                    value={inlineTagValue}
-                    onChange={(e) => setInlineTagValue(e.target.value)}
-                    className="text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    autoFocus
-                  >
-                    <option value="">Select tag</option>
-                    {tags.map((t) => (
-                      <option key={t.id} value={t.name}>{t.name}</option>
-                    ))}
-                  </select>
+                  <Select value={inlineTagValue} onValueChange={setInlineTagValue}>
+                    <SelectTrigger className="h-8 w-[140px] text-xs border-slate-200 rounded-md bg-white focus:ring-2 focus:ring-blue-500">
+                      <SelectValue placeholder="Select tag" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-white border-slate-200 rounded-lg shadow-lg max-h-[200px]">
+                      {tags.map((t) => (
+                        <SelectItem key={t.id} value={t.name} className="text-xs cursor-pointer">
+                          {t.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <button
                     onClick={() => handleAddInlineTag(link.id, inlineTagValue)}
                     className="text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md transition-colors"
