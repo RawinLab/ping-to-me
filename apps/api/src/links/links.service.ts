@@ -315,6 +315,11 @@ export class LinksService {
       }
     }
 
+    // Get click/engagement count
+    const clicks = await this.prisma.clickEvent.count({
+      where: { linkId: link.id },
+    });
+
     return {
       id: link.id,
       originalUrl: link.originalUrl,
@@ -325,6 +330,7 @@ export class LinksService {
       tags: link.tags,
       status: link.status as any,
       createdAt: link.createdAt.toISOString(),
+      clicks,
     };
   }
   async importLinks(userId: string, fileBuffer: Buffer) {

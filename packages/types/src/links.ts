@@ -24,6 +24,7 @@ export interface LinkResponse {
   tags: string[];
   status: 'ACTIVE' | 'EXPIRED' | 'DISABLED' | 'BANNED';
   createdAt: string;
+  clicks?: number; // Engagement count
 }
 
 export enum LinkStatus {

@@ -410,8 +410,8 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
             <div className="flex items-center flex-wrap gap-x-5 gap-y-2 mt-4 text-sm">
               <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg">
                 <BarChart2 className="h-4 w-4" />
-                <span className="font-semibold">{(link as any).clicks || 0}</span>
-                <span className="text-emerald-600">clicks</span>
+                <span className="font-semibold">{link.clicks || 0}</span>
+                <span className="text-emerald-600">engagements</span>
               </span>
               <span className="flex items-center gap-1.5 text-slate-500">
                 <Calendar className="h-4 w-4 text-slate-400" />
@@ -771,9 +771,9 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
 
         {/* Stats */}
         <div className="flex items-center justify-between text-sm border-t border-slate-100 pt-4">
-          <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg">
+          <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg" title="engagements">
             <BarChart2 className="h-4 w-4" />
-            <span className="font-semibold">{(link as any).clicks || 0}</span>
+            <span className="font-semibold">{link.clicks || 0}</span>
           </span>
           <span className="flex items-center gap-1.5 text-slate-400">
             <Calendar className="h-3.5 w-3.5" />
