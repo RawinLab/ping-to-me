@@ -218,10 +218,16 @@ enum LinkStatus {
   BANNED
 }
 
+enum ClickSource {
+  DIRECT
+  QR
+  API
+}
+
 model ClickEvent {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  linkId    String   @db.Uuid
-  timestamp DateTime @default(now())
+  id        String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  linkId    String      @db.Uuid
+  timestamp DateTime    @default(now())
   ip        String?
   country   String?
   city      String?
@@ -230,8 +236,9 @@ model ClickEvent {
   os        String?
   referrer  String?
   userAgent String?
+  source    ClickSource @default(DIRECT)
 
-  link      Link     @relation(fields: [linkId], references: [id])
+  link      Link        @relation(fields: [linkId], references: [id])
 }
 
 model Domain {

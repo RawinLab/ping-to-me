@@ -1,13 +1,14 @@
 import { Body, Controller, Get, Param, Post, Query, Request, UseGuards } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { AuthGuard } from '../auth/auth.guard';
+import { TrackClickDto } from './dto/track-click.dto';
 
 @Controller('analytics')
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) { }
 
   @Post('track')
-  async track(@Body() body: any) {
+  async track(@Body() body: TrackClickDto) {
     // Public endpoint called by Redirector
     // In real app, secure with a shared secret or API key
     return this.analyticsService.trackClick(body);
@@ -34,5 +35,14 @@ export class LinkAnalyticsController {
   ) {
     const daysNum = days ? parseInt(days, 10) : 30;
     return this.analyticsService.getLinkAnalytics(id, req.user.id, daysNum);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get(':id/analytics/qr')
+  async getQrAnalytics(
+    @Request() req,
+    @Param('id') id: string,
+  ) {
+    return this.analyticsService.getQrAnalytics(id, req.user.id);
   }
 }

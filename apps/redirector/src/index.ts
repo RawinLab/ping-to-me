@@ -84,6 +84,11 @@ app.get('/:slug', async (c) => {
       return c.text('Password Protected', 403);
     }
 
+    // Detect click source - QR codes add utm_source=qr or qr=1 to URL
+    const clickSource = url.searchParams.get('utm_source') === 'qr' || url.searchParams.get('qr') === '1'
+      ? 'QR'
+      : 'DIRECT';
+
     // Async analytics (fire and forget)
     c.executionCtx.waitUntil(
       fetch(`${apiUrl}/analytics/track`, {
@@ -95,6 +100,7 @@ app.get('/:slug', async (c) => {
           userAgent: c.req.header('user-agent'),
           ip: c.req.header('cf-connecting-ip'),
           country: c.req.header('cf-ipcountry'),
+          source: clickSource,
         }),
       }).catch(err => console.error('Analytics error:', err))
     )

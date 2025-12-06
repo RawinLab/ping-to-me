@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, ClickSource } from '@prisma/client';
 import { UAParser } from 'ua-parser-js';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -13,6 +13,7 @@ export class AnalyticsService {
     userAgent?: string;
     ip?: string;
     country?: string;
+    source?: ClickSource;
   }) {
     const link = await this.prisma.link.findUnique({ where: { slug: data.slug } });
     if (!link) return; // Ignore invalid slugs
@@ -38,13 +39,11 @@ export class AnalyticsService {
         userAgent: data.userAgent,
         ip: data.ip,
         country: data.country || 'Unknown',
-        // Store parsed data if schema supports it, otherwise just use it for now?
-        // Schema check: ClickEvent has `userAgent`, `ip`, `country`.
-        // It does NOT have browser/os/device columns yet.
-        // For now, we will just store what we can. 
-        // Wait, if I want to aggregate by Device, I need to store it or parse it on read.
-        // Parsing on read is slow.
-        // Let's check schema first.
+        source: data.source || ClickSource.DIRECT,
+        // Store parsed data for analytics aggregation
+        browser,
+        os,
+        device,
       },
     });
   }
@@ -118,6 +117,7 @@ export class AnalyticsService {
     const browsers: Record<string, number> = {};
     const os: Record<string, number> = {};
     const referrers: Record<string, number> = {};
+    const sources: Record<string, number> = {};
     const clicksByDate: Record<string, number> = {};
 
     clicks.forEach(click => {
@@ -134,6 +134,10 @@ export class AnalyticsService {
       // Referrer
       const referrer = click.referrer || 'direct';
       referrers[referrer] = (referrers[referrer] || 0) + 1;
+
+      // Source
+      const source = click.source || 'DIRECT';
+      sources[source] = (sources[source] || 0) + 1;
 
       // Clicks by date for chart
       const date = click.timestamp.toISOString().split('T')[0];
@@ -176,6 +180,7 @@ export class AnalyticsService {
       browsers,
       os,
       referrers,
+      sources,
       days, // Include days in response for frontend reference
     };
   }
@@ -291,6 +296,63 @@ export class AnalyticsService {
       referrers,
       devices,
       days,
+    };
+  }
+
+  async getQrAnalytics(linkId: string, userId: string) {
+    // Verify ownership
+    const link = await this.prisma.link.findUnique({ where: { id: linkId } });
+    if (!link) {
+      throw new NotFoundException('Link not found');
+    }
+    if (link.userId !== userId) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    // Get total clicks
+    const totalClicks = await this.prisma.clickEvent.count({
+      where: { linkId },
+    });
+
+    // Count clicks by source
+    const sourceStats = await this.prisma.clickEvent.groupBy({
+      by: ['source'],
+      where: { linkId },
+      _count: { id: true },
+    });
+
+    // Initialize counts
+    let qrScans = 0;
+    let directClicks = 0;
+    let apiClicks = 0;
+
+    // Process grouped results
+    sourceStats.forEach((stat) => {
+      const count = stat._count.id;
+      switch (stat.source) {
+        case 'QR':
+          qrScans = count;
+          break;
+        case 'DIRECT':
+          directClicks = count;
+          break;
+        case 'API':
+          apiClicks = count;
+          break;
+      }
+    });
+
+    // Calculate QR percentage
+    const qrPercentage = totalClicks > 0
+      ? Math.round((qrScans / totalClicks) * 100)
+      : 0;
+
+    return {
+      totalClicks,
+      qrScans,
+      directClicks,
+      apiClicks,
+      qrPercentage,
     };
   }
 }

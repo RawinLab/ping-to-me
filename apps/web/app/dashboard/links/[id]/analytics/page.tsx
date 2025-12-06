@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
   Button,
+  Progress,
 } from "@pingtome/ui";
 import { format } from "date-fns";
 import {
@@ -52,7 +53,9 @@ export default function LinkAnalyticsPage() {
   const id = params.id as string;
   const [data, setData] = useState<any>(null);
   const [link, setLink] = useState<any>(null);
+  const [qrData, setQrData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [qrLoading, setQrLoading] = useState(true);
   const [dateRange, setDateRange] = useState<"7d" | "30d" | "90d">("30d");
   const [copied, setCopied] = useState(false);
 
@@ -78,12 +81,25 @@ export default function LinkAnalyticsPage() {
     }
   }, [id]);
 
+  const fetchQrAnalytics = useCallback(async () => {
+    try {
+      setQrLoading(true);
+      const res = await apiRequest(`/links/${id}/analytics/qr`);
+      setQrData(res);
+    } catch (err) {
+      console.error("Failed to load QR analytics");
+    } finally {
+      setQrLoading(false);
+    }
+  }, [id]);
+
   useEffect(() => {
     if (id) {
       fetchAnalytics();
       fetchLinkDetails();
+      fetchQrAnalytics();
     }
-  }, [id, fetchAnalytics, fetchLinkDetails]);
+  }, [id, fetchAnalytics, fetchLinkDetails, fetchQrAnalytics]);
 
   // Re-fetch when date range changes
   useEffect(() => {
@@ -319,6 +335,126 @@ export default function LinkAnalyticsPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Click Sources Section */}
+        <Card className="overflow-hidden border-0 shadow-md">
+          <CardHeader className="border-b bg-slate-50/50 pb-4">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <Share2 className="h-5 w-5 text-blue-600" />
+              Click Sources
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            {qrLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-pulse text-muted-foreground">
+                  Loading click sources...
+                </div>
+              </div>
+            ) : qrData ? (
+              <div className="space-y-4">
+                {/* QR Scans */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                      <span className="font-medium text-slate-700">QR Scans</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-slate-500">
+                        {qrData.qrScans.toLocaleString()}
+                      </span>
+                      <span className="font-semibold text-purple-600 w-12 text-right">
+                        {qrData.totalClicks > 0
+                          ? Math.round((qrData.qrScans / qrData.totalClicks) * 100)
+                          : 0}%
+                      </span>
+                    </div>
+                  </div>
+                  <Progress
+                    value={qrData.totalClicks > 0
+                      ? (qrData.qrScans / qrData.totalClicks) * 100
+                      : 0}
+                    className="h-2 bg-purple-100"
+                    style={{
+                      "--progress-background": "#a855f7",
+                    } as React.CSSProperties}
+                  />
+                </div>
+
+                {/* Direct Clicks */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                      <span className="font-medium text-slate-700">Direct Clicks</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-slate-500">
+                        {qrData.directClicks.toLocaleString()}
+                      </span>
+                      <span className="font-semibold text-blue-600 w-12 text-right">
+                        {qrData.totalClicks > 0
+                          ? Math.round((qrData.directClicks / qrData.totalClicks) * 100)
+                          : 0}%
+                      </span>
+                    </div>
+                  </div>
+                  <Progress
+                    value={qrData.totalClicks > 0
+                      ? (qrData.directClicks / qrData.totalClicks) * 100
+                      : 0}
+                    className="h-2 bg-blue-100"
+                    style={{
+                      "--progress-background": "#3b82f6",
+                    } as React.CSSProperties}
+                  />
+                </div>
+
+                {/* API Clicks */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                      <span className="font-medium text-slate-700">API Clicks</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-slate-500">
+                        {qrData.apiClicks.toLocaleString()}
+                      </span>
+                      <span className="font-semibold text-green-600 w-12 text-right">
+                        {qrData.totalClicks > 0
+                          ? Math.round((qrData.apiClicks / qrData.totalClicks) * 100)
+                          : 0}%
+                      </span>
+                    </div>
+                  </div>
+                  <Progress
+                    value={qrData.totalClicks > 0
+                      ? (qrData.apiClicks / qrData.totalClicks) * 100
+                      : 0}
+                    className="h-2 bg-green-100"
+                    style={{
+                      "--progress-background": "#10b981",
+                    } as React.CSSProperties}
+                  />
+                </div>
+
+                {/* Total */}
+                <div className="pt-4 border-t border-slate-200">
+                  <div className="flex items-center justify-between text-sm font-semibold">
+                    <span className="text-slate-900">Total Clicks</span>
+                    <span className="text-slate-900">{qrData.totalClicks.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                No click source data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* QR Code and Bio Page Section */}
         <div className="grid gap-4 md:grid-cols-2">
