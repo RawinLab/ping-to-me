@@ -502,7 +502,7 @@
 
 ---
 
-## Phase 5: Testing
+## Phase 5: Testing ✅ COMPLETED
 
 **Priority: HIGH** | **Estimated: 2-3 hours**
 
@@ -510,7 +510,7 @@
 
 **File**: `apps/api/src/qr/__tests__/qr.service.spec.ts`
 
-- [ ] **TASK-032**: เขียน unit tests สำหรับ QrService methods ใหม่
+- [x] **TASK-032**: เขียน unit tests สำหรับ QrService methods ใหม่ (39 test cases)
 
   ```typescript
   describe('QrService', () => {
@@ -543,9 +543,9 @@
 
 ### 5.2 E2E Tests
 
-**File**: `apps/web/e2e/qr-code.spec.ts`
+**File**: `apps/web/e2e/qr-customizer.spec.ts`
 
-- [ ] **TASK-033**: เขียน E2E tests เพิ่มเติม
+- [x] **TASK-033**: เขียน E2E tests เพิ่มเติม (46 test cases)
 
   ```typescript
   test.describe('QR Code Customizer', () => {
@@ -573,14 +573,14 @@
 
 ### 5.3 Run Tests
 
-- [ ] **VERIFY-012**: รัน unit tests
+- [x] **VERIFY-012**: รัน unit tests
   ```bash
   pnpm --filter @pingtome/api test
   ```
 
-- [ ] **VERIFY-013**: รัน E2E tests
+- [x] **VERIFY-013**: รัน E2E tests
   ```bash
-  cd apps/web && npx playwright test e2e/qr-code.spec.ts
+  cd apps/web && npx playwright test e2e/qr-customizer.spec.ts
   ```
 
 ---
@@ -589,14 +589,14 @@
 
 - [x] `pnpm build` passes without errors
 - [x] `pnpm dev` starts without errors
-- [ ] All existing tests still pass
+- [x] All existing tests still pass (Unit: 39 tests, E2E: 46 tests)
 - [x] QR config saves to database
 - [x] QR config loads when reopening customizer
 - [x] Error correction dropdown works
 - [x] Border size slider works
 - [x] PDF download works
 - [x] (Optional) Batch download works (API implemented)
-- [ ] (Optional) QR analytics works
+- [ ] (Optional) QR analytics works (Phase 4 - deferred)
 
 ---
 
