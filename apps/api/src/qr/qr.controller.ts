@@ -2,6 +2,7 @@ import { Body, Controller, Post, Get, Query, Res, UseGuards, Request } from '@ne
 import { Response } from 'express';
 import { QrCodeService, QrCodeOptions } from './qr.service';
 import { AuthGuard } from '../auth/auth.guard';
+import { BatchDownloadDto } from './dto/batch-download.dto';
 
 class GenerateAdvancedQrDto {
   url: string;
@@ -11,6 +12,7 @@ class GenerateAdvancedQrDto {
   logoSize?: number;
   size?: number;
   margin?: number;
+  errorCorrection?: 'L' | 'M' | 'Q' | 'H';
 }
 
 @Controller('qr')
@@ -74,6 +76,16 @@ export class QrCodeController {
       res.setHeader('Content-Type', 'image/svg+xml');
       res.setHeader('Content-Disposition', 'attachment; filename="qrcode.svg"');
       res.send(svg);
+    } else if (format === 'pdf') {
+      const pdfBuffer = await this.qrService.generatePdfQr({
+        url,
+        foregroundColor: foregroundColor || '#000000',
+        backgroundColor: backgroundColor || '#FFFFFF',
+        size: sizeNum,
+      });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename="qrcode.pdf"');
+      res.send(pdfBuffer);
     } else {
       const { dataUrl } = await this.qrService.generateAdvancedQr({
         url,
@@ -88,5 +100,18 @@ export class QrCodeController {
       res.setHeader('Content-Disposition', 'attachment; filename="qrcode.png"');
       res.send(buffer);
     }
+  }
+
+  @Post('batch-download')
+  @UseGuards(AuthGuard)
+  async batchDownload(@Body() dto: BatchDownloadDto, @Res() res: Response) {
+    const zipBuffer = await this.qrService.batchGenerateQr(
+      dto.linkIds,
+      dto.format || 'png',
+      dto.size || 300,
+    );
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', 'attachment; filename="qrcodes.zip"');
+    res.send(zipBuffer);
   }
 }

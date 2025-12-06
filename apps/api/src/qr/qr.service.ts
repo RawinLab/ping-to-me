@@ -1,6 +1,9 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import * as QRCode from 'qrcode';
 import sharp from 'sharp';
+import PDFDocument from 'pdfkit';
+import archiver from 'archiver';
+import { Writable } from 'stream';
 import { StorageService } from '../storage/storage.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateQrConfigDto } from './dto/qr-config.dto';
@@ -86,6 +89,7 @@ export class QrCodeService {
       logoSize = 20,
       size = 300,
       margin = 2,
+      errorCorrection,
     } = options;
 
     // Validate URL
@@ -104,8 +108,8 @@ export class QrCodeService {
       throw new BadRequestException('Invalid background color format. Use hex format like #FFFFFF');
     }
 
-    // Use high error correction when logo is present
-    const errorCorrectionLevel = logo ? 'H' : 'M';
+    // Use provided error correction, or H when logo is present, or M as default
+    const errorCorrectionLevel = errorCorrection || (logo ? 'H' : 'M');
 
     // Generate QR code as PNG buffer
     const qrBuffer = await QRCode.toBuffer(url, {
@@ -343,6 +347,149 @@ export class QrCodeService {
   async deleteQrConfig(linkId: string): Promise<void> {
     await this.prisma.qrCode.deleteMany({
       where: { linkId },
+    });
+  }
+
+  // ============ PDF Generation ============
+
+  async generatePdfQr(options: {
+    url: string;
+    foregroundColor?: string;
+    backgroundColor?: string;
+    size?: number;
+    title?: string;
+  }): Promise<Buffer> {
+    const {
+      url,
+      foregroundColor = '#000000',
+      backgroundColor = '#FFFFFF',
+      size = 200,
+      title,
+    } = options;
+
+    // Generate QR code as PNG buffer
+    const qrBuffer = await QRCode.toBuffer(url, {
+      type: 'png',
+      width: size,
+      margin: 2,
+      color: {
+        dark: foregroundColor,
+        light: backgroundColor,
+      },
+      errorCorrectionLevel: 'M',
+    });
+
+    // Create PDF
+    return new Promise((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      const doc = new PDFDocument({
+        size: 'A4',
+        margin: 50,
+      });
+
+      doc.on('data', (chunk) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      // Add title if provided
+      if (title) {
+        doc.fontSize(16).text(title, { align: 'center' });
+        doc.moveDown();
+      }
+
+      // Add QR code image centered
+      const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+      const x = doc.page.margins.left + (pageWidth - size) / 2;
+      doc.image(qrBuffer, x, doc.y, { width: size, height: size });
+      doc.moveDown(size / 12);
+
+      // Add URL below QR code
+      doc.fontSize(10).text(url, { align: 'center', link: url });
+
+      doc.end();
+    });
+  }
+
+  // ============ Batch Download ============
+
+  async batchGenerateQr(
+    linkIds: string[],
+    format: 'png' | 'svg' | 'pdf' = 'png',
+    size: number = 300,
+  ): Promise<Buffer> {
+    // Get links with their QR configs
+    const links = await this.prisma.link.findMany({
+      where: { id: { in: linkIds } },
+      include: { qrCode: true },
+    });
+
+    if (links.length === 0) {
+      throw new NotFoundException('No links found');
+    }
+
+    // Create ZIP archive
+    return new Promise((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      const archive = archiver('zip', { zlib: { level: 9 } });
+
+      const writableStream = new Writable({
+        write(chunk, encoding, callback) {
+          chunks.push(chunk);
+          callback();
+        },
+      });
+
+      writableStream.on('finish', () => resolve(Buffer.concat(chunks)));
+      archive.on('error', reject);
+
+      archive.pipe(writableStream);
+
+      // Process each link
+      const processLinks = async () => {
+        for (const link of links) {
+          const shortUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3010'}/${link.slug}`;
+          const config = link.qrCode;
+
+          try {
+            if (format === 'svg') {
+              const svg = await this.generateSvgQr(shortUrl, {
+                color: config?.foregroundColor || '#000000',
+                bgcolor: config?.backgroundColor || '#FFFFFF',
+                size,
+              });
+              archive.append(svg, { name: `${link.slug}.svg` });
+            } else if (format === 'pdf') {
+              const pdfBuffer = await this.generatePdfQr({
+                url: shortUrl,
+                foregroundColor: config?.foregroundColor || '#000000',
+                backgroundColor: config?.backgroundColor || '#FFFFFF',
+                size,
+                title: link.title || link.slug,
+              });
+              archive.append(pdfBuffer, { name: `${link.slug}.pdf` });
+            } else {
+              // PNG format
+              const { dataUrl } = await this.generateAdvancedQr({
+                url: shortUrl,
+                foregroundColor: config?.foregroundColor || '#000000',
+                backgroundColor: config?.backgroundColor || '#FFFFFF',
+                size,
+                margin: config?.borderSize || 2,
+                errorCorrection: (config?.errorCorrection as 'L' | 'M' | 'Q' | 'H') || 'M',
+              });
+              const base64Data = dataUrl.split(',')[1];
+              const buffer = Buffer.from(base64Data, 'base64');
+              archive.append(buffer, { name: `${link.slug}.png` });
+            }
+          } catch (error) {
+            console.error(`Failed to generate QR for ${link.slug}:`, error);
+          }
+        }
+
+        archive.finalize();
+      };
+
+      processLinks().catch(reject);
     });
   }
 }
