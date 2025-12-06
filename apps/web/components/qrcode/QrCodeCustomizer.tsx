@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Button,
   Input,
@@ -10,6 +10,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@pingtome/ui";
 import {
   QrCode,
@@ -19,14 +24,26 @@ import {
   Palette,
   Image as ImageIcon,
   RefreshCw,
+  FileText,
+  Shield,
+  Save,
 } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 
 interface QrCodeCustomizerProps {
   url: string;
+  linkId?: string; // For saving/loading config
   initialQrCode?: string;
   trigger?: React.ReactNode;
+  onConfigSaved?: () => void;
 }
+
+const ERROR_CORRECTIONS = [
+  { value: "L", label: "Low (7%)", description: "Fastest scan" },
+  { value: "M", label: "Medium (15%)", description: "Recommended" },
+  { value: "Q", label: "Quartile (25%)", description: "Good recovery" },
+  { value: "H", label: "High (30%)", description: "Best for logos" },
+];
 
 const PRESET_COLORS = [
   { name: "Black", fg: "#000000", bg: "#FFFFFF" },
@@ -43,18 +60,74 @@ const PRESET_COLORS = [
 
 export function QrCodeCustomizer({
   url,
+  linkId,
   initialQrCode,
   trigger,
+  onConfigSaved,
 }: QrCodeCustomizerProps) {
   const [open, setOpen] = useState(false);
   const [qrCode, setQrCode] = useState(initialQrCode || "");
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [foregroundColor, setForegroundColor] = useState("#000000");
   const [backgroundColor, setBackgroundColor] = useState("#FFFFFF");
   const [logo, setLogo] = useState<string | null>(null);
   const [logoSize, setLogoSize] = useState(20);
   const [size, setSize] = useState(300);
+  const [errorCorrection, setErrorCorrection] = useState("M");
+  const [borderSize, setBorderSize] = useState(2);
+  const [configLoaded, setConfigLoaded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load saved config when dialog opens
+  useEffect(() => {
+    if (open && linkId && !configLoaded) {
+      loadSavedConfig();
+    }
+  }, [open, linkId, configLoaded]);
+
+  const loadSavedConfig = async () => {
+    if (!linkId) return;
+    try {
+      const config = await apiRequest(`/links/${linkId}/qr`);
+      if (config) {
+        setForegroundColor(config.foregroundColor || "#000000");
+        setBackgroundColor(config.backgroundColor || "#FFFFFF");
+        setErrorCorrection(config.errorCorrection || "M");
+        setBorderSize(config.borderSize ?? 2);
+        setSize(config.size || 300);
+        setLogoSize(config.logoSizePercent || 20);
+        setConfigLoaded(true);
+      }
+    } catch {
+      // No saved config, use defaults
+      setConfigLoaded(true);
+    }
+  };
+
+  const saveConfig = async () => {
+    if (!linkId) return;
+    setSaving(true);
+    try {
+      await apiRequest(`/links/${linkId}/qr`, {
+        method: "POST",
+        body: JSON.stringify({
+          foregroundColor,
+          backgroundColor,
+          errorCorrection,
+          borderSize,
+          size,
+          logoSizePercent: logoSize,
+          logo: logo || undefined,
+        }),
+      });
+      onConfigSaved?.();
+    } catch (error) {
+      console.error("Failed to save QR config:", error);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const generateQrCode = useCallback(async () => {
     setLoading(true);
@@ -68,6 +141,8 @@ export function QrCodeCustomizer({
           logo: logo || undefined,
           logoSize,
           size,
+          margin: borderSize,
+          errorCorrection,
         }),
       });
       setQrCode(response.dataUrl);
@@ -76,7 +151,7 @@ export function QrCodeCustomizer({
     } finally {
       setLoading(false);
     }
-  }, [url, foregroundColor, backgroundColor, logo, logoSize, size]);
+  }, [url, foregroundColor, backgroundColor, logo, logoSize, size, borderSize, errorCorrection]);
 
   // Compress image if needed (max 500KB)
   const compressImage = (file: File, maxSizeKB: number = 500): Promise<string> => {
@@ -163,8 +238,8 @@ export function QrCodeCustomizer({
     setBackgroundColor(bg);
   };
 
-  const downloadQrCode = (format: "png" | "svg") => {
-    if (!qrCode) return;
+  const downloadQrCode = (format: "png" | "svg" | "pdf") => {
+    if (!qrCode && format === "png") return;
 
     if (format === "png") {
       const link = document.createElement("a");
@@ -174,9 +249,9 @@ export function QrCodeCustomizer({
       link.click();
       document.body.removeChild(link);
     } else {
-      // For SVG, we need to call the API
+      // For SVG and PDF, we need to call the API
       window.open(
-        `${process.env.NEXT_PUBLIC_API_URL}/qr/download?url=${encodeURIComponent(url)}&fg=${encodeURIComponent(foregroundColor)}&bg=${encodeURIComponent(backgroundColor)}&size=${size}&format=svg`,
+        `${process.env.NEXT_PUBLIC_API_URL}/qr/download?url=${encodeURIComponent(url)}&fg=${encodeURIComponent(foregroundColor)}&bg=${encodeURIComponent(backgroundColor)}&size=${size}&format=${format}`,
         "_blank"
       );
     }
@@ -232,21 +307,51 @@ export function QrCodeCustomizer({
                 )}
                 Generate
               </Button>
+              {linkId && (
+                <Button
+                  variant="outline"
+                  onClick={saveConfig}
+                  disabled={saving}
+                  title="Save configuration"
+                >
+                  {saving ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => downloadQrCode("png")}
                 disabled={!qrCode}
+                className="flex-1"
               >
-                <Download className="h-4 w-4 mr-2" />
+                <Download className="h-4 w-4 mr-1" />
                 PNG
               </Button>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => downloadQrCode("svg")}
                 disabled={!qrCode || !!logo}
                 title={logo ? "SVG not available with logo" : "Download SVG"}
+                className="flex-1"
               >
                 SVG
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadQrCode("pdf")}
+                disabled={!qrCode}
+                className="flex-1"
+              >
+                <FileText className="h-4 w-4 mr-1" />
+                PDF
               </Button>
             </div>
           </div>
@@ -385,6 +490,45 @@ export function QrCodeCustomizer({
                   />
                 </div>
               )}
+            </div>
+
+            {/* Error Correction */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Error Correction
+              </Label>
+              <Select value={errorCorrection} onValueChange={setErrorCorrection}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select error correction" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ERROR_CORRECTIONS.map((ec) => (
+                    <SelectItem key={ec.value} value={ec.value}>
+                      <div className="flex flex-col">
+                        <span>{ec.label}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {ec.description}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Border Size */}
+            <div className="space-y-2">
+              <Label htmlFor="border-size">Border Size: {borderSize}</Label>
+              <input
+                type="range"
+                id="border-size"
+                min="0"
+                max="10"
+                value={borderSize}
+                onChange={(e) => setBorderSize(parseInt(e.target.value))}
+                className="w-full"
+              />
             </div>
 
             {/* Size */}
