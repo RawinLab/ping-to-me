@@ -314,12 +314,14 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
     const favicon = getFaviconUrl(link.originalUrl);
     const domain = getDomain(link.originalUrl);
     const shortDomain = link.shortUrl ? new URL(link.shortUrl).host : "pingto.me";
+    const isExpired = link.status === "EXPIRED";
+    const isDisabled = link.status === "DISABLED";
 
     return (
       <div
-        className={`bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-shadow ${
-          selectedIds.has(link.id) ? "ring-2 ring-blue-500" : ""
-        }`}
+        className={`group bg-white rounded-2xl border border-slate-200/80 p-5 hover:shadow-lg hover:shadow-slate-200/50 hover:border-slate-300 transition-all duration-200 ${
+          selectedIds.has(link.id) ? "ring-2 ring-blue-500 border-blue-300" : ""
+        } ${isExpired || isDisabled ? "opacity-75" : ""}`}
       >
         <div className="flex items-start gap-4">
           {/* Checkbox */}
@@ -327,86 +329,117 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
             <Checkbox
               checked={selectedIds.has(link.id)}
               onCheckedChange={() => toggleSelectOne(link.id)}
-              className="border-slate-300"
+              className="border-slate-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
             />
           </div>
 
           {/* Favicon */}
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 relative">
             {favicon ? (
-              <img
-                src={favicon}
-                alt=""
-                className="w-10 h-10 rounded-lg bg-slate-100 p-1"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-              />
+              <div className="relative">
+                <img
+                  src={favicon}
+                  alt=""
+                  className="w-12 h-12 rounded-xl bg-slate-50 p-1.5 border border-slate-100"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+                {isExpired && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-amber-500 rounded-full flex items-center justify-center">
+                    <span className="text-[8px] text-white font-bold">!</span>
+                  </div>
+                )}
+              </div>
             ) : (
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                <Globe className="h-5 w-5 text-white" />
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <Globe className="h-6 w-6 text-white" />
               </div>
             )}
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            {/* Title */}
-            <h3 className="font-semibold text-slate-900 truncate">
-              {link.title || `${domain} – untitled`}
-            </h3>
+            {/* Title with status badge */}
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-slate-900 truncate">
+                {link.title || `${domain} – untitled`}
+              </h3>
+              {isExpired && (
+                <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 rounded-full">
+                  Expired
+                </span>
+              )}
+              {isDisabled && (
+                <span className="px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-600 rounded-full">
+                  Disabled
+                </span>
+              )}
+            </div>
 
             {/* Short URL */}
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex items-center gap-2 mt-1.5">
               <a
                 href={link.shortUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                className="text-blue-600 hover:text-blue-700 hover:underline font-medium text-sm transition-colors"
               >
                 {shortDomain}/{link.slug}
               </a>
               <button
                 onClick={() => copyToClipboard(link.shortUrl, link.id)}
-                className="p-1 hover:bg-slate-100 rounded transition-colors"
+                className="p-1.5 hover:bg-blue-50 rounded-lg transition-all"
                 title="Copy to clipboard"
               >
                 {copiedId === link.id ? (
                   <CheckCircle2 className="h-4 w-4 text-green-500" />
                 ) : (
-                  <Copy className="h-4 w-4 text-slate-400" />
+                  <Copy className="h-4 w-4 text-slate-400 group-hover:text-slate-500" />
                 )}
               </button>
             </div>
 
             {/* Original URL */}
             <div className="flex items-center gap-2 mt-2 text-slate-500 text-sm">
-              <Link2 className="h-3.5 w-3.5 flex-shrink-0" />
-              <span className="truncate">{link.originalUrl}</span>
+              <Link2 className="h-3.5 w-3.5 flex-shrink-0 text-slate-400" />
+              <span className="truncate hover:text-slate-700 transition-colors">{link.originalUrl}</span>
             </div>
 
             {/* Meta info */}
-            <div className="flex items-center flex-wrap gap-4 mt-3 text-sm text-slate-500">
-              <span className="flex items-center gap-1.5">
-                <BarChart2 className="h-4 w-4 text-emerald-500" />
-                <span className="text-emerald-600 font-medium">
-                  {(link as any).clicks || 0} engagements
-                </span>
+            <div className="flex items-center flex-wrap gap-x-5 gap-y-2 mt-4 text-sm">
+              <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg">
+                <BarChart2 className="h-4 w-4" />
+                <span className="font-semibold">{(link as any).clicks || 0}</span>
+                <span className="text-emerald-600">clicks</span>
               </span>
-              <span className="flex items-center gap-1.5">
-                <Calendar className="h-4 w-4" />
+              <span className="flex items-center gap-1.5 text-slate-500">
+                <Calendar className="h-4 w-4 text-slate-400" />
                 {format(new Date(link.createdAt), "MMM d, yyyy")}
               </span>
-              <span className="flex items-center gap-1.5">
-                <Tags className="h-4 w-4" />
-                {link.tags && link.tags.length > 0 ? link.tags.join(", ") : "No tags"}
-              </span>
+              {link.tags && link.tags.length > 0 ? (
+                <div className="flex items-center gap-1.5">
+                  <Tags className="h-4 w-4 text-slate-400" />
+                  <div className="flex gap-1">
+                    {link.tags.slice(0, 3).map((tag, i) => (
+                      <span key={i} className="px-2 py-0.5 text-xs bg-slate-100 text-slate-600 rounded-full">
+                        {tag}
+                      </span>
+                    ))}
+                    {link.tags.length > 3 && (
+                      <span className="px-2 py-0.5 text-xs bg-slate-100 text-slate-500 rounded-full">
+                        +{link.tags.length - 3}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ) : null}
               {inlineTagLinkId === link.id ? (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-2 bg-slate-50 px-2 py-1 rounded-lg">
                   <select
                     value={inlineTagValue}
                     onChange={(e) => setInlineTagValue(e.target.value)}
-                    className="text-xs border border-slate-200 rounded px-2 py-1"
+                    className="text-xs border border-slate-200 rounded-md px-2 py-1.5 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     autoFocus
                   >
                     <option value="">Select tag</option>
@@ -416,13 +449,13 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
                   </select>
                   <button
                     onClick={() => handleAddInlineTag(link.id, inlineTagValue)}
-                    className="text-xs text-blue-600 hover:text-blue-700 px-1"
+                    className="text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md transition-colors"
                   >
                     Add
                   </button>
                   <button
                     onClick={() => { setInlineTagLinkId(null); setInlineTagValue(""); }}
-                    className="text-xs text-slate-400 hover:text-slate-600 px-1"
+                    className="text-xs text-slate-500 hover:text-slate-700 px-1"
                   >
                     Cancel
                   </button>
@@ -430,17 +463,17 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
               ) : (
                 <button
                   onClick={() => setInlineTagLinkId(link.id)}
-                  className="flex items-center gap-1 text-blue-600 hover:text-blue-700"
+                  className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2 py-1 rounded-lg transition-colors"
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  Add tag
+                  <span className="text-sm">Add tag</span>
                 </button>
               )}
             </div>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <EditLinkModal
               link={{
                 id: link.id,
@@ -453,7 +486,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+                className="h-9 w-9 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
               >
                 <Pencil className="h-4 w-4" />
               </Button>
@@ -461,7 +494,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+              className="h-9 w-9 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all"
               onClick={() => setQrModalLink(link)}
             >
               <Share2 className="h-4 w-4" />
@@ -469,7 +502,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 text-slate-500 hover:text-slate-700 hover:bg-slate-100"
+              className="h-9 w-9 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
               asChild
             >
               <Link href={`/dashboard/analytics/${link.id}`}>
@@ -557,25 +590,43 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
     const favicon = getFaviconUrl(link.originalUrl);
     const domain = getDomain(link.originalUrl);
     const shortDomain = link.shortUrl ? new URL(link.shortUrl).host : "pingto.me";
+    const isExpired = link.status === "EXPIRED";
+    const isDisabled = link.status === "DISABLED";
 
     return (
       <div
-        className={`bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md transition-shadow ${
-          selectedIds.has(link.id) ? "ring-2 ring-blue-500" : ""
-        }`}
+        className={`group bg-white rounded-2xl border border-slate-200/80 p-5 hover:shadow-lg hover:shadow-slate-200/50 hover:border-slate-300 transition-all duration-200 ${
+          selectedIds.has(link.id) ? "ring-2 ring-blue-500 border-blue-300" : ""
+        } ${isExpired || isDisabled ? "opacity-75" : ""}`}
       >
-        {/* Header with checkbox and actions */}
-        <div className="flex items-start justify-between mb-3">
-          <Checkbox
-            checked={selectedIds.has(link.id)}
-            onCheckedChange={() => toggleSelectOne(link.id)}
-            className="border-slate-300"
-          />
-          <div className="flex items-center gap-1">
+        {/* Header with favicon, checkbox and actions */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <Checkbox
+              checked={selectedIds.has(link.id)}
+              onCheckedChange={() => toggleSelectOne(link.id)}
+              className="border-slate-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+            />
+            {favicon ? (
+              <img
+                src={favicon}
+                alt=""
+                className="w-10 h-10 rounded-xl bg-slate-50 p-1.5 border border-slate-100"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = "none";
+                }}
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
+                <Globe className="h-5 w-5 text-white" />
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-slate-400 hover:text-slate-600"
+              className="h-8 w-8 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg"
               onClick={() => setQrModalLink(link)}
             >
               <Share2 className="h-4 w-4" />
@@ -585,12 +636,26 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-slate-400 hover:text-slate-600"
+                  className="h-8 w-8 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"
                 >
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-48">
+                <EditLinkModal
+                  link={{
+                    id: link.id,
+                    title: link.title,
+                    campaignId: (link as any).campaignId,
+                    expirationDate: (link as any).expirationDate,
+                  }}
+                  onSuccess={fetchLinks}
+                >
+                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edit link
+                  </DropdownMenuItem>
+                </EditLinkModal>
                 <DropdownMenuItem asChild>
                   <Link href={`/dashboard/analytics/${link.id}`}>
                     <BarChart2 className="mr-2 h-4 w-4" />
@@ -600,6 +665,25 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
                 <DropdownMenuItem onClick={() => setQrModalLink(link)}>
                   <QrCode className="mr-2 h-4 w-4" />
                   QR Code
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() =>
+                    handleStatusChange(
+                      link.id,
+                      link.status === "ACTIVE" ? "DISABLED" : "ACTIVE"
+                    )
+                  }
+                >
+                  {link.status === "ACTIVE" ? (
+                    <>
+                      <PauseCircle className="mr-2 h-4 w-4" /> Disable link
+                    </>
+                  ) : (
+                    <>
+                      <PlayCircle className="mr-2 h-4 w-4" /> Enable link
+                    </>
+                  )}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -614,10 +698,22 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
           </div>
         </div>
 
-        {/* Title */}
-        <h3 className="font-semibold text-slate-900 truncate mb-1">
-          {link.title || `${domain} – untitled`}
-        </h3>
+        {/* Title with status badge */}
+        <div className="flex items-center gap-2 mb-2">
+          <h3 className="font-semibold text-slate-900 truncate flex-1">
+            {link.title || `${domain} – untitled`}
+          </h3>
+          {isExpired && (
+            <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 rounded-full flex-shrink-0">
+              Expired
+            </span>
+          )}
+          {isDisabled && (
+            <span className="px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-600 rounded-full flex-shrink-0">
+              Disabled
+            </span>
+          )}
+        </div>
 
         {/* Short URL */}
         <div className="flex items-center gap-2 mb-2">
@@ -625,38 +721,47 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
             href={link.shortUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-700 font-medium text-sm truncate"
+            className="text-blue-600 hover:text-blue-700 hover:underline font-medium text-sm truncate"
           >
             {shortDomain}/{link.slug}
           </a>
           <button
             onClick={() => copyToClipboard(link.shortUrl, link.id)}
-            className="p-1 hover:bg-slate-100 rounded transition-colors flex-shrink-0"
+            className="p-1.5 hover:bg-blue-50 rounded-lg transition-all flex-shrink-0"
           >
             {copiedId === link.id ? (
               <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
             ) : (
-              <Copy className="h-3.5 w-3.5 text-slate-400" />
+              <Copy className="h-3.5 w-3.5 text-slate-400 group-hover:text-slate-500" />
             )}
           </button>
         </div>
 
         {/* Original URL */}
-        <p className="text-sm text-slate-500 truncate mb-3">
-          {link.originalUrl}
-        </p>
+        <div className="flex items-center gap-1.5 text-sm text-slate-500 mb-4">
+          <Link2 className="h-3.5 w-3.5 flex-shrink-0 text-slate-400" />
+          <span className="truncate">{link.originalUrl}</span>
+        </div>
 
         {/* Tags */}
-        <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
-          <Tags className="h-4 w-4" />
+        <div className="flex items-center flex-wrap gap-1.5 mb-4">
           {link.tags && link.tags.length > 0 ? (
-            <span className="truncate">{link.tags.join(", ")}</span>
-          ) : (
-            <span className="text-slate-400">No tags</span>
-          )}
+            <>
+              {link.tags.slice(0, 2).map((tag, i) => (
+                <span key={i} className="px-2 py-0.5 text-xs bg-slate-100 text-slate-600 rounded-full">
+                  {tag}
+                </span>
+              ))}
+              {link.tags.length > 2 && (
+                <span className="px-2 py-0.5 text-xs bg-slate-100 text-slate-500 rounded-full">
+                  +{link.tags.length - 2}
+                </span>
+              )}
+            </>
+          ) : null}
           <button
             onClick={() => setInlineTagLinkId(link.id)}
-            className="flex items-center gap-0.5 text-blue-600 hover:text-blue-700 ml-auto"
+            className="flex items-center gap-0.5 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2 py-0.5 rounded-full transition-colors"
           >
             <Plus className="h-3 w-3" />
             Add tag
@@ -664,13 +769,14 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
         </div>
 
         {/* Stats */}
-        <div className="flex items-center justify-between text-sm border-t pt-3 mt-3">
-          <span className="flex items-center gap-1.5 text-emerald-600 font-medium">
+        <div className="flex items-center justify-between text-sm border-t border-slate-100 pt-4">
+          <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg">
             <BarChart2 className="h-4 w-4" />
-            {(link as any).clicks || 0} engagements
+            <span className="font-semibold">{(link as any).clicks || 0}</span>
           </span>
-          <span className="text-slate-400">
-            {format(new Date(link.createdAt), "MMM d, yyyy")}
+          <span className="flex items-center gap-1.5 text-slate-400">
+            <Calendar className="h-3.5 w-3.5" />
+            {format(new Date(link.createdAt), "MMM d")}
           </span>
         </div>
       </div>
@@ -679,12 +785,14 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
 
   // Promo banner
   const renderPromoBanner = () => (
-    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-4 flex items-center gap-3">
-      <Sparkles className="h-5 w-5 text-blue-500 flex-shrink-0" />
+    <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 rounded-2xl border border-blue-100/60 p-5 flex items-center gap-4 shadow-sm">
+      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25 flex-shrink-0">
+        <Sparkles className="h-5 w-5 text-white" />
+      </div>
       <p className="text-sm text-slate-700 flex-1">
-        Change a link&apos;s destination, even after you&apos;ve shared it. Get redirects with every plan.{" "}
-        <Link href="/dashboard/billing" className="text-blue-600 hover:text-blue-700 font-medium">
-          View plans
+        <span className="font-medium text-slate-900">Pro tip:</span> Change a link&apos;s destination, even after you&apos;ve shared it. Get redirects with every plan.{" "}
+        <Link href="/dashboard/billing" className="text-blue-600 hover:text-blue-700 font-semibold hover:underline">
+          View plans →
         </Link>
       </p>
     </div>
@@ -728,21 +836,27 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
 
       {/* Bulk Actions Bar */}
       {selectedIds.size > 0 && (
-        <div className="bg-slate-900 text-white rounded-lg p-4 flex justify-between items-center">
-          <span className="text-sm font-medium">{selectedIds.size} selected</span>
+        <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl p-4 px-6 flex justify-between items-center shadow-xl shadow-slate-900/20">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
+              <CheckCircle2 className="h-4 w-4 text-blue-400" />
+            </div>
+            <span className="text-sm font-medium">{selectedIds.size} link{selectedIds.size > 1 ? "s" : ""} selected</span>
+          </div>
           <div className="flex gap-2">
             <Button
               variant="secondary"
               size="sm"
               onClick={() => setBulkTagDialogOpen(true)}
-              className="bg-slate-800 hover:bg-slate-700 text-white border-0"
+              className="bg-white/10 hover:bg-white/20 text-white border-0 rounded-lg"
             >
-              <Tags className="mr-2 h-4 w-4" /> Tag
+              <Tags className="mr-2 h-4 w-4" /> Add tag
             </Button>
             <Button
               variant="destructive"
               size="sm"
               onClick={handleBulkDelete}
+              className="rounded-lg"
             >
               <Trash2 className="mr-2 h-4 w-4" /> Delete
             </Button>
@@ -756,32 +870,36 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="bg-white rounded-xl border border-slate-200 p-5 animate-pulse"
+              className="bg-white rounded-2xl border border-slate-200/80 p-5 animate-pulse"
             >
               <div className="flex items-start gap-4">
-                <div className="w-4 h-4 bg-slate-200 rounded" />
-                <div className="w-10 h-10 bg-slate-200 rounded-lg" />
+                <div className="w-5 h-5 bg-slate-200 rounded mt-0.5" />
+                <div className="w-12 h-12 bg-gradient-to-br from-slate-200 to-slate-300 rounded-xl" />
                 <div className="flex-1 space-y-3">
-                  <div className="h-5 bg-slate-200 rounded w-1/3" />
-                  <div className="h-4 bg-slate-200 rounded w-1/4" />
-                  <div className="h-4 bg-slate-200 rounded w-2/3" />
-                  <div className="h-4 bg-slate-200 rounded w-1/2" />
+                  <div className="h-5 bg-slate-200 rounded-lg w-1/3" />
+                  <div className="h-4 bg-blue-100 rounded-lg w-1/4" />
+                  <div className="h-4 bg-slate-100 rounded-lg w-2/3" />
+                  <div className="flex gap-3 pt-2">
+                    <div className="h-7 bg-emerald-100 rounded-lg w-20" />
+                    <div className="h-7 bg-slate-100 rounded-lg w-28" />
+                    <div className="h-5 bg-slate-100 rounded-full w-16" />
+                  </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
       ) : links.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
-          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Link2 className="h-8 w-8 text-slate-400" />
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-16 text-center">
+          <div className="w-20 h-20 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/10">
+            <Link2 className="h-10 w-10 text-blue-500" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">No links yet</h3>
-          <p className="text-slate-500 mb-6">
-            Create your first short link to get started
+          <h3 className="text-xl font-semibold text-slate-900 mb-2">No links yet</h3>
+          <p className="text-slate-500 mb-8 max-w-sm mx-auto">
+            Create your first short link to start tracking clicks and engagement
           </p>
-          <Button asChild>
-            <Link href="/dashboard/links/new">Create link</Link>
+          <Button asChild className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full px-8 shadow-lg shadow-blue-500/25">
+            <Link href="/dashboard/links/new">Create your first link</Link>
           </Button>
         </div>
       ) : viewMode === "grid" ? (

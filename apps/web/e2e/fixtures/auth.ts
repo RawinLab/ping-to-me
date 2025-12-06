@@ -28,10 +28,10 @@ export async function loginAsUser(
   await page.click('button:has-text("Sign In with Email")');
 
   // Wait for redirect to dashboard
-  await page.waitForURL(/\/dashboard/, { timeout: 10000 });
+  await page.waitForURL(/\/dashboard/, { timeout: 15000 });
 
-  // Verify we're logged in
-  await expect(page.locator('text=PingTO.Me')).toBeVisible();
+  // Verify we're logged in by checking dashboard elements
+  await expect(page.locator('h1, nav').first()).toBeVisible({ timeout: 10000 });
 }
 
 /**

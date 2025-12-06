@@ -52,43 +52,43 @@ export default function LinksPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100/50">
       <div className="container py-8 space-y-6 max-w-6xl">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900">Links</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Links</h1>
             <p className="text-sm text-slate-500 mt-1">Manage and track your shortened URLs</p>
           </div>
           <Link href="/dashboard/links/new">
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6">
+            <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full px-6 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all">
               <Plus className="mr-2 h-4 w-4" /> Create link
             </Button>
           </Link>
         </div>
 
         {/* Search and Filters Bar */}
-        <div className="flex flex-wrap gap-3 items-center">
+        <div className="flex flex-wrap gap-3 items-center bg-white/50 backdrop-blur-sm p-3 rounded-2xl border border-slate-200/60 shadow-sm">
           <div className="relative flex-1 min-w-[240px] max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input
-              placeholder="Search links"
+              placeholder="Search links..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-white border-slate-200 rounded-lg h-10"
+              className="pl-10 bg-white border-slate-200 rounded-xl h-11 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
             />
           </div>
 
           <Button
             variant="outline"
-            className={`bg-white border-slate-200 rounded-lg h-10 gap-2 ${hasDateFilter ? "border-blue-500 bg-blue-50" : ""}`}
+            className={`bg-white border-slate-200 rounded-xl h-11 gap-2 hover:bg-slate-50 transition-all ${hasDateFilter ? "border-blue-500 bg-blue-50 hover:bg-blue-100/80" : ""}`}
             onClick={() => setDateFilterModalOpen(true)}
           >
             <Calendar className={`h-4 w-4 ${hasDateFilter ? "text-blue-600" : "text-slate-500"}`} />
-            <span className={hasDateFilter ? "text-blue-700" : "text-slate-700"}>
+            <span className={`text-sm font-medium ${hasDateFilter ? "text-blue-700" : "text-slate-700"}`}>
               {hasDateFilter
                 ? `${dateRange.start ? format(dateRange.start, "MMM d") : ""} - ${dateRange.end ? format(dateRange.end, "MMM d") : ""}`
-                : "Filter by created date"}
+                : "Filter by date"}
             </span>
             {hasDateFilter && (
               <button
@@ -96,7 +96,7 @@ export default function LinksPage() {
                   e.stopPropagation();
                   clearDateFilter();
                 }}
-                className="ml-1 p-0.5 hover:bg-blue-100 rounded"
+                className="ml-1 p-1 hover:bg-blue-200/50 rounded-full transition-colors"
               >
                 <X className="h-3 w-3 text-blue-600" />
               </button>
@@ -105,11 +105,11 @@ export default function LinksPage() {
 
           <Button
             variant="outline"
-            className={`bg-white border-slate-200 rounded-lg h-10 gap-2 ${hasActiveFilters ? "border-blue-500 bg-blue-50" : ""}`}
+            className={`bg-white border-slate-200 rounded-xl h-11 gap-2 hover:bg-slate-50 transition-all ${hasActiveFilters ? "border-blue-500 bg-blue-50 hover:bg-blue-100/80" : ""}`}
             onClick={() => setFiltersModalOpen(true)}
           >
             <SlidersHorizontal className={`h-4 w-4 ${hasActiveFilters ? "text-blue-600" : "text-slate-500"}`} />
-            <span className={hasActiveFilters ? "text-blue-700" : "text-slate-700"}>
+            <span className={`text-sm font-medium ${hasActiveFilters ? "text-blue-700" : "text-slate-700"}`}>
               {hasActiveFilters ? `${activeFilterCount} filter${activeFilterCount > 1 ? "s" : ""} active` : "Add filters"}
             </span>
             {hasActiveFilters && (
@@ -118,7 +118,7 @@ export default function LinksPage() {
                   e.stopPropagation();
                   clearAllFilters();
                 }}
-                className="ml-1 p-0.5 hover:bg-blue-100 rounded"
+                className="ml-1 p-1 hover:bg-blue-200/50 rounded-full transition-colors"
               >
                 <X className="h-3 w-3 text-blue-600" />
               </button>
@@ -127,36 +127,31 @@ export default function LinksPage() {
         </div>
 
         {/* Toolbar */}
-        <div className="flex justify-between items-center py-2">
-          <div className="flex items-center gap-4 text-sm text-slate-500">
-            <span>{selectedCount} selected</span>
+        <div className="flex justify-between items-center py-3">
+          <div className="flex items-center gap-3 text-sm">
+            {selectedCount > 0 && (
+              <span className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg font-medium">
+                {selectedCount} selected
+              </span>
+            )}
             <Button
               variant="ghost"
               size="sm"
-              className={selectedCount > 0 ? "text-slate-600 hover:text-slate-800" : "text-slate-400"}
+              className="text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg"
               onClick={() => linksTableRef.current?.handleExport()}
             >
-              <Download className="mr-1 h-4 w-4" />
+              <Download className="mr-1.5 h-4 w-4" />
               Export
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={selectedCount > 0 ? "text-slate-600 hover:text-slate-800" : "text-slate-400"}
-              disabled={selectedCount === 0}
-              onClick={() => linksTableRef.current?.openBulkTagDialog()}
-            >
-              Tag
             </Button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {/* View Mode Toggle */}
-            <div className="flex items-center border border-slate-200 rounded-lg bg-white p-1">
+            <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
               <Button
                 variant="ghost"
                 size="icon"
-                className={`h-8 w-8 rounded ${viewMode === "list" ? "bg-slate-100" : ""}`}
+                className={`h-8 w-8 rounded-lg transition-all ${viewMode === "list" ? "bg-slate-900 text-white shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
                 onClick={() => setViewMode("list")}
               >
                 <List className="h-4 w-4" />
@@ -164,7 +159,7 @@ export default function LinksPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className={`h-8 w-8 rounded ${viewMode === "table" ? "bg-slate-100" : ""}`}
+                className={`h-8 w-8 rounded-lg transition-all ${viewMode === "table" ? "bg-slate-900 text-white shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
                 onClick={() => setViewMode("table")}
               >
                 <Table2 className="h-4 w-4" />
@@ -172,7 +167,7 @@ export default function LinksPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className={`h-8 w-8 rounded ${viewMode === "grid" ? "bg-slate-100" : ""}`}
+                className={`h-8 w-8 rounded-lg transition-all ${viewMode === "grid" ? "bg-slate-900 text-white shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
                 onClick={() => setViewMode("grid")}
               >
                 <LayoutGrid className="h-4 w-4" />
@@ -181,7 +176,7 @@ export default function LinksPage() {
 
             {/* Status Filter */}
             <select
-              className="h-10 px-4 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="h-10 px-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-sm transition-all cursor-pointer"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
