@@ -4,10 +4,15 @@ import { Response } from 'express';
 import { LinksService } from './links.service';
 import { CreateLinkDto, LinkResponse } from '@pingtome/types';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { QrCodeService } from '../qr/qr.service';
+import { CreateQrConfigDto } from '../qr/dto/qr-config.dto';
 
 @Controller('links')
 export class LinksController {
-  constructor(private readonly linksService: LinksService) { }
+  constructor(
+    private readonly linksService: LinksService,
+    private readonly qrCodeService: QrCodeService,
+  ) { }
 
   @Post('import')
   @UseGuards(JwtAuthGuard)
@@ -84,5 +89,27 @@ export class LinksController {
   @Get(':slug/lookup')
   async lookup(@Param('slug') slug: string) {
     return this.linksService.lookup(slug);
+  }
+
+  // ============ QR Config Endpoints ============
+
+  @Get(':id/qr')
+  @UseGuards(JwtAuthGuard)
+  async getQrConfig(@Request() req, @Param('id') id: string) {
+    // Verify ownership
+    await this.linksService.findOne(req.user.id, id);
+    return this.qrCodeService.getQrConfig(id);
+  }
+
+  @Post(':id/qr')
+  @UseGuards(JwtAuthGuard)
+  async saveQrConfig(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() dto: CreateQrConfigDto,
+  ) {
+    // Verify ownership
+    await this.linksService.findOne(req.user.id, id);
+    return this.qrCodeService.saveQrConfig(id, dto);
   }
 }

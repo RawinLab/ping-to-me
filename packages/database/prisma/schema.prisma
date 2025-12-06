@@ -158,17 +158,17 @@ model Link {
   title            String?   @db.VarChar(200)
   description      String?   @db.Text
   tags             String[]
-  
+
   // Metadata
   expirationDate   DateTime?
   passwordHash     String?
   redirectType     Int       @default(301) // 301 or 302
   deepLinkFallback String?   @db.VarChar(2048)
-  
+
   // Relations
   userId           String    @db.Uuid
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   // Organization/Campaign/Folder
   organizationId   String?   @db.Uuid
   organization     Organization? @relation(fields: [organizationId], references: [id])
@@ -182,9 +182,26 @@ model Link {
   updatedAt        DateTime   @updatedAt
 
   clicks           ClickEvent[]
+  qrCode           QrCode?
 
   @@index([userId])
   @@index([tags])
+}
+
+model QrCode {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  linkId           String   @unique @db.Uuid
+  link             Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  foregroundColor  String   @default("#000000")
+  backgroundColor  String   @default("#FFFFFF")
+  logoUrl          String?
+  logoSizePercent  Int      @default(20)
+  errorCorrection  String   @default("M") // L, M, Q, H
+  borderSize       Int      @default(2)
+  size             Int      @default(300)
+  qrCodeUrl        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }
 
 model BlockedDomain {

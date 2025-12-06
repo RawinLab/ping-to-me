@@ -1,7 +1,9 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import * as QRCode from 'qrcode';
 import sharp from 'sharp';
 import { StorageService } from '../storage/storage.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateQrConfigDto } from './dto/qr-config.dto';
 
 export interface QrCodeOptions {
   url: string;
@@ -11,11 +13,30 @@ export interface QrCodeOptions {
   logoSize?: number; // Logo size as percentage of QR code (10-30%)
   size?: number; // QR code size in pixels (default 300)
   margin?: number; // Margin around QR code (default 2)
+  errorCorrection?: 'L' | 'M' | 'Q' | 'H'; // Error correction level
+}
+
+export interface QrCodeConfigResponse {
+  id: string;
+  linkId: string;
+  foregroundColor: string;
+  backgroundColor: string;
+  logoUrl: string | null;
+  logoSizePercent: number;
+  errorCorrection: string;
+  borderSize: number;
+  size: number;
+  qrCodeUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 @Injectable()
 export class QrCodeService {
-  constructor(private readonly storageService: StorageService) { }
+  constructor(
+    private readonly storageService: StorageService,
+    private readonly prisma: PrismaService,
+  ) { }
 
   async generateQrCode(url: string, slug: string) {
     try {
@@ -206,5 +227,122 @@ export class QrCodeService {
     });
 
     return svg;
+  }
+
+  // ============ QR Config Persistence Methods ============
+
+  async getQrConfig(linkId: string): Promise<QrCodeConfigResponse | null> {
+    const config = await this.prisma.qrCode.findUnique({
+      where: { linkId },
+    });
+
+    if (!config) {
+      return null;
+    }
+
+    return {
+      id: config.id,
+      linkId: config.linkId,
+      foregroundColor: config.foregroundColor,
+      backgroundColor: config.backgroundColor,
+      logoUrl: config.logoUrl,
+      logoSizePercent: config.logoSizePercent,
+      errorCorrection: config.errorCorrection,
+      borderSize: config.borderSize,
+      size: config.size,
+      qrCodeUrl: config.qrCodeUrl,
+      createdAt: config.createdAt.toISOString(),
+      updatedAt: config.updatedAt.toISOString(),
+    };
+  }
+
+  async saveQrConfig(linkId: string, dto: CreateQrConfigDto): Promise<QrCodeConfigResponse> {
+    // Verify link exists
+    const link = await this.prisma.link.findUnique({
+      where: { id: linkId },
+    });
+
+    if (!link) {
+      throw new NotFoundException('Link not found');
+    }
+
+    // Upload logo to R2 if provided
+    let logoUrl: string | undefined;
+    if (dto.logo) {
+      logoUrl = await this.uploadLogoToR2(dto.logo, linkId);
+    }
+
+    // Upsert QR config
+    const config = await this.prisma.qrCode.upsert({
+      where: { linkId },
+      create: {
+        linkId,
+        foregroundColor: dto.foregroundColor || '#000000',
+        backgroundColor: dto.backgroundColor || '#FFFFFF',
+        logoUrl,
+        logoSizePercent: dto.logoSizePercent || 20,
+        errorCorrection: dto.errorCorrection || 'M',
+        borderSize: dto.borderSize ?? 2,
+        size: dto.size || 300,
+      },
+      update: {
+        foregroundColor: dto.foregroundColor,
+        backgroundColor: dto.backgroundColor,
+        logoUrl: logoUrl || undefined,
+        logoSizePercent: dto.logoSizePercent,
+        errorCorrection: dto.errorCorrection,
+        borderSize: dto.borderSize,
+        size: dto.size,
+      },
+    });
+
+    return {
+      id: config.id,
+      linkId: config.linkId,
+      foregroundColor: config.foregroundColor,
+      backgroundColor: config.backgroundColor,
+      logoUrl: config.logoUrl,
+      logoSizePercent: config.logoSizePercent,
+      errorCorrection: config.errorCorrection,
+      borderSize: config.borderSize,
+      size: config.size,
+      qrCodeUrl: config.qrCodeUrl,
+      createdAt: config.createdAt.toISOString(),
+      updatedAt: config.updatedAt.toISOString(),
+    };
+  }
+
+  async uploadLogoToR2(base64: string, linkId: string): Promise<string> {
+    try {
+      // Extract base64 data
+      let buffer: Buffer;
+      if (base64.startsWith('data:')) {
+        const base64Data = base64.split(',')[1];
+        buffer = Buffer.from(base64Data, 'base64');
+      } else {
+        buffer = Buffer.from(base64, 'base64');
+      }
+
+      // Resize to max 200x200 for storage efficiency
+      const resizedBuffer = await sharp(buffer)
+        .resize(200, 200, { fit: 'inside' })
+        .png()
+        .toBuffer();
+
+      // Upload to R2
+      const key = `qr-logos/${linkId}.png`;
+      const publicUrl = await this.storageService.uploadFile(key, resizedBuffer, 'image/png');
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Failed to upload logo to R2:', error);
+      throw new BadRequestException('Failed to upload logo');
+    }
+  }
+
+  async deleteQrConfig(linkId: string): Promise<void> {
+    await this.prisma.qrCode.deleteMany({
+      where: { linkId },
+    });
   }
 }
