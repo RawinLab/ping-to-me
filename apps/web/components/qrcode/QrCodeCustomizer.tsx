@@ -36,6 +36,8 @@ interface QrCodeCustomizerProps {
   initialQrCode?: string;
   trigger?: React.ReactNode;
   onConfigSaved?: () => void;
+  open?: boolean; // Controlled mode
+  onOpenChange?: (open: boolean) => void; // Controlled mode
 }
 
 const ERROR_CORRECTIONS = [
@@ -64,8 +66,21 @@ export function QrCodeCustomizer({
   initialQrCode,
   trigger,
   onConfigSaved,
+  open: controlledOpen,
+  onOpenChange,
 }: QrCodeCustomizerProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+
+  // Support both controlled and uncontrolled modes
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (value: boolean) => {
+    if (isControlled) {
+      onOpenChange?.(value);
+    } else {
+      setInternalOpen(value);
+    }
+  };
   const [qrCode, setQrCode] = useState(initialQrCode || "");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
