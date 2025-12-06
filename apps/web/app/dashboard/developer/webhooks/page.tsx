@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { apiRequest } from "@/lib/api";
 import {
   Card,
@@ -18,16 +19,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
   Badge,
   Checkbox,
 } from "@pingtome/ui";
-import { Plus, Webhook, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Webhook, Trash2, ExternalLink, Key, ChevronRight, Code, Terminal, Copy, Check, Zap, Link2, MousePointer, Trash, RefreshCw, Eye } from "lucide-react";
 import { format } from "date-fns";
 
 interface WebhookData {
@@ -38,17 +33,23 @@ interface WebhookData {
   active: boolean;
 }
 
+const developerNavItems = [
+  { title: "API Keys", href: "/dashboard/developer/api-keys", icon: Key },
+  { title: "Webhooks", href: "/dashboard/developer/webhooks", icon: Webhook, active: true },
+];
+
 const AVAILABLE_EVENTS = [
-  { id: "link.created", label: "Link Created" },
-  { id: "link.clicked", label: "Link Clicked" },
-  { id: "link.deleted", label: "Link Deleted" },
-  { id: "link.updated", label: "Link Updated" },
-  { id: "bio.viewed", label: "Bio Page Viewed" },
+  { id: "link.created", label: "Link Created", icon: Plus, color: "text-emerald-600 bg-emerald-100" },
+  { id: "link.clicked", label: "Link Clicked", icon: MousePointer, color: "text-blue-600 bg-blue-100" },
+  { id: "link.deleted", label: "Link Deleted", icon: Trash, color: "text-red-600 bg-red-100" },
+  { id: "link.updated", label: "Link Updated", icon: RefreshCw, color: "text-amber-600 bg-amber-100" },
+  { id: "bio.viewed", label: "Bio Page Viewed", icon: Eye, color: "text-purple-600 bg-purple-100" },
 ];
 
 export default function WebhooksPage() {
   const [webhooks, setWebhooks] = useState<WebhookData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   // Create dialog
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -111,171 +112,8 @@ export default function WebhooksPage() {
     );
   };
 
-  if (loading) {
-    return <div className="p-8">Loading...</div>;
-  }
-
-  return (
-    <div className="p-8 max-w-4xl mx-auto space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Webhooks</h1>
-          <p className="text-muted-foreground">
-            Receive real-time notifications for events.
-          </p>
-        </div>
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" /> Add Webhook
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Webhook</DialogTitle>
-              <DialogDescription>
-                Configure a webhook endpoint to receive event notifications.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="url">Endpoint URL</Label>
-                <Input
-                  id="url"
-                  type="url"
-                  placeholder="https://your-server.com/webhook"
-                  value={newUrl}
-                  onChange={(e) => setNewUrl(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Events to Subscribe</Label>
-                <div className="space-y-2 mt-2">
-                  {AVAILABLE_EVENTS.map((event) => (
-                    <div key={event.id} className="flex items-center gap-2">
-                      <Checkbox
-                        id={event.id}
-                        checked={selectedEvents.includes(event.id)}
-                        onCheckedChange={() => toggleEvent(event.id)}
-                      />
-                      <Label
-                        htmlFor={event.id}
-                        className="font-normal cursor-pointer"
-                      >
-                        {event.label}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setCreateDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreate}
-                disabled={creating || !newUrl || selectedEvents.length === 0}
-              >
-                {creating ? "Creating..." : "Create Webhook"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Webhooks Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Webhook className="h-5 w-5" />
-            Your Webhooks
-          </CardTitle>
-          <CardDescription>
-            Endpoints that receive event notifications.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {webhooks.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Endpoint</TableHead>
-                  <TableHead>Events</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {webhooks.map((webhook) => (
-                  <TableRow key={webhook.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <code className="text-sm bg-muted px-2 py-1 rounded truncate max-w-[200px]">
-                          {webhook.url}
-                        </code>
-                        <a href={webhook.url} target="_blank" rel="noopener">
-                          <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                        </a>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {webhook.events.map((event) => (
-                          <Badge
-                            key={event}
-                            variant="secondary"
-                            className="text-xs"
-                          >
-                            {event}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(webhook.createdAt), "MMM d, yyyy")}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(webhook.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="py-8 text-center">
-              <Webhook className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">
-                No webhooks configured
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                Add a webhook to receive real-time event notifications.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Webhook Payload Example */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Payload Format</CardTitle>
-          <CardDescription>
-            Example of the webhook payload you will receive.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
-            {`{
+  const copyPayload = () => {
+    const payload = `{
   "event": "link.created",
   "timestamp": "2024-01-15T10:30:00Z",
   "data": {
@@ -284,10 +122,336 @@ export default function WebhooksPage() {
     "originalUrl": "https://example.com",
     "shortUrl": "https://pingto.me/my-link"
   }
+}`;
+    navigator.clipboard.writeText(payload);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6 lg:p-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-slate-200 rounded w-48" />
+            <div className="h-4 bg-slate-200 rounded w-72" />
+            <div className="grid lg:grid-cols-[240px_1fr] gap-8">
+              <div className="space-y-2">
+                {[1, 2].map((i) => (
+                  <div key={i} className="h-12 bg-slate-100 rounded-xl" />
+                ))}
+              </div>
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-24 bg-slate-100 rounded-xl" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 lg:p-8">
+      <div className="max-w-5xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
+            Developer
+          </h1>
+          <p className="text-slate-500 mt-1">
+            Integrate PingTO.Me with your applications.
+          </p>
+        </div>
+
+        <div className="grid lg:grid-cols-[240px_1fr] gap-8">
+          {/* Developer Navigation */}
+          <nav className="space-y-1">
+            {developerNavItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                    item.active
+                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {item.title}
+                  {!item.active && <ChevronRight className="h-4 w-4 ml-auto text-slate-400" />}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Main Content */}
+          <div className="space-y-6">
+            {/* Header with Add Button */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">Webhooks</h2>
+                <p className="text-sm text-slate-500">Receive real-time notifications for events.</p>
+              </div>
+              <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
+                    <Plus className="mr-2 h-4 w-4" /> Add Webhook
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-lg">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Webhook className="h-5 w-5 text-blue-600" />
+                      Add Webhook
+                    </DialogTitle>
+                    <DialogDescription>
+                      Configure a webhook endpoint to receive event notifications.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="url" className="text-slate-700 font-medium">Endpoint URL</Label>
+                      <Input
+                        id="url"
+                        type="url"
+                        placeholder="https://your-server.com/webhook"
+                        value={newUrl}
+                        onChange={(e) => setNewUrl(e.target.value)}
+                        className="h-11 rounded-lg"
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      <Label className="text-slate-700 font-medium">Events to Subscribe</Label>
+                      <div className="space-y-2">
+                        {AVAILABLE_EVENTS.map((event) => {
+                          const EventIcon = event.icon;
+                          return (
+                            <div
+                              key={event.id}
+                              className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                                selectedEvents.includes(event.id)
+                                  ? "border-blue-300 bg-blue-50"
+                                  : "border-slate-200 hover:border-slate-300"
+                              }`}
+                              onClick={() => toggleEvent(event.id)}
+                            >
+                              <Checkbox
+                                id={event.id}
+                                checked={selectedEvents.includes(event.id)}
+                                onCheckedChange={() => toggleEvent(event.id)}
+                              />
+                              <div className={`h-8 w-8 rounded-lg ${event.color} flex items-center justify-center`}>
+                                <EventIcon className="h-4 w-4" />
+                              </div>
+                              <Label
+                                htmlFor={event.id}
+                                className="font-medium cursor-pointer flex-1"
+                              >
+                                {event.label}
+                              </Label>
+                              <code className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded">
+                                {event.id}
+                              </code>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter className="gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCreateDialogOpen(false)}
+                      className="rounded-lg"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleCreate}
+                      disabled={creating || !newUrl || selectedEvents.length === 0}
+                      className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                    >
+                      {creating ? "Creating..." : "Create Webhook"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            {/* Webhooks List */}
+            {webhooks.length > 0 ? (
+              <div className="space-y-4">
+                {webhooks.map((webhook) => (
+                  <Card key={webhook.id} className="border-slate-200 shadow-sm hover:shadow-md transition-all">
+                    <CardContent className="p-5">
+                      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                        <div className="flex items-start gap-4 flex-1 min-w-0">
+                          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center">
+                            <Webhook className="h-6 w-6 text-purple-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <code className="text-sm bg-slate-100 px-3 py-1.5 rounded-lg truncate max-w-[300px] text-slate-700 font-mono">
+                                {webhook.url}
+                              </code>
+                              <a
+                                href={webhook.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-slate-400 hover:text-blue-600 transition-colors"
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                              </a>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {webhook.events.map((event) => {
+                                const eventInfo = AVAILABLE_EVENTS.find((e) => e.id === event);
+                                return (
+                                  <Badge
+                                    key={event}
+                                    className={`${eventInfo?.color || "bg-slate-100 text-slate-600"} border-0 text-xs`}
+                                  >
+                                    {eventInfo?.label || event}
+                                  </Badge>
+                                );
+                              })}
+                            </div>
+                            <p className="text-xs text-slate-400 mt-2">
+                              Created {format(new Date(webhook.createdAt), "MMM d, yyyy")}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(webhook.id)}
+                          className="rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card className="border-slate-200 border-dashed">
+                <CardContent className="py-16">
+                  <div className="text-center">
+                    <div className="mx-auto h-16 w-16 rounded-2xl bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center mb-4">
+                      <Webhook className="h-8 w-8 text-purple-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                      No webhooks configured
+                    </h3>
+                    <p className="text-slate-500 mb-6 max-w-sm mx-auto">
+                      Add a webhook to receive real-time notifications when events happen in your account.
+                    </p>
+                    <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
+                          <Plus className="mr-2 h-4 w-4" /> Add Your First Webhook
+                        </Button>
+                      </DialogTrigger>
+                    </Dialog>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Payload Example */}
+            <Card className="border-slate-200 shadow-sm overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-slate-900 flex items-center justify-center">
+                    <Code className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Payload Format</CardTitle>
+                    <CardDescription>
+                      Example of the webhook payload you will receive.
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="flex items-center justify-between px-4 py-2 bg-slate-900">
+                  <div className="flex items-center gap-2">
+                    <Terminal className="h-4 w-4 text-slate-400" />
+                    <span className="text-xs text-slate-400 font-medium">JSON</span>
+                  </div>
+                  <button
+                    onClick={copyPayload}
+                    className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-emerald-400" />
+                        <span className="text-emerald-400">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5" />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <pre className="bg-slate-800 p-4 overflow-x-auto text-sm">
+                  <code className="text-slate-300 font-mono">
+{`{
+  `}<span className="text-purple-400">&quot;event&quot;</span>{`: `}<span className="text-emerald-400">&quot;link.created&quot;</span>{`,
+  `}<span className="text-purple-400">&quot;timestamp&quot;</span>{`: `}<span className="text-emerald-400">&quot;2024-01-15T10:30:00Z&quot;</span>{`,
+  `}<span className="text-purple-400">&quot;data&quot;</span>{`: {
+    `}<span className="text-purple-400">&quot;id&quot;</span>{`: `}<span className="text-emerald-400">&quot;abc123&quot;</span>{`,
+    `}<span className="text-purple-400">&quot;slug&quot;</span>{`: `}<span className="text-emerald-400">&quot;my-link&quot;</span>{`,
+    `}<span className="text-purple-400">&quot;originalUrl&quot;</span>{`: `}<span className="text-emerald-400">&quot;https://example.com&quot;</span>{`,
+    `}<span className="text-purple-400">&quot;shortUrl&quot;</span>{`: `}<span className="text-emerald-400">&quot;https://pingto.me/my-link&quot;</span>{`
+  }
 }`}
-          </pre>
-        </CardContent>
-      </Card>
+                  </code>
+                </pre>
+              </CardContent>
+            </Card>
+
+            {/* Available Events */}
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-amber-500" />
+                  Available Events
+                </CardTitle>
+                <CardDescription>
+                  Events you can subscribe to for webhook notifications.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {AVAILABLE_EVENTS.map((event) => {
+                    const EventIcon = event.icon;
+                    return (
+                      <div key={event.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                        <div className={`h-10 w-10 rounded-lg ${event.color} flex items-center justify-center`}>
+                          <EventIcon className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-slate-900 text-sm">{event.label}</p>
+                          <code className="text-xs text-slate-500">{event.id}</code>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

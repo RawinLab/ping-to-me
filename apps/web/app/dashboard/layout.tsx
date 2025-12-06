@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import {
   cn,
   Button,
@@ -10,7 +11,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuLabel,
   Input,
+  Badge,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from "@pingtome/ui";
 import {
   LayoutDashboard,
@@ -33,7 +40,13 @@ import {
   Plus,
   Search,
   Settings,
-  ChevronRight,
+  Menu,
+  X,
+  Sparkles,
+  HelpCircle,
+  Moon,
+  Sun,
+  Command,
 } from "lucide-react";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { apiRequest } from "@/lib/api";
@@ -43,26 +56,31 @@ const mainNavItems = [
     title: "Home",
     href: "/dashboard",
     icon: LayoutDashboard,
+    description: "Overview & quick actions",
   },
   {
     title: "Links",
     href: "/dashboard/links",
     icon: Link2,
+    description: "Manage all your short links",
   },
   {
     title: "QR Codes",
     href: "/dashboard/qr-codes",
     icon: QrCode,
+    description: "Create & customize QR codes",
   },
   {
     title: "Bio Pages",
     href: "/dashboard/biopages",
     icon: FileText,
+    description: "Your link-in-bio pages",
   },
   {
     title: "Analytics",
     href: "/dashboard/analytics",
     icon: BarChart3,
+    description: "Track your performance",
   },
 ];
 
@@ -71,16 +89,19 @@ const manageItems = [
     title: "Domains",
     href: "/dashboard/domains",
     icon: Globe,
+    description: "Custom branded domains",
   },
   {
     title: "Folders",
     href: "/dashboard/folders",
     icon: FolderOpen,
+    description: "Organize your links",
   },
   {
     title: "Organization",
     href: "/dashboard/organization",
     icon: Tags,
+    description: "Team & workspace settings",
   },
 ];
 
@@ -89,39 +110,13 @@ const developerItems = [
     title: "API Keys",
     href: "/dashboard/developer/api-keys",
     icon: Key,
+    description: "Manage API access",
   },
   {
     title: "Webhooks",
     href: "/dashboard/developer/webhooks",
     icon: Webhook,
-  },
-];
-
-const settingsItems = [
-  {
-    title: "Profile",
-    href: "/dashboard/settings/profile",
-    icon: User,
-  },
-  {
-    title: "Security",
-    href: "/dashboard/settings/security",
-    icon: Lock,
-  },
-  {
-    title: "Two-Factor Auth",
-    href: "/dashboard/settings/two-factor",
-    icon: Shield,
-  },
-  {
-    title: "Audit Logs",
-    href: "/dashboard/settings/audit-logs",
-    icon: History,
-  },
-  {
-    title: "Billing",
-    href: "/dashboard/billing",
-    icon: CreditCard,
+    description: "Event notifications",
   },
 ];
 
@@ -132,6 +127,13 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
 
   const handleLogout = async () => {
     try {
@@ -139,7 +141,6 @@ export default function DashboardLayout({
     } catch (e) {
       // Ignore errors
     }
-    // Clear cookies client-side
     document.cookie =
       "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     router.push("/login");
@@ -154,7 +155,7 @@ export default function DashboardLayout({
   }) => (
     <div className="space-y-1">
       {title && (
-        <p className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+        <p className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
           {title}
         </p>
       )}
@@ -164,138 +165,213 @@ export default function DashboardLayout({
           pathname === item.href ||
           (item.href !== "/dashboard" && pathname.startsWith(item.href));
         return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
-              isActive
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            )}
-          >
-            <Icon className="h-5 w-5" />
-            {item.title}
-          </Link>
+          <TooltipProvider key={item.href} delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200",
+                    isActive
+                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  )}
+                >
+                  <Icon className={cn(
+                    "h-[18px] w-[18px] transition-transform group-hover:scale-110",
+                    isActive ? "text-white" : "text-slate-400 group-hover:text-slate-600"
+                  )} />
+                  <span className="truncate">{item.title}</span>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="hidden lg:block">
+                <p className="font-medium">{item.title}</p>
+                <p className="text-xs text-muted-foreground">{item.description}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         );
       })}
     </div>
   );
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="w-64 border-r bg-card hidden md:flex md:flex-col">
+      <aside className={cn(
+        "fixed md:sticky top-0 left-0 z-50 h-screen w-72 bg-white border-r border-slate-200/80 flex flex-col transition-transform duration-300 ease-in-out",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+      )}>
         {/* Logo */}
-        <div className="p-4 border-b">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-              <Link2 className="h-4 w-4 text-primary-foreground" />
+        <div className="p-5 border-b border-slate-100">
+          <Link href="/dashboard" className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <Link2 className="h-5 w-5 text-white" />
             </div>
-            <span className="text-lg font-bold">PingTO.Me</span>
+            <div>
+              <span className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
+                PingTO.Me
+              </span>
+              <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0 bg-blue-50 text-blue-600 border-0">
+                Beta
+              </Badge>
+            </div>
           </Link>
         </div>
 
         {/* Create Button */}
         <div className="p-4">
           <Link href="/dashboard/links/new">
-            <Button className="w-full gap-2 shadow-sm">
+            <Button className="w-full h-11 gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25 text-white font-medium rounded-xl transition-all hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5">
               <Plus className="h-4 w-4" />
-              Create new
+              Create new link
             </Button>
           </Link>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-2 space-y-6 overflow-y-auto">
+        <nav className="flex-1 px-3 py-2 space-y-6 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
           <NavSection items={mainNavItems} />
           <NavSection items={manageItems} title="Manage" />
           <NavSection items={developerItems} title="Developer" />
         </nav>
 
+        {/* Upgrade Banner */}
+        <div className="mx-3 mb-3 p-4 bg-gradient-to-br from-violet-50 to-indigo-50 rounded-xl border border-violet-100">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="h-4 w-4 text-violet-600" />
+            <span className="text-sm font-semibold text-violet-900">Upgrade to Pro</span>
+          </div>
+          <p className="text-xs text-violet-600 mb-3">
+            Unlock custom domains, advanced analytics & more.
+          </p>
+          <Link href="/pricing">
+            <Button size="sm" variant="outline" className="w-full h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100">
+              View plans
+            </Button>
+          </Link>
+        </div>
+
         {/* Settings at bottom */}
-        <div className="p-3 border-t">
+        <div className="p-3 border-t border-slate-100">
           <Link
             href="/dashboard/settings/profile"
             className={cn(
-              "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
+              "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200",
               pathname.includes("/settings")
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "bg-slate-100 text-slate-900"
+                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
             )}
           >
-            <Settings className="h-5 w-5" />
+            <Settings className="h-[18px] w-[18px] text-slate-400" />
             Settings
           </Link>
         </div>
-      </div>
+      </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Top Bar */}
-        <header className="h-16 border-b bg-card flex items-center justify-between px-6">
+        <header className="sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/80 flex items-center justify-between px-4 md:px-6">
+          {/* Mobile Menu Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden mr-2"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+
+          {/* Search */}
           <div className="flex items-center gap-4 flex-1 max-w-xl">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <div className={cn(
+              "relative flex-1 transition-all duration-200",
+              searchFocused && "scale-[1.02]"
+            )}>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
                 type="search"
-                placeholder="Search links, QR codes, and more..."
-                className="pl-10 bg-muted/50 border-0 focus-visible:ring-1"
+                placeholder="Search links, QR codes..."
+                className={cn(
+                  "pl-10 pr-12 h-10 bg-slate-50 border-slate-200 rounded-xl transition-all",
+                  "focus:bg-white focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                )}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
               />
+              <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium text-slate-400 bg-slate-100 rounded border border-slate-200">
+                <Command className="h-2.5 w-2.5" />K
+              </kbd>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* Right Actions */}
+          <div className="flex items-center gap-2 ml-4">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-500 hover:text-slate-700">
+                    <HelpCircle className="h-[18px] w-[18px]" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Help & Support</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
             <NotificationCenter />
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="gap-2 rounded-full"
+                  className="gap-2 px-2 hover:bg-slate-100 rounded-xl"
                 >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-medium text-sm">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-medium text-sm ring-2 ring-white shadow-sm">
                     U
                   </div>
-                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                  <ChevronDown className="h-3 w-3 text-slate-400" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem asChild>
-                  <Link
-                    href="/dashboard/settings/profile"
-                    className="flex items-center"
-                  >
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
+              <DropdownMenuContent align="end" className="w-56 rounded-xl p-2">
+                <DropdownMenuLabel className="px-2 py-1.5">
+                  <p className="font-medium">My Account</p>
+                  <p className="text-xs font-normal text-muted-foreground">user@example.com</p>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="my-2" />
+                <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                  <Link href="/dashboard/settings/profile" className="flex items-center">
+                    <User className="mr-2 h-4 w-4 text-slate-500" />
+                    Profile Settings
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link
-                    href="/dashboard/settings/security"
-                    className="flex items-center"
-                  >
-                    <Lock className="mr-2 h-4 w-4" />
+                <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                  <Link href="/dashboard/settings/security" className="flex items-center">
+                    <Lock className="mr-2 h-4 w-4 text-slate-500" />
                     Security
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link
-                    href="/dashboard/billing"
-                    className="flex items-center"
-                  >
-                    <CreditCard className="mr-2 h-4 w-4" />
+                <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                  <Link href="/dashboard/billing" className="flex items-center">
+                    <CreditCard className="mr-2 h-4 w-4 text-slate-500" />
                     Billing
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="my-2" />
                 <DropdownMenuItem
                   onClick={handleLogout}
-                  className="text-destructive focus:text-destructive"
+                  className="rounded-lg cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  Logout
+                  Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -17,4 +17,6 @@ export * from "./table";
 export * from "./tabs";
 export * from "./textarea";
 export * from "./avatar";
+export * from "./tooltip";
+export * from "./progress";
 export * from "./utils";
