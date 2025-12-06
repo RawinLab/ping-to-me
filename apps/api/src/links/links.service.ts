@@ -254,15 +254,25 @@ export class LinksService {
     }
   }
 
-  async update(userId: string, id: string, data: Partial<CreateLinkDto> & { status?: LinkStatus }) {
+  async update(userId: string, id: string, data: Partial<CreateLinkDto> & { status?: LinkStatus; campaignId?: string | null }) {
     const link = await this.prisma.link.findUnique({ where: { id } });
     if (!link || link.userId !== userId) {
       throw new ForbiddenException('Access denied');
     }
 
+    // Validate new URL if provided
+    if (data.originalUrl) {
+      try {
+        new URL(data.originalUrl);
+      } catch (e) {
+        throw new BadRequestException('Invalid URL format');
+      }
+    }
+
     const updated = await this.prisma.link.update({
       where: { id },
       data: {
+        originalUrl: data.originalUrl,
         title: data.title,
         description: data.description,
         tags: data.tags,
@@ -270,6 +280,7 @@ export class LinksService {
         status: data.status,
         passwordHash: data.password,
         deepLinkFallback: data.deepLinkFallback,
+        campaignId: data.campaignId === null ? null : data.campaignId,
       },
     });
 

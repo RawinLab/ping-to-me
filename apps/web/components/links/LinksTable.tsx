@@ -478,7 +478,9 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
             <EditLinkModal
               link={{
                 id: link.id,
+                originalUrl: link.originalUrl,
                 title: link.title,
+                tags: link.tags,
                 campaignId: (link as any).campaignId,
                 expirationDate: (link as any).expirationDate,
               }}
@@ -525,7 +527,9 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
                 <EditLinkModal
                   link={{
                     id: link.id,
+                    originalUrl: link.originalUrl,
                     title: link.title,
+                    tags: link.tags,
                     campaignId: (link as any).campaignId,
                     expirationDate: (link as any).expirationDate,
                   }}
@@ -646,7 +650,9 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
                 <EditLinkModal
                   link={{
                     id: link.id,
+                    originalUrl: link.originalUrl,
                     title: link.title,
+                    tags: link.tags,
                     campaignId: (link as any).campaignId,
                     expirationDate: (link as any).expirationDate,
                   }}
