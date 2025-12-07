@@ -3,9 +3,10 @@ import { DeveloperController } from "./developer.controller";
 import { ApiKeyService } from "./api-keys.service";
 import { WebhookService } from "./webhooks.service";
 import { AuthModule } from "../auth/auth.module";
+import { AuditModule } from "../audit/audit.module";
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, AuditModule],
   controllers: [DeveloperController],
   providers: [ApiKeyService, WebhookService],
   exports: [ApiKeyService, WebhookService],

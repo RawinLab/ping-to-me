@@ -1,12 +1,19 @@
-import { Injectable, BadRequestException } from "@nestjs/common";
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { PrismaClient } from "@pingtome/database";
 import * as crypto from "crypto";
+import * as bcrypt from "bcrypt";
 import {
   isValidScope,
   API_SCOPES,
   SCOPE_DESCRIPTIONS,
 } from "../auth/rbac/api-scopes";
-import { CreateApiKeyDto, ApiKeyCreatedResponseDto } from "./dto";
+import { ApiKeyCreatedResponseDto, ApiKeyRotatedResponseDto } from "./dto";
+import { AuditService } from "../audit/audit.service";
 
 /**
  * Options for creating an API key
@@ -29,6 +36,8 @@ interface CreateApiKeyOptions {
 @Injectable()
 export class ApiKeyService {
   private prisma = new PrismaClient();
+
+  constructor(private auditService: AuditService) {}
 
   /**
    * Creates a new API key with specified scopes and restrictions
@@ -186,6 +195,194 @@ export class ApiKeyService {
         description: SCOPE_DESCRIPTIONS[scope] || scope,
         group: resource === "admin" ? "Full Access" : resource,
       };
+    });
+  }
+
+  /**
+   * Rotates an API key by generating a new key value
+   * Requires password confirmation for security
+   *
+   * @param userId - User ID requesting the rotation
+   * @param keyId - API key ID to rotate
+   * @param password - User password for confirmation
+   * @returns New API key (shown only once)
+   * @throws NotFoundException if key not found
+   * @throws UnauthorizedException if password is incorrect
+   */
+  async rotateApiKey(
+    userId: string,
+    keyId: string,
+    password: string,
+  ): Promise<ApiKeyRotatedResponseDto> {
+    // Fetch the user to verify password
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || !user.password) {
+      throw new UnauthorizedException("Invalid credentials");
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException("Invalid password");
+    }
+
+    // Fetch the API key
+    const apiKey = await this.prisma.apiKey.findUnique({
+      where: { id: keyId },
+    });
+
+    if (!apiKey) {
+      throw new NotFoundException("API key not found");
+    }
+
+    // Verify user has access to this key's organization
+    const membership = await this.prisma.organizationMember.findUnique({
+      where: {
+        userId_organizationId: {
+          userId,
+          organizationId: apiKey.organizationId,
+        },
+      },
+    });
+
+    if (!membership) {
+      throw new NotFoundException("API key not found");
+    }
+
+    // Generate new key value
+    const newKey = `pk_${crypto.randomBytes(24).toString("hex")}`;
+    const newKeyHash = crypto.createHash("sha256").update(newKey).digest("hex");
+
+    // Update the API key with new hash
+    await this.prisma.apiKey.update({
+      where: { id: keyId },
+      data: {
+        keyHash: newKeyHash,
+      },
+    });
+
+    // Audit log: API key rotated
+    await this.auditService.logApiKeyEvent(
+      userId,
+      apiKey.organizationId,
+      "api_key.rotated",
+      {
+        id: apiKey.id,
+        name: apiKey.name,
+        scopes: apiKey.scopes,
+      },
+      {
+        details: {
+          rotatedAt: new Date(),
+        },
+      },
+    );
+
+    return {
+      key: newKey,
+      message:
+        "API key rotated successfully. Store the new key securely - it won't be shown again.",
+    };
+  }
+
+  /**
+   * Sets or clears the expiration date for an API key
+   *
+   * @param userId - User ID requesting the change
+   * @param keyId - API key ID
+   * @param expiresAt - New expiration date or null to clear
+   * @returns Updated API key info
+   * @throws NotFoundException if key not found
+   * @throws BadRequestException if expiration date is in the past
+   */
+  async setExpiration(
+    userId: string,
+    keyId: string,
+    expiresAt: Date | null,
+  ): Promise<any> {
+    // Validate expiration date is in the future
+    if (expiresAt && expiresAt <= new Date()) {
+      throw new BadRequestException("Expiration date must be in the future");
+    }
+
+    // Fetch the API key
+    const apiKey = await this.prisma.apiKey.findUnique({
+      where: { id: keyId },
+    });
+
+    if (!apiKey) {
+      throw new NotFoundException("API key not found");
+    }
+
+    // Verify user has access to this key's organization
+    const membership = await this.prisma.organizationMember.findUnique({
+      where: {
+        userId_organizationId: {
+          userId,
+          organizationId: apiKey.organizationId,
+        },
+      },
+    });
+
+    if (!membership) {
+      throw new NotFoundException("API key not found");
+    }
+
+    // Update expiration
+    const updatedApiKey = await this.prisma.apiKey.update({
+      where: { id: keyId },
+      data: {
+        expiresAt,
+      },
+      select: {
+        id: true,
+        name: true,
+        scopes: true,
+        ipWhitelist: true,
+        rateLimit: true,
+        expiresAt: true,
+        createdAt: true,
+        lastUsedAt: true,
+      },
+    });
+
+    return updatedApiKey;
+  }
+
+  /**
+   * Gets API keys expiring within a specified number of days
+   *
+   * @param organizationId - Organization ID
+   * @param days - Number of days to look ahead (default: 7)
+   * @returns Array of API keys expiring soon
+   */
+  async getExpiringKeys(organizationId: string, days: number = 7) {
+    const now = new Date();
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + days);
+
+    return this.prisma.apiKey.findMany({
+      where: {
+        organizationId,
+        expiresAt: {
+          gte: now,
+          lte: futureDate,
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        scopes: true,
+        expiresAt: true,
+        createdAt: true,
+        lastUsedAt: true,
+      },
+      orderBy: {
+        expiresAt: "asc",
+      },
     });
   }
 }

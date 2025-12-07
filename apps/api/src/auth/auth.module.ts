@@ -12,10 +12,17 @@ import { JwtRefreshStrategy } from "./strategies/jwt-refresh.strategy";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { MailModule } from "../mail/mail.module";
 import { AuditModule } from "../audit/audit.module";
+import { ScheduleModule } from "@nestjs/schedule";
 // Legacy RolesGuard - kept for backward compatibility
 import { RolesGuard } from "./guards/roles.guard";
 // New RBAC system
 import { PermissionService, PermissionGuard, AccessLogService } from "./rbac";
+// Session Management
+import { SessionService } from "./session.service";
+import { SessionController } from "./session.controller";
+// Login Security
+import { LoginSecurityService } from "./login-security.service";
+import { LoginActivityController } from "./login-activity.controller";
 
 @Module({
   imports: [
@@ -31,11 +38,14 @@ import { PermissionService, PermissionGuard, AccessLogService } from "./rbac";
     }),
     MailModule,
     ConfigModule,
+    ScheduleModule.forRoot(),
     forwardRef(() => AuditModule),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, SessionController, LoginActivityController],
   providers: [
     AuthService,
+    SessionService,
+    LoginSecurityService,
     JwtStrategy,
     LocalStrategy,
     GoogleStrategy,
@@ -50,6 +60,8 @@ import { PermissionService, PermissionGuard, AccessLogService } from "./rbac";
   ],
   exports: [
     AuthService,
+    SessionService,
+    LoginSecurityService,
     // Legacy guard - kept for backward compatibility
     RolesGuard,
     // New RBAC system

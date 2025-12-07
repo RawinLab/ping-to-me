@@ -32,6 +32,7 @@ model User {
   memberships       OrganizationMember[]
   accounts          Account[]
   sessions          Session[]
+  backupCodes       BackupCode[]
   links             Link[]
   notifications     Notification[]
   folders           Folder[]
@@ -63,7 +64,45 @@ model Session {
   sessionToken String   @unique
   userId       String   @db.Uuid
   expires      DateTime
+
+  // Enhanced session tracking
+  tokenHash    String?  // Hashed refresh token
+  deviceInfo   String?  // Parsed user agent (e.g., "Chrome on Windows")
+  ipAddress    String?
+  location     String?  // Geo-resolved (e.g., "Bangkok, Thailand")
+  lastActive   DateTime @default(now())
+  createdAt    DateTime @default(now())
+
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expires])
+}
+
+model BackupCode {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @db.Uuid
+  code      String    // Hashed backup code
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model LoginAttempt {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String
+  success   Boolean
+  ipAddress String?
+  userAgent String?
+  location  String?  // Geo-resolved
+  reason    String?  // 'invalid_password', 'user_not_found', '2fa_failed', 'account_locked'
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+  @@index([ipAddress, createdAt])
 }
 
 model VerificationToken {
@@ -114,17 +153,20 @@ model Organization {
 }
 
 model OrganizationSettings {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organizationId  String   @unique @db.Uuid
-  ipAllowlist     Json?    // Array of allowed IP addresses/ranges
-  ssoEnabled      Boolean  @default(false)
-  ssoProviderId   String?
-  enforced2FA     Boolean  @default(false)
-  sessionTimeout  Int      @default(7200) // seconds (default 2 hours)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId     String   @unique @db.Uuid
+  ipAllowlist        Json?    // Array of allowed IP addresses/ranges
+  ssoEnabled         Boolean  @default(false)
+  ssoProviderId      String?
+  enforced2FA        Boolean  @default(false)
+  enforce2FAForRoles String[] @default([]) // Roles that require 2FA, e.g., ["OWNER", "ADMIN"]
+  maxLoginAttempts   Int      @default(5)
+  lockoutDuration    Int      @default(30) // minutes
+  sessionTimeout     Int      @default(7200) // seconds (default 2 hours)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
 model OrganizationInvitation {
@@ -286,6 +328,10 @@ model Link {
   folderId         String?   @db.Uuid
   folder           Folder?   @relation(fields: [folderId], references: [id])
 
+  // Custom domain
+  domainId         String?   @db.Uuid
+  domain           Domain?   @relation(fields: [domainId], references: [id])
+
   status           LinkStatus @default(ACTIVE)
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
@@ -352,14 +398,37 @@ model ClickEvent {
 }
 
 model Domain {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  hostname       String   @unique
-  organizationId String   @db.Uuid
-  isVerified     Boolean  @default(false)
-  verificationToken String?
-  createdAt      DateTime @default(now())
+  id                   String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hostname             String       @unique
+  organizationId       String       @db.Uuid
 
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  // Verification fields
+  status               DomainStatus @default(PENDING)
+  isVerified           Boolean      @default(false)
+  verificationType     String?      // 'txt' | 'cname'
+  verificationToken    String?
+  verificationAttempts Int          @default(0)
+  lastVerifiedAt       DateTime?
+  lastCheckAt          DateTime?
+  verificationError    String?
+  isDefault            Boolean      @default(false)
+
+  // SSL fields
+  sslStatus            SslStatus    @default(PENDING)
+  sslProvider          String?      // e.g., 'letsencrypt'
+  sslCertificateId     String?
+  sslIssuedAt          DateTime?
+  sslExpiresAt         DateTime?
+  sslAutoRenew         Boolean      @default(true)
+
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt @default(now())
+
+  organization         Organization @relation(fields: [organizationId], references: [id])
+  links                Link[]
+
+  @@index([organizationId])
+  @@index([status])
 }
 
 enum MemberRole {
@@ -367,6 +436,21 @@ enum MemberRole {
   ADMIN
   EDITOR
   VIEWER
+}
+
+enum DomainStatus {
+  PENDING
+  VERIFYING
+  VERIFIED
+  FAILED
+}
+
+enum SslStatus {
+  PENDING
+  PROVISIONING
+  ACTIVE
+  EXPIRED
+  FAILED
 }
 
 enum PlanType {

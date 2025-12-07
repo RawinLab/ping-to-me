@@ -4,7 +4,10 @@ import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import { MailService } from "../mail/mail.service";
 import { AuditService } from "../audit/audit.service";
+import { LoginSecurityService } from "./login-security.service";
+import { SessionService } from "./session.service";
 import { randomUUID } from "crypto";
+import { Request } from "express";
 
 @Injectable()
 export class AuthService {
@@ -13,6 +16,8 @@ export class AuthService {
     private jwtService: JwtService,
     private mailService: MailService,
     private auditService: AuditService,
+    private loginSecurityService: LoginSecurityService,
+    private sessionService: SessionService,
   ) {}
 
   async register(email: string, password?: string, name?: string) {
@@ -160,11 +165,25 @@ export class AuthService {
     return { message: "Password reset successfully" };
   }
 
-  async validateUser(email: string, pass: string): Promise<any> {
+  async validateUser(email: string, pass: string, req?: Request): Promise<any> {
     const user = await this.prisma.user.findUnique({ where: { email } });
+
     if (user && user.password && (await bcrypt.compare(pass, user.password))) {
       const { password, ...result } = user;
       return result;
+    }
+
+    // Determine failure reason
+    const reason = !user ? "user_not_found" : "invalid_password";
+
+    // Log failed attempt using LoginSecurityService if request is available
+    if (req) {
+      await this.loginSecurityService.logLoginAttempt(
+        email,
+        false,
+        req,
+        reason,
+      );
     }
 
     // Audit log: Failed login attempt (don't log password)
@@ -172,15 +191,28 @@ export class AuthService {
       status: "failure",
       details: {
         email,
-        reason: !user ? "user_not_found" : "invalid_password",
+        reason,
       },
     });
 
     return null;
   }
 
-  async login(user: any, ipAddress?: string, userAgent?: string) {
+  async login(user: any, request?: any) {
     const payload = { sub: user.id, email: user.email, role: user.role };
+
+    // Generate tokens
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: "7d" });
+
+    // Create session with device info, IP, etc.
+    if (request) {
+      await this.sessionService.createSession(user.id, refreshToken, request);
+    }
+
+    // Extract IP and user agent for audit log
+    const ipAddress = request?.ip || request?.connection?.remoteAddress;
+    const userAgent = request?.headers?.['user-agent'];
 
     // Audit log: Successful login
     await this.auditService.logSecurityEvent(user.id, "auth.login", {
@@ -190,8 +222,8 @@ export class AuthService {
     });
 
     return {
-      accessToken: this.jwtService.sign(payload),
-      refreshToken: this.jwtService.sign(payload, { expiresIn: "7d" }),
+      accessToken,
+      refreshToken,
     };
   }
 

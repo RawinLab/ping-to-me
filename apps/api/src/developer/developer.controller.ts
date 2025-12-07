@@ -4,7 +4,9 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
+  Query,
   Request,
   UseGuards,
   ValidationPipe,
@@ -13,7 +15,12 @@ import { ApiKeyService } from "./api-keys.service";
 import { WebhookService } from "./webhooks.service";
 import { AuthGuard } from "../auth/auth.guard";
 import { PermissionGuard, Permission } from "../auth/rbac";
-import { CreateApiKeyDto } from "./dto";
+import {
+  CreateApiKeyDto,
+  RotateApiKeyDto,
+  SetExpirationDto,
+  ApiKeyRotatedResponseDto,
+} from "./dto";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 
 @ApiTags("developer")
@@ -85,6 +92,82 @@ export class DeveloperController {
   async revokeApiKey(@Request() req, @Param("id") id: string) {
     const orgId = req.query.orgId as string;
     return this.apiKeyService.revokeApiKey(id, orgId);
+  }
+
+  @Post("api-keys/:id/rotate")
+  @Permission({ resource: "api-key", action: "create" })
+  @ApiOperation({
+    summary: "Rotate an API key",
+    description:
+      "Generates a new key value while keeping the same ID and metadata. Requires password confirmation.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "API key rotated successfully",
+    type: ApiKeyRotatedResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Invalid password",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "API key not found",
+  })
+  async rotateApiKey(
+    @Request() req,
+    @Param("id") id: string,
+    @Body(ValidationPipe) dto: RotateApiKeyDto,
+  ) {
+    return this.apiKeyService.rotateApiKey(req.user.id, id, dto.password);
+  }
+
+  @Patch("api-keys/:id/expiry")
+  @Permission({ resource: "api-key", action: "create" })
+  @ApiOperation({
+    summary: "Set or clear API key expiration",
+    description:
+      "Updates the expiration date for an API key. Set to null to remove expiration.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "Expiration updated successfully",
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Invalid expiration date (must be in future)",
+  })
+  @ApiResponse({
+    status: 404,
+    description: "API key not found",
+  })
+  async setExpiration(
+    @Request() req,
+    @Param("id") id: string,
+    @Body(ValidationPipe) dto: SetExpirationDto,
+  ) {
+    const expiresAt = dto.expiresAt ? new Date(dto.expiresAt) : null;
+    return this.apiKeyService.setExpiration(req.user.id, id, expiresAt);
+  }
+
+  @Get("api-keys/expiring")
+  @Permission({ resource: "api-key", action: "read" })
+  @ApiOperation({
+    summary: "Get API keys expiring soon",
+    description:
+      "Returns API keys that will expire within the specified number of days",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "List of expiring API keys",
+  })
+  async getExpiringKeys(
+    @Request() req,
+    @Query("orgId") orgId: string,
+    @Query("days") days?: string,
+  ) {
+    const daysAhead = days ? parseInt(days, 10) : 7;
+    return this.apiKeyService.getExpiringKeys(orgId, daysAhead);
   }
 
   // Webhooks

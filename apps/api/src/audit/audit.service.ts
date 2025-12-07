@@ -199,6 +199,7 @@ export class AuditService {
       | "domain.verified"
       | "domain.failed"
       | "domain.removed"
+      | "domain.reset"
       | "domain.ssl_updated",
     domain: { id: string; hostname: string },
     options?: {
@@ -305,7 +306,10 @@ export class AuditService {
       | "auth.2fa_disabled"
       | "auth.password_changed"
       | "auth.password_reset_requested"
-      | "auth.email_verified",
+      | "auth.email_verified"
+      | "session.list_viewed"
+      | "session.terminated"
+      | "session.all_other_terminated",
     options?: {
       status?: "success" | "failure";
       context?: AuditContext;
@@ -315,7 +319,7 @@ export class AuditService {
     await this.log({
       userId: userId || undefined,
       action,
-      resource: "User",
+      resource: action.startsWith("session.") ? "Session" : "User",
       resourceId: userId || undefined,
       status: options?.status,
       details: options?.details,
