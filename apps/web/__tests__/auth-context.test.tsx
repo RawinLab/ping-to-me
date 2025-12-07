@@ -1,6 +1,6 @@
 import { render, screen, waitFor, act } from "@testing-library/react";
-import { AuthProvider, useAuth } from "../context/auth-context";
-import { api } from "../lib/api";
+import { AuthProvider, useAuth } from "../contexts/AuthContext";
+import { api, initializeAuth, apiRequest, setAccessToken } from "../lib/api";
 
 // Mock API
 jest.mock("../lib/api", () => ({
@@ -8,11 +8,14 @@ jest.mock("../lib/api", () => ({
     get: jest.fn(),
     post: jest.fn(),
   },
+  initializeAuth: jest.fn(),
+  apiRequest: jest.fn(),
+  setAccessToken: jest.fn(),
 }));
 
 const TestComponent = () => {
-  const { user, login, logout, isLoading } = useAuth();
-  if (isLoading) return <div>Loading...</div>;
+  const { user, login, logout, loading } = useAuth();
+  if (loading) return <div>Loading...</div>;
   if (!user)
     return (
       <div>
@@ -49,8 +52,8 @@ describe("AuthContext", () => {
     (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
   });
 
-  it("initializes with no user", async () => {
-    (api.post as jest.Mock).mockRejectedValue({ response: { status: 401 } });
+  it("initializes with no user when not authenticated", async () => {
+    (initializeAuth as jest.Mock).mockResolvedValue(false);
 
     render(
       <AuthProvider>
@@ -64,12 +67,19 @@ describe("AuthContext", () => {
     );
   });
 
-  it("loads user on mount if token exists", async () => {
-    (api.post as jest.Mock).mockResolvedValue({
-      data: { accessToken: "token" },
-    });
-    (api.get as jest.Mock).mockResolvedValue({
-      data: { id: "1", name: "Test User", email: "test@example.com" },
+  it("loads user on mount if authenticated", async () => {
+    (initializeAuth as jest.Mock).mockResolvedValue(true);
+    (apiRequest as jest.Mock).mockImplementation((url) => {
+      if (url === "/auth/me")
+        return Promise.resolve({
+          id: "1",
+          name: "Test User",
+          email: "test@example.com",
+          role: "user",
+          plan: "free",
+        });
+      if (url === "/organizations") return Promise.resolve([]);
+      return Promise.reject({});
     });
 
     render(
@@ -85,12 +95,14 @@ describe("AuthContext", () => {
   });
 
   it("login updates user state", async () => {
+    (initializeAuth as jest.Mock).mockResolvedValue(false);
     (api.post as jest.Mock).mockImplementation((url) => {
-      if (url === "/auth/refresh")
-        return Promise.reject({ response: { status: 401 } });
       if (url === "/auth/login")
         return Promise.resolve({
-          data: { accessToken: "token", user: { id: "1", name: "Test User" } },
+          data: {
+            accessToken: "token",
+            user: { id: "1", name: "Test User", role: "user", plan: "free" },
+          },
         });
       return Promise.reject({});
     });
@@ -117,14 +129,22 @@ describe("AuthContext", () => {
   });
 
   it("logout clears user state", async () => {
-    (api.post as jest.Mock).mockImplementation((url) => {
-      if (url === "/auth/refresh")
-        return Promise.resolve({ data: { accessToken: "token" } });
-      if (url === "/auth/logout") return Promise.resolve({});
+    (initializeAuth as jest.Mock).mockResolvedValue(true);
+    (apiRequest as jest.Mock).mockImplementation((url) => {
+      if (url === "/auth/me")
+        return Promise.resolve({
+          id: "1",
+          name: "Test User",
+          email: "test@example.com",
+          role: "user",
+          plan: "free",
+        });
+      if (url === "/organizations") return Promise.resolve([]);
       return Promise.reject({});
     });
-    (api.get as jest.Mock).mockResolvedValue({
-      data: { id: "1", name: "Test User" },
+    (api.post as jest.Mock).mockImplementation((url) => {
+      if (url === "/auth/logout") return Promise.resolve({});
+      return Promise.reject({});
     });
 
     render(
@@ -146,5 +166,6 @@ describe("AuthContext", () => {
       expect(screen.getByText("Not Logged In")).toBeInTheDocument()
     );
     expect(mockPush).toHaveBeenCalledWith("/login");
+    expect(setAccessToken).toHaveBeenCalledWith(null);
   });
 });

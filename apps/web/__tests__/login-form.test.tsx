@@ -1,10 +1,10 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { LoginForm } from "../components/auth/LoginForm";
-import { useAuth } from "../context/auth-context";
+import { useAuth } from "../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 
 // Mock useAuth
-jest.mock("../context/auth-context", () => ({
+jest.mock("../contexts/AuthContext", () => ({
   useAuth: jest.fn(),
 }));
 

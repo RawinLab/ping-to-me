@@ -8,7 +8,8 @@ import {
   useRef,
   ReactNode,
 } from "react";
-import { apiRequest, initializeAuth } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { apiRequest, initializeAuth, api, setAccessToken } from "@/lib/api";
 
 interface User {
   id: string;
@@ -30,6 +31,8 @@ interface AuthContextType {
   memberships: OrgMembership[];
   currentOrgId: string | null;
   loading: boolean;
+  login: (data: { email: string; password: string }) => Promise<void>;
+  logout: () => Promise<void>;
   hasRole: (roles: string[]) => boolean;
   hasOrgRole: (orgId: string, roles: string[]) => boolean;
   canAccess: (feature: string) => boolean;
@@ -45,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const initRef = useRef(false);
+  const router = useRouter();
 
   useEffect(() => {
     // Prevent double initialization in strict mode
@@ -149,6 +153,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("currentOrgId", orgId);
   };
 
+  const login = async (data: { email: string; password: string }) => {
+    const res = await api.post("/auth/login", data);
+    setUser(res.data.user);
+    router.push("/dashboard");
+  };
+
+  const logout = async () => {
+    await api.post("/auth/logout");
+    setAccessToken(null);
+    setUser(null);
+    setMemberships([]);
+    setCurrentOrgId(null);
+    router.push("/login");
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -156,6 +175,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         memberships,
         currentOrgId,
         loading,
+        login,
+        logout,
         hasRole,
         hasOrgRole,
         canAccess,
