@@ -31,8 +31,23 @@ export class BioPageService {
     });
   }
 
-  async getBioPage(slug: string): Promise<BioPage | null> {
-    return this.prisma.bioPage.findUnique({ where: { slug } });
+  async getBioPage(slug: string): Promise<any | null> {
+    return this.prisma.bioPage.findUnique({
+      where: { slug },
+      include: {
+        bioLinks: {
+          orderBy: { order: 'asc' },
+          include: {
+            link: {
+              select: {
+                slug: true,
+                originalUrl: true,
+              },
+            },
+          },
+        },
+      },
+    });
   }
 
   async getPublicBioPage(slug: string): Promise<any | null> {
@@ -107,10 +122,31 @@ export class BioPageService {
     return this.prisma.bioPage.delete({ where: { id } });
   }
 
-  async listBioPages(userId: string, orgId: string): Promise<BioPage[]> {
-    return this.prisma.bioPage.findMany({
+  async listBioPages(userId: string, orgId: string): Promise<any[]> {
+    const pages = await this.prisma.bioPage.findMany({
       where: { organizationId: orgId },
+      include: {
+        bioLinks: {
+          orderBy: { order: 'asc' },
+          include: {
+            link: {
+              select: {
+                slug: true,
+                originalUrl: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            bioLinks: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
     });
+
+    return pages;
   }
 
   // Helper method to verify bio page ownership

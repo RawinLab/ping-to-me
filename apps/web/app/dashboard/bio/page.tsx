@@ -218,8 +218,8 @@ export default function BioPagesDashboard() {
                       <div className="flex items-center gap-1.5 text-muted-foreground">
                         <Link2 className="h-4 w-4" />
                         <span>
-                          {page.content?.links?.length || 0}{" "}
-                          {page.content?.links?.length === 1 ? "link" : "links"}
+                          {page._count?.bioLinks || page.bioLinks?.length || 0}{" "}
+                          {(page._count?.bioLinks || page.bioLinks?.length || 0) === 1 ? "link" : "links"}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -234,9 +234,9 @@ export default function BioPagesDashboard() {
                       >
                         {page.isPublished ? "Published" : "Draft"}
                       </Badge>
-                      {page.content?.theme && (
+                      {page.theme?.name && (
                         <Badge variant="outline" className="text-xs capitalize">
-                          {page.content.theme}
+                          {page.theme.name}
                         </Badge>
                       )}
                     </div>
