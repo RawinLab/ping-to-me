@@ -52,3 +52,10 @@ export {
   RequireScope,
   SCOPE_KEY,
 } from './require-scope.decorator';
+
+// Access Log Service - for RBAC access auditing
+export {
+  AccessLogService,
+  AccessResult,
+  type AccessLogData,
+} from './access-log.service';

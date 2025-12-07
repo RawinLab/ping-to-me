@@ -383,3 +383,31 @@ model AuditLog {
   @@index([action])
   @@index([createdAt])
 }
+
+// RBAC Access Log - for permission check auditing
+model AccessLog {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String?      @db.Uuid
+  apiKeyId       String?      @db.Uuid
+  organizationId String?      @db.Uuid
+  resource       String       // link, team, billing, domain, etc.
+  action         String       // create, read, update, delete, etc.
+  result         AccessResult // ALLOWED or DENIED
+  reason         String?      // Reason for denial (if denied)
+  ipAddress      String?
+  userAgent      String?
+  endpoint       String?      // API endpoint accessed
+  method         String?      // HTTP method (GET, POST, etc.)
+  createdAt      DateTime     @default(now())
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([result])
+  @@index([resource])
+  @@index([createdAt])
+}
+
+enum AccessResult {
+  ALLOWED
+  DENIED
+}

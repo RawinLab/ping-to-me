@@ -14,7 +14,7 @@ import { MailModule } from '../mail/mail.module';
 // Legacy RolesGuard - kept for backward compatibility
 import { RolesGuard } from './guards/roles.guard';
 // New RBAC system
-import { PermissionService, PermissionGuard } from './rbac';
+import { PermissionService, PermissionGuard, AccessLogService } from './rbac';
 
 @Module({
   imports: [
@@ -44,6 +44,7 @@ import { PermissionService, PermissionGuard } from './rbac';
     // New RBAC system
     PermissionService,
     PermissionGuard,
+    AccessLogService,
   ],
   exports: [
     AuthService,
@@ -52,6 +53,7 @@ import { PermissionService, PermissionGuard } from './rbac';
     // New RBAC system
     PermissionService,
     PermissionGuard,
+    AccessLogService,
   ],
 })
 export class AuthModule { }

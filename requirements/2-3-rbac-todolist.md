@@ -435,7 +435,7 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 - [x] Add `scopes` field (String[]) to ApiKey model
 - [x] Add `ipWhitelist` field (String[]?, optional)
 - [x] Add `rateLimit` field (Int?, optional, requests per minute)
-- [ ] Run database migration
+- [x] Run database migration
 - [x] Update Prisma client
 
 **Acceptance Criteria**:
@@ -545,12 +545,12 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `packages/database/prisma/schema.prisma`
 
 **Subtasks**:
-- [ ] Add `AccessLog` model with fields:
+- [x] Add `AccessLog` model with fields:
   - `id`, `userId`, `apiKeyId`, `organizationId`
   - `resource`, `action`, `result` (ALLOWED/DENIED)
   - `reason`, `ipAddress`, `userAgent`, `createdAt`
-- [ ] Add indexes for querying
-- [ ] Run migration
+- [x] Add indexes for querying
+- [x] Run migration
 
 **Acceptance Criteria**:
 - Model created successfully
@@ -563,11 +563,11 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/api/src/auth/rbac/permission.guard.ts`
 
 **Subtasks**:
-- [ ] Log all permission check attempts (success and denial)
-- [ ] Include context: userId, orgId, resource, action
-- [ ] Include request metadata: IP, user agent
-- [ ] Use async logging to not block requests
-- [ ] Integrate with existing AuditService or create AccessLogService
+- [x] Log all permission check attempts (success and denial)
+- [x] Include context: userId, orgId, resource, action
+- [x] Include request metadata: IP, user agent
+- [x] Use async logging to not block requests
+- [x] Integrate with existing AuditService or create AccessLogService
 
 **Acceptance Criteria**:
 - All access attempts logged

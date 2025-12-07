@@ -3,6 +3,7 @@ import {
   ExecutionContext,
   Injectable,
   ForbiddenException,
+  Optional,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PermissionService } from './permission.service';
@@ -11,6 +12,7 @@ import {
   REQUIRE_ALL_PERMISSIONS_KEY,
   PermissionMetadata,
 } from './permission.decorator';
+import { AccessLogService, AccessResult } from './access-log.service';
 
 /**
  * Permission Guard for NestJS RBAC system
@@ -45,6 +47,7 @@ export class PermissionGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
     private permissionService: PermissionService,
+    @Optional() private accessLogService?: AccessLogService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -80,6 +83,9 @@ export class PermissionGuard implements CanActivate {
     // Extract resource ID for ownership checks (if needed)
     const resourceId = this.extractResourceId(request);
 
+    // Extract request metadata for logging
+    const requestMeta = this.extractRequestMetadata(request);
+
     // Handle PERMISSION_KEY (OR condition - user needs ANY permission)
     if (permissionMetadata) {
       const permissions = Array.isArray(permissionMetadata)
@@ -94,11 +100,27 @@ export class PermissionGuard implements CanActivate {
       );
 
       if (!hasAccess) {
+        // Log denied access
+        this.logAccess(
+          user.id,
+          organizationId,
+          permissions,
+          AccessResult.DENIED,
+          `Insufficient permissions for ${permissions[0].resource}:${permissions[0].action}`,
+          requestMeta,
+        );
         this.throwForbiddenException(permissions[0], user);
       }
 
-      // Log access for audit (optional)
-      this.logAccess(user.id, organizationId, permissions, 'granted');
+      // Log granted access
+      this.logAccess(
+        user.id,
+        organizationId,
+        permissions,
+        AccessResult.ALLOWED,
+        undefined,
+        requestMeta,
+      );
 
       return true;
     }
@@ -113,11 +135,27 @@ export class PermissionGuard implements CanActivate {
       );
 
       if (!hasAccess) {
+        // Log denied access
+        this.logAccess(
+          user.id,
+          organizationId,
+          requireAllMetadata,
+          AccessResult.DENIED,
+          `Missing required permissions`,
+          requestMeta,
+        );
         this.throwForbiddenException(requireAllMetadata[0], user);
       }
 
-      // Log access for audit (optional)
-      this.logAccess(user.id, organizationId, requireAllMetadata, 'granted');
+      // Log granted access
+      this.logAccess(
+        user.id,
+        organizationId,
+        requireAllMetadata,
+        AccessResult.ALLOWED,
+        undefined,
+        requestMeta,
+      );
 
       return true;
     }
@@ -285,23 +323,70 @@ export class PermissionGuard implements CanActivate {
   }
 
   /**
+   * Extract request metadata for logging
+   */
+  private extractRequestMetadata(request: any): {
+    ipAddress?: string;
+    userAgent?: string;
+    endpoint?: string;
+    method?: string;
+  } {
+    return {
+      ipAddress:
+        request.ip ||
+        request.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
+        request.connection?.remoteAddress,
+      userAgent: request.headers?.['user-agent'],
+      endpoint: request.originalUrl || request.url,
+      method: request.method,
+    };
+  }
+
+  /**
    * Log access attempt for audit purposes
-   * In production, this should integrate with your audit logging system
+   * Uses AccessLogService for persistent logging to database
    */
   private logAccess(
     userId: string,
     organizationId: string,
     permissions: PermissionMetadata[],
-    result: 'granted' | 'denied',
+    result: AccessResult,
+    reason?: string,
+    requestMeta?: {
+      ipAddress?: string;
+      userAgent?: string;
+      endpoint?: string;
+      method?: string;
+    },
   ): void {
-    // Optional: Log to console for development
-    // In production, replace with proper audit logging
+    // Log to AccessLogService if available
+    if (this.accessLogService) {
+      // Log each permission check separately for granular auditing
+      for (const permission of permissions) {
+        this.accessLogService.log({
+          userId,
+          organizationId,
+          resource: permission.resource,
+          action: permission.action,
+          result,
+          reason,
+          ipAddress: requestMeta?.ipAddress,
+          userAgent: requestMeta?.userAgent,
+          endpoint: requestMeta?.endpoint,
+          method: requestMeta?.method,
+        });
+      }
+    }
+
+    // Also log to console in development for debugging
     if (process.env.NODE_ENV === 'development') {
       console.log('[PermissionGuard]', {
         userId,
         organizationId,
         permissions: permissions.map((p) => `${p.resource}:${p.action}`),
         result,
+        reason,
+        endpoint: requestMeta?.endpoint,
         timestamp: new Date().toISOString(),
       });
     }
