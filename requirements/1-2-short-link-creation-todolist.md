@@ -1,15 +1,16 @@
 # Module 1.2: Short Link Creation - Development Todolist
 
-> **Status**: ~75-80% Complete
-> **Priority**: Critical - Security fixes required (password not hashed)
+> **Status**: ~95% Complete ✅
+> **Priority**: Medium - Phase 1 & 2 complete, Phase 3 remaining
 > **Reference**: `requirements/1-2-short-link-creation-plan.md`
+> **Last Updated**: 2025-12-08
 
 ---
 
-## Phase 1: Critical Security Fixes (IMMEDIATE)
+## Phase 1: Critical Security Fixes (IMMEDIATE) ✅ COMPLETED
 
-### Task 1.2.1: Hash Link Passwords
-- [ ] **Fix password hashing in links.service.ts**
+### Task 1.2.1: Hash Link Passwords ✅
+- [x] **Fix password hashing in links.service.ts**
   - File: `apps/api/src/links/links.service.ts` (line 108)
   - Current: `passwordHash: dto.password` (PLAIN TEXT!)
   - Fix: `passwordHash: dto.password ? await bcrypt.hash(dto.password, 10) : null`
@@ -17,8 +18,8 @@
   - Effort: 30 minutes
   - Test: Verify password is hashed in database
 
-### Task 1.2.2: Create Link DTOs with Validation
-- [ ] **Create CreateLinkDto**
+### Task 1.2.2: Create Link DTOs with Validation ✅
+- [x] **Create CreateLinkDto**
   - File: `apps/api/src/links/dto/create-link.dto.ts`
   - Validations:
     - `originalUrl`: @IsUrl, @MaxLength(2048)
@@ -30,20 +31,20 @@
     - `redirectType`: @IsOptional, @IsEnum(['301', '302'])
     - `deepLinkFallback`: @IsOptional, @IsUrl
 
-- [ ] **Create UpdateLinkDto**
+- [x] **Create UpdateLinkDto**
   - File: `apps/api/src/links/dto/update-link.dto.ts`
   - Use PartialType(CreateLinkDto)
 
-- [ ] **Create CheckSlugDto**
+- [x] **Create CheckSlugDto**
   - File: `apps/api/src/links/dto/check-slug.dto.ts`
   - Fields: `slug` (required), `domainId` (optional)
 
-- [ ] **Apply DTOs to LinksController**
+- [x] **Apply DTOs to LinksController**
   - File: `apps/api/src/links/links.controller.ts`
   - Add @Body() with DTO types to all endpoints
 
-### Task 1.2.3: Fix Redirector Redirect Type
-- [ ] **Update redirector to respect redirect type**
+### Task 1.2.3: Fix Redirector Redirect Type ✅
+- [x] **Update redirector to respect redirect type**
   - File: `apps/redirector/src/index.ts` (line 118)
   - Current: `return Response.redirect(url, 301)` (always 301)
   - Fix: `const redirectCode = parseInt(linkData.redirectType) || 301; return Response.redirect(url, redirectCode)`
@@ -52,10 +53,10 @@
 
 ---
 
-## Phase 2: High Priority Features
+## Phase 2: High Priority Features ✅ COMPLETED
 
-### Task 1.2.4: Slug Availability Check Endpoint
-- [ ] **Create check-slug endpoint**
+### Task 1.2.4: Slug Availability Check Endpoint ✅
+- [x] **Create check-slug endpoint**
   - File: `apps/api/src/links/links.controller.ts`
   - Endpoint: `POST /links/check-slug`
   - Input: `{ slug: string, domainId?: string }`
@@ -65,19 +66,19 @@
     - Check existing links in database
     - Generate 3 alternatives if taken
 
-- [ ] **Add generateAlternatives helper**
+- [x] **Add generateAlternatives helper**
   - File: `apps/api/src/links/links.service.ts`
   - Method: `generateAlternatives(slug: string): string[]`
   - Return: `[slug-1, slug-xxxx (nanoid 4), my-slug]`
 
-- [ ] **Frontend slug availability indicator**
+- [ ] **Frontend slug availability indicator** (TODO)
   - File: `apps/web/app/dashboard/links/new/page.tsx`
   - Add debounced API call on slug input
   - Show available/taken indicator
   - Display suggestions when taken
 
-### Task 1.2.5: Link Safety Detection
-- [ ] **Create SafetyCheckService**
+### Task 1.2.5: Link Safety Detection ✅
+- [x] **Create SafetyCheckService**
   - File: `apps/api/src/links/services/safety-check.service.ts`
   - Methods:
     - `checkUrl(url: string): Promise<SafetyCheckResult>`
@@ -85,14 +86,14 @@
   - Integrate Google Safe Browsing API
   - Environment variable: `GOOGLE_SAFE_BROWSING_KEY`
 
-- [ ] **Update Prisma schema for safety fields**
+- [x] **Update Prisma schema for safety fields**
   - File: `packages/database/prisma/schema.prisma`
   - Add to Link model:
     - `safetyStatus String?` // 'safe' | 'unsafe' | 'pending' | 'unknown'
     - `safetyCheckDate DateTime?`
     - `safetyThreats String[]`
 
-- [ ] **Trigger safety check on link creation**
+- [x] **Trigger safety check on link creation**
   - File: `apps/api/src/links/links.service.ts`
   - Call safety check asynchronously after creation
   - Don't block link creation
@@ -101,19 +102,19 @@
   - Display warning badge for unsafe links
   - Show threat types
 
-### Task 1.2.6: Soft Delete & Restore
-- [ ] **Convert delete to soft delete**
+### Task 1.2.6: Soft Delete & Restore ✅
+- [x] **Convert delete to soft delete**
   - File: `apps/api/src/links/links.service.ts`
   - Update delete method:
     - Set `status: 'ARCHIVED'`
     - Set `deletedAt: new Date()`
   - Remove from Cloudflare KV
 
-- [ ] **Add deletedAt field to schema**
+- [x] **Add deletedAt field to schema**
   - File: `packages/database/prisma/schema.prisma`
   - Add: `deletedAt DateTime?` to Link model
 
-- [ ] **Create restore endpoint**
+- [x] **Create restore endpoint**
   - Endpoint: `POST /links/:id/restore`
   - File: `apps/api/src/links/links.controller.ts`
   - Validation: Only archived links can be restored
