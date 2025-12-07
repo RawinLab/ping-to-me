@@ -256,5 +256,8 @@ For detailed documentation on specific modules, refer to these files:
 | Topic | Reference File | Description |
 |-------|---------------|-------------|
 | **RBAC & Permissions** | [`refs/rbac.md`](refs/rbac.md) | Role-based access control system, permission matrix, guards, decorators, and how to add new resources |
+| **Audit Logging** | [`refs/auditlog.md`](refs/auditlog.md) | Audit logging system, event types, helper methods, and how to add audit logging to new features |
 
 > **Note:** When working with RBAC, permissions, authorization, or creating new modules that need access control, always read `refs/rbac.md` first.
+
+> **Note:** When creating new features that modify data (CRUD operations), always implement audit logging following `refs/auditlog.md`.
