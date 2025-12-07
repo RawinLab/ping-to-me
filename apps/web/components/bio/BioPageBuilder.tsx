@@ -33,7 +33,10 @@ import { BackgroundPicker } from "@/components/bio/BackgroundPicker";
 import { ButtonStyleSelector } from "@/components/bio/ButtonStyleSelector";
 import { SortableLinkList } from "@/components/bio/SortableLinkList";
 import { LinkStyleEditor, type BioPageLink } from "@/components/bio/LinkStyleEditor";
+import { SocialLinksEditor } from "@/components/bio/SocialLinksEditor";
+import { LayoutSelector } from "@/components/bio/LayoutSelector";
 import { useLinkReorder } from "@/hooks/useLinkReorder";
+import type { SocialLink } from "@pingtome/types";
 import {
   THEME_PRESETS,
   DEFAULT_THEME,
@@ -83,6 +86,9 @@ export function BioPageBuilder({
   );
   const [showBranding, setShowBranding] = useState<boolean>(
     existingPage?.showBranding ?? true
+  );
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>(
+    existingPage?.socialLinks || []
   );
 
   // Reorder hook
@@ -164,6 +170,7 @@ export function BioPageBuilder({
         theme: customTheme,
         layout,
         showBranding,
+        socialLinks,
         orgId: currentOrgId,
       };
 
@@ -490,29 +497,21 @@ export function BioPageBuilder({
             {/* Settings Tab */}
             <TabsContent value="settings" className="space-y-6 mt-6">
               <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="layout">Layout Style</Label>
-                  <Select
-                    value={layout}
-                    onValueChange={(value: "stacked" | "grid") =>
-                      setLayout(value)
-                    }
-                  >
-                    <SelectTrigger id="layout">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="stacked">
-                        Stacked (Single Column)
-                      </SelectItem>
-                      <SelectItem value="grid">Grid (Two Columns)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Choose how your links are displayed on the page
-                  </p>
+                {/* Layout Selector */}
+                <LayoutSelector
+                  value={layout}
+                  onChange={setLayout}
+                />
+
+                {/* Social Links Editor */}
+                <div className="border-t pt-6">
+                  <SocialLinksEditor
+                    socialLinks={socialLinks}
+                    onChange={setSocialLinks}
+                  />
                 </div>
 
+                {/* Branding Toggle */}
                 <div className="flex items-center justify-between p-4 border rounded-md bg-gray-50">
                   <div className="space-y-0.5">
                     <Label
