@@ -87,14 +87,14 @@ npx playwright test apps/web/e2e/quota-plan.spec.ts
 
 ## Phase 1: Database Schema (Week 1)
 
-### TASK-2.7.1: Create PlanDefinition Model
+### TASK-2.7.1: Create PlanDefinition Model ✅
 
 **Priority**: HIGH | **Type**: Database | **Estimated**: 1-2 hours
 **File**: `packages/database/prisma/schema.prisma`
 
 **Subtasks**:
 
-- [ ] Create `PlanDefinition` model with fields:
+- [x] Create `PlanDefinition` model with fields:
   - `id` (UUID, primary key)
   - `name` (String, unique - 'free', 'pro', 'enterprise')
   - `displayName` (String)
@@ -113,19 +113,19 @@ npx playwright test apps/web/e2e/quota-plan.spec.ts
 
 **Acceptance Criteria**:
 
-- Model created successfully
-- Can store plan configuration
+- ✅ Model created successfully
+- ✅ Can store plan configuration
 
 ---
 
-### TASK-2.7.2: Create UsageTracking Model
+### TASK-2.7.2: Create UsageTracking Model ✅
 
 **Priority**: HIGH | **Type**: Database | **Estimated**: 1 hour
 **File**: `packages/database/prisma/schema.prisma`
 
 **Subtasks**:
 
-- [ ] Create `UsageTracking` model with fields:
+- [x] Create `UsageTracking` model with fields:
   - `id` (UUID, primary key)
   - `organizationId` (UUID, foreign key)
   - `yearMonth` (String, 'YYYY-MM' format)
@@ -134,25 +134,25 @@ npx playwright test apps/web/e2e/quota-plan.spec.ts
   - `teamMembersActive` (Int, default 0)
   - `customDomains` (Int, default 0)
   - `createdAt`, `updatedAt`
-- [ ] Add relation to Organization
-- [ ] Add unique constraint on `[organizationId, yearMonth]`
-- [ ] Add indexes on `organizationId`, `yearMonth`
+- [x] Add relation to Organization
+- [x] Add unique constraint on `[organizationId, yearMonth]`
+- [x] Add indexes on `organizationId`, `yearMonth`
 
 **Acceptance Criteria**:
 
-- One record per org per month
-- Tracks all resource types
+- ✅ One record per org per month
+- ✅ Tracks all resource types
 
 ---
 
-### TASK-2.7.3: Create UsageEvent Model (Optional)
+### TASK-2.7.3: Create UsageEvent Model (Optional) ✅
 
 **Priority**: LOW | **Type**: Database | **Estimated**: 30 minutes
 **File**: `packages/database/prisma/schema.prisma`
 
 **Subtasks**:
 
-- [ ] Create `UsageEvent` model for detailed tracking:
+- [x] Create `UsageEvent` model for detailed tracking:
   - `id` (UUID, primary key)
   - `organizationId` (UUID)
   - `userId` (UUID, optional)
@@ -160,74 +160,74 @@ npx playwright test apps/web/e2e/quota-plan.spec.ts
   - `resourceId` (String, optional)
   - `metadata` (Json, optional)
   - `createdAt`
-- [ ] Add indexes for querying
+- [x] Add indexes for querying
 
 **Acceptance Criteria**:
 
-- Can track individual usage events
-- Useful for detailed analysis
+- ✅ Can track individual usage events
+- ✅ Useful for detailed analysis
 
 ---
 
-### TASK-2.7.4: Seed Plan Definitions
+### TASK-2.7.4: Seed Plan Definitions ✅
 
 **Priority**: HIGH | **Type**: Database | **Estimated**: 1 hour
 **File**: `packages/database/prisma/seed.ts`
 
 **Subtasks**:
 
-- [ ] Create seed data for FREE plan:
+- [x] Create seed data for FREE plan:
   - linksPerMonth: 50, domains: 1, members: 1, apiCalls: 0, analytics: 30
-- [ ] Create seed data for PRO plan:
+- [x] Create seed data for PRO plan:
   - linksPerMonth: 1000, domains: 5, members: 10, apiCalls: 10000, analytics: 90
-- [ ] Create seed data for ENTERPRISE plan:
+- [x] Create seed data for ENTERPRISE plan:
   - linksPerMonth: -1, domains: -1, members: -1, apiCalls: -1, analytics: 730
-- [ ] Include features array for each plan
-- [ ] Add Stripe price IDs (can be updated later)
+- [x] Include features array for each plan
+- [x] Add Stripe price IDs (can be updated later)
 
 **Acceptance Criteria**:
 
-- Plans seeded correctly
-- Limits match specification
+- ✅ Plans seeded correctly
+- ✅ Limits match specification
 
 ---
 
 ## Phase 1: Quota Service (Week 1-2)
 
-### TASK-2.7.5: Create Quota Service
+### TASK-2.7.5: Create Quota Service ✅
 
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 3-4 hours
 **File**: `apps/api/src/quota/quota.service.ts` (new)
 
 **Subtasks**:
 
-- [ ] Create `QuotaService` class
-- [ ] Inject `PrismaService`
-- [ ] Implement `getOrgWithPlan(orgId)` - fetch org with plan details
-- [ ] Implement `getPlanLimits(planName)` - get limits from PlanDefinition
-- [ ] Implement `getCurrentUsage(orgId)` - get current month's usage
-- [ ] Implement `getCurrentYearMonth()` - returns 'YYYY-MM'
+- [x] Create `QuotaService` class
+- [x] Inject `PrismaService`
+- [x] Implement `getOrgWithPlan(orgId)` - fetch org with plan details
+- [x] Implement `getPlanLimits(planName)` - get limits from PlanDefinition
+- [x] Implement `getCurrentUsage(orgId)` - get current month's usage
+- [x] Implement `getCurrentYearMonth()` - returns 'YYYY-MM'
 
 **Acceptance Criteria**:
 
-- Service structure created
-- Basic methods implemented
+- ✅ Service structure created
+- ✅ Basic methods implemented
 
 ---
 
-### TASK-2.7.6: Implement Quota Check Method
+### TASK-2.7.6: Implement Quota Check Method ✅
 
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2-3 hours
 **File**: `apps/api/src/quota/quota.service.ts`
 
 **Subtasks**:
 
-- [ ] Implement `checkQuota(orgId, resource)` method
-- [ ] Parameter `resource`: 'links' | 'domains' | 'members' | 'api_calls'
-- [ ] Fetch org's plan limits
-- [ ] Fetch current usage
-- [ ] Compare current vs limit
-- [ ] Return `QuotaCheckResult`:
+- [x] Implement `checkQuota(orgId, resource)` method
+- [x] Parameter `resource`: 'links' | 'domains' | 'members' | 'api_calls'
+- [x] Fetch org's plan limits
+- [x] Fetch current usage
+- [x] Compare current vs limit
+- [x] Return `QuotaCheckResult`:
   ```typescript
   {
     allowed: boolean;
@@ -238,76 +238,76 @@ npx playwright test apps/web/e2e/quota-plan.spec.ts
     percentUsed: number;
   }
   ```
-- [ ] Handle unlimited (-1) case
+- [x] Handle unlimited (-1) case
 
 **Acceptance Criteria**:
 
-- Accurate quota checks
-- Unlimited plans handled
-- Result includes usage details
+- ✅ Accurate quota checks
+- ✅ Unlimited plans handled
+- ✅ Result includes usage details
 
 ---
 
-### TASK-2.7.7: Implement Usage Increment/Decrement
+### TASK-2.7.7: Implement Usage Increment/Decrement ✅
 
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2 hours
 **File**: `apps/api/src/quota/quota.service.ts`
 
 **Subtasks**:
 
-- [ ] Implement `incrementUsage(orgId, resource)` method:
+- [x] Implement `incrementUsage(orgId, resource)` method:
   - Get current year-month
   - Upsert UsageTracking record
   - Increment the appropriate field
-- [ ] Implement `decrementUsage(orgId, resource)` method:
+- [x] Implement `decrementUsage(orgId, resource)` method:
   - Similar to increment but decrement
   - Don't go below 0
-- [ ] Both methods should be atomic (transaction)
+- [x] Both methods should be atomic (transaction)
 
 **Acceptance Criteria**:
 
-- Usage incremented on resource creation
-- Usage decremented on resource deletion
-- Thread-safe/atomic
+- ✅ Usage incremented on resource creation
+- ✅ Usage decremented on resource deletion
+- ✅ Thread-safe/atomic
 
 ---
 
-### TASK-2.7.8: Create Quota Module
+### TASK-2.7.8: Create Quota Module ✅
 
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 1 hour
 **File**: `apps/api/src/quota/quota.module.ts` (new)
 
 **Subtasks**:
 
-- [ ] Create `QuotaModule`
-- [ ] Export `QuotaService`
-- [ ] Make globally available (or import where needed)
-- [ ] Register in `app.module.ts`
+- [x] Create `QuotaModule`
+- [x] Export `QuotaService`
+- [x] Make globally available (or import where needed)
+- [x] Register in `app.module.ts`
 
 **Acceptance Criteria**:
 
-- Module registered
-- Service injectable in other modules
+- ✅ Module registered
+- ✅ Service injectable in other modules
 
 ---
 
 ## Phase 2: Quota Enforcement (Week 2)
 
-### TASK-2.7.9: Integrate Quota Check in Links Service
+### TASK-2.7.9: Integrate Quota Check in Links Service ✅
 
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2 hours
 **File**: `apps/api/src/links/links.service.ts`
 
 **Subtasks**:
 
-- [ ] Inject `QuotaService`
-- [ ] In `create()` method:
+- [x] Inject `QuotaService`
+- [x] In `create()` method:
   - Call `checkQuota(orgId, 'links')` BEFORE creating
   - If not allowed, throw `ForbiddenException` with quota info
   - On success, call `incrementUsage(orgId, 'links')`
-- [ ] In `delete()` method:
+- [x] In `delete()` method:
   - Call `decrementUsage(orgId, 'links')` after deletion
-- [ ] Handle bulk operations appropriately
+- [x] Handle bulk operations appropriately
 
 **Exception Response**:
 
@@ -323,302 +323,302 @@ npx playwright test apps/web/e2e/quota-plan.spec.ts
 
 **Acceptance Criteria**:
 
-- Link creation blocked at limit
-- Usage tracked on create/delete
-- Helpful error message returned
+- ✅ Link creation blocked at limit
+- ✅ Usage tracked on create/delete
+- ✅ Helpful error message returned
 
 ---
 
-### TASK-2.7.10: Integrate Quota Check in Domains Service
+### TASK-2.7.10: Integrate Quota Check in Domains Service ✅
 
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 1-2 hours
 **File**: `apps/api/src/domains/domains.service.ts`
 
 **Subtasks**:
 
-- [ ] Inject `QuotaService`
-- [ ] In `create()` method:
+- [x] Inject `QuotaService`
+- [x] In `create()` method:
   - Call `checkQuota(orgId, 'domains')` BEFORE creating
   - Throw exception if exceeded
   - Increment usage on success
-- [ ] In `delete()` method:
+- [x] In `delete()` method:
   - Decrement usage after deletion
-- [ ] Note: domains don't reset monthly (total count)
+- [x] Note: domains don't reset monthly (total count)
 
 **Acceptance Criteria**:
 
-- Domain addition blocked at limit
-- Usage tracked correctly
+- ✅ Domain addition blocked at limit
+- ✅ Usage tracked correctly
 
 ---
 
-### TASK-2.7.11: Integrate Quota Check in Organization Service (Members)
+### TASK-2.7.11: Integrate Quota Check in Organization Service (Members) ✅
 
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 1-2 hours
 **File**: `apps/api/src/organizations/organization.service.ts`
 
 **Subtasks**:
 
-- [ ] Inject `QuotaService`
-- [ ] In `addMember()` or invitation acceptance:
+- [x] Inject `QuotaService`
+- [x] In `addMember()` or invitation acceptance:
   - Call `checkQuota(orgId, 'members')` BEFORE adding
   - Throw exception if exceeded
   - Increment usage on success
-- [ ] In `removeMember()`:
+- [x] In `removeMember()`:
   - Decrement usage after removal
-- [ ] Note: members don't reset monthly (total count)
+- [x] Note: members don't reset monthly (total count)
 
 **Acceptance Criteria**:
 
-- Member invite blocked at limit
-- Usage tracked correctly
+- ✅ Member invite blocked at limit
+- ✅ Usage tracked correctly
 
 ---
 
-### TASK-2.7.12: Implement API Rate Limiting by Quota
+### TASK-2.7.12: Implement API Rate Limiting by Quota ✅
 
 **Priority**: MEDIUM | **Type**: Backend | **Estimated**: 3-4 hours
 **File**: `apps/api/src/quota/api-quota.guard.ts` (new)
 
 **Subtasks**:
 
-- [ ] Create `ApiQuotaGuard` that checks API call quota
-- [ ] Extract organization from API key
-- [ ] Call `checkQuota(orgId, 'api_calls')`
-- [ ] Increment usage on each API call
-- [ ] Return 429 with quota info when exceeded
-- [ ] Add rate limit headers to response:
+- [x] Create `ApiQuotaGuard` that checks API call quota
+- [x] Extract organization from API key
+- [x] Call `checkQuota(orgId, 'api_calls')`
+- [x] Increment usage on each API call
+- [x] Return 429 with quota info when exceeded
+- [x] Add rate limit headers to response:
   - `X-RateLimit-Limit`
   - `X-RateLimit-Remaining`
   - `X-RateLimit-Reset`
 
 **Acceptance Criteria**:
 
-- API calls tracked per org
-- Returns 429 at limit
-- Headers included
+- ✅ API calls tracked per org
+- ✅ Returns 429 at limit
+- ✅ Headers included
 
 ---
 
-### TASK-2.7.13: Implement Monthly Reset Logic
+### TASK-2.7.13: Implement Monthly Reset Logic ✅
 
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2 hours
 **File**: `apps/api/src/quota/quota.service.ts`
 
 **Subtasks**:
 
-- [ ] Usage automatically resets with new month (new record created)
-- [ ] Create `recalculateStaticUsage(orgId)` method:
+- [x] Usage automatically resets with new month (new record created)
+- [x] Create `recalculateStaticUsage(orgId)` method:
   - Count actual domains, members (these don't reset)
   - Update current month's record
-- [ ] Create cron job to run on 1st of each month
-- [ ] Verify no data loss on month rollover
+- [x] Create cron job to run on 1st of each month
+- [x] Verify no data loss on month rollover
 
 **Acceptance Criteria**:
 
-- Links/API reset monthly
-- Domains/members are actual counts
-- Clean month transitions
+- ✅ Links/API reset monthly
+- ✅ Domains/members are actual counts
+- ✅ Clean month transitions
 
 ---
 
 ## Phase 2: Usage API Endpoints (Week 2-3)
 
-### TASK-2.7.14: Create Quota Controller
+### TASK-2.7.14: Create Quota Controller ✅
 
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2-3 hours
 **File**: `apps/api/src/quota/quota.controller.ts` (new)
 
 **Subtasks**:
 
-- [ ] Create `QuotaController`
-- [ ] Add `GET /organizations/:id/usage` - Current month usage
-- [ ] Add `GET /organizations/:id/usage/history` - Historical usage (last 12 months)
-- [ ] Add `GET /organizations/:id/usage/limits` - Current limits vs usage
-- [ ] Add `POST /organizations/:id/usage/check` - Check if action allowed
+- [x] Create `QuotaController`
+- [x] Add `GET /organizations/:id/usage` - Current month usage
+- [x] Add `GET /organizations/:id/usage/history` - Historical usage (last 12 months)
+- [x] Add `GET /organizations/:id/usage/limits` - Current limits vs usage
+- [x] Add `POST /organizations/:id/usage/check` - Check if action allowed
   - Body: `{ resource: 'links' | 'domains' | 'members' | 'api_calls' }`
   - Returns: `QuotaCheckResult`
-- [ ] Add `GET /organizations/:id/quota` - Full quota status
+- [x] Add `GET /organizations/:id/quota` - Full quota status
 
 **Acceptance Criteria**:
 
-- All endpoints return accurate data
-- History available for reporting
+- ✅ All endpoints return accurate data
+- ✅ History available for reporting
 
 ---
 
-### TASK-2.7.15: Create Plans API Endpoints
+### TASK-2.7.15: Create Plans API Endpoints ✅
 
 **Priority**: MEDIUM | **Type**: Backend | **Estimated**: 1-2 hours
 **File**: `apps/api/src/plans/plans.controller.ts` (new)
 
 **Subtasks**:
 
-- [ ] Create `PlansController`
-- [ ] Add `GET /plans` - List available plans (public)
-- [ ] Add `GET /plans/:id` - Get plan details (public)
-- [ ] Add `GET /plans/compare` - Feature comparison matrix (public)
-- [ ] Return plans with features, limits, pricing
+- [x] Create `PlansController`
+- [x] Add `GET /plans` - List available plans (public)
+- [x] Add `GET /plans/:id` - Get plan details (public)
+- [x] Add `GET /plans/compare` - Feature comparison matrix (public)
+- [x] Return plans with features, limits, pricing
 
 **Acceptance Criteria**:
 
-- Public endpoints for pricing page
-- Feature comparison available
+- ✅ Public endpoints for pricing page
+- ✅ Feature comparison available
 
 ---
 
 ## Phase 3: Frontend - Usage Dashboard (Week 3)
 
-### TASK-2.7.16: Create Usage Dashboard Component
+### TASK-2.7.16: Create Usage Dashboard Component ✅
 
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 4-5 hours
 **File**: `apps/web/components/billing/UsageDashboard.tsx` (new)
 
 **Subtasks**:
 
-- [ ] Create component accepting `organizationId` prop
-- [ ] Fetch usage data from API
-- [ ] Display for each resource:
+- [x] Create component accepting `organizationId` prop
+- [x] Fetch usage data from API
+- [x] Display for each resource:
   - Label (e.g., "Links")
   - Progress bar showing usage percentage
   - Text showing "45/50 used"
   - Color coding: green (<70%), yellow (70-90%), red (>90%)
-- [ ] Show "Unlimited" badge for unlimited resources
-- [ ] Add warning badge at 80% usage
-- [ ] Add error badge at 100% with upgrade CTA
-- [ ] Loading skeleton while fetching
+- [x] Show "Unlimited" badge for unlimited resources
+- [x] Add warning badge at 80% usage
+- [x] Add error badge at 100% with upgrade CTA
+- [x] Loading skeleton while fetching
 
 **Acceptance Criteria**:
 
-- Accurate usage displayed
-- Visual indicators for limits
-- Upgrade prompt shown
+- ✅ Accurate usage displayed
+- ✅ Visual indicators for limits
+- ✅ Upgrade prompt shown
 
 ---
 
-### TASK-2.7.17: Update Billing Page with Real Usage
+### TASK-2.7.17: Update Billing Page with Real Usage ✅
 
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 2-3 hours
 **File**: `apps/web/app/dashboard/billing/page.tsx`
 
 **Subtasks**:
 
-- [ ] Remove hardcoded "23/50" usage display
-- [ ] Integrate UsageDashboard component
-- [ ] Show current plan details
-- [ ] Show usage for all resources:
+- [x] Remove hardcoded "23/50" usage display
+- [x] Integrate UsageDashboard component
+- [x] Show current plan details
+- [x] Show usage for all resources:
   - Links created this month
   - Custom domains
   - Team members
   - API calls (if applicable)
-- [ ] Add link to detailed usage history
+- [x] Add link to detailed usage history
 
 **Acceptance Criteria**:
 
-- Real usage displayed
-- Matches actual database values
+- ✅ Real usage displayed
+- ✅ Matches actual database values
 
 ---
 
-### TASK-2.7.18: Create Upgrade Prompt Modal
+### TASK-2.7.18: Create Upgrade Prompt Modal ✅
 
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 2-3 hours
 **File**: `apps/web/components/billing/UpgradePrompt.tsx` (new)
 
 **Subtasks**:
 
-- [ ] Create modal triggered when quota exceeded
-- [ ] Display:
+- [x] Create modal triggered when quota exceeded
+- [x] Display:
   - Which limit was reached (e.g., "Link limit reached")
   - Current plan vs upgrade options
   - Feature comparison table
   - Price difference
   - "Upgrade Now" CTA button
-- [ ] Can be triggered from any page
-- [ ] Link to pricing/checkout
+- [x] Can be triggered from any page
+- [x] Link to pricing/checkout
 
 **Acceptance Criteria**:
 
-- Clear message about limit
-- Easy path to upgrade
-- Can be reused across app
+- ✅ Clear message about limit
+- ✅ Easy path to upgrade
+- ✅ Can be reused across app
 
 ---
 
-### TASK-2.7.19: Handle Quota Errors in UI
+### TASK-2.7.19: Handle Quota Errors in UI ✅
 
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 2 hours
 **Files**: Various pages
 
 **Subtasks**:
 
-- [ ] Create `useQuotaError` hook to handle QUOTA_EXCEEDED errors
-- [ ] In link creation page: show upgrade prompt on 403/quota error
-- [ ] In domain add: show upgrade prompt
-- [ ] In team invite: show upgrade prompt
-- [ ] Display user-friendly message with upgrade option
-- [ ] Don't show generic error for quota issues
+- [x] Create `useQuotaError` hook to handle QUOTA_EXCEEDED errors
+- [x] In link creation page: show upgrade prompt on 403/quota error
+- [x] In domain add: show upgrade prompt
+- [x] In team invite: show upgrade prompt
+- [x] Display user-friendly message with upgrade option
+- [x] Don't show generic error for quota issues
 
 **Acceptance Criteria**:
 
-- Quota errors handled gracefully
-- Upgrade path always shown
+- ✅ Quota errors handled gracefully
+- ✅ Upgrade path always shown
 
 ---
 
-### TASK-2.7.20: Add Usage Alerts/Warnings
+### TASK-2.7.20: Add Usage Alerts/Warnings ✅
 
 **Priority**: MEDIUM | **Type**: Frontend | **Estimated**: 2 hours
 **File**: `apps/web/components/billing/UsageAlerts.tsx` (new)
 
 **Subtasks**:
 
-- [ ] Create component showing usage warnings
-- [ ] Display alert when any resource > 80%
-- [ ] Display critical alert when any resource = 100%
-- [ ] Show in dashboard header or sidebar
-- [ ] Link to billing page
-- [ ] Dismissable but reappears
+- [x] Create component showing usage warnings
+- [x] Display alert when any resource > 80%
+- [x] Display critical alert when any resource = 100%
+- [x] Show in dashboard header or sidebar
+- [x] Link to billing page
+- [x] Dismissable but reappears
 
 **Acceptance Criteria**:
 
-- Warnings visible before hitting limit
-- Don't overwhelm user
+- ✅ Warnings visible before hitting limit
+- ✅ Don't overwhelm user
 
 ---
 
-### TASK-2.7.21: Update Pricing Page with Plan Data
+### TASK-2.7.21: Update Pricing Page with Plan Data ✅
 
 **Priority**: MEDIUM | **Type**: Frontend | **Estimated**: 2-3 hours
 **File**: `apps/web/app/pricing/page.tsx`
 
 **Subtasks**:
 
-- [ ] Fetch plans from API instead of hardcoded config
-- [ ] Display all plan limits dynamically
-- [ ] Show feature comparison matrix
-- [ ] Highlight current user's plan (if logged in)
-- [ ] CTA buttons for each plan
+- [x] Fetch plans from API instead of hardcoded config
+- [x] Display all plan limits dynamically
+- [x] Show feature comparison matrix
+- [x] Highlight current user's plan (if logged in)
+- [x] CTA buttons for each plan
 
 **Acceptance Criteria**:
 
-- Plans loaded from database
-- Accurate limits displayed
+- ✅ Plans loaded from database
+- ✅ Accurate limits displayed
 
 ---
 
 ## Phase 3: Upgrade/Downgrade Flow (Week 3-4)
 
-### TASK-2.7.22: Implement Downgrade Warnings
+### TASK-2.7.22: Implement Downgrade Warnings ✅
 
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2-3 hours
 **File**: `apps/api/src/payments/payments.service.ts`
 
 **Subtasks**:
 
-- [ ] Create `checkDowngradeImpact(orgId, newPlan)` method
-- [ ] Compare current usage vs new plan limits
-- [ ] Return which resources would be over limit:
+- [x] Create `checkDowngradeImpact(orgId, newPlan)` method
+- [x] Compare current usage vs new plan limits
+- [x] Return which resources would be over limit:
   ```typescript
   {
     canDowngrade: boolean;
@@ -628,171 +628,171 @@ npx playwright test apps/web/e2e/quota-plan.spec.ts
     ];
   }
   ```
-- [ ] Add `GET /payments/downgrade-check/:planId` endpoint
+- [x] Add `GET /payments/downgrade-check/:planId` endpoint
 
 **Acceptance Criteria**:
 
-- Users warned before downgrade
-- Clear message about what's over limit
+- ✅ Users warned before downgrade
+- ✅ Clear message about what's over limit
 
 ---
 
-### TASK-2.7.23: Create Downgrade Warning UI
+### TASK-2.7.23: Create Downgrade Warning UI ✅
 
 **Priority**: MEDIUM | **Type**: Frontend | **Estimated**: 2 hours
 **File**: `apps/web/components/billing/DowngradeWarning.tsx` (new)
 
 **Subtasks**:
 
-- [ ] Create modal showing downgrade impact
-- [ ] List resources that would be over limit
-- [ ] Explain what happens (e.g., "You'll need to delete 100 links")
-- [ ] Require confirmation to proceed
-- [ ] Option to cancel downgrade
+- [x] Create modal showing downgrade impact
+- [x] List resources that would be over limit
+- [x] Explain what happens (e.g., "You'll need to delete 100 links")
+- [x] Require confirmation to proceed
+- [x] Option to cancel downgrade
 
 **Acceptance Criteria**:
 
-- Clear impact shown
-- User must acknowledge
+- ✅ Clear impact shown
+- ✅ User must acknowledge
 
 ---
 
-### TASK-2.7.24: Implement Grace Period for Downgrades
+### TASK-2.7.24: Implement Grace Period for Downgrades ✅
 
 **Priority**: MEDIUM | **Type**: Backend | **Estimated**: 2-3 hours
 **File**: `apps/api/src/payments/payments.service.ts`
 
 **Subtasks**:
 
-- [ ] On downgrade, give 7-day grace period
-- [ ] During grace period:
+- [x] On downgrade, give 7-day grace period
+- [x] During grace period:
   - Don't hard-block at new limits
   - Show warnings to reduce usage
-- [ ] After grace period:
+- [x] After grace period:
   - Soft-block new creations if over limit
   - Don't delete existing resources
-- [ ] Create `checkGracePeriod(orgId)` method
+- [x] Create `checkGracePeriod(orgId)` method
 
 **Acceptance Criteria**:
 
-- Grace period gives time to adjust
-- No data loss
-- Eventually enforces new limits
+- ✅ Grace period gives time to adjust
+- ✅ No data loss
+- ✅ Eventually enforces new limits
 
 ---
 
 ## Phase 4: Testing (Week 4)
 
-### TASK-2.7.25: Write Quota Service Unit Tests
+### TASK-2.7.25: Write Quota Service Unit Tests ✅
 
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 3 hours
 **File**: `apps/api/src/quota/quota.service.spec.ts`
 
 **Test Cases**:
 
-- [ ] Check quota returns correct result
-- [ ] Unlimited plan returns allowed: true
-- [ ] Usage at limit returns allowed: false
-- [ ] Increment usage works correctly
-- [ ] Decrement usage doesn't go below 0
-- [ ] Monthly reset works
-- [ ] Static resources (domains, members) don't reset
+- [x] Check quota returns correct result
+- [x] Unlimited plan returns allowed: true
+- [x] Usage at limit returns allowed: false
+- [x] Increment usage works correctly
+- [x] Decrement usage doesn't go below 0
+- [x] Monthly reset works
+- [x] Static resources (domains, members) don't reset
 
 **Acceptance Criteria**:
 
-- All tests pass
-- Edge cases covered
+- ✅ All tests pass
+- ✅ Edge cases covered
 
 ---
 
-### TASK-2.7.26: Write E2E Tests - Usage Tracking
+### TASK-2.7.26: Write E2E Tests - Usage Tracking ✅
 
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 2-3 hours
 **File**: `apps/web/e2e/quota-plan.spec.ts`
 
 **Test Cases**:
 
-- [ ] QPM-010: Usage increments on link creation
-- [ ] QPM-011: Usage decrements on link deletion
-- [ ] QPM-012: Usage resets monthly (mock time)
-- [ ] QPM-013: View usage history
+- [x] QPM-010: Usage increments on link creation
+- [x] QPM-011: Usage decrements on link deletion
+- [x] QPM-012: Usage resets monthly (mock time)
+- [x] QPM-013: View usage history
 
 **Acceptance Criteria**:
 
-- Tracking tests pass
+- ✅ Tracking tests pass
 
 ---
 
-### TASK-2.7.27: Write E2E Tests - Quota Enforcement
+### TASK-2.7.27: Write E2E Tests - Quota Enforcement ✅
 
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 3-4 hours
 **File**: `apps/web/e2e/quota-plan.spec.ts`
 
 **Test Cases**:
 
-- [ ] QPM-020: Block link creation at limit
-- [ ] QPM-021: Show upgrade prompt at limit
-- [ ] QPM-022: Block domain addition at limit
-- [ ] QPM-023: Block member invite at limit
-- [ ] QPM-024: Unlimited plan allows unlimited resources
+- [x] QPM-020: Block link creation at limit
+- [x] QPM-021: Show upgrade prompt at limit
+- [x] QPM-022: Block domain addition at limit
+- [x] QPM-023: Block member invite at limit
+- [x] QPM-024: Unlimited plan allows unlimited resources
 
 **Acceptance Criteria**:
 
-- Enforcement tests pass
-- Upgrade prompts shown
+- ✅ Enforcement tests pass
+- ✅ Upgrade prompts shown
 
 ---
 
-### TASK-2.7.28: Write E2E Tests - Usage Dashboard
+### TASK-2.7.28: Write E2E Tests - Usage Dashboard ✅
 
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 2 hours
 **File**: `apps/web/e2e/quota-plan.spec.ts`
 
 **Test Cases**:
 
-- [ ] QPM-030: Display current usage
-- [ ] QPM-031: Show usage progress bars
-- [ ] QPM-032: Warning at 80% usage
-- [ ] QPM-033: Alert at 100% usage
+- [x] QPM-030: Display current usage
+- [x] QPM-031: Show usage progress bars
+- [x] QPM-032: Warning at 80% usage
+- [x] QPM-033: Alert at 100% usage
 
 **Acceptance Criteria**:
 
-- Dashboard tests pass
+- ✅ Dashboard tests pass
 
 ---
 
-### TASK-2.7.29: Write E2E Tests - Upgrade/Downgrade
+### TASK-2.7.29: Write E2E Tests - Upgrade/Downgrade ✅
 
 **Priority**: MEDIUM | **Type**: Testing | **Estimated**: 2-3 hours
 **File**: `apps/web/e2e/quota-plan.spec.ts`
 
 **Test Cases**:
 
-- [ ] QPM-040: Upgrade to Pro plan (mock Stripe)
-- [ ] QPM-041: Downgrade warning when exceeding
-- [ ] QPM-042: Grace period on downgrade
-- [ ] QPM-043: Cancel subscription
+- [x] QPM-040: Upgrade to Pro plan (mock Stripe)
+- [x] QPM-041: Downgrade warning when exceeding
+- [x] QPM-042: Grace period on downgrade
+- [x] QPM-043: Cancel subscription
 
 **Acceptance Criteria**:
 
-- Upgrade/downgrade flows tested
+- ✅ Upgrade/downgrade flows tested
 
 ---
 
-### TASK-2.7.30: Write E2E Tests - API Rate Limiting
+### TASK-2.7.30: Write E2E Tests - API Rate Limiting ✅
 
 **Priority**: MEDIUM | **Type**: Testing | **Estimated**: 2 hours
 **File**: `apps/web/e2e/quota-plan.spec.ts`
 
 **Test Cases**:
 
-- [ ] QPM-050: API calls tracked per org
-- [ ] QPM-051: API blocked at limit
-- [ ] QPM-052: Rate limit headers in response
+- [x] QPM-050: API calls tracked per org
+- [x] QPM-051: API blocked at limit
+- [x] QPM-052: Rate limit headers in response
 
 **Acceptance Criteria**:
 
-- API quota tests pass
+- ✅ API quota tests pass
 
 ---
 
