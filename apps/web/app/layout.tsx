@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Sans, Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/context/auth-context";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "@pingtome/ui";
 
 const notoSans = Noto_Sans({
