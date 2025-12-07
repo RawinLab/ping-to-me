@@ -15,11 +15,18 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Response } from "express";
 import { LinksService } from "./links.service";
-import { CreateLinkDto, LinkResponse } from "@pingtome/types";
+import { LinkResponse } from "@pingtome/types";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { QrCodeService } from "../qr/qr.service";
 import { CreateQrConfigDto } from "../qr/dto/qr-config.dto";
 import { PermissionGuard, Permission } from "../auth/rbac";
+import {
+  CreateLinkDto,
+  UpdateLinkDto,
+  BulkDeleteDto,
+  BulkTagDto,
+  BulkStatusDto,
+} from "./dto";
 
 @Controller("links")
 export class LinksController {
@@ -40,7 +47,7 @@ export class LinksController {
   @Post("bulk-delete")
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission({ resource: "link", action: "bulk" })
-  async bulkDelete(@Request() req, @Body() body: { ids: string[] }) {
+  async bulkDelete(@Request() req, @Body() body: BulkDeleteDto) {
     // TODO: Add organizationId to request
     return this.linksService.deleteMany(req.user.id, body.ids);
   }
@@ -48,10 +55,7 @@ export class LinksController {
   @Post("bulk-tag")
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission({ resource: "link", action: "bulk" })
-  async bulkTag(
-    @Request() req,
-    @Body() body: { ids: string[]; tagName: string },
-  ) {
+  async bulkTag(@Request() req, @Body() body: BulkTagDto) {
     // TODO: Add organizationId to request
     return this.linksService.addTagToMany(req.user.id, body.ids, body.tagName);
   }
@@ -59,10 +63,7 @@ export class LinksController {
   @Post("bulk-status")
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission({ resource: "link", action: "bulk" })
-  async bulkStatus(
-    @Request() req,
-    @Body() body: { ids: string[]; status: string },
-  ) {
+  async bulkStatus(@Request() req, @Body() body: BulkStatusDto) {
     return this.linksService.updateStatusMany(req.user.id, body.ids, body.status);
   }
 
@@ -91,7 +92,7 @@ export class LinksController {
   @Post(":id") // Using POST for update to avoid CORS preflight issues sometimes, but PATCH is better REST
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission({ resource: "link", action: "update", context: "own" })
-  async update(@Request() req, @Param("id") id: string, @Body() body: any) {
+  async update(@Request() req, @Param("id") id: string, @Body() body: UpdateLinkDto) {
     // TODO: Add organizationId to request
     return this.linksService.update(req.user.id, id, body);
   }

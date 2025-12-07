@@ -2,6 +2,7 @@ import "tsconfig-paths/register";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+import { ValidationPipe } from "@nestjs/common";
 import cookieParser from "cookie-parser";
 import { json, urlencoded } from "express";
 
@@ -22,6 +23,18 @@ async function bootstrap() {
     credentials: true,
   });
   app.use(cookieParser());
+
+  // Enable validation globally
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // Strip properties that are not in the DTO
+      forbidNonWhitelisted: false, // Allow extra properties but strip them
+      transform: true, // Automatically transform payloads to DTO instances
+      transformOptions: {
+        enableImplicitConversion: true, // Enable implicit type conversion
+      },
+    }),
+  );
 
   // Swagger/OpenAPI Documentation
   const config = new DocumentBuilder()

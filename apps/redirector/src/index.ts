@@ -53,6 +53,7 @@ app.get("/:slug", async (c) => {
           passwordHash: data.passwordHash,
           expirationDate: data.expirationDate,
           deepLinkFallback: data.deepLinkFallback,
+          redirectType: data.redirectType,
         });
         // Cache in KV for next time
         c.executionCtx.waitUntil(kv.put(slug, value, { expirationTtl: 3600 })); // Cache for 1 hour
@@ -130,8 +131,13 @@ app.get("/:slug", async (c) => {
       }).catch((err) => console.error("Analytics error:", err)),
     );
 
-    console.log(`Redirecting ${slug} to ${destination}`);
-    return c.redirect(destination, 301);
+    // Get redirect type from metadata (default to 301 if not specified)
+    const redirectCode = metadata.redirectType ? parseInt(metadata.redirectType.toString()) : 301;
+    // Validate redirect code (only allow 301 or 302)
+    const validRedirectCode = (redirectCode === 301 || redirectCode === 302) ? redirectCode : 301;
+
+    console.log(`Redirecting ${slug} to ${destination} with ${validRedirectCode}`);
+    return c.redirect(destination, validRedirectCode);
   }
 
   return c.text("Link not found", 404);

@@ -10,6 +10,7 @@ import { toDataURL } from "qrcode";
 import { QrCodeService } from "../qr/qr.service";
 import { AuditService } from "../audit/audit.service";
 import { QuotaService } from "../quota/quota.service";
+import * as bcrypt from "bcrypt";
 
 @Injectable()
 export class LinksService {
@@ -143,7 +144,7 @@ export class LinksService {
         expirationDate: dto.expirationDate
           ? new Date(dto.expirationDate)
           : null,
-        passwordHash: dto.password, // TODO: Hash this in US6
+        passwordHash: dto.password ? await bcrypt.hash(dto.password, 10) : null,
         redirectType: dto.redirectType || 301,
         deepLinkFallback: dto.deepLinkFallback,
         userId,
@@ -207,6 +208,7 @@ export class LinksService {
       expirationDate: link.expirationDate,
       deepLinkFallback: link.deepLinkFallback,
       status: link.status,
+      redirectType: link.redirectType,
     });
 
     try {
@@ -317,6 +319,7 @@ export class LinksService {
       passwordHash: link.passwordHash,
       expirationDate: link.expirationDate,
       deepLinkFallback: link.deepLinkFallback,
+      redirectType: link.redirectType,
     };
   }
 
@@ -435,7 +438,7 @@ export class LinksService {
           ? new Date(data.expirationDate)
           : undefined,
         status: data.status,
-        passwordHash: data.password,
+        passwordHash: data.password ? await bcrypt.hash(data.password, 10) : undefined,
         deepLinkFallback: data.deepLinkFallback,
         campaignId: data.campaignId === null ? null : data.campaignId,
       },
