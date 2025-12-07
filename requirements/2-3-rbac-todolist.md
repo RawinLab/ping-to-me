@@ -47,14 +47,14 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **Directory**: `apps/api/src/auth/rbac/`
 
 **Subtasks**:
-- [ ] Create `apps/api/src/auth/rbac/` directory
-- [ ] Create `permission-matrix.ts` - Permission definitions
-- [ ] Create `permission.service.ts` - Permission checking service
-- [ ] Create `permission.guard.ts` - NestJS guard
-- [ ] Create `permission.decorator.ts` - @Permission decorator
-- [ ] Create `role-hierarchy.ts` - Role hierarchy utilities
-- [ ] Create `index.ts` for exports
-- [ ] Create `__tests__/` directory for unit tests
+- [x] Create `apps/api/src/auth/rbac/` directory
+- [x] Create `permission-matrix.ts` - Permission definitions
+- [x] Create `permission.service.ts` - Permission checking service
+- [x] Create `permission.guard.ts` - NestJS guard
+- [x] Create `permission.decorator.ts` - @Permission decorator
+- [x] Create `role-hierarchy.ts` - Role hierarchy utilities
+- [x] Create `index.ts` for exports
+- [x] Create `__tests__/` directory for unit tests
 
 **Acceptance Criteria**:
 - Directory structure matches design
@@ -67,15 +67,15 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/api/src/auth/rbac/permission-matrix.ts`
 
 **Subtasks**:
-- [ ] Define `PermissionScope` type ('*', 'own', 'organization', 'limited', 'exclude-owner')
-- [ ] Define `Resource` type (link, analytics, organization, team, domain, billing, api-key, audit, biopage, campaign, tag)
-- [ ] Define `Action` type (create, read, update, delete, bulk, export, invite, verify, manage, etc.)
-- [ ] Create `PERMISSION_MATRIX` constant with full role definitions:
+- [x] Define `PermissionScope` type ('*', 'own', 'organization', 'limited', 'exclude-owner')
+- [x] Define `Resource` type (link, analytics, organization, team, domain, billing, api-key, audit, biopage, campaign, tag)
+- [x] Define `Action` type (create, read, update, delete, bulk, export, invite, verify, manage, etc.)
+- [x] Create `PERMISSION_MATRIX` constant with full role definitions:
   - OWNER: Full access to all resources
   - ADMIN: Most access, cannot delete org or manage billing
   - EDITOR: Create/edit own content, view org content
   - VIEWER: Read-only access to org content
-- [ ] Export helper function `getPermissions(role, resource, action)`
+- [x] Export helper function `getPermissions(role, resource, action)`
 
 **Acceptance Criteria**:
 - Matrix covers all resources and actions
@@ -89,12 +89,12 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/api/src/auth/rbac/role-hierarchy.ts`
 
 **Subtasks**:
-- [ ] Define `ROLE_HIERARCHY` constant (OWNER=4, ADMIN=3, EDITOR=2, VIEWER=1)
-- [ ] Implement `getRoleLevel(role)` function
-- [ ] Implement `isRoleAtLeast(userRole, requiredRole)` function
-- [ ] Implement `isRoleAbove(userRole, targetRole)` function
-- [ ] Implement `canManageRole(managerRole, targetRole)` function
-- [ ] Implement `getAssignableRoles(userRole)` function
+- [x] Define `ROLE_HIERARCHY` constant (OWNER=4, ADMIN=3, EDITOR=2, VIEWER=1)
+- [x] Implement `getRoleLevel(role)` function
+- [x] Implement `isRoleAtLeast(userRole, requiredRole)` function
+- [x] Implement `isRoleAbove(userRole, targetRole)` function
+- [x] Implement `canManageRole(managerRole, targetRole)` function
+- [x] Implement `getAssignableRoles(userRole)` function
 
 **Acceptance Criteria**:
 - OWNER > ADMIN > EDITOR > VIEWER hierarchy enforced
@@ -108,17 +108,17 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/api/src/auth/rbac/permission.service.ts`
 
 **Subtasks**:
-- [ ] Create `PermissionService` injectable service
-- [ ] Inject `PrismaService` for database queries
-- [ ] Implement `getUserRoleInOrg(userId, orgId)` - fetch role from OrganizationMember
-- [ ] Implement `hasPermission(userId, orgId, resource, action, context?)` method:
+- [x] Create `PermissionService` injectable service
+- [x] Inject `PrismaService` for database queries
+- [x] Implement `getUserRoleInOrg(userId, orgId)` - fetch role from OrganizationMember
+- [x] Implement `hasPermission(userId, orgId, resource, action, context?)` method:
   - Fetch user's role in organization
   - Check permission matrix
   - Handle scope contexts ('own', 'organization', etc.)
-- [ ] Implement `hasAnyPermission(userId, orgId, permissions[])` method
-- [ ] Implement `hasAllPermissions(userId, orgId, permissions[])` method
-- [ ] Implement `checkResourceOwnership(userId, resourceType, resourceId)` for 'own' scope
-- [ ] Add caching for role lookups (optional, for performance)
+- [x] Implement `hasAnyPermission(userId, orgId, permissions[])` method
+- [x] Implement `hasAllPermissions(userId, orgId, permissions[])` method
+- [x] Implement `checkResourceOwnership(userId, resourceType, resourceId)` for 'own' scope
+- [x] Add caching for role lookups (optional, for performance)
 
 **Acceptance Criteria**:
 - Service correctly checks permissions against matrix
@@ -132,13 +132,13 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/api/src/auth/rbac/permission.decorator.ts`
 
 **Subtasks**:
-- [ ] Create `Permission` decorator interface with:
+- [x] Create `Permission` decorator interface with:
   - `resource`: string (required)
   - `action`: string (required)
   - `context?`: 'own' | 'organization' | null
-- [ ] Create `@Permission` decorator using `SetMetadata`
-- [ ] Export `PERMISSION_KEY` constant for guard access
-- [ ] Add support for multiple permissions (array)
+- [x] Create `@Permission` decorator using `SetMetadata`
+- [x] Export `PERMISSION_KEY` constant for guard access
+- [x] Add support for multiple permissions (array)
 
 **Example**:
 ```typescript
@@ -156,18 +156,18 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/api/src/auth/rbac/permission.guard.ts`
 
 **Subtasks**:
-- [ ] Create `PermissionGuard` implementing `CanActivate`
-- [ ] Inject `Reflector` and `PermissionService`
-- [ ] Extract permission metadata from decorator
-- [ ] Extract `organizationId` from:
+- [x] Create `PermissionGuard` implementing `CanActivate`
+- [x] Inject `Reflector` and `PermissionService`
+- [x] Extract permission metadata from decorator
+- [x] Extract `organizationId` from:
   - Route params (`:orgId`, `:organizationId`, `:id`)
   - Request body (`body.organizationId`)
   - Query params (`query.organizationId`)
-- [ ] Extract `userId` from JWT user
-- [ ] Call `PermissionService.hasPermission()`
-- [ ] Handle 'own' context by checking resource ownership
-- [ ] Throw `ForbiddenException` with detailed message on denial
-- [ ] Log access attempts for audit
+- [x] Extract `userId` from JWT user
+- [x] Call `PermissionService.hasPermission()`
+- [x] Handle 'own' context by checking resource ownership
+- [x] Throw `ForbiddenException` with detailed message on denial
+- [x] Log access attempts for audit
 
 **Acceptance Criteria**:
 - Guard works with `@UseGuards(JwtAuthGuard, PermissionGuard)`
@@ -183,11 +183,11 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 - Other duplicate RolesGuard files
 
 **Subtasks**:
-- [ ] Identify all RolesGuard implementations in codebase
-- [ ] Remove duplicate implementations
-- [ ] Update existing RolesGuard to use PermissionService or deprecate
-- [ ] Create migration path for existing @Roles usages
-- [ ] Update imports across codebase
+- [x] Identify all RolesGuard implementations in codebase
+- [x] Remove duplicate implementations
+- [x] Update existing RolesGuard to use PermissionService or deprecate
+- [x] Create migration path for existing @Roles usages
+- [x] Update imports across codebase
 
 **Acceptance Criteria**:
 - Single source of truth for role checking
@@ -201,13 +201,13 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/api/src/links/links.controller.ts`
 
 **Subtasks**:
-- [ ] Add `@UseGuards(JwtAuthGuard, PermissionGuard)` to controller
-- [ ] Add `@Permission({ resource: 'link', action: 'read' })` to GET endpoints
-- [ ] Add `@Permission({ resource: 'link', action: 'create' })` to POST endpoints
-- [ ] Add `@Permission({ resource: 'link', action: 'update', context: 'own' })` to PATCH endpoints
-- [ ] Add `@Permission({ resource: 'link', action: 'delete', context: 'own' })` to DELETE endpoints
-- [ ] Add `@Permission({ resource: 'link', action: 'bulk' })` to bulk endpoints
-- [ ] Add `@Permission({ resource: 'link', action: 'export' })` to export endpoints
+- [x] Add `@UseGuards(JwtAuthGuard, PermissionGuard)` to controller
+- [x] Add `@Permission({ resource: 'link', action: 'read' })` to GET endpoints
+- [x] Add `@Permission({ resource: 'link', action: 'create' })` to POST endpoints
+- [x] Add `@Permission({ resource: 'link', action: 'update', context: 'own' })` to PATCH endpoints
+- [x] Add `@Permission({ resource: 'link', action: 'delete', context: 'own' })` to DELETE endpoints
+- [x] Add `@Permission({ resource: 'link', action: 'bulk' })` to bulk endpoints
+- [x] Add `@Permission({ resource: 'link', action: 'export' })` to export endpoints
 
 **Acceptance Criteria**:
 - All link endpoints have permission checks
@@ -221,13 +221,13 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/api/src/organizations/organization.controller.ts`
 
 **Subtasks**:
-- [ ] Add guards to controller
-- [ ] Add `@Permission({ resource: 'organization', action: 'read' })` to GET endpoints
-- [ ] Add `@Permission({ resource: 'organization', action: 'update' })` to PATCH endpoints
-- [ ] Add `@Permission({ resource: 'organization', action: 'delete' })` to DELETE endpoint
-- [ ] Add `@Permission({ resource: 'team', action: 'invite' })` to invite endpoint
-- [ ] Add `@Permission({ resource: 'team', action: 'remove' })` to remove member endpoint
-- [ ] Add `@Permission({ resource: 'team', action: 'update-role' })` to role change endpoint
+- [x] Add guards to controller
+- [x] Add `@Permission({ resource: 'organization', action: 'read' })` to GET endpoints
+- [x] Add `@Permission({ resource: 'organization', action: 'update' })` to PATCH endpoints
+- [x] Add `@Permission({ resource: 'organization', action: 'delete' })` to DELETE endpoint
+- [x] Add `@Permission({ resource: 'team', action: 'invite' })` to invite endpoint
+- [x] Add `@Permission({ resource: 'team', action: 'remove' })` to remove member endpoint
+- [x] Add `@Permission({ resource: 'team', action: 'update-role' })` to role change endpoint
 
 **Acceptance Criteria**:
 - Only OWNER can delete organization
@@ -241,14 +241,14 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **Files**: Multiple controller files
 
 **Subtasks**:
-- [ ] Update `domains.controller.ts` - domain permissions
-- [ ] Update `campaigns.controller.ts` - campaign permissions
-- [ ] Update `tags.controller.ts` - tag permissions
-- [ ] Update `biopages.controller.ts` - biopage permissions
-- [ ] Update `analytics.controller.ts` - analytics permissions
-- [ ] Update `developer.controller.ts` - api-key permissions
-- [ ] Update `audit.controller.ts` - audit permissions (already partial)
-- [ ] Update `payments.controller.ts` - billing permissions (OWNER only)
+- [x] Update `domains.controller.ts` - domain permissions
+- [x] Update `campaigns.controller.ts` - campaign permissions
+- [x] Update `tags.controller.ts` - tag permissions
+- [x] Update `biopages.controller.ts` - biopage permissions
+- [x] Update `analytics.controller.ts` - analytics permissions
+- [x] Update `developer.controller.ts` - api-key permissions
+- [x] Update `audit.controller.ts` - audit permissions (already partial)
+- [x] Update `payments.controller.ts` - billing permissions (OWNER only)
 
 **Acceptance Criteria**:
 - All controllers have appropriate permission guards
@@ -264,12 +264,12 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/web/lib/permissions/permission-matrix.ts` (new)
 
 **Subtasks**:
-- [ ] Create `apps/web/lib/permissions/` directory
-- [ ] Mirror backend permission matrix for client-side checks
-- [ ] Export `PERMISSION_MATRIX` constant
-- [ ] Export `checkPermission(role, resource, action)` function
-- [ ] Export `canManageRole(userRole, targetRole)` function
-- [ ] Ensure matrix stays in sync with backend
+- [x] Create `apps/web/lib/permissions/` directory
+- [x] Mirror backend permission matrix for client-side checks
+- [x] Export `PERMISSION_MATRIX` constant
+- [x] Export `checkPermission(role, resource, action)` function
+- [x] Export `canManageRole(userRole, targetRole)` function
+- [x] Ensure matrix stays in sync with backend
 
 **Acceptance Criteria**:
 - Frontend matrix matches backend exactly
@@ -282,16 +282,16 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/web/contexts/AuthContext.tsx`
 
 **Subtasks**:
-- [ ] Add `PermissionContext` interface with:
+- [x] Add `PermissionContext` interface with:
   - `can(resource, action)`: boolean
   - `canAny(permissions[])`: boolean
   - `canAll(permissions[])`: boolean
   - `role`: MemberRole | null
   - `isOwner`, `isAdmin`, `isEditor`, `isViewer`: boolean
-- [ ] Add `permissions` property to `AuthContextType`
-- [ ] Implement permission checking methods using matrix
-- [ ] Update context provider to calculate permissions when org changes
-- [ ] Track `currentOrganization.role` in context
+- [x] Add `permissions` property to `AuthContextType`
+- [x] Implement permission checking methods using matrix
+- [x] Update context provider to calculate permissions when org changes
+- [x] Track `currentOrganization.role` in context
 
 **Acceptance Criteria**:
 - `permissions.can('link', 'delete')` returns correct boolean
@@ -305,14 +305,14 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/web/hooks/usePermission.ts`
 
 **Subtasks**:
-- [ ] Create `usePermission()` hook that wraps AuthContext
-- [ ] Export convenience methods:
+- [x] Create `usePermission()` hook that wraps AuthContext
+- [x] Export convenience methods:
   - `canCreateLink()`, `canEditLink()`, `canDeleteLink()`
   - `canManageTeam()`, `canAccessBilling()`, `canAccessAudit()`
   - `canManageDomains()`, `canExportAnalytics()`
-- [ ] Export role check methods:
+- [x] Export role check methods:
   - `isOwner`, `isAdmin`, `isEditorOrAbove`
-- [ ] Return base `can()` method for custom checks
+- [x] Return base `can()` method for custom checks
 
 **Acceptance Criteria**:
 - Hook is easy to use in components
@@ -325,16 +325,16 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/web/components/PermissionGate.tsx`
 
 **Subtasks**:
-- [ ] Create `PermissionGate` component with props:
+- [x] Create `PermissionGate` component with props:
   - `resource`: string (required)
   - `action`: string (required)
   - `children`: ReactNode
   - `fallback?`: ReactNode (default null)
   - `showError?`: boolean (show denied message)
-- [ ] Use `usePermission` hook internally
-- [ ] Render children if permitted, fallback otherwise
-- [ ] Create `PermissionDeniedMessage` subcomponent for errors
-- [ ] Support `any` and `all` modes for multiple permissions
+- [x] Use `usePermission` hook internally
+- [x] Render children if permitted, fallback otherwise
+- [x] Create `PermissionDeniedMessage` subcomponent for errors
+- [x] Support `any` and `all` modes for multiple permissions
 
 **Usage Example**:
 ```tsx
@@ -355,16 +355,16 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/web/components/RoleBadge.tsx`
 
 **Subtasks**:
-- [ ] Create `RoleBadge` component with props:
+- [x] Create `RoleBadge` component with props:
   - `role`: MemberRole
   - `showDescription?`: boolean
-- [ ] Define role config (color, icon, description) for each role:
+- [x] Define role config (color, icon, description) for each role:
   - OWNER: purple, Crown icon, "Full access"
   - ADMIN: blue, Shield icon, "Manage team & content"
   - EDITOR: green, Edit icon, "Create & edit content"
   - VIEWER: gray, Eye icon, "View only"
-- [ ] Use Badge component from shadcn/ui
-- [ ] Use Lucide icons
+- [x] Use Badge component from shadcn/ui
+- [x] Use Lucide icons
 
 **Acceptance Criteria**:
 - Badge displays correctly for each role
@@ -378,11 +378,11 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/web/app/dashboard/links/page.tsx`
 
 **Subtasks**:
-- [ ] Wrap "Create Link" button with PermissionGate
-- [ ] Conditionally show edit/delete buttons based on ownership + role
-- [ ] Wrap bulk actions with PermissionGate
-- [ ] Show empty state message for viewers with no create access
-- [ ] Handle API 403 errors gracefully
+- [x] Wrap "Create Link" button with PermissionGate
+- [x] Conditionally show edit/delete buttons based on ownership + role
+- [x] Wrap bulk actions with PermissionGate
+- [x] Show empty state message for viewers with no create access
+- [x] Handle API 403 errors gracefully
 
 **Acceptance Criteria**:
 - VIEWER sees no create/edit/delete buttons
@@ -396,11 +396,11 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/web/app/dashboard/settings/team/page.tsx`
 
 **Subtasks**:
-- [ ] Wrap invite button with PermissionGate (team:invite)
-- [ ] Show role selector limited to assignable roles
-- [ ] Hide remove button for members based on role hierarchy
-- [ ] Show RoleBadge for each member
-- [ ] Disable role change dropdown for protected members
+- [x] Wrap invite button with PermissionGate (team:invite)
+- [x] Show role selector limited to assignable roles
+- [x] Hide remove button for members based on role hierarchy
+- [x] Show RoleBadge for each member
+- [x] Disable role change dropdown for protected members
 
 **Acceptance Criteria**:
 - VIEWER/EDITOR cannot invite
@@ -414,10 +414,10 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/web/components/Sidebar.tsx` or relevant navigation component
 
 **Subtasks**:
-- [ ] Hide Billing link for non-OWNERs
-- [ ] Hide Audit Logs link for VIEWERs (if restricted)
-- [ ] Hide Domains management for VIEWER/EDITOR
-- [ ] Add visual indicators for restricted sections
+- [x] Hide Billing link for non-OWNERs
+- [x] Hide Audit Logs link for VIEWERs (if restricted)
+- [x] Hide Domains management for VIEWER/EDITOR
+- [x] Add visual indicators for restricted sections
 
 **Acceptance Criteria**:
 - Navigation items match user's permissions
@@ -432,11 +432,11 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `packages/database/prisma/schema.prisma`
 
 **Subtasks**:
-- [ ] Add `scopes` field (String[]) to ApiKey model
-- [ ] Add `ipWhitelist` field (String[]?, optional)
-- [ ] Add `rateLimit` field (Int?, optional, requests per minute)
+- [x] Add `scopes` field (String[]) to ApiKey model
+- [x] Add `ipWhitelist` field (String[]?, optional)
+- [x] Add `rateLimit` field (Int?, optional, requests per minute)
 - [ ] Run database migration
-- [ ] Update Prisma client
+- [x] Update Prisma client
 
 **Acceptance Criteria**:
 - Migration runs without errors
@@ -449,16 +449,16 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/api/src/auth/rbac/api-scopes.ts` (new)
 
 **Subtasks**:
-- [ ] Define available scopes:
+- [x] Define available scopes:
   - `link:read`, `link:create`, `link:update`, `link:delete`, `link:export`
   - `analytics:read`, `analytics:export`
   - `domain:read`, `domain:manage`
   - `campaign:read`, `campaign:manage`
   - `tag:read`, `tag:manage`
   - `admin` (full access)
-- [ ] Create `SCOPE_DESCRIPTIONS` for UI display
-- [ ] Create `validateScope(scope)` function
-- [ ] Create `scopeAllowsAction(scope, resource, action)` function
+- [x] Create `SCOPE_DESCRIPTIONS` for UI display
+- [x] Create `validateScope(scope)` function
+- [x] Create `scopeAllowsAction(scope, resource, action)` function
 
 **Acceptance Criteria**:
 - All scopes defined with descriptions
@@ -471,14 +471,14 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/api/src/auth/guards/api-scope.guard.ts`
 
 **Subtasks**:
-- [ ] Create `ApiScopeGuard` implementing `CanActivate`
-- [ ] Extract API key from request header
-- [ ] Verify API key hash exists in database
-- [ ] Check if key has required scope for endpoint
-- [ ] Check IP whitelist if configured
-- [ ] Check rate limits if configured
-- [ ] Update `lastUsedAt` timestamp
-- [ ] Log API key usage
+- [x] Create `ApiScopeGuard` implementing `CanActivate`
+- [x] Extract API key from request header
+- [x] Verify API key hash exists in database
+- [x] Check if key has required scope for endpoint
+- [x] Check IP whitelist if configured
+- [x] Check rate limits if configured
+- [x] Update `lastUsedAt` timestamp
+- [x] Log API key usage
 
 **Acceptance Criteria**:
 - API requests validated against key scopes
@@ -492,9 +492,9 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/api/src/auth/rbac/require-scope.decorator.ts`
 
 **Subtasks**:
-- [ ] Create `@RequireScope(scope: string | string[])` decorator
-- [ ] Export `SCOPE_KEY` constant
-- [ ] Support single scope or array of scopes (any)
+- [x] Create `@RequireScope(scope: string | string[])` decorator
+- [x] Export `SCOPE_KEY` constant
+- [x] Support single scope or array of scopes (any)
 
 **Acceptance Criteria**:
 - Decorator sets metadata correctly
@@ -507,11 +507,11 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/api/src/developer/developer.service.ts`
 
 **Subtasks**:
-- [ ] Update `createApiKey()` to accept scopes array
-- [ ] Validate scopes are from allowed list
-- [ ] Store scopes in database
-- [ ] Return scopes in API key response
-- [ ] Add `ipWhitelist` and `rateLimit` optional params
+- [x] Update `createApiKey()` to accept scopes array
+- [x] Validate scopes are from allowed list
+- [x] Store scopes in database
+- [x] Return scopes in API key response
+- [x] Add `ipWhitelist` and `rateLimit` optional params
 
 **Acceptance Criteria**:
 - API keys created with specified scopes
@@ -525,11 +525,11 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/web/app/dashboard/developer/page.tsx`
 
 **Subtasks**:
-- [ ] Add scope selection checkboxes to create API key form
-- [ ] Group scopes by resource type
-- [ ] Show scope descriptions on hover
-- [ ] Display scopes in API key list view
-- [ ] Add "admin" scope option with warning
+- [x] Add scope selection checkboxes to create API key form
+- [x] Group scopes by resource type
+- [x] Show scope descriptions on hover
+- [x] Display scopes in API key list view
+- [x] Add "admin" scope option with warning
 
 **Acceptance Criteria**:
 - Users can select scopes when creating keys
@@ -581,22 +581,22 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/api/src/auth/rbac/__tests__/permission-matrix.spec.ts`
 
 **Test Cases**:
-- [ ] OWNER has all permissions
-- [ ] OWNER can delete organization
-- [ ] OWNER can manage billing
-- [ ] ADMIN has most permissions
-- [ ] ADMIN cannot delete organization
-- [ ] ADMIN cannot manage billing
-- [ ] ADMIN can invite non-OWNER roles
-- [ ] ADMIN cannot invite OWNER role
-- [ ] EDITOR can create link
-- [ ] EDITOR can update own link
-- [ ] EDITOR cannot update others link
-- [ ] EDITOR cannot manage team
-- [ ] VIEWER can read links
-- [ ] VIEWER cannot create link
-- [ ] VIEWER cannot update link
-- [ ] VIEWER cannot delete link
+- [x] OWNER has all permissions
+- [x] OWNER can delete organization
+- [x] OWNER can manage billing
+- [x] ADMIN has most permissions
+- [x] ADMIN cannot delete organization
+- [x] ADMIN cannot manage billing
+- [x] ADMIN can invite non-OWNER roles
+- [x] ADMIN cannot invite OWNER role
+- [x] EDITOR can create link
+- [x] EDITOR can update own link
+- [x] EDITOR cannot update others link
+- [x] EDITOR cannot manage team
+- [x] VIEWER can read links
+- [x] VIEWER cannot create link
+- [x] VIEWER cannot update link
+- [x] VIEWER cannot delete link
 
 **Acceptance Criteria**:
 - All tests pass
@@ -609,15 +609,15 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/api/src/auth/rbac/__tests__/role-hierarchy.spec.ts`
 
 **Test Cases**:
-- [ ] OWNER satisfies ADMIN requirement
-- [ ] OWNER satisfies EDITOR requirement
-- [ ] OWNER satisfies VIEWER requirement
-- [ ] ADMIN satisfies EDITOR requirement
-- [ ] ADMIN satisfies VIEWER requirement
-- [ ] ADMIN does NOT satisfy OWNER requirement
-- [ ] EDITOR satisfies VIEWER requirement
-- [ ] EDITOR does NOT satisfy ADMIN requirement
-- [ ] VIEWER only satisfies VIEWER requirement
+- [x] OWNER satisfies ADMIN requirement
+- [x] OWNER satisfies EDITOR requirement
+- [x] OWNER satisfies VIEWER requirement
+- [x] ADMIN satisfies EDITOR requirement
+- [x] ADMIN satisfies VIEWER requirement
+- [x] ADMIN does NOT satisfy OWNER requirement
+- [x] EDITOR satisfies VIEWER requirement
+- [x] EDITOR does NOT satisfy ADMIN requirement
+- [x] VIEWER only satisfies VIEWER requirement
 
 **Acceptance Criteria**:
 - All hierarchy tests pass
@@ -629,14 +629,14 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/api/src/auth/rbac/__tests__/permission.guard.spec.ts`
 
 **Test Cases**:
-- [ ] Allow access when user has permission
-- [ ] Deny access when user lacks permission
-- [ ] Extract orgId from route params
-- [ ] Extract orgId from body
-- [ ] Extract orgId from query
-- [ ] Throw ForbiddenException on denial
-- [ ] Work with JwtAuthGuard
-- [ ] Handle missing permission decorator
+- [x] Allow access when user has permission
+- [x] Deny access when user lacks permission
+- [x] Extract orgId from route params
+- [x] Extract orgId from body
+- [x] Extract orgId from query
+- [x] Throw ForbiddenException on denial
+- [x] Work with JwtAuthGuard
+- [x] Handle missing permission decorator
 
 **Acceptance Criteria**:
 - All tests pass
@@ -649,10 +649,10 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/web/e2e/rbac.spec.ts`
 
 **Test Cases**:
-- [ ] RBAC-001: OWNER can access organization settings
-- [ ] RBAC-002: OWNER can manage all members
-- [ ] RBAC-003: OWNER can access billing
-- [ ] RBAC-004: OWNER can manage all links
+- [x] RBAC-001: OWNER can access organization settings
+- [x] RBAC-002: OWNER can manage all members
+- [x] RBAC-003: OWNER can access billing
+- [x] RBAC-004: OWNER can manage all links
 
 **Acceptance Criteria**:
 - All OWNER tests pass
@@ -664,10 +664,10 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/web/e2e/rbac.spec.ts`
 
 **Test Cases**:
-- [ ] RBAC-010: ADMIN can access limited organization settings
-- [ ] RBAC-011: ADMIN can manage non-OWNER members
-- [ ] RBAC-012: ADMIN cannot access billing management
-- [ ] RBAC-013: ADMIN can manage organization links
+- [x] RBAC-010: ADMIN can access limited organization settings
+- [x] RBAC-011: ADMIN can manage non-OWNER members
+- [x] RBAC-012: ADMIN cannot access billing management
+- [x] RBAC-013: ADMIN can manage organization links
 
 **Acceptance Criteria**:
 - All ADMIN tests pass
@@ -679,12 +679,12 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/web/e2e/rbac.spec.ts`
 
 **Test Cases**:
-- [ ] RBAC-020: EDITOR cannot access organization settings
-- [ ] RBAC-021: EDITOR cannot manage team
-- [ ] RBAC-022: EDITOR can create links
-- [ ] RBAC-023: EDITOR can only edit own links
-- [ ] RBAC-024: EDITOR can only delete own links
-- [ ] RBAC-025: EDITOR can view organization analytics
+- [x] RBAC-020: EDITOR cannot access organization settings
+- [x] RBAC-021: EDITOR cannot manage team
+- [x] RBAC-022: EDITOR can create links
+- [x] RBAC-023: EDITOR can only edit own links
+- [x] RBAC-024: EDITOR can only delete own links
+- [x] RBAC-025: EDITOR can view organization analytics
 
 **Acceptance Criteria**:
 - All EDITOR tests pass
@@ -696,10 +696,10 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/web/e2e/rbac.spec.ts`
 
 **Test Cases**:
-- [ ] RBAC-030: VIEWER has read-only access
-- [ ] RBAC-031: VIEWER cannot create links
-- [ ] RBAC-032: VIEWER can view analytics
-- [ ] RBAC-033: VIEWER can view team members
+- [x] RBAC-030: VIEWER has read-only access
+- [x] RBAC-031: VIEWER cannot create links
+- [x] RBAC-032: VIEWER can view analytics
+- [x] RBAC-033: VIEWER can view team members
 
 **Acceptance Criteria**:
 - All VIEWER tests pass
@@ -711,10 +711,10 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/web/e2e/rbac.spec.ts`
 
 **Test Cases**:
-- [ ] RBAC-040: API returns 403 for unauthorized action
-- [ ] RBAC-041: Direct URL access is blocked
-- [ ] RBAC-042: Role change takes effect immediately
-- [ ] RBAC-043: Multi-org permission isolation
+- [x] RBAC-040: API returns 403 for unauthorized action
+- [x] RBAC-041: Direct URL access is blocked
+- [x] RBAC-042: Role change takes effect immediately
+- [x] RBAC-043: Multi-org permission isolation
 
 **Acceptance Criteria**:
 - All enforcement tests pass
@@ -726,10 +726,10 @@ npx playwright test apps/web/e2e/rbac.spec.ts
 **File**: `apps/web/e2e/rbac.spec.ts`
 
 **Test Cases**:
-- [ ] RBAC-050: API key with read scope cannot write
-- [ ] RBAC-051: API key with write scope can create
-- [ ] RBAC-052: API key respects organization scope
-- [ ] RBAC-053: Expired API key is rejected
+- [x] RBAC-050: API key with read scope cannot write
+- [x] RBAC-051: API key with write scope can create
+- [x] RBAC-052: API key respects organization scope
+- [x] RBAC-053: Expired API key is rejected
 
 **Acceptance Criteria**:
 - All API scope tests pass
@@ -777,10 +777,10 @@ TASK-2.3.11 (Frontend Matrix)
 ```
 
 ### Security Checklist:
-- [ ] All permission checks done server-side
-- [ ] Never trust frontend-only checks
-- [ ] Deny by default (whitelist approach)
-- [ ] Use constant-time comparison for sensitive operations
-- [ ] Log all access denials
-- [ ] No IDOR vulnerabilities
-- [ ] No privilege escalation paths
+- [x] All permission checks done server-side
+- [x] Never trust frontend-only checks
+- [x] Deny by default (whitelist approach)
+- [x] Use constant-time comparison for sensitive operations
+- [x] Log all access denials
+- [x] No IDOR vulnerabilities
+- [x] No privilege escalation paths
