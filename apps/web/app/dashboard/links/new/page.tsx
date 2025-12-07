@@ -75,6 +75,7 @@ interface Domain {
   id: string;
   hostname: string;
   isVerified: boolean;
+  isDefault: boolean;
 }
 
 interface BioPage {

@@ -161,7 +161,9 @@ export class AuditService {
       | "link.archived"
       | "link.restored"
       | "link.bulk_created"
-      | "link.bulk_deleted",
+      | "link.bulk_deleted"
+      | "link.status_changed"
+      | "link.bulk_status_changed",
     link: { id: string; slug?: string; targetUrl?: string },
     options?: {
       changes?: { before?: Record<string, any>; after?: Record<string, any> };

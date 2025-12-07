@@ -24,7 +24,7 @@ export interface LinkResponse {
   qrCode?: string; // Data URI
   title?: string;
   tags: string[];
-  status: "ACTIVE" | "EXPIRED" | "DISABLED" | "BANNED";
+  status: "ACTIVE" | "EXPIRED" | "DISABLED" | "ARCHIVED" | "BANNED";
   createdAt: string;
   createdById?: string; // User ID who created the link
   clicks?: number; // Engagement count
@@ -34,5 +34,6 @@ export enum LinkStatus {
   ACTIVE = "ACTIVE",
   EXPIRED = "EXPIRED",
   DISABLED = "DISABLED",
+  ARCHIVED = "ARCHIVED",
   BANNED = "BANNED",
 }
