@@ -1,14 +1,21 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { MemberRole } from '@pingtome/database';
-import { AuditService } from '../audit/audit.service';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { MemberRole } from "@pingtome/database";
+import { AuditService } from "../audit/audit.service";
+import { UpdateOrganizationSettingsDto } from "./dto/organization-settings.dto";
+import { UpdateOrganizationDto } from "./dto/update-organization.dto";
 
 @Injectable()
 export class OrganizationService {
   constructor(
     private prisma: PrismaService,
     private auditService: AuditService,
-  ) { }
+  ) {}
 
   // Organization CRUD
   async create(userId: string, data: { name: string; slug: string }) {
@@ -20,14 +27,17 @@ export class OrganizationService {
         members: {
           create: {
             userId,
-            role: 'OWNER',
+            role: "OWNER",
           },
         },
       },
     });
 
+    // Create default settings for the organization
+    await this.createDefaultSettings(org.id);
+
     // Audit log: org created
-    await this.auditService.logOrgEvent(userId, org.id, 'org.created', {
+    await this.auditService.logOrgEvent(userId, org.id, "org.created", {
       details: {
         name: org.name,
         slug: org.slug,
@@ -71,26 +81,47 @@ export class OrganizationService {
     });
 
     if (!org) {
-      throw new NotFoundException('Organization not found');
+      throw new NotFoundException("Organization not found");
     }
 
     // Check if user is a member
-    const isMember = org.members.some(m => m.userId === userId);
+    const isMember = org.members.some((m) => m.userId === userId);
     if (!isMember) {
-      throw new ForbiddenException('Access denied');
+      throw new ForbiddenException("Access denied");
     }
 
     return org;
   }
 
-  async update(orgId: string, userId: string, data: { name?: string; slug?: string }) {
+  async update(orgId: string, userId: string, data: UpdateOrganizationDto) {
     // Check if user is owner/admin
-    await this.checkPermission(orgId, userId, ['OWNER', 'ADMIN']);
+    await this.checkPermission(orgId, userId, ["OWNER", "ADMIN"]);
+
+    // If defaultDomainId is provided, verify the domain exists and belongs to org
+    if (data.defaultDomainId) {
+      const domain = await this.prisma.domain.findUnique({
+        where: { id: data.defaultDomainId },
+      });
+
+      if (!domain || domain.organizationId !== orgId) {
+        throw new BadRequestException(
+          "Invalid domain ID or domain does not belong to this organization",
+        );
+      }
+    }
 
     // Get current org state for change tracking
     const before = await this.prisma.organization.findUnique({
       where: { id: orgId },
-      select: { name: true, slug: true },
+      select: {
+        name: true,
+        slug: true,
+        logo: true,
+        description: true,
+        timezone: true,
+        dataRetentionDays: true,
+        defaultDomainId: true,
+      },
     });
 
     const updated = await this.prisma.organization.update({
@@ -99,9 +130,18 @@ export class OrganizationService {
     });
 
     // Audit log: org updated with change tracking
-    const changes = this.auditService.captureChanges(before, { name: updated.name, slug: updated.slug });
+    const changes = this.auditService.captureChanges(before, {
+      name: updated.name,
+      slug: updated.slug,
+      logo: updated.logo,
+      description: updated.description,
+      timezone: updated.timezone,
+      dataRetentionDays: updated.dataRetentionDays,
+      defaultDomainId: updated.defaultDomainId,
+    });
+
     if (changes) {
-      await this.auditService.logOrgEvent(userId, orgId, 'org.updated', {
+      await this.auditService.logOrgEvent(userId, orgId, "org.updated", {
         changes,
         details: {
           updatedFields: Object.keys(data),
@@ -114,7 +154,7 @@ export class OrganizationService {
 
   async delete(orgId: string, userId: string) {
     // Only owner can delete
-    await this.checkPermission(orgId, userId, ['OWNER']);
+    await this.checkPermission(orgId, userId, ["OWNER"]);
 
     // Get org details before deletion
     const org = await this.prisma.organization.findUnique({
@@ -127,7 +167,7 @@ export class OrganizationService {
     });
 
     // Audit log: org deleted
-    await this.auditService.logOrgEvent(userId, orgId, 'org.deleted', {
+    await this.auditService.logOrgEvent(userId, orgId, "org.deleted", {
       details: {
         name: org?.name,
         slug: org?.slug,
@@ -137,7 +177,11 @@ export class OrganizationService {
     return deleted;
   }
 
-  private async checkPermission(orgId: string, userId: string, allowedRoles: string[]) {
+  private async checkPermission(
+    orgId: string,
+    userId: string,
+    allowedRoles: string[],
+  ) {
     const member = await this.prisma.organizationMember.findUnique({
       where: {
         userId_organizationId: { userId, organizationId: orgId },
@@ -145,10 +189,244 @@ export class OrganizationService {
     });
 
     if (!member || !allowedRoles.includes(member.role)) {
-      throw new ForbiddenException('Permission denied');
+      throw new ForbiddenException("Permission denied");
     }
 
     return member;
+  }
+
+  // Organization Settings
+  async createDefaultSettings(orgId: string) {
+    return this.prisma.organizationSettings.create({
+      data: {
+        organizationId: orgId,
+        ssoEnabled: false,
+        enforced2FA: false,
+        sessionTimeout: 7200, // 2 hours default
+      },
+    });
+  }
+
+  async getSettings(orgId: string, userId: string) {
+    // Check if user is a member
+    await this.checkPermission(orgId, userId, [
+      "OWNER",
+      "ADMIN",
+      "EDITOR",
+      "VIEWER",
+    ]);
+
+    const settings = await this.prisma.organizationSettings.findUnique({
+      where: { organizationId: orgId },
+    });
+
+    if (!settings) {
+      // Create default settings if they don't exist
+      return this.createDefaultSettings(orgId);
+    }
+
+    return settings;
+  }
+
+  async updateSettings(
+    orgId: string,
+    userId: string,
+    data: UpdateOrganizationSettingsDto,
+  ) {
+    // Only owner/admin can update settings
+    await this.checkPermission(orgId, userId, ["OWNER", "ADMIN"]);
+
+    // Get current settings for change tracking
+    const before = await this.prisma.organizationSettings.findUnique({
+      where: { organizationId: orgId },
+    });
+
+    if (!before) {
+      throw new NotFoundException("Organization settings not found");
+    }
+
+    const updated = await this.prisma.organizationSettings.update({
+      where: { organizationId: orgId },
+      data,
+    });
+
+    // Audit log: settings updated
+    const changes = this.auditService.captureChanges(
+      {
+        ipAllowlist: before.ipAllowlist,
+        ssoEnabled: before.ssoEnabled,
+        ssoProviderId: before.ssoProviderId,
+        enforced2FA: before.enforced2FA,
+        sessionTimeout: before.sessionTimeout,
+      },
+      {
+        ipAllowlist: updated.ipAllowlist,
+        ssoEnabled: updated.ssoEnabled,
+        ssoProviderId: updated.ssoProviderId,
+        enforced2FA: updated.enforced2FA,
+        sessionTimeout: updated.sessionTimeout,
+      },
+    );
+
+    if (changes) {
+      await this.auditService.logOrgEvent(
+        userId,
+        orgId,
+        "org.settings_updated",
+        {
+          changes,
+          details: {
+            updatedFields: Object.keys(data),
+          },
+        },
+      );
+    }
+
+    return updated;
+  }
+
+  async uploadLogo(orgId: string, userId: string, file: Express.Multer.File) {
+    // Check if user is owner/admin
+    await this.checkPermission(orgId, userId, ["OWNER", "ADMIN"]);
+
+    // Validate file type
+    const allowedMimeTypes = [
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "image/webp",
+    ];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException(
+        "Invalid file type. Only PNG, JPG, and WebP are allowed.",
+      );
+    }
+
+    // Validate file size (2MB max)
+    const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+    if (file.size > maxSize) {
+      throw new BadRequestException("File size exceeds 2MB limit.");
+    }
+
+    // Convert to base64
+    const base64Logo = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+
+    // Update organization with logo
+    const updated = await this.prisma.organization.update({
+      where: { id: orgId },
+      data: { logo: base64Logo },
+    });
+
+    // Audit log: logo uploaded
+    await this.auditService.logOrgEvent(userId, orgId, "org.logo_uploaded", {
+      details: {
+        fileName: file.originalname,
+        fileSize: file.size,
+        mimeType: file.mimetype,
+      },
+    });
+
+    return updated;
+  }
+
+  async deleteLogo(orgId: string, userId: string) {
+    // Check if user is owner/admin
+    await this.checkPermission(orgId, userId, ["OWNER", "ADMIN"]);
+
+    const updated = await this.prisma.organization.update({
+      where: { id: orgId },
+      data: { logo: null },
+    });
+
+    // Audit log: logo deleted
+    await this.auditService.logOrgEvent(userId, orgId, "org.logo_deleted", {
+      details: {},
+    });
+
+    return updated;
+  }
+
+  async transferOwnership(
+    orgId: string,
+    currentOwnerId: string,
+    newOwnerId: string,
+  ) {
+    // Verify current user is the owner
+    const currentMember = await this.checkPermission(orgId, currentOwnerId, [
+      "OWNER",
+    ]);
+
+    // Verify new owner is a member
+    const newMember = await this.prisma.organizationMember.findUnique({
+      where: {
+        userId_organizationId: {
+          userId: newOwnerId,
+          organizationId: orgId,
+        },
+      },
+      include: {
+        user: {
+          select: { email: true, name: true },
+        },
+      },
+    });
+
+    if (!newMember) {
+      throw new BadRequestException(
+        "New owner must be an existing member of the organization",
+      );
+    }
+
+    if (newOwnerId === currentOwnerId) {
+      throw new BadRequestException(
+        "You are already the owner of this organization",
+      );
+    }
+
+    // Transfer ownership: update both members in a transaction
+    await this.prisma.$transaction([
+      // Demote current owner to admin
+      this.prisma.organizationMember.update({
+        where: {
+          userId_organizationId: {
+            userId: currentOwnerId,
+            organizationId: orgId,
+          },
+        },
+        data: { role: "ADMIN" },
+      }),
+      // Promote new member to owner
+      this.prisma.organizationMember.update({
+        where: {
+          userId_organizationId: {
+            userId: newOwnerId,
+            organizationId: orgId,
+          },
+        },
+        data: { role: "OWNER" },
+      }),
+    ]);
+
+    // Audit log: ownership transferred
+    await this.auditService.logOrgEvent(
+      currentOwnerId,
+      orgId,
+      "org.ownership_transferred",
+      {
+        details: {
+          previousOwnerId: currentOwnerId,
+          newOwnerId: newOwnerId,
+          newOwnerEmail: newMember.user.email,
+          newOwnerName: newMember.user.name,
+        },
+      },
+    );
+
+    return {
+      message: "Ownership transferred successfully",
+      previousOwnerId: currentOwnerId,
+      newOwnerId: newOwnerId,
+    };
   }
 
   // Member management
@@ -168,11 +446,18 @@ export class OrganizationService {
     });
   }
 
-  async inviteMember(orgId: string, invitedByUserId: string, email: string, role: MemberRole) {
+  async inviteMember(
+    orgId: string,
+    invitedByUserId: string,
+    email: string,
+    role: MemberRole,
+  ) {
     // 1. Find user by email
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
-      throw new NotFoundException('User not found. For MVP, user must be registered first.');
+      throw new NotFoundException(
+        "User not found. For MVP, user must be registered first.",
+      );
     }
 
     // 2. Check if already a member
@@ -186,7 +471,9 @@ export class OrganizationService {
     });
 
     if (existingMember) {
-      throw new BadRequestException('User is already a member of this organization');
+      throw new BadRequestException(
+        "User is already a member of this organization",
+      );
     }
 
     // 3. Add member
@@ -212,7 +499,7 @@ export class OrganizationService {
     await this.auditService.logTeamEvent(
       invitedByUserId,
       orgId,
-      'member.joined',
+      "member.joined",
       {
         userId: user.id,
         email: user.email,
@@ -228,7 +515,12 @@ export class OrganizationService {
     return newMember;
   }
 
-  async updateMemberRole(orgId: string, targetUserId: string, updatedByUserId: string, role: MemberRole) {
+  async updateMemberRole(
+    orgId: string,
+    targetUserId: string,
+    updatedByUserId: string,
+    role: MemberRole,
+  ) {
     // Check if member exists
     const member = await this.prisma.organizationMember.findUnique({
       where: {
@@ -245,7 +537,7 @@ export class OrganizationService {
     });
 
     if (!member) {
-      throw new NotFoundException('Member not found');
+      throw new NotFoundException("Member not found");
     }
 
     const oldRole = member.role;
@@ -264,7 +556,7 @@ export class OrganizationService {
     await this.auditService.logTeamEvent(
       updatedByUserId,
       orgId,
-      'member.role_changed',
+      "member.role_changed",
       {
         userId: targetUserId,
         email: member.user.email,
@@ -284,7 +576,11 @@ export class OrganizationService {
     return updated;
   }
 
-  async removeMember(orgId: string, targetUserId: string, removedByUserId: string) {
+  async removeMember(
+    orgId: string,
+    targetUserId: string,
+    removedByUserId: string,
+  ) {
     // Prevent removing the last owner? (Optional for MVP but good practice)
     // For now, just remove.
 
@@ -317,7 +613,7 @@ export class OrganizationService {
       await this.auditService.logTeamEvent(
         removedByUserId,
         orgId,
-        'member.removed',
+        "member.removed",
         {
           userId: targetUserId,
           email: member.user.email,
@@ -335,4 +631,3 @@ export class OrganizationService {
     return deleted;
   }
 }
-

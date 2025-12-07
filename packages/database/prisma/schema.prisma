@@ -29,12 +29,14 @@ model User {
   twoFactorEnabled   Boolean  @default(false)
   twoFactorSecret    String?
 
-  memberships OrganizationMember[]
-  accounts      Account[]
-  sessions      Session[]
-  links         Link[]
-  notifications Notification[]
-  folders       Folder[]
+  memberships       OrganizationMember[]
+  accounts          Account[]
+  sessions          Session[]
+  links             Link[]
+  notifications     Notification[]
+  folders           Folder[]
+  sentInvitations   OrganizationInvitation[] @relation("SentInvitations")
+  invitedMembers    OrganizationMember[]     @relation("InvitedByUser")
 }
 
 model Account {
@@ -86,20 +88,66 @@ model Notification {
 }
 
 model Organization {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug      String   @unique
-  name      String
-  plan      PlanType @default(FREE)
-  createdAt DateTime @default(now())
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug             String   @unique
+  name             String
+  logo             String?
+  description      String?
+  timezone         String   @default("UTC")
+  dataRetentionDays Int     @default(90)
+  defaultDomainId  String?  @db.Uuid
+  plan             PlanType @default(FREE)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt @default(now())
 
-  members   OrganizationMember[]
-  links     Link[]
-  domains   Domain[]
-  tags      Tag[]
-  campaigns Campaign[]
-  bioPages  BioPage[]
-  apiKeys   ApiKey[]
-  webhooks  Webhook[]
+  members     OrganizationMember[]
+  links       Link[]
+  domains     Domain[]
+  tags        Tag[]
+  campaigns   Campaign[]
+  bioPages    BioPage[]
+  apiKeys     ApiKey[]
+  webhooks    Webhook[]
+  settings    OrganizationSettings?
+  invitations OrganizationInvitation[]
+}
+
+model OrganizationSettings {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String   @unique @db.Uuid
+  ipAllowlist     Json?    // Array of allowed IP addresses/ranges
+  ssoEnabled      Boolean  @default(false)
+  ssoProviderId   String?
+  enforced2FA     Boolean  @default(false)
+  sessionTimeout  Int      @default(7200) // seconds (default 2 hours)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model OrganizationInvitation {
+  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String     @db.Uuid
+  email           String
+  role            MemberRole @default(VIEWER)
+  token           String     @unique
+  tokenHash       String?    // Hashed token for secure storage
+  invitedById     String     @db.Uuid
+  personalMessage String?
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  declinedAt      DateTime?
+  createdAt       DateTime   @default(now())
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy       User         @relation("SentInvitations", fields: [invitedById], references: [id])
+
+  @@unique([organizationId, email])
+  @@index([token])
+  @@index([tokenHash])
+  @@index([expiresAt])
+  @@index([email])
 }
 
 model ApiKey {
@@ -199,11 +247,16 @@ model OrganizationMember {
   userId         String       @db.Uuid
   organizationId String       @db.Uuid
   role           MemberRole   @default(VIEWER)
+  joinedAt       DateTime     @default(now())
+  lastActiveAt   DateTime?
+  invitedById    String?      @db.Uuid
 
   user           User         @relation(fields: [userId], references: [id])
   organization   Organization @relation(fields: [organizationId], references: [id])
+  invitedBy      User?        @relation("InvitedByUser", fields: [invitedById], references: [id])
 
   @@id([userId, organizationId])
+  @@index([invitedById])
 }
 
 model Link {
