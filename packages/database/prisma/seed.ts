@@ -6,6 +6,7 @@ import {
   LinkStatus,
 } from "@prisma/client";
 import * as bcrypt from "bcrypt";
+import { Decimal } from "@prisma/client/runtime/library";
 
 const prisma = new PrismaClient();
 
@@ -255,8 +256,94 @@ function generateClickEvents(
   return events;
 }
 
+/**
+ * Seed Plan Definitions
+ * Creates the three plan tiers: Free, Pro, and Enterprise
+ */
+async function seedPlanDefinitions() {
+  console.log("Seeding plan definitions...");
+
+  const plans = [
+    {
+      name: "free",
+      displayName: "Free",
+      linksPerMonth: 50,
+      customDomains: 1,
+      teamMembers: 1,
+      apiCallsPerMonth: 0, // Free plan has no API access
+      analyticsRetentionDays: 30,
+      priceMonthly: new Decimal(0),
+      priceYearly: new Decimal(0),
+      features: [
+        "50 links per month",
+        "1 custom domain",
+        "Basic analytics (30 days)",
+        "Standard support",
+      ],
+      isActive: true,
+    },
+    {
+      name: "pro",
+      displayName: "Pro",
+      linksPerMonth: 1000,
+      customDomains: 5,
+      teamMembers: 10,
+      apiCallsPerMonth: 10000,
+      analyticsRetentionDays: 90,
+      priceMonthly: new Decimal(9),
+      priceYearly: new Decimal(90), // 2 months free
+      features: [
+        "1,000 links per month",
+        "5 custom domains",
+        "Up to 10 team members",
+        "10,000 API calls per month",
+        "Advanced analytics (90 days)",
+        "Priority support",
+      ],
+      isActive: true,
+    },
+    {
+      name: "enterprise",
+      displayName: "Enterprise",
+      linksPerMonth: -1, // Unlimited
+      customDomains: -1, // Unlimited
+      teamMembers: -1, // Unlimited
+      apiCallsPerMonth: -1, // Unlimited
+      analyticsRetentionDays: 730, // 2 years
+      priceMonthly: new Decimal(49),
+      priceYearly: new Decimal(490), // 2 months free
+      features: [
+        "Unlimited links",
+        "Unlimited custom domains",
+        "Unlimited team members",
+        "Unlimited API calls",
+        "Analytics retention (2 years)",
+        "SSO/SAML support",
+        "Dedicated support",
+        "SLA guarantee",
+      ],
+      isActive: true,
+    },
+  ];
+
+  for (const plan of plans) {
+    await prisma.planDefinition.upsert({
+      where: { name: plan.name },
+      update: plan,
+      create: plan,
+    });
+    console.log(`  Upserted plan: ${plan.displayName}`);
+  }
+
+  console.log("  Plan definitions seeded successfully");
+}
+
 async function main() {
   console.log("Starting E2E test data seed...\n");
+
+  // Seed plan definitions first (required for organizations and users)
+  await seedPlanDefinitions();
+  console.log();
 
   // Hash password once for all users
   const passwordHash = await bcrypt.hash(TEST_PASSWORD, HASH_ROUNDS);

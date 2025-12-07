@@ -110,6 +110,7 @@ model Organization {
   webhooks    Webhook[]
   settings    OrganizationSettings?
   invitations OrganizationInvitation[]
+  usageTracking UsageTracking[]
 }
 
 model OrganizationSettings {
@@ -469,4 +470,56 @@ model AccessLog {
 enum AccessResult {
   ALLOWED
   DENIED
+}
+
+model PlanDefinition {
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                   String   @unique  // 'free', 'pro', 'enterprise'
+  displayName            String
+  linksPerMonth          Int      // -1 = unlimited
+  customDomains          Int      // -1 = unlimited
+  teamMembers            Int      // -1 = unlimited
+  apiCallsPerMonth       Int      // -1 = unlimited
+  analyticsRetentionDays Int
+  priceMonthly           Decimal  @db.Decimal(10, 2)
+  priceYearly            Decimal  @db.Decimal(10, 2)
+  features               String[] // Feature list for display
+  stripePriceIdMonthly   String?
+  stripePriceIdYearly    String?
+  isActive               Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@map("plan_definitions")
+}
+
+model UsageTracking {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId   String   @db.Uuid
+  yearMonth        String   // 'YYYY-MM' format
+  linksCreated     Int      @default(0)
+  apiCalls         Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, yearMonth])
+  @@index([organizationId])
+  @@index([yearMonth])
+  @@map("usage_tracking")
+}
+
+model UsageEvent {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  userId         String?  @db.Uuid
+  eventType      String   // 'link_created', 'link_deleted', 'api_call', 'domain_added', etc.
+  resourceId     String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([eventType, createdAt])
+  @@map("usage_events")
 }
