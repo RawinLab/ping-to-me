@@ -7,7 +7,12 @@ import {
   Card,
   CardContent,
 } from "@pingtome/ui";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Instagram, Twitter, Youtube, Facebook, Linkedin, Github, Mail, MessageCircle } from "lucide-react";
+import type { BioPageTheme, LayoutType, SocialLink, SocialPlatform } from "@pingtome/types";
+import {
+  getButtonStyleClasses,
+  getButtonShadowClasses,
+} from "@/lib/biopage-themes";
 
 interface BioLink {
   id: string;
@@ -31,9 +36,9 @@ interface BioPageData {
   title: string;
   description: string | null;
   avatarUrl: string | null;
-  theme: any;
-  layout: any;
-  socialLinks: any;
+  theme: BioPageTheme;
+  layout: LayoutType;
+  socialLinks: SocialLink[];
   showBranding: boolean;
   bioLinks: BioLink[];
 }
@@ -42,8 +47,21 @@ interface BioPageRendererProps {
   pageData: BioPageData;
 }
 
+// Social platform icon mapping
+const socialIcons: Record<SocialPlatform, typeof Instagram> = {
+  instagram: Instagram,
+  twitter: Twitter,
+  tiktok: MessageCircle, // Using MessageCircle as placeholder for TikTok
+  youtube: Youtube,
+  facebook: Facebook,
+  linkedin: Linkedin,
+  github: Github,
+  email: Mail,
+  whatsapp: MessageCircle,
+};
+
 export function BioPageRenderer({ pageData }: BioPageRendererProps) {
-  const { title, description, avatarUrl, bioLinks, showBranding } = pageData;
+  const { title, description, avatarUrl, bioLinks, showBranding, theme, layout, socialLinks } = pageData;
 
   // Get the URL for each link (either external URL or short link)
   const getUrl = (bioLink: BioLink): string => {
@@ -58,28 +76,105 @@ export function BioPageRenderer({ pageData }: BioPageRendererProps) {
     return "#";
   };
 
+  // Compute background style based on theme
+  const getBackgroundStyle = (): React.CSSProperties => {
+    const baseStyle: React.CSSProperties = {};
+
+    switch (theme.backgroundType) {
+      case "solid":
+        baseStyle.backgroundColor = theme.backgroundColor;
+        break;
+      case "gradient":
+        if (theme.backgroundGradient) {
+          baseStyle.backgroundImage = theme.backgroundGradient;
+        } else {
+          baseStyle.backgroundColor = theme.backgroundColor;
+        }
+        break;
+      case "image":
+        if (theme.backgroundImage) {
+          baseStyle.backgroundImage = `url(${theme.backgroundImage})`;
+          baseStyle.backgroundSize = "cover";
+          baseStyle.backgroundPosition = "center";
+          baseStyle.backgroundRepeat = "no-repeat";
+        } else {
+          baseStyle.backgroundColor = theme.backgroundColor;
+        }
+        break;
+    }
+
+    return baseStyle;
+  };
+
+  // Get button style classes
+  const buttonStyleClasses = getButtonStyleClasses(theme.buttonStyle);
+  const buttonShadowClasses = getButtonShadowClasses(theme.buttonShadow);
+
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex justify-center">
+    <div
+      className="min-h-screen py-12 px-4 sm:px-6 lg:px-8 flex justify-center"
+      style={{
+        ...getBackgroundStyle(),
+        fontFamily: theme.fontFamily,
+      }}
+    >
       <div className="max-w-md w-full space-y-8">
+        {/* Header Section */}
         <div className="text-center">
-          <Avatar className="h-24 w-24 mx-auto mb-4">
+          <Avatar className="h-24 w-24 mx-auto mb-4" style={{ boxShadow: `0 0 0 4px ${theme.primaryColor}` }}>
             <AvatarImage src={avatarUrl || undefined} alt={title} />
-            <AvatarFallback>
+            <AvatarFallback style={{ backgroundColor: theme.primaryColor, color: theme.buttonTextColor }}>
               {title.substring(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
+          <h1 className="text-3xl font-bold" style={{ color: theme.textColor }}>
+            {title}
+          </h1>
           {description && (
-            <p className="mt-2 text-gray-600">{description}</p>
+            <p className="mt-2 text-lg" style={{ color: theme.textColor, opacity: 0.8 }}>
+              {description}
+            </p>
           )}
         </div>
 
-        <div className="space-y-4">
+        {/* Social Links */}
+        {socialLinks && socialLinks.length > 0 && (
+          <div className="flex justify-center gap-4 flex-wrap">
+            {socialLinks
+              .sort((a, b) => a.order - b.order)
+              .map((social) => {
+                const Icon = socialIcons[social.platform];
+                return (
+                  <a
+                    key={social.platform}
+                    href={social.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`p-3 transition-all hover:scale-110 ${buttonStyleClasses} ${buttonShadowClasses}`}
+                    style={{
+                      backgroundColor: theme.buttonColor,
+                      color: theme.buttonTextColor,
+                    }}
+                    aria-label={social.platform}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </a>
+                );
+              })}
+          </div>
+        )}
+
+        {/* Bio Links */}
+        <div className={layout === "grid" ? "grid grid-cols-2 gap-4" : "space-y-4"}>
           {bioLinks.map((bioLink) => {
             const url = getUrl(bioLink);
             const displayTitle = bioLink.title;
             const displayDescription = bioLink.description ||
               (bioLink.link ? bioLink.link.originalUrl : bioLink.externalUrl);
+
+            // Use per-link colors if set, otherwise fall back to theme colors
+            const buttonColor = bioLink.buttonColor || theme.buttonColor;
+            const textColor = bioLink.textColor || theme.buttonTextColor;
 
             return (
               <a
@@ -90,9 +185,9 @@ export function BioPageRenderer({ pageData }: BioPageRendererProps) {
                 className="block"
               >
                 <Card
-                  className="hover:shadow-md transition-shadow cursor-pointer"
+                  className={`hover:scale-[1.02] transition-all cursor-pointer border-0 ${buttonStyleClasses} ${buttonShadowClasses}`}
                   style={{
-                    backgroundColor: bioLink.buttonColor || undefined,
+                    backgroundColor: buttonColor,
                   }}
                 >
                   <CardContent className="p-4 flex items-center justify-between">
@@ -100,7 +195,7 @@ export function BioPageRenderer({ pageData }: BioPageRendererProps) {
                       <div
                         className="font-medium text-lg"
                         style={{
-                          color: bioLink.textColor || undefined,
+                          color: textColor,
                         }}
                       >
                         {displayTitle}
@@ -109,9 +204,8 @@ export function BioPageRenderer({ pageData }: BioPageRendererProps) {
                         <div
                           className="text-sm truncate max-w-[250px]"
                           style={{
-                            color: bioLink.textColor
-                              ? `${bioLink.textColor}99` // Add transparency
-                              : undefined,
+                            color: textColor,
+                            opacity: 0.7,
                           }}
                         >
                           {displayDescription}
@@ -121,7 +215,7 @@ export function BioPageRenderer({ pageData }: BioPageRendererProps) {
                     <ExternalLink
                       className="h-5 w-5 flex-shrink-0 ml-3"
                       style={{
-                        color: bioLink.textColor || undefined,
+                        color: textColor,
                       }}
                     />
                   </CardContent>
@@ -130,15 +224,20 @@ export function BioPageRenderer({ pageData }: BioPageRendererProps) {
             );
           })}
           {bioLinks.length === 0 && (
-            <div className="text-center text-gray-500 py-8">
+            <div className="text-center py-8" style={{ color: theme.textColor, opacity: 0.6 }}>
               No links to display.
             </div>
           )}
         </div>
 
+        {/* Branding */}
         {showBranding !== false && (
           <div className="text-center mt-8">
-            <a href="/" className="text-xs text-gray-400 hover:text-gray-600">
+            <a
+              href="/"
+              className="text-xs hover:opacity-80 transition-opacity"
+              style={{ color: theme.textColor, opacity: 0.5 }}
+            >
               Powered by PingTO.Me
             </a>
           </div>

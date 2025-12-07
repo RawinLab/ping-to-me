@@ -6,3 +6,4 @@ export interface User {
 export * from './auth';
 export * from './links';
 export * from './qr';
+export * from './biopage';
