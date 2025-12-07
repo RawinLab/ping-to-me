@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, UseGuards, Request, Headers, RawBodyReques
 import { PaymentsService } from './payments.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Request as ExpressRequest } from 'express';
+import { PermissionGuard, Permission } from '../auth/rbac';
 
 @Controller('payments')
 export class PaymentsController {
@@ -13,13 +14,15 @@ export class PaymentsController {
   }
 
   @Get('subscription')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: 'billing', action: 'read' })
   async getSubscription(@Request() req) {
     return this.paymentsService.getSubscription(req.user.id);
   }
 
   @Post('checkout')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: 'billing', action: 'manage' })
   async createCheckout(
     @Request() req,
     @Body() body: { priceId: string; successUrl: string; cancelUrl: string },
@@ -33,7 +36,8 @@ export class PaymentsController {
   }
 
   @Post('portal')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: 'billing', action: 'manage' })
   async createPortal(
     @Request() req,
     @Body() body: { returnUrl: string },
@@ -42,7 +46,8 @@ export class PaymentsController {
   }
 
   @Get('billing-history')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: 'billing', action: 'read' })
   async getBillingHistory(@Request() req) {
     return this.paymentsService.getBillingHistory(req.user.id);
   }

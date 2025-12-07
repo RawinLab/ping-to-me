@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Post, Query, Request, UseGuards } from '@
 import { AnalyticsService } from './analytics.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { TrackClickDto } from './dto/track-click.dto';
+import { PermissionGuard, Permission } from '../auth/rbac';
 
 @Controller('analytics')
 export class AnalyticsController {
@@ -14,8 +15,9 @@ export class AnalyticsController {
     return this.analyticsService.trackClick(body);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
   @Get('dashboard')
+  @Permission({ resource: 'analytics', action: 'read' })
   async getDashboardMetrics(@Request() req, @Query('days') days?: string) {
     const daysNum = days ? parseInt(days, 10) : 30;
     return this.analyticsService.getDashboardMetrics(req.user.id, daysNum);
@@ -26,8 +28,9 @@ export class AnalyticsController {
 export class LinkAnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) { }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
   @Get(':id/analytics')
+  @Permission({ resource: 'analytics', action: 'read' })
   async getAnalytics(
     @Request() req,
     @Param('id') id: string,
@@ -37,8 +40,9 @@ export class LinkAnalyticsController {
     return this.analyticsService.getLinkAnalytics(id, req.user.id, daysNum);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
   @Get(':id/analytics/qr')
+  @Permission({ resource: 'analytics', action: 'read' })
   async getQrAnalytics(
     @Request() req,
     @Param('id') id: string,

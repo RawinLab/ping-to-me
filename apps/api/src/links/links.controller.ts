@@ -6,6 +6,7 @@ import { CreateLinkDto, LinkResponse } from '@pingtome/types';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { QrCodeService } from '../qr/qr.service';
 import { CreateQrConfigDto } from '../qr/dto/qr-config.dto';
+import { PermissionGuard, Permission } from '../auth/rbac';
 
 @Controller('links')
 export class LinksController {
@@ -15,27 +16,35 @@ export class LinksController {
   ) { }
 
   @Post('import')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: 'link', action: 'bulk' })
   @UseInterceptors(FileInterceptor('file'))
   async import(@Request() req, @UploadedFile() file: Express.Multer.File) {
+    // TODO: Add organizationId to request
     return this.linksService.importLinks(req.user.id, file.buffer);
   }
 
   @Post('bulk-delete')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: 'link', action: 'bulk' })
   async bulkDelete(@Request() req, @Body() body: { ids: string[] }) {
+    // TODO: Add organizationId to request
     return this.linksService.deleteMany(req.user.id, body.ids);
   }
 
   @Post('bulk-tag')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: 'link', action: 'bulk' })
   async bulkTag(@Request() req, @Body() body: { ids: string[]; tagName: string }) {
+    // TODO: Add organizationId to request
     return this.linksService.addTagToMany(req.user.id, body.ids, body.tagName);
   }
 
   @Get('export')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: 'link', action: 'export' })
   async export(@Request() req, @Res() res: Response) {
+    // TODO: Add organizationId to request
     const csv = await this.linksService.exportLinks(req.user.id);
     res.header('Content-Type', 'text/csv');
     res.header('Content-Disposition', 'attachment; filename="links.csv"');
@@ -43,19 +52,24 @@ export class LinksController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: 'link', action: 'create' })
   async create(@Request() req, @Body() createLinkDto: CreateLinkDto): Promise<LinkResponse> {
+    // TODO: Add organizationId to request
     return this.linksService.create(req.user.id, createLinkDto);
   }
 
   @Post(':id') // Using POST for update to avoid CORS preflight issues sometimes, but PATCH is better REST
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: 'link', action: 'update', context: 'own' })
   async update(@Request() req, @Param('id') id: string, @Body() body: any) {
+    // TODO: Add organizationId to request
     return this.linksService.update(req.user.id, id, body);
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: 'link', action: 'read' })
   async findAll(
     @Request() req,
     @Query('page') page: number = 1,
@@ -65,6 +79,7 @@ export class LinksController {
     @Query('search') search?: string,
     @Query('status') status?: string,
   ) {
+    // TODO: Add organizationId to request
     return this.linksService.findAll(req.user.id, {
       page: Number(page),
       limit: Number(limit),
@@ -75,13 +90,15 @@ export class LinksController {
     });
   }
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: 'link', action: 'read' })
   async findOne(@Request() req, @Param('id') id: string) {
     return this.linksService.findOne(req.user.id, id);
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: 'link', action: 'delete', context: 'own' })
   async delete(@Request() req, @Param('id') id: string) {
     return this.linksService.delete(req.user.id, id);
   }
@@ -94,7 +111,8 @@ export class LinksController {
   // ============ QR Config Endpoints ============
 
   @Get(':id/qr')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: 'link', action: 'read' })
   async getQrConfig(@Request() req, @Param('id') id: string) {
     // Verify ownership
     await this.linksService.findOne(req.user.id, id);
@@ -102,7 +120,8 @@ export class LinksController {
   }
 
   @Post(':id/qr')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: 'link', action: 'update', context: 'own' })
   async saveQrConfig(
     @Request() req,
     @Param('id') id: string,

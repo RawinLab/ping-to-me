@@ -9,6 +9,7 @@ import { UpdateBioLinkDto } from './dto/update-bio-link.dto';
 import { ReorderLinksDto } from './dto/reorder-links.dto';
 import { TrackEventDto } from './dto/track-event.dto';
 import { Throttle } from '@nestjs/throttler';
+import { PermissionGuard, Permission } from '../auth/rbac';
 
 @Controller('biopages')
 export class BioPageController {
@@ -17,8 +18,9 @@ export class BioPageController {
     private readonly prisma: PrismaService,
   ) { }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
   @Post()
+  @Permission({ resource: 'biopage', action: 'create' })
   async create(@Request() req, @Body() body: { slug: string; title: string; orgId: string }): Promise<BioPage> {
     let orgId = body.orgId;
     if (!orgId || orgId === 'default') {
@@ -42,26 +44,30 @@ export class BioPageController {
     res.json(page);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
   @Get(':slug')
+  @Permission({ resource: 'biopage', action: 'read' })
   async get(@Param('slug') slug: string): Promise<BioPage | null> {
     return this.bioPageService.getBioPage(slug);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
   @Patch(':id')
+  @Permission({ resource: 'biopage', action: 'update', context: 'own' })
   async update(@Request() req, @Param('id') id: string, @Body() body: any): Promise<BioPage> {
     return this.bioPageService.updateBioPage(id, req.user.id, body);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
   @Delete(':id')
+  @Permission({ resource: 'biopage', action: 'delete', context: 'own' })
   async delete(@Request() req, @Param('id') id: string): Promise<BioPage> {
     return this.bioPageService.deleteBioPage(id, req.user.id);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
   @Get()
+  @Permission({ resource: 'biopage', action: 'read' })
   async list(@Request() req, @Query('orgId') orgId: string): Promise<BioPage[]> {
     if (!orgId || orgId === 'default') {
       const member = await this.prisma.organizationMember.findFirst({
@@ -75,8 +81,9 @@ export class BioPageController {
 
   // BioPageLink endpoints
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
   @Post(':id/links')
+  @Permission({ resource: 'biopage', action: 'update', context: 'own' })
   async addLink(
     @Request() req,
     @Param('id') bioPageId: string,
@@ -85,8 +92,9 @@ export class BioPageController {
     return this.bioPageService.addLink(bioPageId, req.user.id, dto);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
   @Patch(':id/links/:linkId')
+  @Permission({ resource: 'biopage', action: 'update', context: 'own' })
   async updateLink(
     @Request() req,
     @Param('id') bioPageId: string,
@@ -96,8 +104,9 @@ export class BioPageController {
     return this.bioPageService.updateLink(bioPageId, linkId, req.user.id, dto);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
   @Delete(':id/links/:linkId')
+  @Permission({ resource: 'biopage', action: 'update', context: 'own' })
   async removeLink(
     @Request() req,
     @Param('id') bioPageId: string,
@@ -106,8 +115,9 @@ export class BioPageController {
     return this.bioPageService.removeLink(bioPageId, linkId, req.user.id);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
   @Patch(':id/links/reorder')
+  @Permission({ resource: 'biopage', action: 'update', context: 'own' })
   async reorderLinks(
     @Request() req,
     @Param('id') bioPageId: string,
@@ -144,8 +154,9 @@ export class BioPageController {
 
   // Analytics endpoints
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
   @Get(':id/analytics/summary')
+  @Permission({ resource: 'biopage', action: 'read' })
   async getAnalyticsSummary(
     @Request() req,
     @Param('id') bioPageId: string,
@@ -155,8 +166,9 @@ export class BioPageController {
     return this.bioPageService.getAnalyticsSummary(bioPageId, req.user.id, daysNum);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
   @Get(':id/analytics/timeseries')
+  @Permission({ resource: 'biopage', action: 'read' })
   async getAnalyticsTimeseries(
     @Request() req,
     @Param('id') bioPageId: string,
@@ -166,8 +178,9 @@ export class BioPageController {
     return this.bioPageService.getAnalyticsTimeseries(bioPageId, req.user.id, validPeriod);
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, PermissionGuard)
   @Get(':id/analytics/clicks')
+  @Permission({ resource: 'biopage', action: 'read' })
   async getClicksByLink(
     @Request() req,
     @Param('id') bioPageId: string

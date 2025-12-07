@@ -2,9 +2,10 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, 
 import { TagsService } from './tags.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { PrismaService } from '../prisma/prisma.service';
+import { PermissionGuard, Permission } from '../auth/rbac';
 
 @Controller('tags')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, PermissionGuard)
 export class TagsController {
   constructor(
     private readonly tagsService: TagsService,
@@ -12,6 +13,7 @@ export class TagsController {
   ) { }
 
   @Post()
+  @Permission({ resource: 'tag', action: 'create' })
   async create(@Request() req, @Body() body: { name: string; color?: string; orgId: string }) {
     let orgId = body.orgId;
     if (!orgId || orgId === 'default') {
@@ -25,6 +27,7 @@ export class TagsController {
   }
 
   @Get()
+  @Permission({ resource: 'tag', action: 'read' })
   async findAll(@Request() req, @Query('orgId') orgId: string) {
     if (!orgId || orgId === 'default') {
       const member = await this.prisma.organizationMember.findFirst({
@@ -37,11 +40,13 @@ export class TagsController {
   }
 
   @Patch(':id')
+  @Permission({ resource: 'tag', action: 'update', context: 'own' })
   update(@Request() req, @Param('id') id: string, @Body() body: { name?: string; color?: string }) {
     return this.tagsService.update(req.user.id, id, body);
   }
 
   @Delete(':id')
+  @Permission({ resource: 'tag', action: 'delete' })
   remove(@Request() req, @Param('id') id: string) {
     return this.tagsService.remove(req.user.id, id);
   }
