@@ -11,7 +11,10 @@ import { GithubStrategy } from './strategies/github.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailModule } from '../mail/mail.module';
+// Legacy RolesGuard - kept for backward compatibility
 import { RolesGuard } from './guards/roles.guard';
+// New RBAC system
+import { PermissionService, PermissionGuard } from './rbac';
 
 @Module({
   imports: [
@@ -36,9 +39,20 @@ import { RolesGuard } from './guards/roles.guard';
     GoogleStrategy,
     GithubStrategy,
     JwtRefreshStrategy,
+    // Legacy guard - kept for backward compatibility
     RolesGuard,
+    // New RBAC system
+    PermissionService,
+    PermissionGuard,
   ],
-  exports: [AuthService, RolesGuard],
+  exports: [
+    AuthService,
+    // Legacy guard - kept for backward compatibility
+    RolesGuard,
+    // New RBAC system
+    PermissionService,
+    PermissionGuard,
+  ],
 })
 export class AuthModule { }
 
