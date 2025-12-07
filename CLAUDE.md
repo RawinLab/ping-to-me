@@ -193,3 +193,15 @@ THROTTLE_DISABLED=false
 - Use workspace packages: `@pingtome/database`, `@pingtome/ui`, `@pingtome/types`
 - API uses NestJS guards for auth and RBAC
 - Frontend uses axios with token refresh interceptor
+
+---
+
+## Reference Documents
+
+For detailed documentation on specific modules, refer to these files:
+
+| Topic | Reference File | Description |
+|-------|---------------|-------------|
+| **RBAC & Permissions** | [`refs/rbac.md`](refs/rbac.md) | Role-based access control system, permission matrix, guards, decorators, and how to add new resources |
+
+> **Note:** When working with RBAC, permissions, authorization, or creating new modules that need access control, always read `refs/rbac.md` first.
