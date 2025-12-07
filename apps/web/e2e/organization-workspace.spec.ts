@@ -117,7 +117,7 @@ test.describe("Organization Workspace", () => {
         body: JSON.stringify({
           data: [],
           meta: { total: 0, page: 1, limit: 10, totalPages: 1 },
-        });
+        }),
       });
     });
 
