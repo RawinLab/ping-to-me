@@ -4,12 +4,18 @@ import { PrismaService } from "../prisma/prisma.service";
 import { QrCodeService } from "../qr/qr.service";
 import { AuditService } from "../audit/audit.service";
 import { QuotaService } from "../quota/quota.service";
+import { BadRequestException, ForbiddenException } from "@nestjs/common";
+import { LinkStatus } from "@pingtome/types";
 
 describe("LinksService", () => {
   let service: LinksService;
   let prisma: PrismaService;
+  let auditService: AuditService;
 
   beforeEach(async () => {
+    // Mock fetch globally for Cloudflare KV sync tests
+    global.fetch = jest.fn();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         LinksService,
@@ -21,12 +27,17 @@ describe("LinksService", () => {
               create: jest.fn(),
               findMany: jest.fn(),
               count: jest.fn(),
+              update: jest.fn(),
             },
             blockedDomain: {
               findUnique: jest.fn(),
             },
             clickEvent: {
               count: jest.fn().mockResolvedValue(0),
+            },
+            domain: {
+              findFirst: jest.fn(),
+              findUnique: jest.fn(),
             },
           },
         },
@@ -56,6 +67,11 @@ describe("LinksService", () => {
 
     service = module.get<LinksService>(LinksService);
     prisma = module.get<PrismaService>(PrismaService);
+    auditService = module.get<AuditService>(AuditService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it("should be defined", () => {
@@ -73,19 +89,32 @@ describe("LinksService", () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         userId,
-        status: "ACTIVE",
+        status: LinkStatus.ACTIVE,
         tags: [],
         redirectType: 301,
+        title: null,
+        description: null,
+        expirationDate: null,
+        passwordHash: null,
+        deepLinkFallback: null,
+        organizationId: null,
+        domainId: null,
       };
 
       (prisma.blockedDomain.findUnique as jest.Mock).mockResolvedValue(null);
       (prisma.link.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.domain.findFirst as jest.Mock).mockResolvedValue(null);
       (prisma.link.create as jest.Mock).mockResolvedValue(mockLink);
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        text: jest.fn().mockResolvedValue(""),
+      });
 
       const result = await service.create(userId, dto);
 
       expect(result).toBeDefined();
       expect(result.slug).toBe("abc12345");
+      expect(result.status).toBe(LinkStatus.ACTIVE);
       expect(prisma.link.create).toHaveBeenCalled();
     });
 
@@ -110,6 +139,639 @@ describe("LinksService", () => {
       await expect(service.create(userId, dto)).rejects.toThrow(
         "This domain is blocked",
       );
+    });
+  });
+
+  describe("syncToKv", () => {
+    it("should include status in KV value when syncing to Cloudflare", async () => {
+      const userId = "user-123";
+      const mockLink = {
+        id: "link-123",
+        originalUrl: "https://example.com",
+        slug: "test-slug",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId,
+        status: LinkStatus.ACTIVE,
+        tags: [],
+        redirectType: 301,
+        title: "Test",
+        description: null,
+        expirationDate: null,
+        passwordHash: null,
+        deepLinkFallback: null,
+        organizationId: null,
+        domainId: null,
+      };
+
+      // Set environment variables for KV
+      process.env.CF_ACCOUNT_ID = "account-123";
+      process.env.CF_NAMESPACE_ID = "namespace-123";
+      process.env.CF_API_TOKEN = "token-123";
+
+      (prisma.blockedDomain.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.link.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.domain.findFirst as jest.Mock).mockResolvedValue(null);
+      (prisma.link.create as jest.Mock).mockResolvedValue(mockLink);
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        text: jest.fn().mockResolvedValue(""),
+      });
+
+      await service.create(userId, { originalUrl: "https://example.com" });
+
+      // Verify fetch was called with correct KV value including status
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("account-123"),
+        expect.objectContaining({
+          method: "PUT",
+          body: expect.stringContaining('"status":"ACTIVE"'),
+        }),
+      );
+    });
+
+    it("should update KV value when status changes", async () => {
+      const userId = "user-123";
+      const linkId = "link-123";
+
+      const existingLink = {
+        id: linkId,
+        originalUrl: "https://example.com",
+        slug: "test-slug",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId,
+        status: LinkStatus.ACTIVE,
+        tags: [],
+        redirectType: 301,
+        title: "Test",
+        description: null,
+        expirationDate: null,
+        passwordHash: null,
+        deepLinkFallback: null,
+        organizationId: null,
+        domainId: null,
+      };
+
+      const updatedLink = {
+        ...existingLink,
+        status: LinkStatus.DISABLED,
+      };
+
+      process.env.CF_ACCOUNT_ID = "account-123";
+      process.env.CF_NAMESPACE_ID = "namespace-123";
+      process.env.CF_API_TOKEN = "token-123";
+
+      (prisma.link.findUnique as jest.Mock).mockResolvedValue(existingLink);
+      (prisma.link.update as jest.Mock).mockResolvedValue(updatedLink);
+      (auditService.captureChanges as jest.Mock).mockReturnValue({
+        status: { from: "ACTIVE", to: "DISABLED" },
+      });
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        text: jest.fn().mockResolvedValue(""),
+      });
+
+      await service.update(userId, linkId, { status: LinkStatus.DISABLED });
+
+      // Verify fetch was called with updated status
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("account-123"),
+        expect.objectContaining({
+          method: "PUT",
+          body: expect.stringContaining('"status":"DISABLED"'),
+        }),
+      );
+    });
+  });
+
+  describe("updateStatus", () => {
+    it("should change status to DISABLED", async () => {
+      const userId = "user-123";
+      const linkId = "link-123";
+
+      const existingLink = {
+        id: linkId,
+        originalUrl: "https://example.com",
+        slug: "test-slug",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId,
+        status: LinkStatus.ACTIVE,
+        tags: [],
+        redirectType: 301,
+        title: "Test",
+        description: null,
+        expirationDate: null,
+        passwordHash: null,
+        deepLinkFallback: null,
+        organizationId: null,
+        domainId: null,
+      };
+
+      const updatedLink = {
+        ...existingLink,
+        status: LinkStatus.DISABLED,
+      };
+
+      (prisma.link.findUnique as jest.Mock).mockResolvedValue(existingLink);
+      (prisma.link.update as jest.Mock).mockResolvedValue(updatedLink);
+      (auditService.captureChanges as jest.Mock).mockReturnValue({
+        status: { from: "ACTIVE", to: "DISABLED" },
+      });
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        text: jest.fn().mockResolvedValue(""),
+      });
+
+      const result = await service.update(userId, linkId, {
+        status: LinkStatus.DISABLED,
+      });
+
+      expect(result.status).toBe(LinkStatus.DISABLED);
+      expect(prisma.link.update).toHaveBeenCalledWith({
+        where: { id: linkId },
+        data: expect.objectContaining({
+          status: LinkStatus.DISABLED,
+        }),
+      });
+    });
+
+    it("should change status to ARCHIVED", async () => {
+      const userId = "user-123";
+      const linkId = "link-123";
+
+      const existingLink = {
+        id: linkId,
+        originalUrl: "https://example.com",
+        slug: "test-slug",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId,
+        status: LinkStatus.ACTIVE,
+        tags: [],
+        redirectType: 301,
+        title: "Test",
+        description: null,
+        expirationDate: null,
+        passwordHash: null,
+        deepLinkFallback: null,
+        organizationId: null,
+        domainId: null,
+      };
+
+      const updatedLink = {
+        ...existingLink,
+        status: "ARCHIVED",
+      };
+
+      (prisma.link.findUnique as jest.Mock).mockResolvedValue(existingLink);
+      (prisma.link.update as jest.Mock).mockResolvedValue(updatedLink);
+      (auditService.captureChanges as jest.Mock).mockReturnValue({
+        status: { from: "ACTIVE", to: "ARCHIVED" },
+      });
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        text: jest.fn().mockResolvedValue(""),
+      });
+
+      const result = await service.update(userId, linkId, {
+        status: "ARCHIVED" as any,
+      });
+
+      expect(result.status).toBe("ARCHIVED");
+      expect(prisma.link.update).toHaveBeenCalledWith({
+        where: { id: linkId },
+        data: expect.objectContaining({
+          status: "ARCHIVED",
+        }),
+      });
+    });
+
+    it("should audit log status changes", async () => {
+      const userId = "user-123";
+      const linkId = "link-123";
+
+      const existingLink = {
+        id: linkId,
+        originalUrl: "https://example.com",
+        slug: "test-slug",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId,
+        status: LinkStatus.ACTIVE,
+        tags: [],
+        redirectType: 301,
+        title: "Test",
+        description: null,
+        expirationDate: null,
+        passwordHash: null,
+        deepLinkFallback: null,
+        organizationId: null,
+        domainId: null,
+      };
+
+      const updatedLink = {
+        ...existingLink,
+        status: LinkStatus.DISABLED,
+      };
+
+      (prisma.link.findUnique as jest.Mock).mockResolvedValue(existingLink);
+      (prisma.link.update as jest.Mock).mockResolvedValue(updatedLink);
+      (auditService.captureChanges as jest.Mock).mockReturnValue({
+        status: { from: "ACTIVE", to: "DISABLED" },
+      });
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        text: jest.fn().mockResolvedValue(""),
+      });
+
+      await service.update(userId, linkId, {
+        status: LinkStatus.DISABLED,
+      });
+
+      // Verify audit log was called with status change
+      expect(auditService.logLinkEvent).toHaveBeenCalledWith(
+        userId,
+        null,
+        "link.updated",
+        expect.objectContaining({
+          id: linkId,
+          slug: "test-slug",
+        }),
+        expect.objectContaining({
+          changes: expect.objectContaining({
+            status: { from: "ACTIVE", to: "DISABLED" },
+          }),
+        }),
+      );
+    });
+
+    it("should sync to KV after status change", async () => {
+      const userId = "user-123";
+      const linkId = "link-123";
+
+      const existingLink = {
+        id: linkId,
+        originalUrl: "https://example.com",
+        slug: "test-slug",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId,
+        status: LinkStatus.ACTIVE,
+        tags: [],
+        redirectType: 301,
+        title: "Test",
+        description: null,
+        expirationDate: null,
+        passwordHash: null,
+        deepLinkFallback: null,
+        organizationId: null,
+        domainId: null,
+      };
+
+      const updatedLink = {
+        ...existingLink,
+        status: LinkStatus.DISABLED,
+      };
+
+      process.env.CF_ACCOUNT_ID = "account-123";
+      process.env.CF_NAMESPACE_ID = "namespace-123";
+      process.env.CF_API_TOKEN = "token-123";
+
+      (prisma.link.findUnique as jest.Mock).mockResolvedValue(existingLink);
+      (prisma.link.update as jest.Mock).mockResolvedValue(updatedLink);
+      (auditService.captureChanges as jest.Mock).mockReturnValue({
+        status: { from: "ACTIVE", to: "DISABLED" },
+      });
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        text: jest.fn().mockResolvedValue(""),
+      });
+
+      await service.update(userId, linkId, {
+        status: LinkStatus.DISABLED,
+      });
+
+      // Verify KV was synced with new status
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("account-123"),
+        expect.objectContaining({
+          method: "PUT",
+        }),
+      );
+    });
+
+    it("should throw ForbiddenException when user is not the owner", async () => {
+      const userId = "user-123";
+      const otherId = "user-456";
+      const linkId = "link-123";
+
+      const existingLink = {
+        id: linkId,
+        originalUrl: "https://example.com",
+        slug: "test-slug",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId: otherId,
+        status: LinkStatus.ACTIVE,
+        tags: [],
+        redirectType: 301,
+        title: "Test",
+        description: null,
+        expirationDate: null,
+        passwordHash: null,
+        deepLinkFallback: null,
+        organizationId: null,
+        domainId: null,
+      };
+
+      (prisma.link.findUnique as jest.Mock).mockResolvedValue(existingLink);
+
+      await expect(
+        service.update(userId, linkId, { status: LinkStatus.DISABLED }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe("lookup", () => {
+    it("should accept ACTIVE links", async () => {
+      const mockLink = {
+        id: "link-123",
+        slug: "test-slug",
+        originalUrl: "https://example.com",
+        passwordHash: null,
+        expirationDate: null,
+        deepLinkFallback: null,
+        status: LinkStatus.ACTIVE,
+      };
+
+      (prisma.link.findUnique as jest.Mock).mockResolvedValue(mockLink);
+
+      const result = await service.lookup("test-slug");
+
+      expect(result).toBeDefined();
+      expect(result.originalUrl).toBe("https://example.com");
+    });
+
+    it("should reject DISABLED links with ForbiddenException", async () => {
+      const mockLink = {
+        id: "link-123",
+        slug: "test-slug",
+        originalUrl: "https://example.com",
+        passwordHash: null,
+        expirationDate: null,
+        deepLinkFallback: null,
+        status: LinkStatus.DISABLED,
+      };
+
+      (prisma.link.findUnique as jest.Mock).mockResolvedValue(mockLink);
+
+      await expect(service.lookup("test-slug")).rejects.toThrow(
+        ForbiddenException,
+      );
+      await expect(service.lookup("test-slug")).rejects.toThrow(
+        "Link is not active",
+      );
+    });
+
+    it("should reject BANNED links with ForbiddenException", async () => {
+      const mockLink = {
+        id: "link-123",
+        slug: "test-slug",
+        originalUrl: "https://example.com",
+        passwordHash: null,
+        expirationDate: null,
+        deepLinkFallback: null,
+        status: LinkStatus.BANNED,
+      };
+
+      (prisma.link.findUnique as jest.Mock).mockResolvedValue(mockLink);
+
+      await expect(service.lookup("test-slug")).rejects.toThrow(
+        ForbiddenException,
+      );
+      await expect(service.lookup("test-slug")).rejects.toThrow(
+        "Link is not active",
+      );
+    });
+
+    it("should reject ARCHIVED links with ForbiddenException", async () => {
+      const mockLink = {
+        id: "link-123",
+        slug: "test-slug",
+        originalUrl: "https://example.com",
+        passwordHash: null,
+        expirationDate: null,
+        deepLinkFallback: null,
+        status: "ARCHIVED",
+      };
+
+      (prisma.link.findUnique as jest.Mock).mockResolvedValue(mockLink);
+
+      await expect(service.lookup("test-slug")).rejects.toThrow(
+        ForbiddenException,
+      );
+      await expect(service.lookup("test-slug")).rejects.toThrow(
+        "Link is not active",
+      );
+    });
+
+    it("should reject expired links with ForbiddenException", async () => {
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 1);
+
+      const mockLink = {
+        id: "link-123",
+        slug: "test-slug",
+        originalUrl: "https://example.com",
+        passwordHash: null,
+        expirationDate: pastDate,
+        deepLinkFallback: null,
+        status: LinkStatus.ACTIVE,
+      };
+
+      (prisma.link.findUnique as jest.Mock).mockResolvedValue(mockLink);
+
+      await expect(service.lookup("test-slug")).rejects.toThrow(
+        ForbiddenException,
+      );
+      await expect(service.lookup("test-slug")).rejects.toThrow(
+        "Link has expired",
+      );
+    });
+
+    it("should reject non-existent links with BadRequestException", async () => {
+      (prisma.link.findUnique as jest.Mock).mockResolvedValue(null);
+
+      await expect(service.lookup("non-existent")).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.lookup("non-existent")).rejects.toThrow(
+        "Link not found",
+      );
+    });
+
+    it("should accept links with future expiration dates", async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 1);
+
+      const mockLink = {
+        id: "link-123",
+        slug: "test-slug",
+        originalUrl: "https://example.com",
+        passwordHash: null,
+        expirationDate: futureDate,
+        deepLinkFallback: null,
+        status: LinkStatus.ACTIVE,
+      };
+
+      (prisma.link.findUnique as jest.Mock).mockResolvedValue(mockLink);
+
+      const result = await service.lookup("test-slug");
+
+      expect(result).toBeDefined();
+      expect(result.originalUrl).toBe("https://example.com");
+    });
+  });
+
+  describe("findAll with status filtering", () => {
+    it("should exclude BANNED links by default", async () => {
+      const userId = "user-123";
+      const mockLinks = [
+        {
+          id: "link-1",
+          slug: "active-link",
+          originalUrl: "https://example.com",
+          status: LinkStatus.ACTIVE,
+          userId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          tags: [],
+          redirectType: 301,
+          title: null,
+          description: null,
+          expirationDate: null,
+          passwordHash: null,
+          deepLinkFallback: null,
+          organizationId: null,
+          domainId: null,
+        },
+        {
+          id: "link-2",
+          slug: "disabled-link",
+          originalUrl: "https://example.com",
+          status: LinkStatus.DISABLED,
+          userId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          tags: [],
+          redirectType: 301,
+          title: null,
+          description: null,
+          expirationDate: null,
+          passwordHash: null,
+          deepLinkFallback: null,
+          organizationId: null,
+          domainId: null,
+        },
+      ];
+
+      (prisma.link.findMany as jest.Mock).mockResolvedValue(mockLinks);
+      (prisma.link.count as jest.Mock).mockResolvedValue(2);
+
+      const result = await service.findAll(userId, {
+        page: 1,
+        limit: 10,
+      });
+
+      // Verify the query excluded BANNED status
+      expect(prisma.link.findMany).toHaveBeenCalledWith({
+        where: expect.objectContaining({
+          userId,
+          status: { not: LinkStatus.BANNED },
+        }),
+        skip: 0,
+        take: 10,
+        orderBy: { createdAt: "desc" },
+      });
+
+      expect(result.data).toHaveLength(2);
+    });
+
+    it("should filter by specific status when provided", async () => {
+      const userId = "user-123";
+      const mockLinks = [
+        {
+          id: "link-1",
+          slug: "disabled-link",
+          originalUrl: "https://example.com",
+          status: LinkStatus.DISABLED,
+          userId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          tags: [],
+          redirectType: 301,
+          title: null,
+          description: null,
+          expirationDate: null,
+          passwordHash: null,
+          deepLinkFallback: null,
+          organizationId: null,
+          domainId: null,
+        },
+      ];
+
+      (prisma.link.findMany as jest.Mock).mockResolvedValue(mockLinks);
+      (prisma.link.count as jest.Mock).mockResolvedValue(1);
+
+      await service.findAll(userId, {
+        page: 1,
+        limit: 10,
+        status: LinkStatus.DISABLED,
+      });
+
+      // Verify the query included the specific status filter
+      expect(prisma.link.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: LinkStatus.DISABLED,
+          }),
+        }),
+      );
+    });
+  });
+
+  describe("export with status", () => {
+    it("should include status in exported CSV", async () => {
+      const userId = "user-123";
+      const mockLinks = [
+        {
+          id: "link-1",
+          slug: "test-slug",
+          originalUrl: "https://example.com",
+          status: LinkStatus.ACTIVE,
+          userId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          tags: [],
+          redirectType: 301,
+          title: "Test Link",
+          description: null,
+          expirationDate: null,
+          passwordHash: null,
+          deepLinkFallback: null,
+          organizationId: null,
+          domainId: null,
+        },
+      ];
+
+      (prisma.link.findMany as jest.Mock).mockResolvedValue(mockLinks);
+
+      const csv = await service.exportLinks(userId);
+
+      expect(csv).toContain("status");
+      expect(csv).toContain(LinkStatus.ACTIVE);
     });
   });
 });

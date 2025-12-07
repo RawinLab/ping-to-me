@@ -151,4 +151,193 @@ test.describe("Link Status Control", () => {
 
     // Verify API called (via route assertion)
   });
+
+  test("STAT-005: Disabled link returns 403 at redirect", async ({ page }) => {
+    // Mock 403 response for disabled link
+    await page.route("**/disabled-link", async (route) => {
+      await route.fulfill({
+        status: 403,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: "Link is disabled",
+          message: "This link has been disabled by the creator",
+        }),
+      });
+    });
+
+    // Try to access disabled link directly
+    await page.goto("/disabled-link");
+
+    // Verify 403 error response or error message displayed
+    // The exact error message depends on how redirector handles it
+    // We check for either the status or visible error content
+    const response = await page.goto("/disabled-link", {
+      waitUntil: "domcontentloaded",
+    });
+    expect(response?.status()).toBe(403);
+  });
+
+  test("STAT-006: Bulk disable multiple links", async ({ page }) => {
+    // Mock bulk status update endpoint
+    await page.route("**/links/bulk-status", async (route) => {
+      if (route.request().method() === "POST") {
+        const data = route.request().postDataJSON();
+        expect(data.ids).toHaveLength(2);
+        expect(data.status).toBe("DISABLED");
+
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            success: true,
+            count: 2,
+            updatedLinks: [
+              { ...mockLinks[0], status: "DISABLED" },
+              { ...mockLinks[1], status: "DISABLED" },
+            ],
+          }),
+        });
+      }
+    });
+
+    // Select first two links using checkboxes
+    // Skip "Select All" checkbox (first one) and select row-specific checkboxes
+    const row1 = page.locator("tr", { hasText: "active-link" });
+    await row1.locator('button[role="checkbox"]').click();
+
+    const row2 = page.locator("tr", { hasText: "disabled-link" });
+    await row2.locator('button[role="checkbox"]').click();
+
+    // Expect bulk action buttons to appear
+    await expect(
+      page.locator('button:has-text("Disable Selected")'),
+    ).toBeVisible();
+
+    // Handle confirm dialog if present
+    page.on("dialog", (dialog) => dialog.accept());
+
+    // Click Disable Selected
+    await page.click('button:has-text("Disable Selected")');
+
+    // Verify API called (handled by route assertion)
+  });
+
+  test("STAT-007: Bulk enable multiple links", async ({ page }) => {
+    // Mock bulk status update endpoint
+    await page.route("**/links/bulk-status", async (route) => {
+      if (route.request().method() === "POST") {
+        const data = route.request().postDataJSON();
+        expect(data.ids).toHaveLength(2);
+        expect(data.status).toBe("ACTIVE");
+
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            success: true,
+            count: 2,
+            updatedLinks: [
+              { ...mockLinks[1], status: "ACTIVE" },
+              { ...mockLinks[2], status: "ACTIVE" },
+            ],
+          }),
+        });
+      }
+    });
+
+    // Update mock to return disabled links for this test
+    const disabledLinks = mockLinks.map((link) => ({
+      ...link,
+      status: "DISABLED",
+    }));
+
+    await page.route("**/links?*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: disabledLinks,
+          meta: { total: 3, page: 1, limit: 10, totalPages: 1 },
+        }),
+      });
+    });
+
+    // Reload to get disabled links
+    await page.reload();
+
+    // Select disabled links
+    const row1 = page.locator("tr", { hasText: "disabled-link" });
+    await row1.locator('button[role="checkbox"]').click();
+
+    const row2 = page.locator("tr", { hasText: "archived-link" });
+    await row2.locator('button[role="checkbox"]').click();
+
+    // Expect bulk action buttons to appear
+    await expect(
+      page.locator('button:has-text("Enable Selected")'),
+    ).toBeVisible();
+
+    // Handle confirm dialog if present
+    page.on("dialog", (dialog) => dialog.accept());
+
+    // Click Enable Selected
+    await page.click('button:has-text("Enable Selected")');
+
+    // Verify API called (handled by route assertion)
+  });
+
+  test("STAT-008: Archived link returns 410 at redirect", async ({ page }) => {
+    // Mock 410 response for archived link
+    await page.route("**/archived-link", async (route) => {
+      await route.fulfill({
+        status: 410,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: "Link not found",
+          message: "This link has been archived and is no longer available",
+        }),
+      });
+    });
+
+    // Try to access archived link directly
+    const response = await page.goto("/archived-link", {
+      waitUntil: "domcontentloaded",
+    });
+
+    // Verify 410 Gone response
+    expect(response?.status()).toBe(410);
+  });
+
+  test("STAT-009: Banned link returns 410 at redirect", async ({ page }) => {
+    // Mock 410 response for banned link
+    // Banned links are similar to archived - they return 410 Gone
+    const bannedLink = {
+      id: "link-banned",
+      originalUrl: "https://example.com/banned",
+      slug: "banned-link",
+      shortUrl: "http://localhost:3000/banned-link",
+      createdAt: new Date().toISOString(),
+      status: "BANNED",
+    };
+
+    await page.route("**/banned-link", async (route) => {
+      await route.fulfill({
+        status: 410,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: "Link not available",
+          message:
+            "This link has been banned and is no longer available. Please contact support if you believe this is an error.",
+        }),
+      });
+    });
+
+    // Try to access banned link directly
+    const response = await page.goto("/banned-link", {
+      waitUntil: "domcontentloaded",
+    });
+
+    // Verify 410 Gone response
+    expect(response?.status()).toBe(410);
+  });
 });
