@@ -43,6 +43,7 @@ import {
   CheckCircle2,
   Sparkles,
   Plus,
+  ArchiveRestore,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -272,6 +273,40 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
           });
         } else {
           toast.error("Failed to delete links");
+        }
+      }
+    };
+
+    const handleBulkStatusChange = async (status: string) => {
+      if (!canBulkLinks()) {
+        toast.error("Permission denied", {
+          description: "You don't have permission to perform bulk operations",
+        });
+        return;
+      }
+      try {
+        await apiRequest("/links/bulk-status", {
+          method: "POST",
+          body: JSON.stringify({
+            ids: Array.from(selectedIds),
+            status,
+          }),
+        });
+        const statusLabel =
+          status === "ACTIVE"
+            ? "enabled"
+            : status === "DISABLED"
+              ? "disabled"
+              : "archived";
+        toast.success(`${selectedIds.size} links ${statusLabel} successfully`);
+        fetchLinks();
+      } catch (error: any) {
+        if (error?.response?.status === 403) {
+          toast.error("Permission denied", {
+            description: "You don't have permission to update these links",
+          });
+        } else {
+          toast.error("Failed to update link status");
         }
       }
     };
@@ -664,30 +699,43 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                   {canEditLink() && canModifyLink(link) && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() =>
-                          handleStatusChange(
-                            link.id,
-                            link.status === "ACTIVE" ? "DISABLED" : "ACTIVE",
-                          )
-                        }
-                      >
-                        {link.status === "ACTIVE" ? (
-                          <>
-                            <PauseCircle className="mr-2 h-4 w-4" /> Disable
-                            link
-                          </>
-                        ) : (
-                          <>
-                            <PlayCircle className="mr-2 h-4 w-4" /> Enable link
-                          </>
-                        )}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleStatusChange(link.id, "ARCHIVED")}
-                      >
-                        <Archive className="mr-2 h-4 w-4" /> Archive
-                      </DropdownMenuItem>
+                      {link.status === "ARCHIVED" ? (
+                        <DropdownMenuItem
+                          onClick={() => handleStatusChange(link.id, "ACTIVE")}
+                        >
+                          <ArchiveRestore className="mr-2 h-4 w-4" /> Restore
+                        </DropdownMenuItem>
+                      ) : (
+                        <>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleStatusChange(
+                                link.id,
+                                link.status === "ACTIVE" ? "DISABLED" : "ACTIVE",
+                              )
+                            }
+                          >
+                            {link.status === "ACTIVE" ? (
+                              <>
+                                <PauseCircle className="mr-2 h-4 w-4" /> Disable
+                                link
+                              </>
+                            ) : (
+                              <>
+                                <PlayCircle className="mr-2 h-4 w-4" /> Enable
+                                link
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleStatusChange(link.id, "ARCHIVED")
+                            }
+                          >
+                            <Archive className="mr-2 h-4 w-4" /> Archive
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </>
                   )}
                   {canDeleteLink() && canModifyLink(link) && (
@@ -804,25 +852,43 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                   {canEditLink() && canModifyLink(link) && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() =>
-                          handleStatusChange(
-                            link.id,
-                            link.status === "ACTIVE" ? "DISABLED" : "ACTIVE",
-                          )
-                        }
-                      >
-                        {link.status === "ACTIVE" ? (
-                          <>
-                            <PauseCircle className="mr-2 h-4 w-4" /> Disable
-                            link
-                          </>
-                        ) : (
-                          <>
-                            <PlayCircle className="mr-2 h-4 w-4" /> Enable link
-                          </>
-                        )}
-                      </DropdownMenuItem>
+                      {link.status === "ARCHIVED" ? (
+                        <DropdownMenuItem
+                          onClick={() => handleStatusChange(link.id, "ACTIVE")}
+                        >
+                          <ArchiveRestore className="mr-2 h-4 w-4" /> Restore
+                        </DropdownMenuItem>
+                      ) : (
+                        <>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleStatusChange(
+                                link.id,
+                                link.status === "ACTIVE" ? "DISABLED" : "ACTIVE",
+                              )
+                            }
+                          >
+                            {link.status === "ACTIVE" ? (
+                              <>
+                                <PauseCircle className="mr-2 h-4 w-4" /> Disable
+                                link
+                              </>
+                            ) : (
+                              <>
+                                <PlayCircle className="mr-2 h-4 w-4" /> Enable
+                                link
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleStatusChange(link.id, "ARCHIVED")
+                            }
+                          >
+                            <Archive className="mr-2 h-4 w-4" /> Archive
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </>
                   )}
                   {canDeleteLink() && canModifyLink(link) && (
@@ -1012,6 +1078,30 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                 className="bg-white/10 hover:bg-white/20 text-white border-0 rounded-lg"
               >
                 <Tags className="mr-2 h-4 w-4" /> Add tag
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleBulkStatusChange("ACTIVE")}
+                className="bg-white/10 hover:bg-white/20 text-white border-0 rounded-lg"
+              >
+                <PlayCircle className="mr-2 h-4 w-4" /> Enable All
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleBulkStatusChange("DISABLED")}
+                className="bg-white/10 hover:bg-white/20 text-white border-0 rounded-lg"
+              >
+                <PauseCircle className="mr-2 h-4 w-4" /> Disable All
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleBulkStatusChange("ARCHIVED")}
+                className="bg-white/10 hover:bg-white/20 text-white border-0 rounded-lg"
+              >
+                <Archive className="mr-2 h-4 w-4" /> Archive All
               </Button>
               <Button
                 variant="destructive"
