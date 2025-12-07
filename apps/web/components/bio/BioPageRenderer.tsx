@@ -119,9 +119,50 @@ export function BioPageRenderer({ pageData, onLinkClick }: BioPageRendererProps)
         fontFamily: theme.fontFamily,
       }}
     >
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .bio-header {
+          animation: fadeIn 0.3s ease-out;
+        }
+
+        .bio-link-item {
+          animation: fadeInUp 0.3s ease-out backwards;
+        }
+
+        .bio-link-card {
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .bio-link-card:hover {
+          transform: scale(1.03);
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
+        }
+      `}</style>
+
       <div className="max-w-md w-full space-y-8">
         {/* Header Section */}
-        <div className="text-center">
+        <div className="text-center bio-header">
           <Avatar className="h-24 w-24 mx-auto mb-4" style={{ boxShadow: `0 0 0 4px ${theme.primaryColor}` }}>
             <AvatarImage src={avatarUrl || undefined} alt={title} />
             <AvatarFallback style={{ backgroundColor: theme.primaryColor, color: theme.buttonTextColor }}>
@@ -167,7 +208,7 @@ export function BioPageRenderer({ pageData, onLinkClick }: BioPageRendererProps)
 
         {/* Bio Links */}
         <div className={layout === "grid" ? "grid grid-cols-2 gap-4" : "space-y-4"}>
-          {bioLinks.map((bioLink) => {
+          {bioLinks.map((bioLink, index) => {
             const url = getUrl(bioLink);
             const displayTitle = bioLink.title;
             const displayDescription = bioLink.description ||
@@ -189,11 +230,14 @@ export function BioPageRenderer({ pageData, onLinkClick }: BioPageRendererProps)
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block"
+                className="block bio-link-item"
                 onClick={handleClick}
+                style={{
+                  animationDelay: `${0.1 + index * 0.05}s`,
+                }}
               >
                 <Card
-                  className={`hover:scale-[1.02] transition-all cursor-pointer border-0 ${buttonStyleClasses} ${buttonShadowClasses}`}
+                  className={`bio-link-card cursor-pointer border-0 ${buttonStyleClasses} ${buttonShadowClasses}`}
                   style={{
                     backgroundColor: buttonColor,
                   }}

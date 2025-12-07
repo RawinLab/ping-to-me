@@ -20,4 +20,5 @@ export * from "./avatar";
 export * from "./tooltip";
 export * from "./progress";
 export * from "./separator";
+export * from "./skeleton";
 export * from "./utils";

@@ -25,7 +25,16 @@ import {
   TabsTrigger,
   Switch,
 } from "@pingtome/ui";
-import { Plus, Loader2 } from "lucide-react";
+import {
+  Plus,
+  Loader2,
+  FileText,
+  Link as LinkIcon,
+  Palette,
+  Settings,
+  Smartphone,
+  Save
+} from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { ThemeSelector } from "@/components/bio/ThemeSelector";
 import { ColorPicker } from "@/components/bio/ColorPicker";
@@ -35,6 +44,7 @@ import { SortableLinkList } from "@/components/bio/SortableLinkList";
 import { LinkStyleEditor, type BioPageLink } from "@/components/bio/LinkStyleEditor";
 import { SocialLinksEditor } from "@/components/bio/SocialLinksEditor";
 import { LayoutSelector } from "@/components/bio/LayoutSelector";
+import { BioPagePreview } from "@/components/bio/BioPagePreview";
 import { useLinkReorder } from "@/hooks/useLinkReorder";
 import type { SocialLink } from "@pingtome/types";
 import {
@@ -315,226 +325,304 @@ export function BioPageBuilder({
 
   return (
     <div className="space-y-6">
-      {/* Page Details Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Page Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="slug">Slug</Label>
-              <div className="flex items-center">
-                <span className="text-muted-foreground text-sm mr-2">
-                  pingto.me/bio/
-                </span>
-                <Input
-                  id="slug"
-                  {...form.register("slug")}
-                  placeholder="my-page"
-                  disabled={!!existingPage}
-                />
+      {/* Sticky Header with Save Button */}
+      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b py-4 -mx-6 px-6">
+        <div className="flex items-center justify-between max-w-7xl mx-auto">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Bio Page Editor</h2>
+            <p className="text-sm text-muted-foreground">
+              Customize your link-in-bio page with live preview
+            </p>
+          </div>
+          <Button
+            onClick={form.handleSubmit(onSubmit)}
+            disabled={loading}
+            size="lg"
+            className="shadow-md"
+          >
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Save className="mr-2 h-4 w-4" />
+            Save Changes
+          </Button>
+        </div>
+      </div>
+
+      {/* Main Layout: Side by Side on Desktop, Stacked on Mobile */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+        {/* Left Column: Editor Forms */}
+        <div className="space-y-6">
+          {/* Page Details Form */}
+          <Card className="shadow-sm">
+            <CardHeader className="border-b bg-muted/30">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                <CardTitle>Page Details</CardTitle>
               </div>
-              {form.formState.errors.slug && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.slug.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="title">Page Title</Label>
-              <Input
-                id="title"
-                {...form.register("title")}
-                placeholder="My Awesome Links"
-              />
-              {form.formState.errors.title && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.title.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                {...form.register("description")}
-                placeholder="Check out my latest content..."
-              />
-            </div>
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Bio Page
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {/* Tabbed Interface for Links, Theme, and Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Customize Your Bio Page</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="links" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="links">Links</TabsTrigger>
-              <TabsTrigger value="theme">Theme</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-            </TabsList>
-
-            {/* Links Tab */}
-            <TabsContent value="links" className="space-y-4 mt-6">
-              {existingPage?.id ? (
-                <>
-                  <div className="flex gap-2">
-                    <Select onValueChange={addLink}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Add a link..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableLinks
-                          .filter((link) => !bioLinks.some((bl) => bl.link?.slug === link.slug))
-                          .map((link) => (
-                            <SelectItem key={link.id} value={link.id}>
-                              {link.title || link.slug} ({link.originalUrl})
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="slug" className="text-sm font-medium">Slug</Label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground text-sm whitespace-nowrap">
+                      pingto.me/bio/
+                    </span>
+                    <Input
+                      id="slug"
+                      {...form.register("slug")}
+                      placeholder="my-page"
+                      disabled={!!existingPage}
+                      className="flex-1"
+                    />
                   </div>
+                  {form.formState.errors.slug && (
+                    <p className="text-sm text-red-500">
+                      {form.formState.errors.slug.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="title" className="text-sm font-medium">Page Title</Label>
+                  <Input
+                    id="title"
+                    {...form.register("title")}
+                    placeholder="My Awesome Links"
+                  />
+                  {form.formState.errors.title && (
+                    <p className="text-sm text-red-500">
+                      {form.formState.errors.title.message}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+                  <Textarea
+                    id="description"
+                    {...form.register("description")}
+                    placeholder="Check out my latest content..."
+                    rows={3}
+                  />
+                </div>
+              </form>
+            </CardContent>
+          </Card>
 
-                  {isReordering && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Saving order...
+          {/* Tabbed Interface for Links, Theme, and Settings */}
+          <Card className="shadow-sm">
+            <CardContent className="pt-6">
+              <Tabs defaultValue="links" className="w-full">
+                <TabsList className="grid w-full grid-cols-3 mb-6 bg-muted p-1">
+                  <TabsTrigger value="links" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                    <LinkIcon className="h-4 w-4" />
+                    <span className="hidden sm:inline">Links</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="theme" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                    <Palette className="h-4 w-4" />
+                    <span className="hidden sm:inline">Theme</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="settings" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                    <Settings className="h-4 w-4" />
+                    <span className="hidden sm:inline">Settings</span>
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* Links Tab */}
+                <TabsContent value="links" className="space-y-4 mt-0">
+                  {existingPage?.id ? (
+                    <>
+                      <div className="flex gap-2">
+                        <Select onValueChange={addLink}>
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Add a link..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableLinks
+                              .filter((link) => !bioLinks.some((bl) => bl.link?.slug === link.slug))
+                              .map((link) => (
+                                <SelectItem key={link.id} value={link.id}>
+                                  {link.title || link.slug} ({link.originalUrl})
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {isReordering && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Saving order...
+                        </div>
+                      )}
+
+                      <SortableLinkList
+                        links={bioLinks}
+                        onReorder={handleReorder}
+                        onEdit={handleEditLink}
+                        onDelete={handleDeleteLink}
+                        onToggleVisibility={handleToggleVisibility}
+                      />
+                    </>
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg bg-muted/20">
+                      <FileText className="h-12 w-12 mx-auto mb-3 opacity-40" />
+                      <p className="font-medium">Save the bio page first</p>
+                      <p className="text-sm mt-1">Then you can add and manage links</p>
                     </div>
                   )}
+                </TabsContent>
 
-                  <SortableLinkList
-                    links={bioLinks}
-                    onReorder={handleReorder}
-                    onEdit={handleEditLink}
-                    onDelete={handleDeleteLink}
-                    onToggleVisibility={handleToggleVisibility}
-                  />
-                </>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-md">
-                  Save the bio page first to add and manage links.
-                </div>
-              )}
-            </TabsContent>
-
-            {/* Theme Tab */}
-            <TabsContent value="theme" className="space-y-6 mt-6">
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-base font-semibold mb-4 block">
-                    Choose a Preset Theme
-                  </Label>
-                  <ThemeSelector
-                    value={selectedTheme}
-                    onChange={handleThemeChange}
-                  />
-                </div>
-
-                {selectedTheme === "custom" && (
-                  <div className="space-y-6 pt-6 border-t">
-                    <h3 className="text-base font-semibold">
-                      Custom Theme Settings
-                    </h3>
-
-                    <ColorPicker
-                      label="Primary Color"
-                      value={customTheme.primaryColor}
-                      onChange={(color) =>
-                        handleCustomThemeUpdate({ primaryColor: color })
-                      }
-                    />
-
-                    <ColorPicker
-                      label="Button Color"
-                      value={customTheme.buttonColor}
-                      onChange={(color) =>
-                        handleCustomThemeUpdate({ buttonColor: color })
-                      }
-                    />
-
-                    <ColorPicker
-                      label="Text Color"
-                      value={customTheme.textColor}
-                      onChange={(color) =>
-                        handleCustomThemeUpdate({ textColor: color })
-                      }
-                    />
-
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Background</Label>
-                      <BackgroundPicker
-                        backgroundType={customTheme.backgroundType}
-                        backgroundColor={customTheme.backgroundColor}
-                        backgroundGradient={customTheme.backgroundGradient}
-                        backgroundImage={customTheme.backgroundImage}
-                        onChange={(updates) =>
-                          handleCustomThemeUpdate(updates)
-                        }
+                {/* Theme Tab */}
+                <TabsContent value="theme" className="space-y-6 mt-0">
+                  <div className="space-y-6">
+                    <div>
+                      <Label className="text-base font-semibold mb-4 block flex items-center gap-2">
+                        <Palette className="h-4 w-4" />
+                        Choose a Preset Theme
+                      </Label>
+                      <ThemeSelector
+                        value={selectedTheme}
+                        onChange={handleThemeChange}
                       />
                     </div>
 
-                    <ButtonStyleSelector
-                      buttonStyle={customTheme.buttonStyle}
-                      buttonShadow={customTheme.buttonShadow}
-                      onChange={(updates) =>
-                        handleCustomThemeUpdate(updates)
-                      }
-                    />
+                    {selectedTheme === "custom" && (
+                      <div className="space-y-6 pt-6 border-t">
+                        <h3 className="text-base font-semibold flex items-center gap-2">
+                          <Settings className="h-4 w-4" />
+                          Custom Theme Settings
+                        </h3>
+
+                        <ColorPicker
+                          label="Primary Color"
+                          value={customTheme.primaryColor}
+                          onChange={(color) =>
+                            handleCustomThemeUpdate({ primaryColor: color })
+                          }
+                        />
+
+                        <ColorPicker
+                          label="Button Color"
+                          value={customTheme.buttonColor}
+                          onChange={(color) =>
+                            handleCustomThemeUpdate({ buttonColor: color })
+                          }
+                        />
+
+                        <ColorPicker
+                          label="Text Color"
+                          value={customTheme.textColor}
+                          onChange={(color) =>
+                            handleCustomThemeUpdate({ textColor: color })
+                          }
+                        />
+
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">Background</Label>
+                          <BackgroundPicker
+                            backgroundType={customTheme.backgroundType}
+                            backgroundColor={customTheme.backgroundColor}
+                            backgroundGradient={customTheme.backgroundGradient}
+                            backgroundImage={customTheme.backgroundImage}
+                            onChange={(updates) =>
+                              handleCustomThemeUpdate(updates)
+                            }
+                          />
+                        </div>
+
+                        <ButtonStyleSelector
+                          buttonStyle={customTheme.buttonStyle}
+                          buttonShadow={customTheme.buttonShadow}
+                          onChange={(updates) =>
+                            handleCustomThemeUpdate(updates)
+                          }
+                        />
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-            </TabsContent>
+                </TabsContent>
 
-            {/* Settings Tab */}
-            <TabsContent value="settings" className="space-y-6 mt-6">
-              <div className="space-y-6">
-                {/* Layout Selector */}
-                <LayoutSelector
-                  value={layout}
-                  onChange={setLayout}
-                />
+                {/* Settings Tab */}
+                <TabsContent value="settings" className="space-y-6 mt-0">
+                  <div className="space-y-6">
+                    {/* Layout Selector */}
+                    <div>
+                      <Label className="text-base font-semibold mb-4 block flex items-center gap-2">
+                        <Settings className="h-4 w-4" />
+                        Layout Options
+                      </Label>
+                      <LayoutSelector
+                        value={layout}
+                        onChange={setLayout}
+                      />
+                    </div>
 
-                {/* Social Links Editor */}
-                <div className="border-t pt-6">
-                  <SocialLinksEditor
-                    socialLinks={socialLinks}
-                    onChange={setSocialLinks}
-                  />
-                </div>
+                    {/* Social Links Editor */}
+                    <div className="pt-6 border-t">
+                      <SocialLinksEditor
+                        socialLinks={socialLinks}
+                        onChange={setSocialLinks}
+                      />
+                    </div>
 
-                {/* Branding Toggle */}
-                <div className="flex items-center justify-between p-4 border rounded-md bg-gray-50">
-                  <div className="space-y-0.5">
-                    <Label
-                      htmlFor="show-branding"
-                      className="text-sm font-medium cursor-pointer"
-                    >
-                      Show PingTO.Me Branding
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      Display &quot;Powered by PingTO.Me&quot; at the bottom of your page
-                    </p>
+                    {/* Branding Toggle */}
+                    <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+                      <div className="space-y-0.5">
+                        <Label
+                          htmlFor="show-branding"
+                          className="text-sm font-medium cursor-pointer"
+                        >
+                          Show PingTO.Me Branding
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          Display &quot;Powered by PingTO.Me&quot; at the bottom of your page
+                        </p>
+                      </div>
+                      <Switch
+                        id="show-branding"
+                        checked={showBranding}
+                        onCheckedChange={setShowBranding}
+                      />
+                    </div>
                   </div>
-                  <Switch
-                    id="show-branding"
-                    checked={showBranding}
-                    onCheckedChange={setShowBranding}
-                  />
-                </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column: Live Preview (Sticky on Desktop) */}
+        <div className="lg:sticky lg:top-28 lg:h-fit">
+          <Card className="shadow-lg border-2">
+            <CardHeader className="border-b bg-gradient-to-r from-primary/10 to-primary/5">
+              <div className="flex items-center gap-2">
+                <Smartphone className="h-5 w-5 text-primary" />
+                <CardTitle>Live Preview</CardTitle>
               </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+              <p className="text-sm text-muted-foreground mt-1">
+                See your changes in real-time
+              </p>
+            </CardHeader>
+            <CardContent className="p-0">
+              <BioPagePreview
+                title={form.watch("title") || "Your Name"}
+                description={form.watch("description")}
+                avatarUrl={existingPage?.avatarUrl}
+                theme={customTheme}
+                layout={layout}
+                bioLinks={bioLinks.filter((link) => link.isVisible !== false).map((link) => ({
+                  id: link.id,
+                  title: link.title,
+                  description: link.description || undefined,
+                  icon: link.icon || undefined,
+                  externalUrl: link.link?.originalUrl || undefined,
+                }))}
+                socialLinks={socialLinks}
+                showBranding={showBranding}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Link Style Editor Modal */}
       <LinkStyleEditor

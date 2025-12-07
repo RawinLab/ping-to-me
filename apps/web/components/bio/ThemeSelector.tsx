@@ -45,29 +45,40 @@ export function ThemeSelector({ value, onChange }: ThemeSelectorProps) {
         <button
           type="button"
           onClick={() => handleThemeClick("custom")}
-          className="w-full text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg transition-all"
+          className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-lg transition-all group"
         >
           <Card
-            className={`relative overflow-hidden transition-all hover:shadow-md ${
-              value === "custom" ? "ring-2 ring-blue-500 shadow-md" : ""
+            className={`relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] ${
+              value === "custom"
+                ? "ring-[3px] ring-blue-500 shadow-lg"
+                : "hover:shadow-md"
             }`}
           >
             <CardContent className="p-4">
-              <div className="w-full h-24 rounded-md mb-3 relative overflow-hidden bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500">
+              <div className="w-full h-24 rounded-md mb-3 relative overflow-hidden bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 transition-all duration-200">
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3">
+                  <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm" />
+                  <div className="w-full space-y-1.5">
+                    <div className="w-full h-3 rounded-full bg-white/30 backdrop-blur-sm" />
+                    <div className="w-full h-3 rounded-full bg-white/30 backdrop-blur-sm" />
+                  </div>
+                </div>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-white text-xs font-bold">CUSTOM</div>
+                  <div className="text-white text-xs font-bold drop-shadow-md">
+                    CUSTOM
+                  </div>
                 </div>
                 {value === "custom" && (
-                  <div className="absolute top-2 right-2 bg-blue-500 text-white rounded-full p-1">
-                    <Check className="h-3 w-3" />
+                  <div className="absolute top-2 right-2 bg-blue-500 text-white rounded-full p-1.5 shadow-lg animate-pulse">
+                    <Check className="h-4 w-4" />
                   </div>
                 )}
               </div>
               <div className="space-y-1">
-                <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">
+                <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 transition-colors duration-200">
                   Custom
                 </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 transition-colors duration-200">
                   Create your own custom theme
                 </p>
               </div>
@@ -109,46 +120,74 @@ function ThemeCard({
     <button
       type="button"
       onClick={onClick}
-      className="w-full text-left focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg transition-all"
+      className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-lg transition-all group"
     >
       <Card
-        className={`relative overflow-hidden transition-all hover:shadow-md ${
-          isSelected ? "ring-2 ring-blue-500 shadow-md" : ""
+        className={`relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] ${
+          isSelected
+            ? "ring-[3px] ring-blue-500 shadow-lg"
+            : "hover:shadow-md"
         }`}
       >
         <CardContent className="p-4">
           {/* Theme Preview */}
           <div
-            className="w-full h-24 rounded-md mb-3 relative overflow-hidden"
+            className="w-full h-24 rounded-md mb-3 relative overflow-hidden transition-all duration-200"
             style={getBackgroundStyle()}
           >
-            {/* Mini button preview inside the theme box */}
-            <div className="absolute inset-0 flex items-center justify-center p-3">
+            {/* Mini bio page preview with avatar and buttons */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3">
+              {/* Avatar circle */}
               <div
-                className="w-full h-8 rounded flex items-center justify-center text-xs font-medium transition-all"
+                className="w-8 h-8 rounded-full border-2 transition-all duration-200"
                 style={{
-                  backgroundColor: theme.buttonColor,
-                  color: theme.buttonTextColor,
+                  borderColor: theme.textColor,
+                  backgroundColor: `${theme.textColor}20`,
                 }}
-              >
-                Sample Button
+              />
+              {/* Button placeholders */}
+              <div className="w-full space-y-1.5">
+                <div
+                  className="w-full h-3 rounded transition-all duration-200"
+                  style={{
+                    backgroundColor: theme.buttonColor,
+                    borderRadius:
+                      theme.buttonStyle === "pill"
+                        ? "9999px"
+                        : theme.buttonStyle === "square"
+                          ? "2px"
+                          : "4px",
+                  }}
+                />
+                <div
+                  className="w-full h-3 rounded transition-all duration-200"
+                  style={{
+                    backgroundColor: theme.buttonColor,
+                    borderRadius:
+                      theme.buttonStyle === "pill"
+                        ? "9999px"
+                        : theme.buttonStyle === "square"
+                          ? "2px"
+                          : "4px",
+                  }}
+                />
               </div>
             </div>
 
             {/* Selection indicator in top-right corner */}
             {isSelected && (
-              <div className="absolute top-2 right-2 bg-blue-500 text-white rounded-full p-1">
-                <Check className="h-3 w-3" />
+              <div className="absolute top-2 right-2 bg-blue-500 text-white rounded-full p-1.5 shadow-lg animate-pulse">
+                <Check className="h-4 w-4" />
               </div>
             )}
           </div>
 
           {/* Theme Name */}
           <div className="space-y-1">
-            <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">
+            <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 transition-colors duration-200">
               {label}
             </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 transition-colors duration-200">
               {description}
             </p>
           </div>
