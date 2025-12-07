@@ -4,6 +4,8 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { apiRequest } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { UsageDashboard, UsageAlerts } from "@/components/billing";
 import {
   Card,
   CardContent,
@@ -18,7 +20,6 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  Progress,
 } from "@pingtome/ui";
 import {
   CreditCard,
@@ -76,6 +77,7 @@ const planFeatures = {
 
 function BillingContent() {
   const searchParams = useSearchParams();
+  const { currentOrgId } = useAuth();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -169,6 +171,9 @@ function BillingContent() {
           </div>
         )}
 
+        {/* Usage Alerts */}
+        {currentOrgId && <UsageAlerts organizationId={currentOrgId} />}
+
         {/* Current Plan Card */}
         <Card className="border-0 bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-xl overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full -translate-y-32 translate-x-32 blur-3xl" />
@@ -252,27 +257,11 @@ function BillingContent() {
                 )}
               </div>
             </div>
-
-            {/* Usage Progress (for free plan) */}
-            {subscription?.plan === "free" && (
-              <div className="mt-8 pt-6 border-t border-slate-700">
-                <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-slate-400">Monthly link usage</span>
-                  <span className="text-white font-medium">23 / 50 links</span>
-                </div>
-                <Progress value={46} className="h-2 bg-slate-700" />
-                <p className="text-xs text-slate-500 mt-2">
-                  27 links remaining this month. Resets on{" "}
-                  {format(
-                    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                    "MMM d",
-                  )}
-                  .
-                </p>
-              </div>
-            )}
           </CardContent>
         </Card>
+
+        {/* Usage Dashboard */}
+        {currentOrgId && <UsageDashboard organizationId={currentOrgId} />}
 
         {/* Upgrade Promo (for free users) */}
         {subscription?.plan === "free" && (

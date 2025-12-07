@@ -18,10 +18,24 @@ import { Check } from "lucide-react";
 interface Plan {
   id: string;
   name: string;
-  price: number;
-  interval: string;
-  priceId?: string;
+  displayName: string;
+  limits: {
+    linksPerMonth: number; // -1 = unlimited
+    customDomains: number;
+    teamMembers: number;
+    apiCallsPerMonth: number;
+    analyticsRetentionDays: number;
+  };
+  pricing: {
+    monthly: number;
+    yearly: number;
+    yearlySavings: number;
+  };
   features: string[];
+  stripePriceIds: {
+    monthly: string | null;
+    yearly: string | null;
+  };
 }
 
 export default function PricingPage() {
@@ -30,6 +44,7 @@ export default function PricingPage() {
   const [currentPlan, setCurrentPlan] = useState<string>("free");
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [billingInterval, setBillingInterval] = useState<"monthly" | "yearly">("monthly");
 
   useEffect(() => {
     fetchData();
@@ -37,28 +52,42 @@ export default function PricingPage() {
 
   const fetchData = async () => {
     try {
-      const [plansRes, subRes] = await Promise.all([
-        apiRequest("/payments/plans"),
-        apiRequest("/payments/subscription").catch(() => ({ plan: "free" })),
-      ]);
+      // Fetch plans from public endpoint (no auth required)
+      const plansRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/plans`).then(res => res.json());
       setPlans(plansRes);
-      setCurrentPlan(subRes.plan);
+
+      // Try to fetch current subscription (requires auth, may fail if not logged in)
+      try {
+        const subRes = await apiRequest("/payments/subscription");
+        setCurrentPlan(subRes.plan);
+      } catch {
+        // User not logged in or no subscription, default to free
+        setCurrentPlan("free");
+      }
     } catch (error) {
-      console.error("Failed to fetch pricing data");
+      console.error("Failed to fetch pricing data:", error);
     } finally {
       setLoading(false);
     }
   };
 
+  const formatLimit = (value: number): string => {
+    return value === -1 ? 'Unlimited' : value.toLocaleString();
+  };
+
   const handleUpgrade = async (plan: Plan) => {
-    if (!plan.priceId) return;
+    const priceId = billingInterval === "monthly"
+      ? plan.stripePriceIds.monthly
+      : plan.stripePriceIds.yearly;
+
+    if (!priceId) return;
 
     setCheckoutLoading(plan.id);
     try {
       const res = await apiRequest("/payments/checkout", {
         method: "POST",
         body: JSON.stringify({
-          priceId: plan.priceId,
+          priceId: priceId,
           successUrl: `${window.location.origin}/dashboard/billing?success=true`,
           cancelUrl: `${window.location.origin}/pricing`,
         }),
@@ -92,12 +121,36 @@ export default function PricingPage() {
           <p className="text-xl text-muted-foreground">
             Choose the plan that fits your needs
           </p>
+
+          {/* Billing Interval Toggle */}
+          <div className="flex items-center justify-center gap-4 mt-8">
+            <Button
+              variant={billingInterval === "monthly" ? "default" : "outline"}
+              onClick={() => setBillingInterval("monthly")}
+            >
+              Monthly
+            </Button>
+            <Button
+              variant={billingInterval === "yearly" ? "default" : "outline"}
+              onClick={() => setBillingInterval("yearly")}
+            >
+              Yearly
+              {plans.length > 0 && plans[0].pricing.yearlySavings > 0 && (
+                <Badge className="ml-2" variant="secondary">
+                  Save {plans[0].pricing.yearlySavings}%
+                </Badge>
+              )}
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-8 md:grid-cols-3">
           {plans.map((plan) => {
             const isCurrentPlan = plan.id === currentPlan;
             const isPro = plan.id === "pro";
+            const currentPrice = billingInterval === "monthly"
+              ? plan.pricing.monthly
+              : plan.pricing.yearly;
 
             return (
               <Card
@@ -110,14 +163,19 @@ export default function PricingPage() {
                   </Badge>
                 )}
                 <CardHeader>
-                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                  <CardTitle className="text-2xl">{plan.displayName}</CardTitle>
                   <CardDescription>
                     <span className="text-4xl font-bold text-foreground">
-                      ${plan.price}
+                      ${currentPrice}
                     </span>
                     <span className="text-muted-foreground">
-                      /{plan.interval}
+                      /{billingInterval === "monthly" ? "month" : "year"}
                     </span>
+                    {billingInterval === "yearly" && currentPrice > 0 && (
+                      <div className="text-sm mt-1">
+                        ${(currentPrice / 12).toFixed(2)}/month billed annually
+                      </div>
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -135,7 +193,7 @@ export default function PricingPage() {
                     <Button disabled className="w-full">
                       Current Plan
                     </Button>
-                  ) : plan.price === 0 ? (
+                  ) : currentPrice === 0 ? (
                     <Button variant="outline" className="w-full" disabled>
                       Free Forever
                     </Button>
