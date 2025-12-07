@@ -72,7 +72,7 @@ const mainNavItems = [
   },
   {
     title: "Bio Pages",
-    href: "/dashboard/biopages",
+    href: "/dashboard/bio",
     icon: FileText,
     description: "Your link-in-bio pages",
   },

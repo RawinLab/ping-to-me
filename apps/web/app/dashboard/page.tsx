@@ -268,7 +268,7 @@ export default function DashboardPage() {
           </Card>
         </Link>
 
-        <Link href="/dashboard/biopages" className="group">
+        <Link href="/dashboard/bio" className="group">
           <Card className="h-full border-slate-200 hover:border-cyan-300 hover:shadow-lg hover:shadow-cyan-500/10 transition-all duration-300 cursor-pointer">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">

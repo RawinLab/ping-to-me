@@ -507,7 +507,7 @@ test.describe('Bio Pages', () => {
     await expect(page.locator('text=Page Not Found')).toBeVisible({ timeout: 10000 });
   });
 
-  test('BIO-050: Display Analytics Dashboard', async ({ page }) => {
+  test.skip('BIO-050: Display Analytics Dashboard - analytics page removed', async ({ page }) => {
     const mockAnalytics = {
       summary: {
         totalViews: 1250,
