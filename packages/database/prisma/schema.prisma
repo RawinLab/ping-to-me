@@ -144,6 +144,7 @@ model BioPage {
 
   organization   Organization @relation(fields: [organizationId], references: [id])
   bioLinks       BioPageLink[]
+  analytics      BioPageAnalytics[]
 }
 
 model BioPageLink {
@@ -167,6 +168,27 @@ model BioPageLink {
   link         Link?    @relation(fields: [linkId], references: [id])
 
   @@index([bioPageId, order])
+}
+
+model BioPageAnalytics {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bioPageId   String   @db.Uuid
+  eventType   String   // 'page_view', 'link_click'
+  bioLinkId   String?  @db.Uuid
+  timestamp   DateTime @default(now())
+  ip          String?
+  country     String?
+  city        String?
+  device      String?  // 'mobile', 'tablet', 'desktop'
+  browser     String?
+  os          String?
+  referrer    String?
+  userAgent   String?
+
+  bioPage     BioPage  @relation(fields: [bioPageId], references: [id], onDelete: Cascade)
+
+  @@index([bioPageId, timestamp])
+  @@index([bioPageId, eventType])
 }
 
 model OrganizationMember {

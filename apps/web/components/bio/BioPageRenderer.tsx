@@ -45,6 +45,7 @@ interface BioPageData {
 
 interface BioPageRendererProps {
   pageData: BioPageData;
+  onLinkClick?: (linkId: string) => void;
 }
 
 // Social platform icon mapping
@@ -60,7 +61,7 @@ const socialIcons: Record<SocialPlatform, typeof Instagram> = {
   whatsapp: MessageCircle,
 };
 
-export function BioPageRenderer({ pageData }: BioPageRendererProps) {
+export function BioPageRenderer({ pageData, onLinkClick }: BioPageRendererProps) {
   const { title, description, avatarUrl, bioLinks, showBranding, theme, layout, socialLinks } = pageData;
 
   // Get the URL for each link (either external URL or short link)
@@ -176,6 +177,12 @@ export function BioPageRenderer({ pageData }: BioPageRendererProps) {
             const buttonColor = bioLink.buttonColor || theme.buttonColor;
             const textColor = bioLink.textColor || theme.buttonTextColor;
 
+            const handleClick = () => {
+              if (onLinkClick) {
+                onLinkClick(bioLink.id);
+              }
+            };
+
             return (
               <a
                 key={bioLink.id}
@@ -183,6 +190,7 @@ export function BioPageRenderer({ pageData }: BioPageRendererProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block"
+                onClick={handleClick}
               >
                 <Card
                   className={`hover:scale-[1.02] transition-all cursor-pointer border-0 ${buttonStyleClasses} ${buttonShadowClasses}`}

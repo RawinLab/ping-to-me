@@ -4,6 +4,8 @@ import { BioPage, BioPageLink } from '@prisma/client';
 import { CreateBioLinkDto } from './dto/create-bio-link.dto';
 import { UpdateBioLinkDto } from './dto/update-bio-link.dto';
 import { ReorderLinksDto } from './dto/reorder-links.dto';
+import { BioEventType } from './dto/track-event.dto';
+import { UAParser } from 'ua-parser-js';
 
 @Injectable()
 export class BioPageService {
@@ -255,5 +257,274 @@ export class BioPageService {
       where: { bioPageId },
       orderBy: { order: 'asc' },
     });
+  }
+
+  // Track analytics event
+  async trackEvent(
+    bioPageId: string,
+    eventType: BioEventType,
+    bioLinkId: string | undefined,
+    referrer: string | undefined,
+    userAgent: string | undefined,
+    ip: string | undefined,
+  ): Promise<void> {
+    // Verify bio page exists (silently ignore if not found)
+    const bioPage = await this.prisma.bioPage.findUnique({
+      where: { id: bioPageId },
+    });
+
+    if (!bioPage) {
+      return; // Silently ignore invalid bio pages
+    }
+
+    // If link_click, verify bioLinkId is valid
+    if (eventType === BioEventType.LINK_CLICK && bioLinkId) {
+      const bioLink = await this.prisma.bioPageLink.findFirst({
+        where: { id: bioLinkId, bioPageId },
+      });
+
+      // Increment click count on the bio link if it exists
+      if (bioLink) {
+        this.prisma.bioPageLink
+          .update({
+            where: { id: bioLinkId },
+            data: { clickCount: { increment: 1 } },
+          })
+          .catch(() => {}); // Fire and forget, don't block on errors
+      }
+    }
+
+    // Parse user agent
+    let browser = 'Unknown';
+    let os = 'Unknown';
+    let device = 'desktop'; // Default to desktop
+
+    if (userAgent) {
+      const parser = new UAParser(userAgent);
+      const result = parser.getResult();
+      browser = result.browser.name || 'Unknown';
+      os = result.os.name || 'Unknown';
+
+      // UAParser returns undefined for desktop, 'mobile' or 'tablet' for others
+      const deviceType = result.device.type;
+      if (deviceType === 'mobile') {
+        device = 'mobile';
+      } else if (deviceType === 'tablet') {
+        device = 'tablet';
+      } else {
+        device = 'desktop';
+      }
+    }
+
+    // Create analytics record (fire and forget, non-blocking)
+    this.prisma.bioPageAnalytics
+      .create({
+        data: {
+          bioPageId,
+          eventType,
+          bioLinkId,
+          referrer,
+          ip,
+          device,
+          browser,
+          os,
+          userAgent,
+        },
+      })
+      .catch(() => {}); // Don't block on errors
+  }
+
+  // Analytics methods
+
+  async getAnalyticsSummary(bioPageId: string, userId: string, days: number = 30) {
+    await this.verifyBioPageOwnership(bioPageId, userId);
+
+    // Calculate date range
+    const now = new Date();
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - days);
+
+    // Get total views (page_view events)
+    const totalViews = await this.prisma.bioPageAnalytics.count({
+      where: {
+        bioPageId,
+        eventType: 'page_view',
+        timestamp: { gte: startDate },
+      },
+    });
+
+    // Get total clicks (link_click events)
+    const totalClicks = await this.prisma.bioPageAnalytics.count({
+      where: {
+        bioPageId,
+        eventType: 'link_click',
+        timestamp: { gte: startDate },
+      },
+    });
+
+    // Get unique visitors (count distinct IPs for page views)
+    const uniqueVisitorsData = await this.prisma.bioPageAnalytics.groupBy({
+      by: ['ip'],
+      where: {
+        bioPageId,
+        eventType: 'page_view',
+        timestamp: { gte: startDate },
+        ip: { not: null },
+      },
+    });
+    const uniqueVisitors = uniqueVisitorsData.length;
+
+    // Get top 5 countries
+    const countriesData = await this.prisma.bioPageAnalytics.groupBy({
+      by: ['country'],
+      where: {
+        bioPageId,
+        eventType: 'page_view',
+        timestamp: { gte: startDate },
+        country: { not: null },
+      },
+      _count: { id: true },
+      orderBy: { _count: { id: 'desc' } },
+      take: 5,
+    });
+
+    const topCountries = countriesData.map((c) => ({
+      country: c.country || 'Unknown',
+      views: c._count.id,
+    }));
+
+    // Get top 5 referrers
+    const referrersData = await this.prisma.bioPageAnalytics.groupBy({
+      by: ['referrer'],
+      where: {
+        bioPageId,
+        eventType: 'page_view',
+        timestamp: { gte: startDate },
+        referrer: { not: null },
+      },
+      _count: { id: true },
+      orderBy: { _count: { id: 'desc' } },
+      take: 5,
+    });
+
+    const topReferrers = referrersData.map((r) => ({
+      referrer: r.referrer || 'Direct',
+      count: r._count.id,
+    }));
+
+    return {
+      totalViews,
+      totalClicks,
+      uniqueVisitors,
+      topCountries,
+      topReferrers,
+    };
+  }
+
+  async getAnalyticsTimeseries(bioPageId: string, userId: string, period: string = '30d') {
+    await this.verifyBioPageOwnership(bioPageId, userId);
+
+    // Parse period to days
+    const periodMap: Record<string, number> = {
+      '7d': 7,
+      '30d': 30,
+      '90d': 90,
+    };
+    const days = periodMap[period] || 30;
+
+    // Calculate date range
+    const now = new Date();
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - days);
+
+    // Get all analytics events in range
+    const events = await this.prisma.bioPageAnalytics.findMany({
+      where: {
+        bioPageId,
+        timestamp: { gte: startDate },
+      },
+      select: {
+        eventType: true,
+        timestamp: true,
+      },
+    });
+
+    // Group by date
+    const dataByDate: Record<string, { views: number; clicks: number }> = {};
+
+    // Initialize all dates in range with zeros
+    for (let i = 0; i < days; i++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0];
+      dataByDate[dateStr] = { views: 0, clicks: 0 };
+    }
+
+    // Count events by date
+    events.forEach((event) => {
+      const dateStr = event.timestamp.toISOString().split('T')[0];
+      if (dataByDate[dateStr]) {
+        if (event.eventType === 'page_view') {
+          dataByDate[dateStr].views++;
+        } else if (event.eventType === 'link_click') {
+          dataByDate[dateStr].clicks++;
+        }
+      }
+    });
+
+    // Convert to array and sort by date
+    const data = Object.entries(dataByDate)
+      .map(([date, counts]) => ({
+        date,
+        views: counts.views,
+        clicks: counts.clicks,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    return { data };
+  }
+
+  async getClicksByLink(bioPageId: string, userId: string) {
+    await this.verifyBioPageOwnership(bioPageId, userId);
+
+    // Get all bio links with their click counts
+    const bioLinks = await this.prisma.bioPageLink.findMany({
+      where: { bioPageId },
+      select: {
+        id: true,
+        title: true,
+      },
+    });
+
+    // Get click counts from analytics
+    const clicksData = await this.prisma.bioPageAnalytics.groupBy({
+      by: ['bioLinkId'],
+      where: {
+        bioPageId,
+        eventType: 'link_click',
+        bioLinkId: { not: null },
+      },
+      _count: { id: true },
+    });
+
+    // Create a map of bioLinkId to click count
+    const clicksMap = new Map<string, number>();
+    clicksData.forEach((c) => {
+      if (c.bioLinkId) {
+        clicksMap.set(c.bioLinkId, c._count.id);
+      }
+    });
+
+    // Combine data
+    const links = bioLinks.map((link) => ({
+      linkId: link.id,
+      title: link.title,
+      clicks: clicksMap.get(link.id) || 0,
+    }));
+
+    // Sort by clicks descending
+    links.sort((a, b) => b.clicks - a.clicks);
+
+    return { links };
   }
 }

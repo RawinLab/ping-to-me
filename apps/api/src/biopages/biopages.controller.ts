@@ -1,12 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Request, UseGuards, Query, BadRequestException, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Request, UseGuards, Query, BadRequestException, Res, HttpCode, Req } from '@nestjs/common';
 import { BioPageService } from './biopages.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { BioPage, BioPageLink } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { Response } from 'express';
+import { Response, Request as ExpressRequest } from 'express';
 import { CreateBioLinkDto } from './dto/create-bio-link.dto';
 import { UpdateBioLinkDto } from './dto/update-bio-link.dto';
 import { ReorderLinksDto } from './dto/reorder-links.dto';
+import { TrackEventDto } from './dto/track-event.dto';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('biopages')
 export class BioPageController {
@@ -112,5 +114,64 @@ export class BioPageController {
     @Body() dto: ReorderLinksDto
   ): Promise<BioPageLink[]> {
     return this.bioPageService.reorderLinks(bioPageId, req.user.id, dto);
+  }
+
+  // Public tracking endpoint (no auth required)
+  @Post(':id/track')
+  @HttpCode(204)
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 requests per minute per IP
+  async track(
+    @Param('id') bioPageId: string,
+    @Body() dto: TrackEventDto,
+    @Req() req: ExpressRequest,
+  ): Promise<void> {
+    // Extract IP from request headers
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip;
+
+    // Extract user agent
+    const userAgent = req.headers['user-agent'];
+
+    // Call service method (non-blocking)
+    await this.bioPageService.trackEvent(
+      bioPageId,
+      dto.eventType,
+      dto.bioLinkId,
+      dto.referrer,
+      userAgent,
+      ip,
+    );
+  }
+
+  // Analytics endpoints
+
+  @UseGuards(AuthGuard)
+  @Get(':id/analytics/summary')
+  async getAnalyticsSummary(
+    @Request() req,
+    @Param('id') bioPageId: string,
+    @Query('days') days?: string
+  ) {
+    const daysNum = days ? parseInt(days, 10) : 30;
+    return this.bioPageService.getAnalyticsSummary(bioPageId, req.user.id, daysNum);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get(':id/analytics/timeseries')
+  async getAnalyticsTimeseries(
+    @Request() req,
+    @Param('id') bioPageId: string,
+    @Query('period') period?: string
+  ) {
+    const validPeriod = period && ['7d', '30d', '90d'].includes(period) ? period : '30d';
+    return this.bioPageService.getAnalyticsTimeseries(bioPageId, req.user.id, validPeriod);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get(':id/analytics/clicks')
+  async getClicksByLink(
+    @Request() req,
+    @Param('id') bioPageId: string
+  ) {
+    return this.bioPageService.getClicksByLink(bioPageId, req.user.id);
   }
 }

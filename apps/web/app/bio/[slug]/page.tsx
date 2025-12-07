@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { BioPageRenderer } from "@/components/bio/BioPageRenderer";
 import { Loader2 } from "lucide-react";
 import axios from "axios";
+import { trackBioPageView, trackBioLinkClick } from "@/lib/bio-analytics";
 
 interface BioPageData {
   id: string;
@@ -45,6 +46,13 @@ export default function PublicBioPage() {
       fetchData();
     }
   }, [slug]);
+
+  // Track page view when data is loaded
+  useEffect(() => {
+    if (pageData) {
+      trackBioPageView(pageData.id);
+    }
+  }, [pageData]);
 
   const fetchData = async () => {
     try {
@@ -87,5 +95,9 @@ export default function PublicBioPage() {
     );
   }
 
-  return <BioPageRenderer pageData={pageData} />;
+  const handleLinkClick = (linkId: string) => {
+    trackBioLinkClick(pageData.id, linkId);
+  };
+
+  return <BioPageRenderer pageData={pageData} onLinkClick={handleLinkClick} />;
 }
