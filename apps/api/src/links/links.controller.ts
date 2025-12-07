@@ -26,6 +26,7 @@ import {
   BulkDeleteDto,
   BulkTagDto,
   BulkStatusDto,
+  CheckSlugDto,
 } from "./dto";
 
 @Controller("links")
@@ -76,6 +77,12 @@ export class LinksController {
     res.header("Content-Type", "text/csv");
     res.header("Content-Disposition", 'attachment; filename="links.csv"');
     res.send(csv);
+  }
+
+  @Post("check-slug")
+  @UseGuards(JwtAuthGuard)
+  async checkSlugAvailability(@Body() dto: CheckSlugDto): Promise<{ available: boolean; suggestions?: string[] }> {
+    return this.linksService.checkSlugAvailability(dto.slug, dto.domainId);
   }
 
   @Post()
@@ -131,6 +138,13 @@ export class LinksController {
   @Permission({ resource: "link", action: "delete", context: "own" })
   async delete(@Request() req, @Param("id") id: string) {
     return this.linksService.delete(req.user.id, id);
+  }
+
+  @Post(":id/restore")
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: "link", action: "update", context: "own" })
+  async restore(@Request() req, @Param("id") id: string) {
+    return this.linksService.restore(req.user.id, id);
   }
 
   @Get(":slug/lookup")

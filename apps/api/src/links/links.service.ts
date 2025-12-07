@@ -10,15 +10,24 @@ import { toDataURL } from "qrcode";
 import { QrCodeService } from "../qr/qr.service";
 import { AuditService } from "../audit/audit.service";
 import { QuotaService } from "../quota/quota.service";
+import { SafetyCheckService } from "./services/safety-check.service";
 import * as bcrypt from "bcrypt";
 
 @Injectable()
 export class LinksService {
+  private readonly RESERVED_SLUGS = [
+    'api', 'admin', 'dashboard', 'auth', 'login', 'register',
+    'signup', 'signin', 'logout', 'settings', 'profile', 'help',
+    'support', 'about', 'contact', 'pricing', 'terms', 'privacy',
+    'docs', 'documentation', 'blog', 'status', 'health'
+  ];
+
   constructor(
     private prisma: PrismaService,
     private qrCodeService: QrCodeService,
     private auditService: AuditService,
     private quotaService: QuotaService,
+    private safetyCheckService: SafetyCheckService,
   ) {}
 
   async create(userId: string, dto: CreateLinkDto): Promise<LinkResponse> {
@@ -151,6 +160,7 @@ export class LinksService {
         organizationId: dto.organizationId || null,
         domainId: domainId || null, // Store domain association (TASK-2.4.15)
         status: LinkStatus.ACTIVE,
+        safetyStatus: 'pending', // Initialize safety status as pending
       },
     });
 
@@ -183,7 +193,12 @@ export class LinksService {
       )
       .catch((err) => console.error("Audit log failed:", err));
 
-    // 9. Return response with QR options
+    // 9. Trigger safety check asynchronously (don't block)
+    this.safetyCheckService
+      .checkAndUpdateLink(link.id, dto.originalUrl)
+      .catch((err) => console.error("Safety check failed:", err));
+
+    // 10. Return response with QR options
     return this.mapToResponse(link, {
       qrColor: dto.qrColor,
       qrLogo: dto.qrLogo,
@@ -253,11 +268,16 @@ export class LinksService {
     const where: any = {
       userId,
       status: { not: LinkStatus.BANNED },
+      deletedAt: null, // Exclude soft-deleted links by default
     };
 
     // Filter by status
     if (status && status !== "all") {
       where.status = status;
+      // If specifically filtering for ARCHIVED, include soft-deleted links
+      if (status === LinkStatus.ARCHIVED) {
+        delete where.deletedAt;
+      }
     }
 
     if (tag) {
@@ -337,10 +357,17 @@ export class LinksService {
       throw new ForbiddenException("Access denied");
     }
 
-    // Delete from KV
-    await this.deleteFromKv(link.slug);
+    // Soft delete: set status to ARCHIVED and deletedAt timestamp
+    const deleted = await this.prisma.link.update({
+      where: { id },
+      data: {
+        status: LinkStatus.ARCHIVED,
+        deletedAt: new Date(),
+      },
+    });
 
-    const deleted = await this.prisma.link.delete({ where: { id } });
+    // Remove from Cloudflare KV (link is no longer active)
+    await this.deleteFromKv(link.slug);
 
     // Decrement usage tracking if link belonged to an organization
     if (link.organizationId) {
@@ -361,12 +388,76 @@ export class LinksService {
         {
           details: {
             title: link.title,
+            softDelete: true,
           },
         },
       )
       .catch((err) => console.error("Audit log failed:", err));
 
     return deleted;
+  }
+
+  async restore(userId: string, id: string) {
+    const link = await this.prisma.link.findUnique({ where: { id } });
+
+    if (!link || link.userId !== userId) {
+      throw new ForbiddenException("Access denied");
+    }
+
+    if (link.status !== LinkStatus.ARCHIVED) {
+      throw new BadRequestException("Only archived links can be restored");
+    }
+
+    // Check quota before restore (if organization link)
+    if (link.organizationId) {
+      const quotaCheck = await this.quotaService.checkQuota(link.organizationId, 'links');
+      if (!quotaCheck.allowed) {
+        throw new ForbiddenException({
+          code: 'QUOTA_EXCEEDED',
+          message: 'Cannot restore link. Monthly link limit reached.',
+          currentUsage: quotaCheck.currentUsage,
+          limit: quotaCheck.limit,
+        });
+      }
+    }
+
+    // Restore: set status to ACTIVE and clear deletedAt
+    const restored = await this.prisma.link.update({
+      where: { id },
+      data: {
+        status: LinkStatus.ACTIVE,
+        deletedAt: null,
+      },
+    });
+
+    // Re-sync to Cloudflare KV
+    await this.syncToKv(restored);
+
+    // Increment usage tracking
+    if (link.organizationId) {
+      await this.quotaService.incrementUsage(link.organizationId, 'links');
+    }
+
+    // Audit log - link restored
+    this.auditService
+      .logLinkEvent(
+        userId,
+        null,
+        "link.restored",
+        {
+          id: link.id,
+          slug: link.slug,
+          targetUrl: link.originalUrl,
+        },
+        {
+          details: {
+            title: link.title,
+          },
+        },
+      )
+      .catch((err) => console.error("Audit log failed:", err));
+
+    return this.mapToResponse(restored);
   }
 
   private async deleteFromKv(slug: string) {
@@ -657,10 +748,10 @@ export class LinksService {
       // or throw error. For safety, let's just delete matching.
     }
 
-    // Delete from KV (need to fetch slugs first)
+    // Fetch links with organization info for quota tracking
     const links = await this.prisma.link.findMany({
       where: { userId, id: { in: ids } },
-      select: { slug: true },
+      select: { slug: true, organizationId: true },
     });
 
     // Delete from KV for each link
@@ -668,12 +759,26 @@ export class LinksService {
       await this.deleteFromKv(link.slug);
     }
 
-    const result = await this.prisma.link.deleteMany({
+    // Soft delete: set status to ARCHIVED and deletedAt timestamp
+    const result = await this.prisma.link.updateMany({
       where: {
         userId,
         id: { in: ids },
       },
+      data: {
+        status: LinkStatus.ARCHIVED,
+        deletedAt: new Date(),
+      },
     });
+
+    // Decrement usage tracking for organization links
+    const orgIds = new Set(links.filter(l => l.organizationId).map(l => l.organizationId));
+    for (const orgId of orgIds) {
+      const orgLinksCount = links.filter(l => l.organizationId === orgId).length;
+      for (let i = 0; i < orgLinksCount; i++) {
+        await this.quotaService.decrementUsage(orgId, 'links');
+      }
+    }
 
     // Audit log - bulk delete (async, non-blocking)
     if (result.count > 0) {
@@ -689,6 +794,7 @@ export class LinksService {
             details: {
               deletedCount: result.count,
               requestedCount: ids.length,
+              softDelete: true,
             },
           },
         )
@@ -789,5 +895,41 @@ export class LinksService {
       .catch((err) => console.error("Audit log failed:", err));
 
     return { success: true, count: links.length, status };
+  }
+
+  async checkSlugAvailability(slug: string, domainId?: string): Promise<{ available: boolean; suggestions?: string[] }> {
+    // 1. Check reserved slugs
+    if (this.RESERVED_SLUGS.includes(slug.toLowerCase())) {
+      return {
+        available: false,
+        suggestions: this.generateSlugAlternatives(slug)
+      };
+    }
+
+    // 2. Check if slug exists in database
+    const existing = await this.prisma.link.findFirst({
+      where: {
+        slug,
+        domainId: domainId || null,
+        status: { not: 'ARCHIVED' }
+      }
+    });
+
+    if (existing) {
+      return {
+        available: false,
+        suggestions: this.generateSlugAlternatives(slug)
+      };
+    }
+
+    return { available: true };
+  }
+
+  private generateSlugAlternatives(slug: string): string[] {
+    return [
+      `${slug}-1`,
+      `${slug}-${nanoid(4)}`,
+      `my-${slug}`,
+    ].slice(0, 3);
   }
 }

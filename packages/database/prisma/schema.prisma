@@ -332,7 +332,13 @@ model Link {
   domainId         String?   @db.Uuid
   domain           Domain?   @relation(fields: [domainId], references: [id])
 
+  // Safety check fields
+  safetyStatus     String?    // 'safe' | 'unsafe' | 'pending' | 'unknown'
+  safetyCheckDate  DateTime?
+  safetyThreats    String[]   @default([])
+
   status           LinkStatus @default(ACTIVE)
+  deletedAt        DateTime?
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 
