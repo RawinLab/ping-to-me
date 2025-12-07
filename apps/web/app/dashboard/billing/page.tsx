@@ -135,7 +135,8 @@ function BillingContent() {
     ? subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)
     : "Free";
 
-  const currentPlan = (subscription?.plan || "free") as keyof typeof planFeatures;
+  const currentPlan = (subscription?.plan ||
+    "free") as keyof typeof planFeatures;
   const features = planFeatures[currentPlan] || planFeatures.free;
 
   return (
@@ -158,7 +159,9 @@ function BillingContent() {
               <CheckCircle className="h-5 w-5 text-emerald-600" />
             </div>
             <div>
-              <p className="font-medium text-emerald-800">Payment Successful!</p>
+              <p className="font-medium text-emerald-800">
+                Payment Successful!
+              </p>
               <p className="text-sm text-emerald-600">
                 Your subscription has been updated successfully.
               </p>
@@ -178,8 +181,8 @@ function BillingContent() {
                       subscription?.plan === "free"
                         ? "bg-slate-700 text-slate-200"
                         : subscription?.plan === "pro"
-                        ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-0"
-                        : "bg-gradient-to-r from-violet-500 to-purple-500 text-white border-0"
+                          ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-0"
+                          : "bg-gradient-to-r from-violet-500 to-purple-500 text-white border-0"
                     }`}
                   >
                     {planName} Plan
@@ -200,8 +203,8 @@ function BillingContent() {
                   {subscription?.status === "active" && subscription.expiresAt
                     ? `Renews on ${format(new Date(subscription.expiresAt), "MMMM d, yyyy")}`
                     : subscription?.plan === "free"
-                    ? "Upgrade to unlock more features"
-                    : "Manage your subscription below"}
+                      ? "Upgrade to unlock more features"
+                      : "Manage your subscription below"}
                 </p>
 
                 {/* Plan Features */}
@@ -231,7 +234,9 @@ function BillingContent() {
                     }`}
                   >
                     <Sparkles className="h-4 w-4" />
-                    {subscription?.plan === "free" ? "Upgrade to Pro" : "Change Plan"}
+                    {subscription?.plan === "free"
+                      ? "Upgrade to Pro"
+                      : "Change Plan"}
                   </Button>
                 </Link>
                 {subscription?.plan !== "free" && (
@@ -257,7 +262,12 @@ function BillingContent() {
                 </div>
                 <Progress value={46} className="h-2 bg-slate-700" />
                 <p className="text-xs text-slate-500 mt-2">
-                  27 links remaining this month. Resets on {format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), "MMM d")}.
+                  27 links remaining this month. Resets on{" "}
+                  {format(
+                    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                    "MMM d",
+                  )}
+                  .
                 </p>
               </div>
             )}
@@ -282,7 +292,10 @@ function BillingContent() {
                       Unlimited links, custom domains, and advanced analytics.
                     </p>
                     <p className="text-2xl font-bold text-slate-900">
-                      $9<span className="text-sm font-normal text-slate-500">/month</span>
+                      $9
+                      <span className="text-sm font-normal text-slate-500">
+                        /month
+                      </span>
                     </p>
                   </div>
                 </div>
@@ -322,7 +335,9 @@ function BillingContent() {
               </div>
               <div>
                 <CardTitle className="text-lg">Billing History</CardTitle>
-                <CardDescription>View and download your past invoices.</CardDescription>
+                <CardDescription>
+                  View and download your past invoices.
+                </CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -334,7 +349,9 @@ function BillingContent() {
                     <TableHead className="font-semibold">Date</TableHead>
                     <TableHead className="font-semibold">Amount</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
-                    <TableHead className="text-right font-semibold">Invoice</TableHead>
+                    <TableHead className="text-right font-semibold">
+                      Invoice
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -362,8 +379,11 @@ function BillingContent() {
                               : "bg-amber-50 text-amber-700 border-0"
                           }
                         >
-                          {invoice.status === "paid" && <CheckCircle className="h-3 w-3 mr-1" />}
-                          {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                          {invoice.status === "paid" && (
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                          )}
+                          {invoice.status.charAt(0).toUpperCase() +
+                            invoice.status.slice(1)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right py-4">
@@ -374,7 +394,11 @@ function BillingContent() {
                             className="gap-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg"
                             asChild
                           >
-                            <a href={invoice.pdfUrl} target="_blank" rel="noopener">
+                            <a
+                              href={invoice.pdfUrl}
+                              target="_blank"
+                              rel="noopener"
+                            >
                               <Download className="h-4 w-4" />
                               Download
                             </a>
@@ -390,7 +414,9 @@ function BillingContent() {
                 <div className="h-16 w-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
                   <Receipt className="h-8 w-8 text-slate-400" />
                 </div>
-                <h3 className="font-medium text-slate-900 mb-1">No invoices yet</h3>
+                <h3 className="font-medium text-slate-900 mb-1">
+                  No invoices yet
+                </h3>
                 <p className="text-sm text-slate-500">
                   Your billing history will appear here once you upgrade.
                 </p>
@@ -416,7 +442,9 @@ function BillingContent() {
                     <span className="text-white font-bold text-xs">VISA</span>
                   </div>
                   <div>
-                    <p className="font-medium text-slate-900">•••• •••• •••• 4242</p>
+                    <p className="font-medium text-slate-900">
+                      •••• •••• •••• 4242
+                    </p>
                     <p className="text-sm text-slate-500">Expires 12/25</p>
                   </div>
                 </div>

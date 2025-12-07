@@ -166,10 +166,22 @@ export function QrCodeCustomizer({
     } finally {
       setLoading(false);
     }
-  }, [url, foregroundColor, backgroundColor, logo, logoSize, size, borderSize, errorCorrection]);
+  }, [
+    url,
+    foregroundColor,
+    backgroundColor,
+    logo,
+    logoSize,
+    size,
+    borderSize,
+    errorCorrection,
+  ]);
 
   // Compress image if needed (max 500KB)
-  const compressImage = (file: File, maxSizeKB: number = 500): Promise<string> => {
+  const compressImage = (
+    file: File,
+    maxSizeKB: number = 500,
+  ): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -220,7 +232,9 @@ export function QrCodeCustomizer({
     });
   };
 
-  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
     if (file) {
       try {
@@ -267,7 +281,7 @@ export function QrCodeCustomizer({
       // For SVG and PDF, we need to call the API
       window.open(
         `${process.env.NEXT_PUBLIC_API_URL}/qr/download?url=${encodeURIComponent(url)}&fg=${encodeURIComponent(foregroundColor)}&bg=${encodeURIComponent(backgroundColor)}&size=${size}&format=${format}`,
-        "_blank"
+        "_blank",
       );
     }
   };
@@ -513,7 +527,10 @@ export function QrCodeCustomizer({
                 <Shield className="h-4 w-4" />
                 Error Correction
               </Label>
-              <Select value={errorCorrection} onValueChange={setErrorCorrection}>
+              <Select
+                value={errorCorrection}
+                onValueChange={setErrorCorrection}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select error correction" />
                 </SelectTrigger>

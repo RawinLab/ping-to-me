@@ -17,21 +17,25 @@ This test suite (`rbac.spec.ts`) validates the RBAC implementation across the Pi
 Tests that verify OWNER role has full access to all features.
 
 #### RBAC-001: Can access organization settings
+
 - **Description**: OWNER users should be able to navigate to and view organization settings
 - **Expected**: Access allowed, no 403 or redirect
 - **Validates**: Org settings page is accessible to OWNER
 
 #### RBAC-002: Can manage all members
+
 - **Description**: OWNER users should be able to view and manage all team members
 - **Expected**: Team management page loads, invite button visible
 - **Validates**: Full member management capabilities
 
 #### RBAC-003: Can access billing
+
 - **Description**: OWNER users should be able to view and manage billing
 - **Expected**: Billing page accessible with plan information
 - **Validates**: Subscription and payment management access
 
 #### RBAC-004: Can manage all links
+
 - **Description**: OWNER users should be able to create, edit, and delete any link in the organization
 - **Expected**: Links page accessible, create/edit/delete actions visible
 - **Validates**: Full link management capabilities
@@ -41,21 +45,25 @@ Tests that verify OWNER role has full access to all features.
 Tests that verify ADMIN role has most access but cannot manage billing.
 
 #### RBAC-010: Can access limited organization settings
+
 - **Description**: ADMIN users should access org settings but with limitations
 - **Expected**: Organization settings page accessible
 - **Validates**: Settings access with role-based constraints
 
 #### RBAC-011: Can manage non-OWNER members
+
 - **Description**: ADMIN users should manage team members but cannot remove OWNER
 - **Expected**: Team management page accessible
 - **Validates**: Member management with role hierarchy enforcement
 
 #### RBAC-012: Cannot access billing management
+
 - **Description**: ADMIN users should NOT be able to access billing
 - **Expected**: 403 Forbidden or redirect from billing page
 - **Validates**: Billing access restricted to OWNER only
 
 #### RBAC-013: Can manage organization links
+
 - **Description**: ADMIN users should be able to manage all organization links
 - **Expected**: Links page accessible with full link management
 - **Validates**: Organization-wide link management access
@@ -65,31 +73,37 @@ Tests that verify ADMIN role has most access but cannot manage billing.
 Tests that verify EDITOR role has limited access - create own content, view org content.
 
 #### RBAC-020: Cannot access organization settings
+
 - **Description**: EDITOR users should NOT be able to access organization settings
 - **Expected**: 403 Forbidden or redirect
 - **Validates**: Org settings restricted to OWNER/ADMIN
 
 #### RBAC-021: Cannot manage team
+
 - **Description**: EDITOR users should NOT be able to access team management
 - **Expected**: 403 Forbidden or redirect
 - **Validates**: Team management restricted to OWNER/ADMIN
 
 #### RBAC-022: Can create links
+
 - **Description**: EDITOR users should be able to create new links
 - **Expected**: Create link page accessible
 - **Validates**: Link creation capability
 
 #### RBAC-023: Can only edit own links
+
 - **Description**: EDITOR users should be able to edit links they created
 - **Expected**: Links page accessible, can edit own links
 - **Validates**: Ownership-based edit permissions
 
 #### RBAC-024: Can only delete own links
+
 - **Description**: EDITOR users should be able to delete links they created
 - **Expected**: Can delete own links, cannot delete others'
 - **Validates**: Ownership-based delete permissions
 
 #### RBAC-025: Can view organization analytics
+
 - **Description**: EDITOR users should be able to view analytics for links they can access
 - **Expected**: Analytics page accessible
 - **Validates**: Analytics read access for organization content
@@ -99,21 +113,25 @@ Tests that verify EDITOR role has limited access - create own content, view org 
 Tests that verify VIEWER role has read-only access.
 
 #### RBAC-030: Has read-only access
+
 - **Description**: VIEWER users should be able to view dashboard but cannot create
 - **Expected**: Dashboard accessible, create buttons hidden
 - **Validates**: Read-only access to dashboard
 
 #### RBAC-031: Cannot create links
+
 - **Description**: VIEWER users should NOT be able to create links
 - **Expected**: 403 Forbidden or redirect from create link page
 - **Validates**: Link creation restricted
 
 #### RBAC-032: Can view analytics
+
 - **Description**: VIEWER users should be able to view analytics
 - **Expected**: Analytics page accessible
 - **Validates**: Analytics read access
 
 #### RBAC-033: Can view team members
+
 - **Description**: VIEWER users should be able to view team but not modify
 - **Expected**: Team members visible, no invite/edit buttons
 - **Validates**: Team member list read-only access
@@ -123,21 +141,25 @@ Tests that verify VIEWER role has read-only access.
 Tests that verify backend permission enforcement and protection mechanisms.
 
 #### RBAC-040: API returns 403 for unauthorized action
+
 - **Description**: API endpoints should reject unauthorized requests with 403 status
 - **Expected**: 403 Forbidden status code
 - **Validates**: API-level permission enforcement
 
 #### RBAC-041: Direct URL access is blocked
+
 - **Description**: Direct navigation to protected URLs should be blocked
 - **Expected**: Access denied or redirect
 - **Validates**: Frontend route protection
 
 #### RBAC-042: Role change takes effect immediately
+
 - **Description**: Permission changes should take effect immediately
 - **Expected**: Permissions updated without re-login
 - **Validates**: Real-time permission updates
 
 #### RBAC-043: Multi-org permission isolation
+
 - **Description**: Users should only see data from their organization
 - **Expected**: Data isolation between organizations
 - **Validates**: Multi-tenant data segregation
@@ -147,21 +169,25 @@ Tests that verify backend permission enforcement and protection mechanisms.
 Tests that verify API key scoping and permissions.
 
 #### RBAC-050: API key with read scope cannot write
+
 - **Description**: Read-only API keys should be unable to modify resources
 - **Expected**: Write operations rejected
 - **Validates**: API key scope enforcement for reads
 
 #### RBAC-051: API key with write scope can create
+
 - **Description**: Write-enabled API keys should be able to create resources
 - **Expected**: Write operations allowed
 - **Validates**: API key scope enforcement for writes
 
 #### RBAC-052: API key respects organization scope
+
 - **Description**: API keys should be limited to their organization
 - **Expected**: Cannot access other organizations' resources
 - **Validates**: Organization-level API key scoping
 
 #### RBAC-053: Expired API key is rejected
+
 - **Description**: Expired API keys should be rejected
 - **Expected**: 401 Unauthorized for expired keys
 - **Validates**: API key expiration enforcement
@@ -171,14 +197,18 @@ Tests that verify API key scoping and permissions.
 ### Helper Functions
 
 #### `setupAuthMocks(page, role)`
+
 Sets up all necessary API mocks for a specific role including:
+
 - Authentication endpoints (auth/refresh, auth/me)
 - Organization endpoints
 - Links, analytics, team members, settings, billing
 - Role-based response handling
 
 #### `loginAsRole(page, role)`
+
 Performs full login flow for a specific role:
+
 1. Sets up auth mocks
 2. Navigates to login page
 3. Fills credentials from TEST_CREDENTIALS
@@ -186,13 +216,16 @@ Performs full login flow for a specific role:
 5. Waits for dashboard redirect
 
 #### `isPathAccessible(page, path)`
+
 Checks if a path is accessible by:
+
 1. Navigating to the path
 2. Checking for 403/access denied indicators
 3. Verifying no redirect occurred
 4. Restoring previous URL
 
 #### `hasVisibleText(page, text)`
+
 Checks if specific text is visible on the page using regex or string matching.
 
 ## Test Credentials
@@ -202,36 +235,38 @@ The tests use predefined credentials from `fixtures/test-data.ts`:
 ```typescript
 TEST_CREDENTIALS = {
   owner: {
-    email: 'e2e-owner@pingtome.test',
-    password: 'TestPassword123!',
-    name: 'E2E Owner User',
+    email: "e2e-owner@pingtome.test",
+    password: "TestPassword123!",
+    name: "E2E Owner User",
   },
   admin: {
-    email: 'e2e-admin@pingtome.test',
-    password: 'TestPassword123!',
-    name: 'E2E Admin User',
+    email: "e2e-admin@pingtome.test",
+    password: "TestPassword123!",
+    name: "E2E Admin User",
   },
   editor: {
-    email: 'e2e-editor@pingtome.test',
-    password: 'TestPassword123!',
-    name: 'E2E Editor User',
+    email: "e2e-editor@pingtome.test",
+    password: "TestPassword123!",
+    name: "E2E Editor User",
   },
   viewer: {
-    email: 'e2e-viewer@pingtome.test',
-    password: 'TestPassword123!',
-    name: 'E2E Viewer User',
+    email: "e2e-viewer@pingtome.test",
+    password: "TestPassword123!",
+    name: "E2E Viewer User",
   },
-}
+};
 ```
 
 ## Running the Tests
 
 ### Run all RBAC tests
+
 ```bash
 pnpm --filter web test:e2e rbac
 ```
 
 ### Run specific role tests
+
 ```bash
 # OWNER tests only
 pnpm --filter web test:e2e rbac -- --grep "OWNER Role"
@@ -247,21 +282,25 @@ pnpm --filter web test:e2e rbac -- --grep "VIEWER Role"
 ```
 
 ### Run specific test
+
 ```bash
 pnpm --filter web test:e2e rbac -- --grep "RBAC-001"
 ```
 
 ### Run with UI mode (interactive)
+
 ```bash
 npx playwright test --ui apps/web/e2e/rbac.spec.ts
 ```
 
 ### Run with debug mode
+
 ```bash
 npx playwright test --debug apps/web/e2e/rbac.spec.ts
 ```
 
 ### List all tests
+
 ```bash
 npx playwright test --list apps/web/e2e/rbac.spec.ts
 ```
@@ -320,6 +359,7 @@ All tests use these patterns:
 The test suite uses **API mocking** rather than real database interactions:
 
 **Advantages**:
+
 - Fast test execution
 - No database setup required
 - Predictable test data
@@ -327,6 +367,7 @@ The test suite uses **API mocking** rather than real database interactions:
 - Tests UI and route protection logic
 
 **Limitations**:
+
 - Doesn't test actual API permission logic
 - API logic should be tested separately via API integration tests
 - Can miss edge cases in real API
@@ -352,6 +393,7 @@ CI=true npx playwright test --project=chromium apps/web/e2e/rbac.spec.ts
 ```
 
 **CI-Specific Behavior**:
+
 - Single worker for consistent test order
 - HTML report generated in `playwright-report/`
 - Retries failed tests twice
@@ -360,21 +402,25 @@ CI=true npx playwright test --project=chromium apps/web/e2e/rbac.spec.ts
 ## Troubleshooting
 
 ### Test Times Out
+
 - Check if mock routes are matching correctly
 - Ensure page.waitForLoadState() is called
 - Increase timeout in test if needed
 
 ### Element Not Found
+
 - Verify CSS/XPath selectors match actual DOM
 - Check if element is visible or hidden
 - Use page.locator().isVisible() to debug
 
 ### Login Fails
+
 - Check TEST_CREDENTIALS match your setup
 - Verify auth endpoints are mocked
 - Check browser console for errors
 
 ### Permission Not Enforced
+
 - Verify mock routes return 403 for unauthorized
 - Check frontend route guards are in place
 - Validate Redux/state management stores permission correctly

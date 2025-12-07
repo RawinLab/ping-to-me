@@ -53,7 +53,9 @@ export function LayoutSelector({ value, onChange }: LayoutSelectorProps) {
       <div className="space-y-1">
         <div className="flex items-center gap-2">
           <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-          <Label className="text-sm font-semibold text-foreground">Choose Layout</Label>
+          <Label className="text-sm font-semibold text-foreground">
+            Choose Layout
+          </Label>
         </div>
         <p className="text-xs text-muted-foreground">
           Select how your links will be displayed on your bio page
@@ -76,7 +78,7 @@ export function LayoutSelector({ value, onChange }: LayoutSelectorProps) {
                 "hover:scale-[1.02] hover:shadow-md dark:hover:shadow-lg",
                 isSelected
                   ? "border-primary bg-primary/5 dark:bg-primary/10 shadow-sm ring-2 ring-primary/20"
-                  : "border-border dark:border-border bg-card dark:bg-card hover:border-muted-foreground/30"
+                  : "border-border dark:border-border bg-card dark:bg-card hover:border-muted-foreground/30",
               )}
             >
               {/* Selected Checkmark */}
@@ -90,15 +92,17 @@ export function LayoutSelector({ value, onChange }: LayoutSelectorProps) {
               <Icon
                 className={cn(
                   "h-5 w-5 transition-colors",
-                  isSelected ? "text-primary" : "text-muted-foreground"
+                  isSelected ? "text-primary" : "text-muted-foreground",
                 )}
               />
 
               {/* Visual Preview */}
-              <div className={cn(
-                "w-full px-2 transition-transform duration-200",
-                isSelected && "scale-[1.02]"
-              )}>
+              <div
+                className={cn(
+                  "w-full px-2 transition-transform duration-200",
+                  isSelected && "scale-[1.02]",
+                )}
+              >
                 {layout.preview}
               </div>
 
@@ -107,7 +111,7 @@ export function LayoutSelector({ value, onChange }: LayoutSelectorProps) {
                 <div
                   className={cn(
                     "text-sm font-semibold transition-colors",
-                    isSelected ? "text-primary" : "text-foreground"
+                    isSelected ? "text-primary" : "text-foreground",
                   )}
                 >
                   {layout.label}

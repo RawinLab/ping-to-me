@@ -59,7 +59,7 @@ export function ImportLinksModal({
             Authorization: `Bearer ${token}`,
           },
           body: formData,
-        }
+        },
       );
 
       if (!res.ok) throw new Error("Upload failed");

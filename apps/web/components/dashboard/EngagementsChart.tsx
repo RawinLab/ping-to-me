@@ -33,7 +33,7 @@ const CHART_COLORS = {
 export function EngagementsChart({ data, onExport }: EngagementsChartProps) {
   // Check if we have detailed breakdown or just total clicks
   const hasDetailedData = data.some(
-    (d) => d.linkClicks !== undefined || d.qrScans !== undefined
+    (d) => d.linkClicks !== undefined || d.qrScans !== undefined,
   );
 
   return (
@@ -52,7 +52,11 @@ export function EngagementsChart({ data, onExport }: EngagementsChartProps) {
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} barGap={0} barCategoryGap="20%">
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                vertical={false}
+                stroke="#E5E7EB"
+              />
               <XAxis
                 dataKey="date"
                 axisLine={false}
@@ -122,14 +126,18 @@ export function EngagementsChart({ data, onExport }: EngagementsChartProps) {
                 className="w-4 h-4 rounded"
                 style={{ backgroundColor: CHART_COLORS.indigo }}
               />
-              <span className="text-sm text-muted-foreground">QR Code scans</span>
+              <span className="text-sm text-muted-foreground">
+                QR Code scans
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <div
                 className="w-4 h-4 rounded"
                 style={{ backgroundColor: CHART_COLORS.cyan }}
               />
-              <span className="text-sm text-muted-foreground">Bio page clicks</span>
+              <span className="text-sm text-muted-foreground">
+                Bio page clicks
+              </span>
             </div>
           </div>
         )}

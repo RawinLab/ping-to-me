@@ -1,7 +1,7 @@
-import { test as base, expect, Page, BrowserContext } from '@playwright/test';
-import { TEST_CREDENTIALS } from './test-data';
+import { test as base, expect, Page, BrowserContext } from "@playwright/test";
+import { TEST_CREDENTIALS } from "./test-data";
 
-type UserRole = 'owner' | 'admin' | 'editor' | 'viewer';
+type UserRole = "owner" | "admin" | "editor" | "viewer";
 
 interface AuthenticatedTestFixtures {
   authenticatedPage: Page;
@@ -13,12 +13,12 @@ interface AuthenticatedTestFixtures {
  */
 export async function loginAsUser(
   page: Page,
-  role: UserRole = 'owner'
+  role: UserRole = "owner",
 ): Promise<void> {
   const credentials = TEST_CREDENTIALS[role];
 
   // Go to login page
-  await page.goto('/login');
+  await page.goto("/login");
 
   // Fill login form
   await page.fill('input[id="email"]', credentials.email);
@@ -31,7 +31,7 @@ export async function loginAsUser(
   await page.waitForURL(/\/dashboard/, { timeout: 15000 });
 
   // Verify we're logged in by checking dashboard elements
-  await expect(page.locator('h1, nav').first()).toBeVisible({ timeout: 10000 });
+  await expect(page.locator("h1, nav").first()).toBeVisible({ timeout: 10000 });
 }
 
 /**
@@ -39,7 +39,7 @@ export async function loginAsUser(
  */
 export async function quickLogin(
   context: BrowserContext,
-  storageStatePath: string
+  storageStatePath: string,
 ): Promise<void> {
   await context.storageState({ path: storageStatePath });
 }
@@ -50,14 +50,14 @@ export async function quickLogin(
 export async function logout(page: Page): Promise<void> {
   // Clear cookies to log out
   await page.context().clearCookies();
-  await page.goto('/login');
+  await page.goto("/login");
 }
 
 /**
  * Extended test with authenticated page fixture
  */
 export const authenticatedTest = base.extend<AuthenticatedTestFixtures>({
-  userRole: ['owner', { option: true }],
+  userRole: ["owner", { option: true }],
   authenticatedPage: async ({ page, userRole }, use) => {
     await loginAsUser(page, userRole);
     await use(page);
@@ -70,7 +70,7 @@ export const authenticatedTest = base.extend<AuthenticatedTestFixtures>({
 export async function isAuthenticated(page: Page): Promise<boolean> {
   try {
     // Check for dashboard elements that only appear when logged in
-    const dashboardElement = await page.locator('text=PingTO.Me').isVisible();
+    const dashboardElement = await page.locator("text=PingTO.Me").isVisible();
     return dashboardElement;
   } catch {
     return false;

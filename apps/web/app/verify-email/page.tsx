@@ -12,7 +12,7 @@ function VerifyEmailContent() {
   const token = searchParams?.get("token");
   const router = useRouter();
   const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading"
+    "loading",
   );
   const [message, setMessage] = useState("");
 
@@ -31,7 +31,7 @@ function VerifyEmailContent() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token }),
-          }
+          },
         );
 
         if (!res.ok) {
@@ -79,7 +79,8 @@ function VerifyEmailContent() {
             </h1>
             <Alert className="bg-green-50 border-green-200 text-green-800">
               <AlertDescription>
-                Your email has been verified successfully. Redirecting to login...
+                Your email has been verified successfully. Redirecting to
+                login...
               </AlertDescription>
             </Alert>
           </>

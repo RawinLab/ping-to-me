@@ -21,12 +21,31 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@pingtome/ui";
-import { Shield, ShieldCheck, ShieldOff, QrCode, User, Key, CreditCard, ChevronRight, Smartphone, Copy, Check, AlertTriangle, Lock } from "lucide-react";
+import {
+  Shield,
+  ShieldCheck,
+  ShieldOff,
+  QrCode,
+  User,
+  Key,
+  CreditCard,
+  ChevronRight,
+  Smartphone,
+  Copy,
+  Check,
+  AlertTriangle,
+  Lock,
+} from "lucide-react";
 
 const settingsNavItems = [
   { title: "Profile", href: "/dashboard/settings/profile", icon: User },
   { title: "Security", href: "/dashboard/settings/security", icon: Shield },
-  { title: "Two-Factor Auth", href: "/dashboard/settings/two-factor", icon: Key, active: true },
+  {
+    title: "Two-Factor Auth",
+    href: "/dashboard/settings/two-factor",
+    icon: Key,
+    active: true,
+  },
   { title: "Billing", href: "/dashboard/billing", icon: CreditCard },
 ];
 
@@ -170,7 +189,9 @@ export default function TwoFactorPage() {
                 >
                   <Icon className="h-4 w-4" />
                   {item.title}
-                  {!item.active && <ChevronRight className="h-4 w-4 ml-auto text-slate-400" />}
+                  {!item.active && (
+                    <ChevronRight className="h-4 w-4 ml-auto text-slate-400" />
+                  )}
                 </Link>
               );
             })}
@@ -187,7 +208,9 @@ export default function TwoFactorPage() {
                       <Key className="h-4 w-4 text-indigo-600" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">Two-Factor Authentication</CardTitle>
+                      <CardTitle className="text-lg">
+                        Two-Factor Authentication
+                      </CardTitle>
                       <CardDescription>
                         Add an extra layer of security to your account.
                       </CardDescription>
@@ -215,7 +238,9 @@ export default function TwoFactorPage() {
                         Your account is protected
                       </p>
                       <p className="text-sm text-emerald-600">
-                        Two-factor authentication is enabled. You&apos;ll need to enter a verification code from your authenticator app when signing in.
+                        Two-factor authentication is enabled. You&apos;ll need
+                        to enter a verification code from your authenticator app
+                        when signing in.
                       </p>
                     </div>
                   </div>
@@ -229,7 +254,9 @@ export default function TwoFactorPage() {
                         Two-factor authentication is not enabled
                       </p>
                       <p className="text-sm text-amber-600">
-                        Protect your account by enabling 2FA. You&apos;ll need an authenticator app like Google Authenticator, Authy, or 1Password.
+                        Protect your account by enabling 2FA. You&apos;ll need
+                        an authenticator app like Google Authenticator, Authy,
+                        or 1Password.
                       </p>
                     </div>
                   </div>
@@ -259,7 +286,9 @@ export default function TwoFactorPage() {
             {/* How it works */}
             <Card className="border-slate-200 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-lg">How Two-Factor Authentication Works</CardTitle>
+                <CardTitle className="text-lg">
+                  How Two-Factor Authentication Works
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-start gap-4">
@@ -267,9 +296,12 @@ export default function TwoFactorPage() {
                     1
                   </div>
                   <div>
-                    <p className="font-medium text-slate-900">Install an authenticator app</p>
+                    <p className="font-medium text-slate-900">
+                      Install an authenticator app
+                    </p>
                     <p className="text-sm text-slate-500">
-                      Download Google Authenticator, Authy, or any TOTP-compatible app on your phone.
+                      Download Google Authenticator, Authy, or any
+                      TOTP-compatible app on your phone.
                     </p>
                   </div>
                 </div>
@@ -278,9 +310,12 @@ export default function TwoFactorPage() {
                     2
                   </div>
                   <div>
-                    <p className="font-medium text-slate-900">Scan the QR code</p>
+                    <p className="font-medium text-slate-900">
+                      Scan the QR code
+                    </p>
                     <p className="text-sm text-slate-500">
-                      Use your authenticator app to scan the QR code we&apos;ll show you during setup.
+                      Use your authenticator app to scan the QR code we&apos;ll
+                      show you during setup.
                     </p>
                   </div>
                 </div>
@@ -289,9 +324,12 @@ export default function TwoFactorPage() {
                     3
                   </div>
                   <div>
-                    <p className="font-medium text-slate-900">Enter the verification code</p>
+                    <p className="font-medium text-slate-900">
+                      Enter the verification code
+                    </p>
                     <p className="text-sm text-slate-500">
-                      Your app will generate a 6-digit code. Enter it to complete the setup.
+                      Your app will generate a 6-digit code. Enter it to
+                      complete the setup.
                     </p>
                   </div>
                 </div>
@@ -301,7 +339,9 @@ export default function TwoFactorPage() {
             {/* Supported Apps */}
             <Card className="border-slate-200 shadow-sm">
               <CardHeader>
-                <CardTitle className="text-lg">Recommended Authenticator Apps</CardTitle>
+                <CardTitle className="text-lg">
+                  Recommended Authenticator Apps
+                </CardTitle>
                 <CardDescription>
                   Any TOTP-compatible app will work with PingTO.Me
                 </CardDescription>
@@ -313,7 +353,9 @@ export default function TwoFactorPage() {
                       <Smartphone className="h-5 w-5 text-slate-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-slate-900 text-sm">Google Authenticator</p>
+                      <p className="font-medium text-slate-900 text-sm">
+                        Google Authenticator
+                      </p>
                       <p className="text-xs text-slate-500">iOS & Android</p>
                     </div>
                   </div>
@@ -322,8 +364,12 @@ export default function TwoFactorPage() {
                       <Lock className="h-5 w-5 text-slate-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-slate-900 text-sm">Authy</p>
-                      <p className="text-xs text-slate-500">iOS, Android & Desktop</p>
+                      <p className="font-medium text-slate-900 text-sm">
+                        Authy
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        iOS, Android & Desktop
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
@@ -331,7 +377,9 @@ export default function TwoFactorPage() {
                       <Key className="h-5 w-5 text-slate-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-slate-900 text-sm">1Password</p>
+                      <p className="font-medium text-slate-900 text-sm">
+                        1Password
+                      </p>
                       <p className="text-xs text-slate-500">All platforms</p>
                     </div>
                   </div>
@@ -351,7 +399,8 @@ export default function TwoFactorPage() {
               Set up Two-Factor Authentication
             </DialogTitle>
             <DialogDescription>
-              Scan the QR code with your authenticator app, then enter the verification code.
+              Scan the QR code with your authenticator app, then enter the
+              verification code.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -383,14 +432,19 @@ export default function TwoFactorPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="verifyCode" className="text-slate-700 font-medium">
+              <Label
+                htmlFor="verifyCode"
+                className="text-slate-700 font-medium"
+              >
                 Verification Code
               </Label>
               <Input
                 id="verifyCode"
                 placeholder="Enter 6-digit code"
                 value={verifyCode}
-                onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, ""))}
+                onChange={(e) =>
+                  setVerifyCode(e.target.value.replace(/\D/g, ""))
+                }
                 maxLength={6}
                 className="h-11 rounded-lg text-center text-lg font-mono tracking-widest"
               />
@@ -433,19 +487,25 @@ export default function TwoFactorPage() {
               <div>
                 <p className="font-medium text-red-800 text-sm">Warning</p>
                 <p className="text-sm text-red-600">
-                  Disabling 2FA will make your account less secure. Your account will only be protected by your password.
+                  Disabling 2FA will make your account less secure. Your account
+                  will only be protected by your password.
                 </p>
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="disableCode" className="text-slate-700 font-medium">
+              <Label
+                htmlFor="disableCode"
+                className="text-slate-700 font-medium"
+              >
                 Verification Code
               </Label>
               <Input
                 id="disableCode"
                 placeholder="Enter 6-digit code"
                 value={disableCode}
-                onChange={(e) => setDisableCode(e.target.value.replace(/\D/g, ""))}
+                onChange={(e) =>
+                  setDisableCode(e.target.value.replace(/\D/g, ""))
+                }
                 maxLength={6}
                 className="h-11 rounded-lg text-center text-lg font-mono tracking-widest"
               />

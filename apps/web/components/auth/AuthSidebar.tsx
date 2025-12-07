@@ -55,12 +55,10 @@ export function AuthSidebar({
 
         {!title && !description && (
           <>
-            <h2 className="text-2xl font-bold">
-              Shorten, Share, Track, Grow
-            </h2>
+            <h2 className="text-2xl font-bold">Shorten, Share, Track, Grow</h2>
             <p className="text-blue-100 text-lg leading-relaxed">
-              Transform long URLs into powerful short links with detailed analytics,
-              custom domains, and QR codes.
+              Transform long URLs into powerful short links with detailed
+              analytics, custom domains, and QR codes.
             </p>
           </>
         )}

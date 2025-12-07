@@ -7,8 +7,23 @@ import {
   Card,
   CardContent,
 } from "@pingtome/ui";
-import { ExternalLink, Instagram, Twitter, Youtube, Facebook, Linkedin, Github, Mail, MessageCircle } from "lucide-react";
-import type { BioPageTheme, LayoutType, SocialLink, SocialPlatform } from "@pingtome/types";
+import {
+  ExternalLink,
+  Instagram,
+  Twitter,
+  Youtube,
+  Facebook,
+  Linkedin,
+  Github,
+  Mail,
+  MessageCircle,
+} from "lucide-react";
+import type {
+  BioPageTheme,
+  LayoutType,
+  SocialLink,
+  SocialPlatform,
+} from "@pingtome/types";
 import {
   getButtonStyleClasses,
   getButtonShadowClasses,
@@ -61,8 +76,20 @@ const socialIcons: Record<SocialPlatform, typeof Instagram> = {
   whatsapp: MessageCircle,
 };
 
-export function BioPageRenderer({ pageData, onLinkClick }: BioPageRendererProps) {
-  const { title, description, avatarUrl, bioLinks, showBranding, theme, layout, socialLinks } = pageData;
+export function BioPageRenderer({
+  pageData,
+  onLinkClick,
+}: BioPageRendererProps) {
+  const {
+    title,
+    description,
+    avatarUrl,
+    bioLinks,
+    showBranding,
+    theme,
+    layout,
+    socialLinks,
+  } = pageData;
 
   // Get the URL for each link (either external URL or short link)
   const getUrl = (bioLink: BioLink): string => {
@@ -71,7 +98,8 @@ export function BioPageRenderer({ pageData, onLinkClick }: BioPageRendererProps)
     }
     if (bioLink.link) {
       // Construct the short URL from the slug
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3010";
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3010";
       return `${baseUrl}/${bioLink.link.slug}`;
     }
     return "#";
@@ -156,16 +184,26 @@ export function BioPageRenderer({ pageData, onLinkClick }: BioPageRendererProps)
 
         .bio-link-card:hover {
           transform: scale(1.03);
-          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
+          box-shadow:
+            0 10px 25px -5px rgba(0, 0, 0, 0.2),
+            0 8px 10px -6px rgba(0, 0, 0, 0.15);
         }
       `}</style>
 
       <div className="max-w-md w-full space-y-8">
         {/* Header Section */}
         <div className="text-center bio-header">
-          <Avatar className="h-24 w-24 mx-auto mb-4" style={{ boxShadow: `0 0 0 4px ${theme.primaryColor}` }}>
+          <Avatar
+            className="h-24 w-24 mx-auto mb-4"
+            style={{ boxShadow: `0 0 0 4px ${theme.primaryColor}` }}
+          >
             <AvatarImage src={avatarUrl || undefined} alt={title} />
-            <AvatarFallback style={{ backgroundColor: theme.primaryColor, color: theme.buttonTextColor }}>
+            <AvatarFallback
+              style={{
+                backgroundColor: theme.primaryColor,
+                color: theme.buttonTextColor,
+              }}
+            >
               {title.substring(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
@@ -173,7 +211,10 @@ export function BioPageRenderer({ pageData, onLinkClick }: BioPageRendererProps)
             {title}
           </h1>
           {description && (
-            <p className="mt-2 text-lg" style={{ color: theme.textColor, opacity: 0.8 }}>
+            <p
+              className="mt-2 text-lg"
+              style={{ color: theme.textColor, opacity: 0.8 }}
+            >
               {description}
             </p>
           )}
@@ -207,11 +248,14 @@ export function BioPageRenderer({ pageData, onLinkClick }: BioPageRendererProps)
         )}
 
         {/* Bio Links */}
-        <div className={layout === "grid" ? "grid grid-cols-2 gap-4" : "space-y-4"}>
+        <div
+          className={layout === "grid" ? "grid grid-cols-2 gap-4" : "space-y-4"}
+        >
           {bioLinks.map((bioLink, index) => {
             const url = getUrl(bioLink);
             const displayTitle = bioLink.title;
-            const displayDescription = bioLink.description ||
+            const displayDescription =
+              bioLink.description ||
               (bioLink.link ? bioLink.link.originalUrl : bioLink.externalUrl);
 
             // Use per-link colors if set, otherwise fall back to theme colors
@@ -276,7 +320,10 @@ export function BioPageRenderer({ pageData, onLinkClick }: BioPageRendererProps)
             );
           })}
           {bioLinks.length === 0 && (
-            <div className="text-center py-8" style={{ color: theme.textColor, opacity: 0.6 }}>
+            <div
+              className="text-center py-8"
+              style={{ color: theme.textColor, opacity: 0.6 }}
+            >
               No links to display.
             </div>
           )}

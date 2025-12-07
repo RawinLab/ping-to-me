@@ -1,9 +1,9 @@
-import { IsString, IsOptional, IsEnum, IsDateString } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsDateString } from "class-validator";
 
 export enum ClickSource {
-  DIRECT = 'DIRECT',
-  QR = 'QR',
-  API = 'API',
+  DIRECT = "DIRECT",
+  QR = "QR",
+  API = "API",
 }
 
 export class TrackClickDto {

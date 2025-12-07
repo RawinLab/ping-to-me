@@ -29,7 +29,10 @@ const CHART_COLORS = [
 ];
 
 // Format referrer URL for display
-function formatReferrer(referrer: string): { display: string; url: string | null } {
+function formatReferrer(referrer: string): {
+  display: string;
+  url: string | null;
+} {
   if (referrer === "direct" || !referrer) {
     return { display: "Direct / None", url: null };
   }
@@ -47,7 +50,11 @@ function formatReferrer(referrer: string): { display: string; url: string | null
   }
 }
 
-export function ReferrersChart({ data, totalClicks, onExport }: ReferrersChartProps) {
+export function ReferrersChart({
+  data,
+  totalClicks,
+  onExport,
+}: ReferrersChartProps) {
   const [expanded, setExpanded] = useState(false);
 
   const chartData = data.map((item, index) => ({
@@ -90,7 +97,9 @@ export function ReferrersChart({ data, totalClicks, onExport }: ReferrersChartPr
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-3xl font-bold">{totalClicks.toLocaleString()}</span>
+              <span className="text-3xl font-bold">
+                {totalClicks.toLocaleString()}
+              </span>
               <span className="text-xs text-muted-foreground uppercase tracking-wider">
                 ENGAGEMENT
               </span>
@@ -100,7 +109,10 @@ export function ReferrersChart({ data, totalClicks, onExport }: ReferrersChartPr
             {chartData.slice(0, displayCount).map((item) => {
               const { display, url } = formatReferrer(item.name);
               return (
-                <div key={item.name} className="flex items-center justify-between gap-2">
+                <div
+                  key={item.name}
+                  className="flex items-center justify-between gap-2"
+                >
                   <div className="flex items-center gap-2 min-w-0 flex-1">
                     <div
                       className="w-3 h-3 rounded-full flex-shrink-0"
@@ -118,13 +130,18 @@ export function ReferrersChart({ data, totalClicks, onExport }: ReferrersChartPr
                         <ExternalLink className="h-3 w-3 flex-shrink-0" />
                       </a>
                     ) : (
-                      <span className="text-sm text-muted-foreground truncate" title={display}>
+                      <span
+                        className="text-sm text-muted-foreground truncate"
+                        title={display}
+                      >
                         {display}
                       </span>
                     )}
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className="text-sm font-medium">{item.value.toLocaleString()}</span>
+                    <span className="text-sm font-medium">
+                      {item.value.toLocaleString()}
+                    </span>
                     <span className="text-xs text-muted-foreground w-10 text-right">
                       {item.percentage}%
                     </span>

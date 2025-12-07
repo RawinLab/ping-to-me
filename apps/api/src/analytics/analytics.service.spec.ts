@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AnalyticsService } from './analytics.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { NotFoundException, ForbiddenException } from '@nestjs/common';
-import { ClickSource } from '@prisma/client';
+import { Test, TestingModule } from "@nestjs/testing";
+import { AnalyticsService } from "./analytics.service";
+import { PrismaService } from "../prisma/prisma.service";
+import { NotFoundException, ForbiddenException } from "@nestjs/common";
+import { ClickSource } from "@prisma/client";
 
-describe('AnalyticsService', () => {
+describe("AnalyticsService", () => {
   let service: AnalyticsService;
   let prisma: PrismaService;
 
@@ -39,93 +39,109 @@ describe('AnalyticsService', () => {
     jest.clearAllMocks();
   });
 
-  describe('trackClick', () => {
-    it('should track a click with DIRECT source by default', async () => {
-      const mockLink = { id: 'link-123', slug: 'test-slug', userId: 'user-123' };
+  describe("trackClick", () => {
+    it("should track a click with DIRECT source by default", async () => {
+      const mockLink = {
+        id: "link-123",
+        slug: "test-slug",
+        userId: "user-123",
+      };
       mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
       mockPrismaService.clickEvent.create.mockResolvedValue({});
 
       await service.trackClick({
-        slug: 'test-slug',
+        slug: "test-slug",
         timestamp: new Date().toISOString(),
-        userAgent: 'Mozilla/5.0',
-        ip: '127.0.0.1',
-        country: 'US',
+        userAgent: "Mozilla/5.0",
+        ip: "127.0.0.1",
+        country: "US",
       });
 
       expect(mockPrismaService.clickEvent.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          linkId: 'link-123',
+          linkId: "link-123",
           source: ClickSource.DIRECT,
-          country: 'US',
+          country: "US",
         }),
       });
     });
 
-    it('should track a click with QR source', async () => {
-      const mockLink = { id: 'link-123', slug: 'test-slug', userId: 'user-123' };
+    it("should track a click with QR source", async () => {
+      const mockLink = {
+        id: "link-123",
+        slug: "test-slug",
+        userId: "user-123",
+      };
       mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
       mockPrismaService.clickEvent.create.mockResolvedValue({});
 
       await service.trackClick({
-        slug: 'test-slug',
+        slug: "test-slug",
         timestamp: new Date().toISOString(),
-        userAgent: 'Mozilla/5.0',
-        ip: '127.0.0.1',
-        country: 'US',
+        userAgent: "Mozilla/5.0",
+        ip: "127.0.0.1",
+        country: "US",
         source: ClickSource.QR,
       });
 
       expect(mockPrismaService.clickEvent.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          linkId: 'link-123',
+          linkId: "link-123",
           source: ClickSource.QR,
         }),
       });
     });
 
-    it('should track a click with API source', async () => {
-      const mockLink = { id: 'link-123', slug: 'test-slug', userId: 'user-123' };
+    it("should track a click with API source", async () => {
+      const mockLink = {
+        id: "link-123",
+        slug: "test-slug",
+        userId: "user-123",
+      };
       mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
       mockPrismaService.clickEvent.create.mockResolvedValue({});
 
       await service.trackClick({
-        slug: 'test-slug',
+        slug: "test-slug",
         timestamp: new Date().toISOString(),
-        userAgent: 'Mozilla/5.0',
-        ip: '127.0.0.1',
-        country: 'US',
+        userAgent: "Mozilla/5.0",
+        ip: "127.0.0.1",
+        country: "US",
         source: ClickSource.API,
       });
 
       expect(mockPrismaService.clickEvent.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          linkId: 'link-123',
+          linkId: "link-123",
           source: ClickSource.API,
         }),
       });
     });
 
-    it('should ignore clicks for invalid slugs', async () => {
+    it("should ignore clicks for invalid slugs", async () => {
       mockPrismaService.link.findUnique.mockResolvedValue(null);
 
       await service.trackClick({
-        slug: 'invalid-slug',
+        slug: "invalid-slug",
         timestamp: new Date().toISOString(),
       });
 
       expect(mockPrismaService.clickEvent.create).not.toHaveBeenCalled();
     });
 
-    it('should parse user agent and store device info', async () => {
-      const mockLink = { id: 'link-123', slug: 'test-slug', userId: 'user-123' };
+    it("should parse user agent and store device info", async () => {
+      const mockLink = {
+        id: "link-123",
+        slug: "test-slug",
+        userId: "user-123",
+      };
       mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
       mockPrismaService.clickEvent.create.mockResolvedValue({});
 
       await service.trackClick({
-        slug: 'test-slug',
+        slug: "test-slug",
         timestamp: new Date().toISOString(),
-        userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)',
+        userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)",
       });
 
       expect(mockPrismaService.clickEvent.create).toHaveBeenCalledWith({
@@ -138,14 +154,14 @@ describe('AnalyticsService', () => {
     });
   });
 
-  describe('getQrAnalytics', () => {
+  describe("getQrAnalytics", () => {
     const mockLink = {
-      id: 'link-123',
-      slug: 'test-slug',
-      userId: 'user-123',
+      id: "link-123",
+      slug: "test-slug",
+      userId: "user-123",
     };
 
-    it('should return QR analytics for a valid link', async () => {
+    it("should return QR analytics for a valid link", async () => {
       mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
       mockPrismaService.clickEvent.count.mockResolvedValue(100);
       mockPrismaService.clickEvent.groupBy.mockResolvedValue([
@@ -154,7 +170,7 @@ describe('AnalyticsService', () => {
         { source: ClickSource.API, _count: { id: 10 } },
       ]);
 
-      const result = await service.getQrAnalytics('link-123', 'user-123');
+      const result = await service.getQrAnalytics("link-123", "user-123");
 
       expect(result).toEqual({
         totalClicks: 100,
@@ -165,12 +181,12 @@ describe('AnalyticsService', () => {
       });
     });
 
-    it('should handle zero clicks', async () => {
+    it("should handle zero clicks", async () => {
       mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
       mockPrismaService.clickEvent.count.mockResolvedValue(0);
       mockPrismaService.clickEvent.groupBy.mockResolvedValue([]);
 
-      const result = await service.getQrAnalytics('link-123', 'user-123');
+      const result = await service.getQrAnalytics("link-123", "user-123");
 
       expect(result).toEqual({
         totalClicks: 0,
@@ -181,45 +197,45 @@ describe('AnalyticsService', () => {
       });
     });
 
-    it('should throw NotFoundException for non-existent link', async () => {
+    it("should throw NotFoundException for non-existent link", async () => {
       mockPrismaService.link.findUnique.mockResolvedValue(null);
 
       await expect(
-        service.getQrAnalytics('non-existent', 'user-123'),
+        service.getQrAnalytics("non-existent", "user-123"),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw ForbiddenException for unauthorized access', async () => {
+    it("should throw ForbiddenException for unauthorized access", async () => {
       mockPrismaService.link.findUnique.mockResolvedValue({
         ...mockLink,
-        userId: 'other-user',
+        userId: "other-user",
       });
 
       await expect(
-        service.getQrAnalytics('link-123', 'user-123'),
+        service.getQrAnalytics("link-123", "user-123"),
       ).rejects.toThrow(ForbiddenException);
     });
 
-    it('should calculate percentage correctly with only QR scans', async () => {
+    it("should calculate percentage correctly with only QR scans", async () => {
       mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
       mockPrismaService.clickEvent.count.mockResolvedValue(50);
       mockPrismaService.clickEvent.groupBy.mockResolvedValue([
         { source: ClickSource.QR, _count: { id: 50 } },
       ]);
 
-      const result = await service.getQrAnalytics('link-123', 'user-123');
+      const result = await service.getQrAnalytics("link-123", "user-123");
 
       expect(result.qrPercentage).toBe(100);
     });
 
-    it('should handle missing source types in groupBy results', async () => {
+    it("should handle missing source types in groupBy results", async () => {
       mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
       mockPrismaService.clickEvent.count.mockResolvedValue(50);
       mockPrismaService.clickEvent.groupBy.mockResolvedValue([
         { source: ClickSource.DIRECT, _count: { id: 50 } },
       ]);
 
-      const result = await service.getQrAnalytics('link-123', 'user-123');
+      const result = await service.getQrAnalytics("link-123", "user-123");
 
       expect(result).toEqual({
         totalClicks: 50,

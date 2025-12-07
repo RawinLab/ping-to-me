@@ -17,7 +17,19 @@ import {
   Label,
   Separator,
 } from "@pingtome/ui";
-import { Lock, Shield, User, Key, CreditCard, ChevronRight, CheckCircle, AlertCircle, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import {
+  Lock,
+  Shield,
+  User,
+  Key,
+  CreditCard,
+  ChevronRight,
+  CheckCircle,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+} from "lucide-react";
 
 const passwordSchema = z
   .object({
@@ -34,8 +46,17 @@ type PasswordFormData = z.infer<typeof passwordSchema>;
 
 const settingsNavItems = [
   { title: "Profile", href: "/dashboard/settings/profile", icon: User },
-  { title: "Security", href: "/dashboard/settings/security", icon: Shield, active: true },
-  { title: "Two-Factor Auth", href: "/dashboard/settings/two-factor", icon: Key },
+  {
+    title: "Security",
+    href: "/dashboard/settings/security",
+    icon: Shield,
+    active: true,
+  },
+  {
+    title: "Two-Factor Auth",
+    href: "/dashboard/settings/two-factor",
+    icon: Key,
+  },
   { title: "Billing", href: "/dashboard/billing", icon: CreditCard },
 ];
 
@@ -94,7 +115,8 @@ export default function SecuritySettingsPage() {
     if (/[^A-Za-z0-9]/.test(pwd)) score++;
 
     if (score <= 2) return { label: "Weak", color: "bg-red-500", width: "33%" };
-    if (score <= 4) return { label: "Medium", color: "bg-amber-500", width: "66%" };
+    if (score <= 4)
+      return { label: "Medium", color: "bg-amber-500", width: "66%" };
     return { label: "Strong", color: "bg-emerald-500", width: "100%" };
   };
 
@@ -130,7 +152,9 @@ export default function SecuritySettingsPage() {
                 >
                   <Icon className="h-4 w-4" />
                   {item.title}
-                  {!item.active && <ChevronRight className="h-4 w-4 ml-auto text-slate-400" />}
+                  {!item.active && (
+                    <ChevronRight className="h-4 w-4 ml-auto text-slate-400" />
+                  )}
                 </Link>
               );
             })}
@@ -147,15 +171,23 @@ export default function SecuritySettingsPage() {
                   </div>
                   <div>
                     <CardTitle className="text-lg">Change Password</CardTitle>
-                    <CardDescription>Update your password to keep your account secure.</CardDescription>
+                    <CardDescription>
+                      Update your password to keep your account secure.
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="p-6">
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-6"
+                >
                   {/* Current Password */}
                   <div className="space-y-2">
-                    <Label htmlFor="currentPassword" className="text-slate-700 font-medium">
+                    <Label
+                      htmlFor="currentPassword"
+                      className="text-slate-700 font-medium"
+                    >
                       Current Password
                     </Label>
                     <div className="relative">
@@ -171,7 +203,11 @@ export default function SecuritySettingsPage() {
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                         onClick={() => setShowCurrent(!showCurrent)}
                       >
-                        {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showCurrent ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                     {form.formState.errors.currentPassword && (
@@ -186,7 +222,10 @@ export default function SecuritySettingsPage() {
 
                   {/* New Password */}
                   <div className="space-y-2">
-                    <Label htmlFor="newPassword" className="text-slate-700 font-medium">
+                    <Label
+                      htmlFor="newPassword"
+                      className="text-slate-700 font-medium"
+                    >
                       New Password
                     </Label>
                     <div className="relative">
@@ -202,7 +241,11 @@ export default function SecuritySettingsPage() {
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                         onClick={() => setShowNew(!showNew)}
                       >
-                        {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showNew ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                     {/* Password Strength Indicator */}
@@ -215,7 +258,18 @@ export default function SecuritySettingsPage() {
                           />
                         </div>
                         <p className="text-xs text-slate-500">
-                          Password strength: <span className={strength.color === "bg-emerald-500" ? "text-emerald-600" : strength.color === "bg-amber-500" ? "text-amber-600" : "text-red-600"}>{strength.label}</span>
+                          Password strength:{" "}
+                          <span
+                            className={
+                              strength.color === "bg-emerald-500"
+                                ? "text-emerald-600"
+                                : strength.color === "bg-amber-500"
+                                  ? "text-amber-600"
+                                  : "text-red-600"
+                            }
+                          >
+                            {strength.label}
+                          </span>
                         </p>
                       </div>
                     )}
@@ -229,7 +283,10 @@ export default function SecuritySettingsPage() {
 
                   {/* Confirm Password */}
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword" className="text-slate-700 font-medium">
+                    <Label
+                      htmlFor="confirmPassword"
+                      className="text-slate-700 font-medium"
+                    >
                       Confirm New Password
                     </Label>
                     <div className="relative">
@@ -245,7 +302,11 @@ export default function SecuritySettingsPage() {
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                         onClick={() => setShowConfirm(!showConfirm)}
                       >
-                        {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showConfirm ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
                       </button>
                     </div>
                     {form.formState.errors.confirmPassword && (
@@ -301,10 +362,14 @@ export default function SecuritySettingsPage() {
                       Enable Two-Factor Authentication
                     </h3>
                     <p className="text-sm text-emerald-700 mb-4">
-                      Add an extra layer of security to your account by enabling 2FA with an authenticator app.
+                      Add an extra layer of security to your account by enabling
+                      2FA with an authenticator app.
                     </p>
                     <Link href="/dashboard/settings/two-factor">
-                      <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg">
+                      <Button
+                        size="sm"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
+                      >
                         <Key className="mr-2 h-4 w-4" />
                         Set up 2FA
                       </Button>
@@ -318,20 +383,36 @@ export default function SecuritySettingsPage() {
             <Card className="border-slate-200 shadow-sm">
               <CardHeader>
                 <CardTitle className="text-lg">Active Sessions</CardTitle>
-                <CardDescription>Manage your active sessions across devices.</CardDescription>
+                <CardDescription>
+                  Manage your active sessions across devices.
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                        <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        <svg
+                          className="h-5 w-5 text-blue-600"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                          />
                         </svg>
                       </div>
                       <div>
-                        <p className="font-medium text-slate-900">Current Session</p>
-                        <p className="text-sm text-slate-500">macOS · Chrome · Bangkok, Thailand</p>
+                        <p className="font-medium text-slate-900">
+                          Current Session
+                        </p>
+                        <p className="text-sm text-slate-500">
+                          macOS · Chrome · Bangkok, Thailand
+                        </p>
                       </div>
                     </div>
                     <span className="text-xs text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full font-medium">
@@ -339,7 +420,11 @@ export default function SecuritySettingsPage() {
                     </span>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" className="mt-4 rounded-lg text-red-600 border-red-200 hover:bg-red-50">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4 rounded-lg text-red-600 border-red-200 hover:bg-red-50"
+                >
                   Sign out all other sessions
                 </Button>
               </CardContent>

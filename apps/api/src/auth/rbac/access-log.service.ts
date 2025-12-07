@@ -1,12 +1,12 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../../prisma/prisma.service";
 
 /**
  * Access result enum matching Prisma schema
  */
 export enum AccessResult {
-  ALLOWED = 'ALLOWED',
-  DENIED = 'DENIED',
+  ALLOWED = "ALLOWED",
+  DENIED = "DENIED",
 }
 
 /**
@@ -71,7 +71,7 @@ export class AccessLogService {
     // Fire and forget - don't await
     this.writeLog(data).catch((error) => {
       // Log error but don't throw - logging should never block requests
-      console.error('[AccessLogService] Failed to write access log:', error);
+      console.error("[AccessLogService] Failed to write access log:", error);
     });
   }
 
@@ -129,10 +129,10 @@ export class AccessLogService {
     options: {
       skip?: number;
       take?: number;
-      orderBy?: 'asc' | 'desc';
+      orderBy?: "asc" | "desc";
     } = {},
   ) {
-    const { skip = 0, take = 50, orderBy = 'desc' } = options;
+    const { skip = 0, take = 50, orderBy = "desc" } = options;
 
     const where: any = {};
 
@@ -185,7 +185,7 @@ export class AccessLogService {
     const denials = await this.prisma.accessLog.findMany({
       where: {
         organizationId,
-        result: 'DENIED',
+        result: "DENIED",
         createdAt: { gte: startDate },
       },
       select: {

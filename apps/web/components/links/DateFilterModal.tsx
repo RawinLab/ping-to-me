@@ -21,12 +21,33 @@ interface DateFilterModalProps {
 }
 
 const QUICK_OPTIONS = [
-  { label: "Last hour", getValue: () => ({ start: subHours(new Date(), 1), end: new Date() }) },
-  { label: "Today", getValue: () => ({ start: startOfDay(new Date()), end: endOfDay(new Date()) }) },
-  { label: "Last 7 days", getValue: () => ({ start: subDays(new Date(), 7), end: new Date() }) },
-  { label: "Last 30 days", getValue: () => ({ start: subDays(new Date(), 30), end: new Date() }) },
-  { label: "Last 60 days", getValue: () => ({ start: subDays(new Date(), 60), end: new Date() }) },
-  { label: "Last 90 days", getValue: () => ({ start: subDays(new Date(), 90), end: new Date() }) },
+  {
+    label: "Last hour",
+    getValue: () => ({ start: subHours(new Date(), 1), end: new Date() }),
+  },
+  {
+    label: "Today",
+    getValue: () => ({
+      start: startOfDay(new Date()),
+      end: endOfDay(new Date()),
+    }),
+  },
+  {
+    label: "Last 7 days",
+    getValue: () => ({ start: subDays(new Date(), 7), end: new Date() }),
+  },
+  {
+    label: "Last 30 days",
+    getValue: () => ({ start: subDays(new Date(), 30), end: new Date() }),
+  },
+  {
+    label: "Last 60 days",
+    getValue: () => ({ start: subDays(new Date(), 60), end: new Date() }),
+  },
+  {
+    label: "Last 90 days",
+    getValue: () => ({ start: subDays(new Date(), 90), end: new Date() }),
+  },
 ];
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -38,12 +59,14 @@ export function DateFilterModal({
   initialStartDate,
   initialEndDate,
 }: DateFilterModalProps) {
-  const [startDate, setStartDate] = useState<Date | null>(initialStartDate || null);
+  const [startDate, setStartDate] = useState<Date | null>(
+    initialStartDate || null,
+  );
   const [endDate, setEndDate] = useState<Date | null>(initialEndDate || null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectingStart, setSelectingStart] = useState(true);
 
-  const handleQuickOption = (option: typeof QUICK_OPTIONS[0]) => {
+  const handleQuickOption = (option: (typeof QUICK_OPTIONS)[0]) => {
     const { start, end } = option.getValue();
     setStartDate(start);
     setEndDate(end);
@@ -104,8 +127,13 @@ export function DateFilterModal({
   };
 
   const isSelected = (day: Date) => {
-    if (startDate && format(day, "yyyy-MM-dd") === format(startDate, "yyyy-MM-dd")) return true;
-    if (endDate && format(day, "yyyy-MM-dd") === format(endDate, "yyyy-MM-dd")) return true;
+    if (
+      startDate &&
+      format(day, "yyyy-MM-dd") === format(startDate, "yyyy-MM-dd")
+    )
+      return true;
+    if (endDate && format(day, "yyyy-MM-dd") === format(endDate, "yyyy-MM-dd"))
+      return true;
     return false;
   };
 
@@ -118,11 +146,15 @@ export function DateFilterModal({
   };
 
   const prevMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+    setCurrentMonth(
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1),
+    );
   };
 
   const nextMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+    setCurrentMonth(
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1),
+    );
   };
 
   const days = getDaysInMonth(currentMonth);
@@ -132,7 +164,9 @@ export function DateFilterModal({
       <DialogContent className="sm:max-w-[420px] p-0">
         <DialogHeader className="p-6 pb-4 border-b">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold">Filter by created date</DialogTitle>
+            <DialogTitle className="text-xl font-semibold">
+              Filter by created date
+            </DialogTitle>
           </div>
         </DialogHeader>
 
@@ -239,9 +273,7 @@ export function DateFilterModal({
             <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button onClick={handleApply}>
-              Apply
-            </Button>
+            <Button onClick={handleApply}>Apply</Button>
           </div>
         </div>
       </DialogContent>

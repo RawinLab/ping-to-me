@@ -1,7 +1,7 @@
-import { Module } from '@nestjs/common';
-import { FoldersController } from './folders.controller';
-import { FoldersService } from './folders.service';
-import { PrismaModule } from '../prisma/prisma.module';
+import { Module } from "@nestjs/common";
+import { FoldersController } from "./folders.controller";
+import { FoldersService } from "./folders.service";
+import { PrismaModule } from "../prisma/prisma.module";
 
 @Module({
   imports: [PrismaModule],
@@ -9,4 +9,4 @@ import { PrismaModule } from '../prisma/prisma.module';
   providers: [FoldersService],
   exports: [FoldersService],
 })
-export class FoldersModule { }
+export class FoldersModule {}

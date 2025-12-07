@@ -34,11 +34,7 @@ const steps = [
     title: "Share & grow",
     description:
       "Share your links everywhere. Use QR codes for offline marketing and bio pages for social media.",
-    features: [
-      "Generate QR codes",
-      "Social media sharing",
-      "Bio page builder",
-    ],
+    features: ["Generate QR codes", "Social media sharing", "Bio page builder"],
   },
 ];
 

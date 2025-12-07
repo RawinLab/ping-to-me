@@ -1,11 +1,12 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { PrismaClient } from '@pingtome/database';
-import * as crypto from 'crypto';
-import { isValidScope, API_SCOPES, SCOPE_DESCRIPTIONS } from '../auth/rbac/api-scopes';
+import { Injectable, BadRequestException } from "@nestjs/common";
+import { PrismaClient } from "@pingtome/database";
+import * as crypto from "crypto";
 import {
-  CreateApiKeyDto,
-  ApiKeyCreatedResponseDto,
-} from './dto';
+  isValidScope,
+  API_SCOPES,
+  SCOPE_DESCRIPTIONS,
+} from "../auth/rbac/api-scopes";
+import { CreateApiKeyDto, ApiKeyCreatedResponseDto } from "./dto";
 
 /**
  * Options for creating an API key
@@ -42,7 +43,7 @@ export class ApiKeyService {
     const {
       orgId,
       name,
-      scopes = ['admin'],
+      scopes = ["admin"],
       ipWhitelist,
       rateLimit,
       expiresAt,
@@ -52,18 +53,18 @@ export class ApiKeyService {
     const invalidScopes = scopes.filter((scope) => !isValidScope(scope));
     if (invalidScopes.length > 0) {
       throw new BadRequestException(
-        `Invalid scopes: ${invalidScopes.join(', ')}. Valid scopes: ${API_SCOPES.join(', ')}`,
+        `Invalid scopes: ${invalidScopes.join(", ")}. Valid scopes: ${API_SCOPES.join(", ")}`,
       );
     }
 
     // Validate expiration date is in the future
     if (expiresAt && expiresAt <= new Date()) {
-      throw new BadRequestException('Expiration date must be in the future');
+      throw new BadRequestException("Expiration date must be in the future");
     }
 
     // Generate API key
-    const key = `pk_${crypto.randomBytes(24).toString('hex')}`;
-    const keyHash = crypto.createHash('sha256').update(key).digest('hex');
+    const key = `pk_${crypto.randomBytes(24).toString("hex")}`;
+    const keyHash = crypto.createHash("sha256").update(key).digest("hex");
 
     // Create API key in database
     const apiKey = await this.prisma.apiKey.create({
@@ -112,7 +113,7 @@ export class ApiKeyService {
         // Do NOT select keyHash
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
   }
@@ -141,7 +142,7 @@ export class ApiKeyService {
    * @returns API key with organization if valid, null otherwise
    */
   async validateApiKey(key: string) {
-    const keyHash = crypto.createHash('sha256').update(key).digest('hex');
+    const keyHash = crypto.createHash("sha256").update(key).digest("hex");
     const apiKey = await this.prisma.apiKey.findUnique({
       where: { keyHash },
       include: { organization: true },
@@ -179,11 +180,11 @@ export class ApiKeyService {
     group: string;
   }> {
     return API_SCOPES.map((scope) => {
-      const [resource] = scope.split(':');
+      const [resource] = scope.split(":");
       return {
         value: scope,
         description: SCOPE_DESCRIPTIONS[scope] || scope,
-        group: resource === 'admin' ? 'Full Access' : resource,
+        group: resource === "admin" ? "Full Access" : resource,
       };
     });
   }

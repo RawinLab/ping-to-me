@@ -23,7 +23,15 @@ import {
   SelectValue,
   Badge,
 } from "@pingtome/ui";
-import { Pencil, X, Plus, Link2, Calendar, Tag, FolderOpen } from "lucide-react";
+import {
+  Pencil,
+  X,
+  Plus,
+  Link2,
+  Calendar,
+  Tag,
+  FolderOpen,
+} from "lucide-react";
 
 const editLinkSchema = z.object({
   originalUrl: z.string().url("Please enter a valid URL"),
@@ -54,8 +62,12 @@ export function EditLinkModal({
 }: EditLinkModalProps) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [campaigns, setCampaigns] = useState<{ id: string; name: string }[]>([]);
-  const [availableTags, setAvailableTags] = useState<{ id: string; name: string }[]>([]);
+  const [campaigns, setCampaigns] = useState<{ id: string; name: string }[]>(
+    [],
+  );
+  const [availableTags, setAvailableTags] = useState<
+    { id: string; name: string }[]
+  >([]);
   const [selectedTags, setSelectedTags] = useState<string[]>(link.tags || []);
   const [newTagInput, setNewTagInput] = useState("");
 
@@ -163,7 +175,9 @@ export function EditLinkModal({
               id="originalUrl"
               placeholder="https://example.com/your-page"
               {...form.register("originalUrl")}
-              className={form.formState.errors.originalUrl ? "border-red-500" : ""}
+              className={
+                form.formState.errors.originalUrl ? "border-red-500" : ""
+              }
             />
             {form.formState.errors.originalUrl && (
               <p className="text-sm text-red-500">

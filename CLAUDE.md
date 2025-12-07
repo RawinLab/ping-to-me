@@ -7,6 +7,7 @@ A Bitly-clone URL shortening platform with analytics, QR codes, and team managem
 **Product**: URL Shortener SaaS with link management, analytics, QR codes, and bio pages
 
 **Core Principles** (from constitution):
+
 - **Scalability & Performance First**: Sub-millisecond redirects, caching strategies
 - **Security & Privacy by Design**: OAuth/2FA, link safety, OWASP compliance
 - **API-First Architecture**: All functionality via RESTful APIs
@@ -15,16 +16,16 @@ A Bitly-clone URL shortening platform with analytics, QR codes, and team managem
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| **Monorepo** | Turborepo + pnpm |
-| **Frontend** | Next.js 14, React 18, TailwindCSS |
+| Layer            | Technology                                                                   |
+| ---------------- | ---------------------------------------------------------------------------- |
+| **Monorepo**     | Turborepo + pnpm                                                             |
+| **Frontend**     | Next.js 14, React 18, TailwindCSS                                            |
 | **UI Framework** | [shadcn/ui](https://ui.shadcn.com/docs/components) + Radix UI + Lucide Icons |
-| **Backend API** | NestJS 10, TypeScript 5.x |
-| **Redirector** | Cloudflare Workers + Hono |
-| **Database** | PostgreSQL + Prisma |
-| **Testing** | Jest (unit), Playwright (E2E) |
-| **Payments** | Stripe |
+| **Backend API**  | NestJS 10, TypeScript 5.x                                                    |
+| **Redirector**   | Cloudflare Workers + Hono                                                    |
+| **Database**     | PostgreSQL + Prisma                                                          |
+| **Testing**      | Jest (unit), Playwright (E2E)                                                |
+| **Payments**     | Stripe                                                                       |
 
 ## Project Structure
 
@@ -83,45 +84,46 @@ pnpm --filter web build                       # Build Web
 
 ## API Modules (apps/api/src/)
 
-| Module | Purpose |
-|--------|---------|
-| `auth/` | Login, register, OAuth, 2FA, JWT |
-| `links/` | CRUD, bulk operations, status |
-| `analytics/` | Click tracking, stats, export |
-| `qr/` | QR code generation with customization |
-| `organizations/` | Workspaces, members, invites |
-| `domains/` | Custom domains, DNS verification |
-| `campaigns/` | Campaign management |
-| `tags/` | Tag CRUD |
-| `folders/` | Folder management |
-| `biopages/` | Link-in-bio pages |
-| `payments/` | Stripe integration |
-| `notifications/` | User notifications |
-| `developer/` | API keys, webhooks |
-| `audit/` | Audit logging |
+| Module           | Purpose                               |
+| ---------------- | ------------------------------------- |
+| `auth/`          | Login, register, OAuth, 2FA, JWT      |
+| `links/`         | CRUD, bulk operations, status         |
+| `analytics/`     | Click tracking, stats, export         |
+| `qr/`            | QR code generation with customization |
+| `organizations/` | Workspaces, members, invites          |
+| `domains/`       | Custom domains, DNS verification      |
+| `campaigns/`     | Campaign management                   |
+| `tags/`          | Tag CRUD                              |
+| `folders/`       | Folder management                     |
+| `biopages/`      | Link-in-bio pages                     |
+| `payments/`      | Stripe integration                    |
+| `notifications/` | User notifications                    |
+| `developer/`     | API keys, webhooks                    |
+| `audit/`         | Audit logging                         |
 
 ## Web App Routes (apps/web/app/)
 
-| Route | Description |
-|-------|-------------|
-| `/` | Landing page |
-| `/login`, `/register` | Authentication |
-| `/forgot-password`, `/reset-password` | Password recovery |
-| `/verify-email` | Email verification |
-| `/dashboard` | Main dashboard |
-| `/dashboard/links` | Link management |
-| `/dashboard/links/create` | Create new link |
-| `/dashboard/analytics/[id]` | Link analytics |
-| `/dashboard/settings/*` | User settings, 2FA |
-| `/dashboard/developer/*` | API keys |
-| `/dashboard/billing` | Subscription management |
-| `/bio/[slug]` | Public bio pages |
-| `/pricing` | Pricing page |
-| `/docs` | API documentation |
+| Route                                 | Description             |
+| ------------------------------------- | ----------------------- |
+| `/`                                   | Landing page            |
+| `/login`, `/register`                 | Authentication          |
+| `/forgot-password`, `/reset-password` | Password recovery       |
+| `/verify-email`                       | Email verification      |
+| `/dashboard`                          | Main dashboard          |
+| `/dashboard/links`                    | Link management         |
+| `/dashboard/links/create`             | Create new link         |
+| `/dashboard/analytics/[id]`           | Link analytics          |
+| `/dashboard/settings/*`               | User settings, 2FA      |
+| `/dashboard/developer/*`              | API keys                |
+| `/dashboard/billing`                  | Subscription management |
+| `/bio/[slug]`                         | Public bio pages        |
+| `/pricing`                            | Pricing page            |
+| `/docs`                               | API documentation       |
 
 ## E2E Tests (apps/web/e2e/)
 
 Playwright test suites covering:
+
 - `auth.spec.ts` - Login, register, OAuth flows
 - `links.spec.ts` - Link CRUD operations
 - `links-page.spec.ts` - Links dashboard UI
@@ -183,6 +185,7 @@ This project uses **shadcn/ui** as the primary UI framework. Always use shadcn/u
 **Component Location**: `apps/web/components/ui/`
 
 **Adding New Components**:
+
 ```bash
 cd apps/web
 npx shadcn@latest add [component-name]
@@ -205,10 +208,11 @@ npx shadcn@latest add [component-name]
 | `Skeleton` | Loading states |
 
 **Example Usage**:
+
 ```tsx
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 export function MyComponent() {
   return (
@@ -253,10 +257,10 @@ export function MyComponent() {
 
 For detailed documentation on specific modules, refer to these files:
 
-| Topic | Reference File | Description |
-|-------|---------------|-------------|
-| **RBAC & Permissions** | [`refs/rbac.md`](refs/rbac.md) | Role-based access control system, permission matrix, guards, decorators, and how to add new resources |
-| **Audit Logging** | [`refs/auditlog.md`](refs/auditlog.md) | Audit logging system, event types, helper methods, and how to add audit logging to new features |
+| Topic                  | Reference File                         | Description                                                                                           |
+| ---------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **RBAC & Permissions** | [`refs/rbac.md`](refs/rbac.md)         | Role-based access control system, permission matrix, guards, decorators, and how to add new resources |
+| **Audit Logging**      | [`refs/auditlog.md`](refs/auditlog.md) | Audit logging system, event types, helper methods, and how to add audit logging to new features       |
 
 > **Note:** When working with RBAC, permissions, authorization, or creating new modules that need access control, always read `refs/rbac.md` first.
 

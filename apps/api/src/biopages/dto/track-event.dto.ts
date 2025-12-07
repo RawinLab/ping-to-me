@@ -1,8 +1,8 @@
-import { IsString, IsOptional, IsEnum, IsUUID } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsUUID } from "class-validator";
 
 export enum BioEventType {
-  PAGE_VIEW = 'page_view',
-  LINK_CLICK = 'link_click',
+  PAGE_VIEW = "page_view",
+  LINK_CLICK = "link_click",
 }
 
 export class TrackEventDto {

@@ -1,15 +1,20 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { AuditService } from '../audit/audit.service';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { AuditService } from "../audit/audit.service";
 
 @Injectable()
 export class CampaignsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
-  ) { }
+  ) {}
 
-  async create(userId: string, orgId: string, name: string, description?: string) {
+  async create(
+    userId: string,
+    orgId: string,
+    name: string,
+    description?: string,
+  ) {
     const campaign = await this.prisma.campaign.create({
       data: {
         name,
@@ -19,19 +24,21 @@ export class CampaignsService {
     });
 
     // Log campaign creation
-    this.auditService.logResourceEvent(
-      userId,
-      orgId,
-      'campaign.created',
-      'Campaign',
-      campaign.id,
-      {
-        details: {
-          name: campaign.name,
-          description: campaign.description,
+    this.auditService
+      .logResourceEvent(
+        userId,
+        orgId,
+        "campaign.created",
+        "Campaign",
+        campaign.id,
+        {
+          details: {
+            name: campaign.name,
+            description: campaign.description,
+          },
         },
-      },
-    ).catch(() => {}); // Fire and forget, don't block on errors
+      )
+      .catch(() => {}); // Fire and forget, don't block on errors
 
     return campaign;
   }
@@ -42,7 +49,7 @@ export class CampaignsService {
         organizationId: orgId,
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
       include: {
         _count: {
@@ -52,7 +59,11 @@ export class CampaignsService {
     });
   }
 
-  async update(userId: string, id: string, data: { name?: string; description?: string }) {
+  async update(
+    userId: string,
+    id: string,
+    data: { name?: string; description?: string },
+  ) {
     // Get current state for audit logging
     const before = await this.prisma.campaign.findUnique({ where: { id } });
 
@@ -64,19 +75,21 @@ export class CampaignsService {
     // Log campaign update with changes
     if (before) {
       const changes = this.auditService.captureChanges(before, campaign);
-      this.auditService.logResourceEvent(
-        userId,
-        before.organizationId,
-        'campaign.updated',
-        'Campaign',
-        campaign.id,
-        {
-          changes,
-          details: {
-            name: campaign.name,
+      this.auditService
+        .logResourceEvent(
+          userId,
+          before.organizationId,
+          "campaign.updated",
+          "Campaign",
+          campaign.id,
+          {
+            changes,
+            details: {
+              name: campaign.name,
+            },
           },
-        },
-      ).catch(() => {}); // Fire and forget, don't block on errors
+        )
+        .catch(() => {}); // Fire and forget, don't block on errors
     }
 
     return campaign;
@@ -92,18 +105,20 @@ export class CampaignsService {
 
     // Log campaign deletion
     if (campaign) {
-      this.auditService.logResourceEvent(
-        userId,
-        campaign.organizationId,
-        'campaign.deleted',
-        'Campaign',
-        campaign.id,
-        {
-          details: {
-            name: campaign.name,
+      this.auditService
+        .logResourceEvent(
+          userId,
+          campaign.organizationId,
+          "campaign.deleted",
+          "Campaign",
+          campaign.id,
+          {
+            details: {
+              name: campaign.name,
+            },
           },
-        },
-      ).catch(() => {}); // Fire and forget, don't block on errors
+        )
+        .catch(() => {}); // Fire and forget, don't block on errors
     }
 
     return deleted;

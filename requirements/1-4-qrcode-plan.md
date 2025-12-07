@@ -11,46 +11,47 @@
 ### Backend (apps/api/src/qr/) - PARTIALLY COMPLETE
 
 **Files:**
+
 - `qr.module.ts`
 - `qr.controller.ts`
 - `qr.service.ts`
 
 **Implemented Features:**
 
-| Feature | Status | Location |
-|---------|--------|----------|
-| Basic QR generation | DONE | `generateQrCode()` - สร้าง QR และ upload ไป R2 |
-| Custom colors | DONE | `generateCustomQr()` - รับ color/bgcolor |
-| Logo overlay | DONE | `generateAdvancedQr()` - รับ logo base64, logoSize |
-| SVG format | DONE | `generateSvgQr()` |
-| Error correction | PARTIAL | Auto H when logo, else M (ไม่มี UI เลือก) |
-| Margin config | PARTIAL | Hardcoded margin=2 |
+| Feature             | Status  | Location                                           |
+| ------------------- | ------- | -------------------------------------------------- |
+| Basic QR generation | DONE    | `generateQrCode()` - สร้าง QR และ upload ไป R2     |
+| Custom colors       | DONE    | `generateCustomQr()` - รับ color/bgcolor           |
+| Logo overlay        | DONE    | `generateAdvancedQr()` - รับ logo base64, logoSize |
+| SVG format          | DONE    | `generateSvgQr()`                                  |
+| Error correction    | PARTIAL | Auto H when logo, else M (ไม่มี UI เลือก)          |
+| Margin config       | PARTIAL | Hardcoded margin=2                                 |
 
 **API Endpoints (Implemented):**
 
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/qr/generate` | POST | Yes | สร้าง QR พื้นฐาน + upload R2 |
-| `/qr/custom` | POST | Yes | สร้าง QR custom colors |
-| `/qr/advanced` | POST | Yes | สร้าง QR + logo + colors |
-| `/qr/preview` | GET | No | Preview QR (no auth) |
-| `/qr/download` | GET | Yes | Download PNG/SVG |
+| Endpoint       | Method | Auth | Description                  |
+| -------------- | ------ | ---- | ---------------------------- |
+| `/qr/generate` | POST   | Yes  | สร้าง QR พื้นฐาน + upload R2 |
+| `/qr/custom`   | POST   | Yes  | สร้าง QR custom colors       |
+| `/qr/advanced` | POST   | Yes  | สร้าง QR + logo + colors     |
+| `/qr/preview`  | GET    | No   | Preview QR (no auth)         |
+| `/qr/download` | GET    | Yes  | Download PNG/SVG             |
 
 ### Frontend (apps/web/) - PARTIALLY COMPLETE
 
 **Implemented Components:**
 
-| Component | Location | Features |
-|-----------|----------|----------|
+| Component              | Location             | Features                                                                              |
+| ---------------------- | -------------------- | ------------------------------------------------------------------------------------- |
 | `QrCodeCustomizer.tsx` | `components/qrcode/` | Full customizer dialog with color presets, logo upload, size slider, PNG/SVG download |
-| `QrCodeModal.tsx` | `components/links/` | Simple modal with colors only (legacy) |
+| `QrCodeModal.tsx`      | `components/links/`  | Simple modal with colors only (legacy)                                                |
 
 **Pages with QR Integration:**
 
-| Page | QR Features |
-|------|-------------|
-| `/dashboard/links/new` | Inline QR customizer with 8 color presets, logo upload, live preview |
-| `/dashboard/links` (LinksTable) | QR Code action in dropdown menu, opens QrCodeModal |
+| Page                            | QR Features                                                          |
+| ------------------------------- | -------------------------------------------------------------------- |
+| `/dashboard/links/new`          | Inline QR customizer with 8 color presets, logo upload, live preview |
+| `/dashboard/links` (LinksTable) | QR Code action in dropdown menu, opens QrCodeModal                   |
 
 **Types (packages/types/src/links.ts):**
 
@@ -67,6 +68,7 @@ qrCode?: string;       // Data URI
 ### E2E Tests (apps/web/e2e/qr.spec.ts) - BASIC ONLY
 
 **Existing Tests (3 tests):**
+
 - `QR-001`: Generate QR Code (open modal)
 - `QR-002`: Customize QR Code (change color)
 - `QR-003`: Download QR Code (PNG)
@@ -82,31 +84,31 @@ qrCode?: string;       // Data URI
 
 ### Backend Gaps
 
-| Feature | Spec Requirement | Priority | Effort |
-|---------|------------------|----------|--------|
-| QR Config Storage | Save QR settings per link | HIGH | Medium |
-| Error Correction UI | L/M/Q/H selection | MEDIUM | Low |
-| Border/Quiet Zone | Configurable margin | LOW | Low |
-| PDF Export | Download as PDF | MEDIUM | Medium |
-| Batch QR Download | ZIP with multiple QRs | HIGH | High |
-| QR Analytics | Track QR vs direct clicks | HIGH | High |
+| Feature             | Spec Requirement          | Priority | Effort |
+| ------------------- | ------------------------- | -------- | ------ |
+| QR Config Storage   | Save QR settings per link | HIGH     | Medium |
+| Error Correction UI | L/M/Q/H selection         | MEDIUM   | Low    |
+| Border/Quiet Zone   | Configurable margin       | LOW      | Low    |
+| PDF Export          | Download as PDF           | MEDIUM   | Medium |
+| Batch QR Download   | ZIP with multiple QRs     | HIGH     | High   |
+| QR Analytics        | Track QR vs direct clicks | HIGH     | High   |
 
 ### Frontend Gaps
 
-| Feature | Spec Requirement | Priority | Effort |
-|---------|------------------|----------|--------|
-| Dedicated QR Page | /dashboard/qr gallery | MEDIUM | Medium |
-| Error Correction UI | Dropdown in customizer | MEDIUM | Low |
-| Border Size Control | Slider for margin | LOW | Low |
-| PDF Download | Button in customizer | MEDIUM | Low |
-| Batch Download UI | Select multiple, ZIP | HIGH | Medium |
-| QR Gallery Grid | View all saved QRs | MEDIUM | Medium |
+| Feature             | Spec Requirement       | Priority | Effort |
+| ------------------- | ---------------------- | -------- | ------ |
+| Dedicated QR Page   | /dashboard/qr gallery  | MEDIUM   | Medium |
+| Error Correction UI | Dropdown in customizer | MEDIUM   | Low    |
+| Border Size Control | Slider for margin      | LOW      | Low    |
+| PDF Download        | Button in customizer   | MEDIUM   | Low    |
+| Batch Download UI   | Select multiple, ZIP   | HIGH     | Medium |
+| QR Gallery Grid     | View all saved QRs     | MEDIUM   | Medium |
 
 ### Database Gaps
 
-| Table | Status | Priority |
-|-------|--------|----------|
-| `QrCode` | Missing | HIGH |
+| Table    | Status  | Priority |
+| -------- | ------- | -------- |
+| `QrCode` | Missing | HIGH     |
 
 ---
 
@@ -142,11 +144,11 @@ model Link {
 
 #### 1.2 New API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/links/:id/qr` | GET | Get saved QR config |
-| `/links/:id/qr` | POST | Create/Update QR config |
-| `/links/:id/qr/regenerate` | POST | Regenerate QR with saved config |
+| Endpoint                   | Method | Description                     |
+| -------------------------- | ------ | ------------------------------- |
+| `/links/:id/qr`            | GET    | Get saved QR config             |
+| `/links/:id/qr`            | POST   | Create/Update QR config         |
+| `/links/:id/qr/regenerate` | POST   | Regenerate QR with saved config |
 
 ### Phase 2: Enhanced Backend Features
 
@@ -225,51 +227,50 @@ QR-API-006: QR analytics endpoint returns QR scan count
 ```typescript
 // File: apps/web/e2e/qr-code.spec.ts
 
-test.describe('QR Code Module', () => {
-
+test.describe("QR Code Module", () => {
   // === Existing Tests (Update) ===
-  test('QR-E2E-001: Open QR customizer from links table')
-  test('QR-E2E-002: Change QR color updates preview')
-  test('QR-E2E-003: Download PNG works')
+  test("QR-E2E-001: Open QR customizer from links table");
+  test("QR-E2E-002: Change QR color updates preview");
+  test("QR-E2E-003: Download PNG works");
 
   // === New Tests ===
 
   // Customizer Options
-  test('QR-E2E-010: Color presets work correctly')
-  test('QR-E2E-011: Custom foreground color picker')
-  test('QR-E2E-012: Custom background color picker')
-  test('QR-E2E-013: Upload logo displays in preview')
-  test('QR-E2E-014: Remove logo button works')
-  test('QR-E2E-015: Logo size slider adjusts preview')
-  test('QR-E2E-016: QR size slider works')
-  test('QR-E2E-017: Error correction dropdown works')
-  test('QR-E2E-018: Border size slider works')
+  test("QR-E2E-010: Color presets work correctly");
+  test("QR-E2E-011: Custom foreground color picker");
+  test("QR-E2E-012: Custom background color picker");
+  test("QR-E2E-013: Upload logo displays in preview");
+  test("QR-E2E-014: Remove logo button works");
+  test("QR-E2E-015: Logo size slider adjusts preview");
+  test("QR-E2E-016: QR size slider works");
+  test("QR-E2E-017: Error correction dropdown works");
+  test("QR-E2E-018: Border size slider works");
 
   // Download Formats
-  test('QR-E2E-020: Download SVG works')
-  test('QR-E2E-021: Download PDF works')
-  test('QR-E2E-022: SVG disabled when logo present')
+  test("QR-E2E-020: Download SVG works");
+  test("QR-E2E-021: Download PDF works");
+  test("QR-E2E-022: SVG disabled when logo present");
 
   // Create Link Integration
-  test('QR-E2E-030: QR toggle in create link page')
-  test('QR-E2E-031: QR color presets in create page')
-  test('QR-E2E-032: QR logo upload in create page')
-  test('QR-E2E-033: QR preview updates on color change')
-  test('QR-E2E-034: Created link shows QR code')
+  test("QR-E2E-030: QR toggle in create link page");
+  test("QR-E2E-031: QR color presets in create page");
+  test("QR-E2E-032: QR logo upload in create page");
+  test("QR-E2E-033: QR preview updates on color change");
+  test("QR-E2E-034: Created link shows QR code");
 
   // Persistence
-  test('QR-E2E-040: QR config saved when creating link')
-  test('QR-E2E-041: Saved config loads when reopening customizer')
+  test("QR-E2E-040: QR config saved when creating link");
+  test("QR-E2E-041: Saved config loads when reopening customizer");
 
   // Batch Operations (Future)
-  test('QR-E2E-050: Batch download button visible')
-  test('QR-E2E-051: Select multiple links for batch QR')
-  test('QR-E2E-052: Batch download creates ZIP file')
+  test("QR-E2E-050: Batch download button visible");
+  test("QR-E2E-051: Select multiple links for batch QR");
+  test("QR-E2E-052: Batch download creates ZIP file");
 
   // Error Handling
-  test('QR-E2E-060: Error message for invalid color')
-  test('QR-E2E-061: Large logo gets compressed')
-  test('QR-E2E-062: Network error shows retry option')
+  test("QR-E2E-060: Error message for invalid color");
+  test("QR-E2E-061: Large logo gets compressed");
+  test("QR-E2E-062: Network error shows retry option");
 });
 ```
 
@@ -333,6 +334,7 @@ test.describe('QR Code Module', () => {
 Get saved QR configuration for a link.
 
 **Response:**
+
 ```json
 {
   "id": "uuid",
@@ -355,6 +357,7 @@ Get saved QR configuration for a link.
 Create or update QR configuration.
 
 **Request:**
+
 ```json
 {
   "foregroundColor": "#000000",
@@ -372,6 +375,7 @@ Create or update QR configuration.
 Download QR code in specified format.
 
 **Query Parameters:**
+
 - `url`: string (required)
 - `fg`: string (hex color, default: #000000)
 - `bg`: string (hex color, default: #FFFFFF)
@@ -383,6 +387,7 @@ Download QR code in specified format.
 Download multiple QR codes as ZIP.
 
 **Request:**
+
 ```json
 {
   "linkIds": ["uuid-1", "uuid-2", "uuid-3"],
@@ -398,6 +403,7 @@ Download multiple QR codes as ZIP.
 ## Dependencies
 
 ### Backend (apps/api)
+
 ```bash
 # Already installed
 qrcode
@@ -409,6 +415,7 @@ pnpm --filter @pingtome/api add -D @types/archiver @types/pdfkit
 ```
 
 ### Frontend (apps/web)
+
 ```bash
 # No new dependencies needed
 ```

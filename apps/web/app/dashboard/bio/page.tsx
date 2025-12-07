@@ -127,7 +127,9 @@ export default function BioPagesDashboard() {
           <Sparkles className="h-16 w-16 text-blue-500" />
         </div>
       </div>
-      <h3 className="text-2xl font-semibold mb-2">Create Your First Bio Page</h3>
+      <h3 className="text-2xl font-semibold mb-2">
+        Create Your First Bio Page
+      </h3>
       <p className="text-muted-foreground text-center max-w-md mb-6">
         Build a beautiful link-in-bio page to share all your important links in
         one place.
@@ -224,7 +226,11 @@ export default function BioPagesDashboard() {
                         <Link2 className="h-4 w-4" />
                         <span>
                           {page._count?.bioLinks || page.bioLinks?.length || 0}{" "}
-                          {(page._count?.bioLinks || page.bioLinks?.length || 0) === 1 ? "link" : "links"}
+                          {(page._count?.bioLinks ||
+                            page.bioLinks?.length ||
+                            0) === 1
+                            ? "link"
+                            : "links"}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5 text-muted-foreground">

@@ -85,7 +85,12 @@ interface ScopesData {
 }
 
 const developerNavItems = [
-  { title: "API Keys", href: "/dashboard/developer/api-keys", icon: Key, active: true },
+  {
+    title: "API Keys",
+    href: "/dashboard/developer/api-keys",
+    icon: Key,
+    active: true,
+  },
   { title: "Webhooks", href: "/dashboard/developer/webhooks", icon: Webhook },
 ];
 
@@ -157,7 +162,10 @@ export default function ApiKeysPage() {
 
       // Add optional fields if provided
       if (ipWhitelist.trim()) {
-        body.ipWhitelist = ipWhitelist.split("\n").map((ip) => ip.trim()).filter(Boolean);
+        body.ipWhitelist = ipWhitelist
+          .split("\n")
+          .map((ip) => ip.trim())
+          .filter(Boolean);
       }
       if (rateLimit) {
         body.rateLimit = parseInt(rateLimit, 10);
@@ -194,7 +202,7 @@ export default function ApiKeysPage() {
   const handleRevoke = async (id: string) => {
     if (
       !confirm(
-        "Are you sure you want to revoke this API key? This action cannot be undone."
+        "Are you sure you want to revoke this API key? This action cannot be undone.",
       )
     ) {
       return;
@@ -216,7 +224,7 @@ export default function ApiKeysPage() {
 
   const toggleScope = (scope: string) => {
     setSelectedScopes((prev) =>
-      prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope]
+      prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope],
     );
   };
 
@@ -231,9 +239,12 @@ export default function ApiKeysPage() {
 
   const getScopeColor = (scope: string) => {
     if (scope === "admin") return "bg-red-100 text-red-700 border-red-200";
-    if (scope.includes("delete")) return "bg-orange-100 text-orange-700 border-orange-200";
-    if (scope.includes("create") || scope.includes("update")) return "bg-blue-100 text-blue-700 border-blue-200";
-    if (scope.includes("read")) return "bg-slate-100 text-slate-700 border-slate-200";
+    if (scope.includes("delete"))
+      return "bg-orange-100 text-orange-700 border-orange-200";
+    if (scope.includes("create") || scope.includes("update"))
+      return "bg-blue-100 text-blue-700 border-blue-200";
+    if (scope.includes("read"))
+      return "bg-slate-100 text-slate-700 border-slate-200";
     return "bg-purple-100 text-purple-700 border-purple-200";
   };
 
@@ -282,7 +293,9 @@ export default function ApiKeysPage() {
                 >
                   <Icon className="h-4 w-4" />
                   {item.title}
-                  {!item.active && <ChevronRight className="h-4 w-4 ml-auto text-slate-400" />}
+                  {!item.active && (
+                    <ChevronRight className="h-4 w-4 ml-auto text-slate-400" />
+                  )}
                 </Link>
               );
             })}
@@ -293,12 +306,17 @@ export default function ApiKeysPage() {
             {/* Create Button & Title */}
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-slate-900">API Keys</h2>
+                <h2 className="text-xl font-semibold text-slate-900">
+                  API Keys
+                </h2>
                 <p className="text-sm text-slate-500">
                   Create and manage API keys for programmatic access.
                 </p>
               </div>
-              <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+              <Dialog
+                open={createDialogOpen}
+                onOpenChange={setCreateDialogOpen}
+              >
                 <DialogTrigger asChild>
                   <Button className="gap-2 h-10 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
                     <Plus className="h-4 w-4" />
@@ -314,7 +332,8 @@ export default function ApiKeysPage() {
                       <div>
                         <DialogTitle>Create API Key</DialogTitle>
                         <DialogDescription>
-                          Configure your API key with specific permissions and settings.
+                          Configure your API key with specific permissions and
+                          settings.
                         </DialogDescription>
                       </div>
                     </div>
@@ -323,7 +342,12 @@ export default function ApiKeysPage() {
                   <div className="space-y-6 py-4">
                     {/* Key Name */}
                     <div className="space-y-2">
-                      <Label htmlFor="name" className="text-slate-700 font-medium">Key Name</Label>
+                      <Label
+                        htmlFor="name"
+                        className="text-slate-700 font-medium"
+                      >
+                        Key Name
+                      </Label>
                       <Input
                         id="name"
                         placeholder="e.g., Production Server, Mobile App"
@@ -337,65 +361,87 @@ export default function ApiKeysPage() {
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <Shield className="h-4 w-4 text-blue-600" />
-                        <Label className="text-slate-700 font-medium">Permissions (Scopes)</Label>
+                        <Label className="text-slate-700 font-medium">
+                          Permissions (Scopes)
+                        </Label>
                       </div>
                       <p className="text-sm text-slate-500">
-                        Select the permissions this API key should have. Choose only what&apos;s needed.
+                        Select the permissions this API key should have. Choose
+                        only what&apos;s needed.
                       </p>
 
                       {loadingScopes ? (
                         <div className="p-4 bg-slate-50 rounded-lg">
-                          <p className="text-sm text-slate-500">Loading scopes...</p>
+                          <p className="text-sm text-slate-500">
+                            Loading scopes...
+                          </p>
                         </div>
                       ) : (
                         <div className="space-y-3 border border-slate-200 rounded-lg p-4 max-h-80 overflow-y-auto">
-                          {Object.entries(availableScopes).map(([resource, { scopes }]) => (
-                            <div key={resource} className="space-y-2">
-                              <h4 className="font-semibold text-sm text-slate-700 capitalize border-b pb-1">
-                                {resource}
-                              </h4>
-                              <div className="grid grid-cols-2 gap-2">
-                                {scopes.map((scope) => (
-                                  <TooltipProvider key={scope.value}>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <div className="flex items-start gap-2 p-2 hover:bg-slate-50 rounded cursor-pointer">
-                                          <Checkbox
-                                            id={scope.value}
-                                            checked={selectedScopes.includes(scope.value)}
-                                            onCheckedChange={() => toggleScope(scope.value)}
-                                            className={scope.value === "admin" ? "border-red-500" : ""}
-                                          />
-                                          <div className="flex-1">
-                                            <label
-                                              htmlFor={scope.value}
-                                              className="text-sm font-medium leading-none cursor-pointer flex items-center gap-1"
-                                            >
-                                              {scope.label}
-                                              {scope.value === "admin" && (
-                                                <Badge className="ml-1 bg-red-100 text-red-700 border-0 text-xs">
-                                                  Full Access
-                                                </Badge>
+                          {Object.entries(availableScopes).map(
+                            ([resource, { scopes }]) => (
+                              <div key={resource} className="space-y-2">
+                                <h4 className="font-semibold text-sm text-slate-700 capitalize border-b pb-1">
+                                  {resource}
+                                </h4>
+                                <div className="grid grid-cols-2 gap-2">
+                                  {scopes.map((scope) => (
+                                    <TooltipProvider key={scope.value}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className="flex items-start gap-2 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                                            <Checkbox
+                                              id={scope.value}
+                                              checked={selectedScopes.includes(
+                                                scope.value,
                                               )}
-                                            </label>
+                                              onCheckedChange={() =>
+                                                toggleScope(scope.value)
+                                              }
+                                              className={
+                                                scope.value === "admin"
+                                                  ? "border-red-500"
+                                                  : ""
+                                              }
+                                            />
+                                            <div className="flex-1">
+                                              <label
+                                                htmlFor={scope.value}
+                                                className="text-sm font-medium leading-none cursor-pointer flex items-center gap-1"
+                                              >
+                                                {scope.label}
+                                                {scope.value === "admin" && (
+                                                  <Badge className="ml-1 bg-red-100 text-red-700 border-0 text-xs">
+                                                    Full Access
+                                                  </Badge>
+                                                )}
+                                              </label>
+                                            </div>
                                           </div>
-                                        </div>
-                                      </TooltipTrigger>
-                                      <TooltipContent side="right" className="max-w-xs">
-                                        <p className="text-xs">{scope.description}</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                ))}
+                                        </TooltipTrigger>
+                                        <TooltipContent
+                                          side="right"
+                                          className="max-w-xs"
+                                        >
+                                          <p className="text-xs">
+                                            {scope.description}
+                                          </p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            ),
+                          )}
                         </div>
                       )}
 
                       {selectedScopes.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                          <span className="text-xs font-medium text-blue-700">Selected:</span>
+                          <span className="text-xs font-medium text-blue-700">
+                            Selected:
+                          </span>
                           {selectedScopes.map((scope) => (
                             <Badge
                               key={scope}
@@ -409,13 +455,18 @@ export default function ApiKeysPage() {
                     </div>
 
                     {/* Advanced Settings */}
-                    <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+                    <Collapsible
+                      open={showAdvanced}
+                      onOpenChange={setShowAdvanced}
+                    >
                       <CollapsibleTrigger asChild>
                         <Button
                           variant="ghost"
                           className="w-full justify-between rounded-lg hover:bg-slate-100"
                         >
-                          <span className="text-sm font-medium">Advanced Settings (Optional)</span>
+                          <span className="text-sm font-medium">
+                            Advanced Settings (Optional)
+                          </span>
                           <ChevronDown
                             className={`h-4 w-4 transition-transform ${showAdvanced ? "rotate-180" : ""}`}
                           />
@@ -424,11 +475,15 @@ export default function ApiKeysPage() {
                       <CollapsibleContent className="space-y-4 pt-4">
                         {/* IP Whitelist */}
                         <div className="space-y-2">
-                          <Label htmlFor="ipWhitelist" className="text-slate-700">
+                          <Label
+                            htmlFor="ipWhitelist"
+                            className="text-slate-700"
+                          >
                             IP Whitelist
                           </Label>
                           <p className="text-xs text-slate-500">
-                            Restrict API key usage to specific IP addresses (one per line)
+                            Restrict API key usage to specific IP addresses (one
+                            per line)
                           </p>
                           <Textarea
                             id="ipWhitelist"
@@ -458,7 +513,9 @@ export default function ApiKeysPage() {
 
                         {/* Expiration Date */}
                         <div className="space-y-2">
-                          <Label className="text-slate-700">Expiration Date</Label>
+                          <Label className="text-slate-700">
+                            Expiration Date
+                          </Label>
                           <p className="text-xs text-slate-500">
                             Set when this API key should automatically expire
                           </p>
@@ -469,10 +526,15 @@ export default function ApiKeysPage() {
                                 className="w-full justify-start text-left font-normal h-11 rounded-lg"
                               >
                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                {expiresAt ? format(expiresAt, "PPP") : "No expiration"}
+                                {expiresAt
+                                  ? format(expiresAt, "PPP")
+                                  : "No expiration"}
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
+                            <PopoverContent
+                              className="w-auto p-0"
+                              align="start"
+                            >
                               <Calendar
                                 mode="single"
                                 selected={expiresAt}
@@ -515,7 +577,11 @@ export default function ApiKeysPage() {
                     </Button>
                     <Button
                       onClick={handleCreate}
-                      disabled={creating || !newKeyName.trim() || selectedScopes.length === 0}
+                      disabled={
+                        creating ||
+                        !newKeyName.trim() ||
+                        selectedScopes.length === 0
+                      }
                       className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600"
                     >
                       {creating ? "Creating..." : "Create Key"}
@@ -534,9 +600,12 @@ export default function ApiKeysPage() {
                       <ShieldCheck className="h-5 w-5 text-emerald-600" />
                     </div>
                     <div>
-                      <CardTitle className="text-emerald-800">API Key Created!</CardTitle>
+                      <CardTitle className="text-emerald-800">
+                        API Key Created!
+                      </CardTitle>
                       <CardDescription className="text-emerald-600">
-                        Copy this key now. You won&apos;t be able to see it again!
+                        Copy this key now. You won&apos;t be able to see it
+                        again!
                       </CardDescription>
                     </div>
                   </div>
@@ -552,7 +621,11 @@ export default function ApiKeysPage() {
                       onClick={() => handleCopy(newKey)}
                       className={`rounded-lg shrink-0 ${copied ? "bg-emerald-50 border-emerald-200 text-emerald-600" : ""}`}
                     >
-                      {copied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      {copied ? (
+                        <CheckCircle className="h-4 w-4" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                   <Button
@@ -576,7 +649,9 @@ export default function ApiKeysPage() {
                   </div>
                   <div>
                     <CardTitle className="text-lg">Your API Keys</CardTitle>
-                    <CardDescription>Use these keys to authenticate API requests.</CardDescription>
+                    <CardDescription>
+                      Use these keys to authenticate API requests.
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -589,7 +664,9 @@ export default function ApiKeysPage() {
                         <TableHead className="font-semibold">Scopes</TableHead>
                         <TableHead className="font-semibold">Created</TableHead>
                         <TableHead className="font-semibold">Status</TableHead>
-                        <TableHead className="text-right font-semibold">Actions</TableHead>
+                        <TableHead className="text-right font-semibold">
+                          Actions
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -601,8 +678,12 @@ export default function ApiKeysPage() {
                                 <Key className="h-4 w-4 text-slate-500" />
                               </div>
                               <div>
-                                <p className="font-medium text-slate-900">{key.name}</p>
-                                <p className="text-xs text-slate-500">pk_live_••••••••</p>
+                                <p className="font-medium text-slate-900">
+                                  {key.name}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  pk_live_••••••••
+                                </p>
                                 {key.expiresAt && (
                                   <div className="flex items-center gap-1 mt-1">
                                     {isExpired(key.expiresAt) ? (
@@ -616,18 +697,33 @@ export default function ApiKeysPage() {
                                             <div className="flex items-center gap-1">
                                               <AlertTriangle className="h-3 w-3 text-orange-600" />
                                               <span className="text-xs text-orange-600">
-                                                Expires {format(new Date(key.expiresAt), "MMM d")}
+                                                Expires{" "}
+                                                {format(
+                                                  new Date(key.expiresAt),
+                                                  "MMM d",
+                                                )}
                                               </span>
                                             </div>
                                           </TooltipTrigger>
                                           <TooltipContent>
-                                            <p className="text-xs">This key expires in {differenceInDays(new Date(key.expiresAt), new Date())} days</p>
+                                            <p className="text-xs">
+                                              This key expires in{" "}
+                                              {differenceInDays(
+                                                new Date(key.expiresAt),
+                                                new Date(),
+                                              )}{" "}
+                                              days
+                                            </p>
                                           </TooltipContent>
                                         </Tooltip>
                                       </TooltipProvider>
                                     ) : (
                                       <span className="text-xs text-slate-500">
-                                        Expires {format(new Date(key.expiresAt), "MMM d, yyyy")}
+                                        Expires{" "}
+                                        {format(
+                                          new Date(key.expiresAt),
+                                          "MMM d, yyyy",
+                                        )}
                                       </span>
                                     )}
                                   </div>
@@ -664,14 +760,16 @@ export default function ApiKeysPage() {
                                         </TooltipTrigger>
                                         <TooltipContent className="max-w-xs">
                                           <div className="flex flex-wrap gap-1">
-                                            {key.scopes.slice(3).map((scope) => (
-                                              <Badge
-                                                key={scope}
-                                                className={`text-xs border ${getScopeColor(scope)}`}
-                                              >
-                                                {getScopeLabel(scope)}
-                                              </Badge>
-                                            ))}
+                                            {key.scopes
+                                              .slice(3)
+                                              .map((scope) => (
+                                                <Badge
+                                                  key={scope}
+                                                  className={`text-xs border ${getScopeColor(scope)}`}
+                                                >
+                                                  {getScopeLabel(scope)}
+                                                </Badge>
+                                              ))}
                                           </div>
                                         </TooltipContent>
                                       </Tooltip>
@@ -679,7 +777,9 @@ export default function ApiKeysPage() {
                                   )}
                                 </>
                               ) : (
-                                <Badge variant="secondary" className="text-xs">No scopes</Badge>
+                                <Badge variant="secondary" className="text-xs">
+                                  No scopes
+                                </Badge>
                               )}
                             </div>
                           </TableCell>
@@ -695,7 +795,10 @@ export default function ApiKeysPage() {
                                 Active
                               </Badge>
                             ) : (
-                              <Badge variant="secondary" className="bg-slate-100 text-slate-500 border-0">
+                              <Badge
+                                variant="secondary"
+                                className="bg-slate-100 text-slate-500 border-0"
+                              >
                                 Never used
                               </Badge>
                             )}
@@ -708,10 +811,17 @@ export default function ApiKeysPage() {
                                     </Badge>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p className="text-xs font-semibold mb-1">Allowed IPs:</p>
+                                    <p className="text-xs font-semibold mb-1">
+                                      Allowed IPs:
+                                    </p>
                                     <div className="space-y-0.5">
                                       {key.ipWhitelist.map((ip) => (
-                                        <p key={ip} className="text-xs font-mono">{ip}</p>
+                                        <p
+                                          key={ip}
+                                          className="text-xs font-mono"
+                                        >
+                                          {ip}
+                                        </p>
                                       ))}
                                     </div>
                                   </TooltipContent>
@@ -727,7 +837,9 @@ export default function ApiKeysPage() {
                                     </Badge>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p className="text-xs">{key.rateLimit} requests/minute</p>
+                                    <p className="text-xs">
+                                      {key.rateLimit} requests/minute
+                                    </p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
@@ -752,7 +864,9 @@ export default function ApiKeysPage() {
                     <div className="h-16 w-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
                       <Key className="h-8 w-8 text-slate-400" />
                     </div>
-                    <h3 className="font-medium text-slate-900 mb-1">No API keys yet</h3>
+                    <h3 className="font-medium text-slate-900 mb-1">
+                      No API keys yet
+                    </h3>
                     <p className="text-sm text-slate-500 mb-4">
                       Create an API key to start using the API programmatically.
                     </p>
@@ -777,7 +891,9 @@ export default function ApiKeysPage() {
                   </div>
                   <div>
                     <CardTitle className="text-lg">Quick Start Guide</CardTitle>
-                    <CardDescription>Get started with the PingTO.Me API.</CardDescription>
+                    <CardDescription>
+                      Get started with the PingTO.Me API.
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -789,10 +905,14 @@ export default function ApiKeysPage() {
                       <ShieldCheck className="h-4 w-4 text-blue-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-blue-800">Authentication</p>
+                      <p className="font-medium text-blue-800">
+                        Authentication
+                      </p>
                       <p className="text-sm text-blue-600 mt-1">
                         Include your API key in the{" "}
-                        <code className="bg-blue-100 px-1.5 py-0.5 rounded text-xs font-mono">x-api-key</code>{" "}
+                        <code className="bg-blue-100 px-1.5 py-0.5 rounded text-xs font-mono">
+                          x-api-key
+                        </code>{" "}
                         header with each request.
                       </p>
                     </div>
@@ -804,20 +924,27 @@ export default function ApiKeysPage() {
                   <div className="flex items-center justify-between px-4 py-2 bg-slate-900 rounded-t-lg">
                     <div className="flex items-center gap-2">
                       <Terminal className="h-4 w-4 text-slate-400" />
-                      <span className="text-xs text-slate-400 font-medium">cURL</span>
+                      <span className="text-xs text-slate-400 font-medium">
+                        cURL
+                      </span>
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="h-7 text-slate-400 hover:text-white hover:bg-slate-700 rounded"
-                      onClick={() => handleCopy('curl -X GET "https://api.pingto.me/links" -H "x-api-key: YOUR_API_KEY"')}
+                      onClick={() =>
+                        handleCopy(
+                          'curl -X GET "https://api.pingto.me/links" -H "x-api-key: YOUR_API_KEY"',
+                        )
+                      }
                     >
                       <Copy className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                   <pre className="bg-slate-800 p-4 rounded-b-lg overflow-x-auto">
                     <code className="text-sm text-slate-300 font-mono">
-                      curl -X GET &quot;https://api.pingto.me/links&quot; \{"\n"}
+                      curl -X GET &quot;https://api.pingto.me/links&quot; \
+                      {"\n"}
                       {"  "}-H &quot;x-api-key: YOUR_API_KEY&quot;
                     </code>
                   </pre>
@@ -831,7 +958,9 @@ export default function ApiKeysPage() {
                         <Code className="h-5 w-5 text-slate-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-slate-900">API Documentation</p>
+                        <p className="font-medium text-slate-900">
+                          API Documentation
+                        </p>
                         <p className="text-sm text-slate-500">
                           View full API reference and examples
                         </p>

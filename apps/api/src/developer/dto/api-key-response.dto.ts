@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 /**
  * Response DTO for API key creation
@@ -11,8 +11,8 @@ export class ApiKeyCreatedResponseDto {
    * @example "pk_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6"
    */
   @ApiProperty({
-    description: 'Plain text API key - only shown once',
-    example: 'pk_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6',
+    description: "Plain text API key - only shown once",
+    example: "pk_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
   })
   key: string;
 
@@ -21,8 +21,8 @@ export class ApiKeyCreatedResponseDto {
    * @example "550e8400-e29b-41d4-a716-446655440000"
    */
   @ApiProperty({
-    description: 'API key ID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: "API key ID",
+    example: "550e8400-e29b-41d4-a716-446655440000",
   })
   id: string;
 
@@ -31,8 +31,8 @@ export class ApiKeyCreatedResponseDto {
    * @example "Production API Key"
    */
   @ApiProperty({
-    description: 'API key name',
-    example: 'Production API Key',
+    description: "API key name",
+    example: "Production API Key",
   })
   name: string;
 
@@ -41,8 +41,8 @@ export class ApiKeyCreatedResponseDto {
    * @example ["link:read", "link:create", "analytics:read"]
    */
   @ApiProperty({
-    description: 'Permission scopes',
-    example: ['link:read', 'link:create', 'analytics:read'],
+    description: "Permission scopes",
+    example: ["link:read", "link:create", "analytics:read"],
     type: [String],
   })
   scopes: string[];
@@ -52,8 +52,8 @@ export class ApiKeyCreatedResponseDto {
    * @example ["192.168.1.1", "10.0.0.0/8"]
    */
   @ApiPropertyOptional({
-    description: 'IP whitelist',
-    example: ['192.168.1.1', '10.0.0.0/8'],
+    description: "IP whitelist",
+    example: ["192.168.1.1", "10.0.0.0/8"],
     type: [String],
   })
   ipWhitelist?: string[];
@@ -63,7 +63,7 @@ export class ApiKeyCreatedResponseDto {
    * @example 1000
    */
   @ApiPropertyOptional({
-    description: 'Rate limit in requests per minute',
+    description: "Rate limit in requests per minute",
     example: 1000,
   })
   rateLimit?: number;
@@ -73,8 +73,8 @@ export class ApiKeyCreatedResponseDto {
    * @example "2024-12-31T23:59:59.000Z"
    */
   @ApiPropertyOptional({
-    description: 'Expiration date',
-    example: '2024-12-31T23:59:59.000Z',
+    description: "Expiration date",
+    example: "2024-12-31T23:59:59.000Z",
   })
   expiresAt?: Date;
 
@@ -83,8 +83,8 @@ export class ApiKeyCreatedResponseDto {
    * @example "2024-01-01T00:00:00.000Z"
    */
   @ApiProperty({
-    description: 'Creation timestamp',
-    example: '2024-01-01T00:00:00.000Z',
+    description: "Creation timestamp",
+    example: "2024-01-01T00:00:00.000Z",
   })
   createdAt: Date;
 }
@@ -99,8 +99,8 @@ export class ApiKeyListItemDto {
    * @example "550e8400-e29b-41d4-a716-446655440000"
    */
   @ApiProperty({
-    description: 'API key ID',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: "API key ID",
+    example: "550e8400-e29b-41d4-a716-446655440000",
   })
   id: string;
 
@@ -109,8 +109,8 @@ export class ApiKeyListItemDto {
    * @example "Production API Key"
    */
   @ApiProperty({
-    description: 'API key name',
-    example: 'Production API Key',
+    description: "API key name",
+    example: "Production API Key",
   })
   name: string;
 
@@ -119,8 +119,8 @@ export class ApiKeyListItemDto {
    * @example ["link:read", "link:create", "analytics:read"]
    */
   @ApiProperty({
-    description: 'Permission scopes',
-    example: ['link:read', 'link:create', 'analytics:read'],
+    description: "Permission scopes",
+    example: ["link:read", "link:create", "analytics:read"],
     type: [String],
   })
   scopes: string[];
@@ -129,8 +129,8 @@ export class ApiKeyListItemDto {
    * IP whitelist if configured
    */
   @ApiPropertyOptional({
-    description: 'IP whitelist',
-    example: ['192.168.1.1'],
+    description: "IP whitelist",
+    example: ["192.168.1.1"],
     type: [String],
   })
   ipWhitelist?: string[];
@@ -139,7 +139,7 @@ export class ApiKeyListItemDto {
    * Rate limit if configured
    */
   @ApiPropertyOptional({
-    description: 'Rate limit in requests per minute',
+    description: "Rate limit in requests per minute",
     example: 1000,
   })
   rateLimit?: number;
@@ -148,8 +148,8 @@ export class ApiKeyListItemDto {
    * Expiration date if set
    */
   @ApiPropertyOptional({
-    description: 'Expiration date',
-    example: '2024-12-31T23:59:59.000Z',
+    description: "Expiration date",
+    example: "2024-12-31T23:59:59.000Z",
   })
   expiresAt?: Date;
 
@@ -157,8 +157,8 @@ export class ApiKeyListItemDto {
    * Last used timestamp
    */
   @ApiPropertyOptional({
-    description: 'Last used timestamp',
-    example: '2024-01-15T10:30:00.000Z',
+    description: "Last used timestamp",
+    example: "2024-01-15T10:30:00.000Z",
   })
   lastUsedAt?: Date;
 
@@ -166,8 +166,8 @@ export class ApiKeyListItemDto {
    * Creation timestamp
    */
   @ApiProperty({
-    description: 'Creation timestamp',
-    example: '2024-01-01T00:00:00.000Z',
+    description: "Creation timestamp",
+    example: "2024-01-01T00:00:00.000Z",
   })
   createdAt: Date;
 }

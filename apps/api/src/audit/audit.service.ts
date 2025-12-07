@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
 
 export interface AuditLogData {
   userId?: string;
@@ -7,7 +7,7 @@ export interface AuditLogData {
   action: string;
   resource: string;
   resourceId?: string;
-  status?: 'success' | 'failure';
+  status?: "success" | "failure";
   details?: Record<string, any>;
   changes?: {
     before?: Record<string, any>;
@@ -28,15 +28,15 @@ export interface AuditContext {
 
 // Sensitive fields to exclude from change tracking
 const SENSITIVE_FIELDS = [
-  'password',
-  'passwordHash',
-  'twoFactorSecret',
-  'secret',
-  'token',
-  'accessToken',
-  'refreshToken',
-  'keyHash',
-  'apiKey',
+  "password",
+  "passwordHash",
+  "twoFactorSecret",
+  "secret",
+  "token",
+  "accessToken",
+  "refreshToken",
+  "keyHash",
+  "apiKey",
 ];
 
 @Injectable()
@@ -55,7 +55,7 @@ export class AuditService {
           action: data.action,
           resource: data.resource,
           resourceId: data.resourceId,
-          status: data.status || 'success',
+          status: data.status || "success",
           details: data.details,
           changes: data.changes,
           ipAddress: data.ipAddress,
@@ -66,7 +66,7 @@ export class AuditService {
       });
     } catch (error) {
       // Don't throw - audit logging should not break main operations
-      console.error('Failed to create audit log:', error);
+      console.error("Failed to create audit log:", error);
     }
   }
 
@@ -80,16 +80,22 @@ export class AuditService {
   ): { before?: Record<string, any>; after?: Record<string, any> } | null {
     if (!before && !after) return null;
 
-    const sanitize = (obj: Record<string, any> | null): Record<string, any> | undefined => {
+    const sanitize = (
+      obj: Record<string, any> | null,
+    ): Record<string, any> | undefined => {
       if (!obj) return undefined;
       const sanitized: Record<string, any> = {};
       for (const [key, value] of Object.entries(obj)) {
         // Skip sensitive fields
-        if (SENSITIVE_FIELDS.some((field) => key.toLowerCase().includes(field.toLowerCase()))) {
+        if (
+          SENSITIVE_FIELDS.some((field) =>
+            key.toLowerCase().includes(field.toLowerCase()),
+          )
+        ) {
           continue;
         }
         // Skip functions and undefined
-        if (typeof value === 'function' || value === undefined) {
+        if (typeof value === "function" || value === undefined) {
           continue;
         }
         sanitized[key] = value;
@@ -105,7 +111,11 @@ export class AuditService {
       const allKeys = new Set([...Object.keys(before), ...Object.keys(after)]);
 
       for (const key of allKeys) {
-        if (SENSITIVE_FIELDS.some((field) => key.toLowerCase().includes(field.toLowerCase()))) {
+        if (
+          SENSITIVE_FIELDS.some((field) =>
+            key.toLowerCase().includes(field.toLowerCase()),
+          )
+        ) {
           continue;
         }
 
@@ -119,12 +129,16 @@ export class AuditService {
         }
       }
 
-      if (Object.keys(changedBefore).length === 0 && Object.keys(changedAfter).length === 0) {
+      if (
+        Object.keys(changedBefore).length === 0 &&
+        Object.keys(changedAfter).length === 0
+      ) {
         return null;
       }
 
       return {
-        before: Object.keys(changedBefore).length > 0 ? changedBefore : undefined,
+        before:
+          Object.keys(changedBefore).length > 0 ? changedBefore : undefined,
         after: Object.keys(changedAfter).length > 0 ? changedAfter : undefined,
       };
     }
@@ -140,11 +154,18 @@ export class AuditService {
   async logLinkEvent(
     userId: string,
     organizationId: string | null,
-    action: 'link.created' | 'link.updated' | 'link.deleted' | 'link.archived' | 'link.restored' | 'link.bulk_created' | 'link.bulk_deleted',
+    action:
+      | "link.created"
+      | "link.updated"
+      | "link.deleted"
+      | "link.archived"
+      | "link.restored"
+      | "link.bulk_created"
+      | "link.bulk_deleted",
     link: { id: string; slug?: string; targetUrl?: string },
     options?: {
       changes?: { before?: Record<string, any>; after?: Record<string, any> };
-      status?: 'success' | 'failure';
+      status?: "success" | "failure";
       context?: AuditContext;
       details?: Record<string, any>;
     },
@@ -153,7 +174,7 @@ export class AuditService {
       userId,
       organizationId: organizationId || undefined,
       action,
-      resource: 'Link',
+      resource: "Link",
       resourceId: link.id,
       status: options?.status,
       details: {
@@ -173,10 +194,15 @@ export class AuditService {
   async logDomainEvent(
     userId: string,
     organizationId: string,
-    action: 'domain.added' | 'domain.verified' | 'domain.failed' | 'domain.removed' | 'domain.ssl_updated',
+    action:
+      | "domain.added"
+      | "domain.verified"
+      | "domain.failed"
+      | "domain.removed"
+      | "domain.ssl_updated",
     domain: { id: string; hostname: string },
     options?: {
-      status?: 'success' | 'failure';
+      status?: "success" | "failure";
       context?: AuditContext;
       details?: Record<string, any>;
     },
@@ -185,7 +211,7 @@ export class AuditService {
       userId,
       organizationId,
       action,
-      resource: 'Domain',
+      resource: "Domain",
       resourceId: domain.id,
       status: options?.status,
       details: {
@@ -203,7 +229,11 @@ export class AuditService {
   async logTeamEvent(
     userId: string,
     organizationId: string,
-    action: 'member.invited' | 'member.joined' | 'member.role_changed' | 'member.removed',
+    action:
+      | "member.invited"
+      | "member.joined"
+      | "member.role_changed"
+      | "member.removed",
     member: { userId?: string; email?: string; role?: string },
     options?: {
       changes?: { before?: Record<string, any>; after?: Record<string, any> };
@@ -215,7 +245,7 @@ export class AuditService {
       userId,
       organizationId,
       action,
-      resource: 'OrganizationMember',
+      resource: "OrganizationMember",
       resourceId: member.userId,
       details: {
         targetEmail: member.email,
@@ -234,7 +264,15 @@ export class AuditService {
   async logOrgEvent(
     userId: string,
     organizationId: string,
-    action: 'org.created' | 'org.updated' | 'org.settings_changed' | 'org.deleted',
+    action:
+      | "org.created"
+      | "org.updated"
+      | "org.settings_changed"
+      | "org.settings_updated"
+      | "org.deleted"
+      | "org.logo_uploaded"
+      | "org.logo_deleted"
+      | "org.ownership_transferred",
     options?: {
       changes?: { before?: Record<string, any>; after?: Record<string, any> };
       context?: AuditContext;
@@ -245,7 +283,7 @@ export class AuditService {
       userId,
       organizationId,
       action,
-      resource: 'Organization',
+      resource: "Organization",
       resourceId: organizationId,
       details: options?.details,
       changes: options?.changes,
@@ -260,16 +298,16 @@ export class AuditService {
   async logSecurityEvent(
     userId: string | null,
     action:
-      | 'auth.login'
-      | 'auth.logout'
-      | 'auth.failed_login'
-      | 'auth.2fa_enabled'
-      | 'auth.2fa_disabled'
-      | 'auth.password_changed'
-      | 'auth.password_reset_requested'
-      | 'auth.email_verified',
+      | "auth.login"
+      | "auth.logout"
+      | "auth.failed_login"
+      | "auth.2fa_enabled"
+      | "auth.2fa_disabled"
+      | "auth.password_changed"
+      | "auth.password_reset_requested"
+      | "auth.email_verified",
     options?: {
-      status?: 'success' | 'failure';
+      status?: "success" | "failure";
       context?: AuditContext;
       details?: Record<string, any>;
     },
@@ -277,7 +315,7 @@ export class AuditService {
     await this.log({
       userId: userId || undefined,
       action,
-      resource: 'User',
+      resource: "User",
       resourceId: userId || undefined,
       status: options?.status,
       details: options?.details,
@@ -292,7 +330,7 @@ export class AuditService {
   async logApiKeyEvent(
     userId: string,
     organizationId: string,
-    action: 'api_key.created' | 'api_key.rotated' | 'api_key.revoked',
+    action: "api_key.created" | "api_key.rotated" | "api_key.revoked",
     apiKey: { id: string; name?: string; scopes?: string[] },
     options?: {
       context?: AuditContext;
@@ -303,7 +341,7 @@ export class AuditService {
       userId,
       organizationId,
       action,
-      resource: 'ApiKey',
+      resource: "ApiKey",
       resourceId: apiKey.id,
       details: {
         keyName: apiKey.name,
@@ -321,7 +359,11 @@ export class AuditService {
   async logBillingEvent(
     userId: string,
     organizationId: string,
-    action: 'billing.plan_changed' | 'billing.subscription_cancelled' | 'billing.payment_failed' | 'billing.payment_succeeded',
+    action:
+      | "billing.plan_changed"
+      | "billing.subscription_cancelled"
+      | "billing.payment_failed"
+      | "billing.payment_succeeded",
     options?: {
       changes?: { before?: Record<string, any>; after?: Record<string, any> };
       context?: AuditContext;
@@ -332,7 +374,7 @@ export class AuditService {
       userId,
       organizationId,
       action,
-      resource: 'Subscription',
+      resource: "Subscription",
       details: options?.details,
       changes: options?.changes,
       ipAddress: options?.context?.ipAddress,
@@ -351,7 +393,7 @@ export class AuditService {
     resourceId: string,
     options?: {
       changes?: { before?: Record<string, any>; after?: Record<string, any> };
-      status?: 'success' | 'failure';
+      status?: "success" | "failure";
       context?: AuditContext;
       details?: Record<string, any>;
     },
@@ -402,15 +444,15 @@ export class AuditService {
     // Search in details JSON field
     if (filters.search) {
       where.OR = [
-        { action: { contains: filters.search, mode: 'insensitive' } },
-        { resource: { contains: filters.search, mode: 'insensitive' } },
+        { action: { contains: filters.search, mode: "insensitive" } },
+        { resource: { contains: filters.search, mode: "insensitive" } },
       ];
     }
 
     const [logs, total] = await Promise.all([
       this.prisma.auditLog.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         take: filters.limit || 50,
         skip: filters.offset || 0,
       }),
@@ -429,16 +471,21 @@ export class AuditService {
   // ==================== Legacy Helper Methods (for backward compatibility) ====================
 
   async logLogin(userId: string, ipAddress?: string, userAgent?: string) {
-    await this.logSecurityEvent(userId, 'auth.login', {
+    await this.logSecurityEvent(userId, "auth.login", {
       context: { ipAddress, userAgent },
     });
   }
 
   async logLogout(userId: string) {
-    await this.logSecurityEvent(userId, 'auth.logout');
+    await this.logSecurityEvent(userId, "auth.logout");
   }
 
-  async logCreate(userId: string, resource: string, resourceId: string, details?: Record<string, any>) {
+  async logCreate(
+    userId: string,
+    resource: string,
+    resourceId: string,
+    details?: Record<string, any>,
+  ) {
     await this.log({
       userId,
       action: `${resource.toLowerCase()}.created`,
@@ -448,7 +495,12 @@ export class AuditService {
     });
   }
 
-  async logUpdate(userId: string, resource: string, resourceId: string, details?: Record<string, any>) {
+  async logUpdate(
+    userId: string,
+    resource: string,
+    resourceId: string,
+    details?: Record<string, any>,
+  ) {
     await this.log({
       userId,
       action: `${resource.toLowerCase()}.updated`,
@@ -486,7 +538,9 @@ export class AuditService {
       },
     });
 
-    console.log(`Cleaned up ${result.count} audit logs older than ${retentionDays} days`);
+    console.log(
+      `Cleaned up ${result.count} audit logs older than ${retentionDays} days`,
+    );
     return result.count;
   }
 }

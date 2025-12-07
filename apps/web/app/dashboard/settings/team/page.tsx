@@ -21,15 +21,38 @@ import { usePermission } from "@/hooks/usePermission";
 import { PermissionGate } from "@/components/PermissionGate";
 import { RoleBadge } from "@/components/RoleBadge";
 import { useAuth } from "@/contexts/AuthContext";
-import { Users, UserPlus, Shield, Crown, Eye, Edit, Trash2, Mail, Lock } from "lucide-react";
+import {
+  Users,
+  UserPlus,
+  Shield,
+  Crown,
+  Eye,
+  Edit,
+  Trash2,
+  Mail,
+  Lock,
+} from "lucide-react";
 import type { MemberRole } from "@/lib/permissions";
 
-const ROLE_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
-  OWNER: { label: "Owner", color: "bg-amber-100 text-amber-700", icon: Crown },
-  ADMIN: { label: "Admin", color: "bg-purple-100 text-purple-700", icon: Shield },
-  EDITOR: { label: "Editor", color: "bg-blue-100 text-blue-700", icon: Edit },
-  VIEWER: { label: "Viewer", color: "bg-slate-100 text-slate-700", icon: Eye },
-};
+const ROLE_CONFIG: Record<string, { label: string; color: string; icon: any }> =
+  {
+    OWNER: {
+      label: "Owner",
+      color: "bg-amber-100 text-amber-700",
+      icon: Crown,
+    },
+    ADMIN: {
+      label: "Admin",
+      color: "bg-purple-100 text-purple-700",
+      icon: Shield,
+    },
+    EDITOR: { label: "Editor", color: "bg-blue-100 text-blue-700", icon: Edit },
+    VIEWER: {
+      label: "Viewer",
+      color: "bg-slate-100 text-slate-700",
+      icon: Eye,
+    },
+  };
 
 export default function TeamSettingsPage() {
   const [members, setMembers] = useState<any[]>([]);
@@ -75,7 +98,11 @@ export default function TeamSettingsPage() {
     }
   };
 
-  const handleRoleChange = async (userId: string, newRole: string, currentRole: string) => {
+  const handleRoleChange = async (
+    userId: string,
+    newRole: string,
+    currentRole: string,
+  ) => {
     // Check if user can manage the target role
     if (!canManageRole(newRole as MemberRole)) {
       alert("You don't have permission to assign this role");
@@ -155,9 +182,12 @@ export default function TeamSettingsPage() {
                   <Lock className="h-4 w-4 text-amber-600" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium text-amber-900 mb-1">Limited Access</p>
+                  <p className="font-medium text-amber-900 mb-1">
+                    Limited Access
+                  </p>
                   <p className="text-sm text-amber-700">
-                    You have {currentUserRole?.toLowerCase()} access. Contact an admin or owner to invite new members or manage team roles.
+                    You have {currentUserRole?.toLowerCase()} access. Contact an
+                    admin or owner to invite new members or manage team roles.
                   </p>
                 </div>
               </div>
@@ -174,11 +204,15 @@ export default function TeamSettingsPage() {
               <Card key={role} className="border-slate-200">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 rounded-xl ${config.color} flex items-center justify-center`}>
+                    <div
+                      className={`h-10 w-10 rounded-xl ${config.color} flex items-center justify-center`}
+                    >
                       <Icon className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="text-2xl font-bold text-slate-900">{count}</p>
+                      <p className="text-2xl font-bold text-slate-900">
+                        {count}
+                      </p>
                       <p className="text-sm text-slate-500">{config.label}s</p>
                     </div>
                   </div>
@@ -197,7 +231,10 @@ export default function TeamSettingsPage() {
               </div>
               <div>
                 <CardTitle className="text-lg">Team Members</CardTitle>
-                <CardDescription>{members.length} member{members.length !== 1 ? "s" : ""} in your organization</CardDescription>
+                <CardDescription>
+                  {members.length} member{members.length !== 1 ? "s" : ""} in
+                  your organization
+                </CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -205,12 +242,18 @@ export default function TeamSettingsPage() {
             {members.length > 0 ? (
               <div className="divide-y divide-slate-100">
                 {members.map((member) => {
-                  const roleConfig = ROLE_CONFIG[member.role] || ROLE_CONFIG.VIEWER;
+                  const roleConfig =
+                    ROLE_CONFIG[member.role] || ROLE_CONFIG.VIEWER;
                   const RoleIcon = roleConfig.icon;
                   const isCurrentUser = member.userId === user?.id;
-                  const canManageThisMember = canManageMember(member.role, member.userId);
-                  const canChangeRole = canUpdateRoles() && canManageThisMember && !isCurrentUser;
-                  const canRemoveThisMember = canRemoveMembers() && canManageThisMember && !isCurrentUser;
+                  const canManageThisMember = canManageMember(
+                    member.role,
+                    member.userId,
+                  );
+                  const canChangeRole =
+                    canUpdateRoles() && canManageThisMember && !isCurrentUser;
+                  const canRemoveThisMember =
+                    canRemoveMembers() && canManageThisMember && !isCurrentUser;
 
                   return (
                     <div
@@ -229,12 +272,16 @@ export default function TeamSettingsPage() {
                               {member.user.name || "Unknown"}
                             </p>
                             {isCurrentUser && (
-                              <Badge variant="outline" className="text-xs">You</Badge>
+                              <Badge variant="outline" className="text-xs">
+                                You
+                              </Badge>
                             )}
                           </div>
                           <div className="flex items-center gap-1.5 text-sm text-slate-500">
                             <Mail className="h-3.5 w-3.5" />
-                            <span className="truncate">{member.user.email}</span>
+                            <span className="truncate">
+                              {member.user.email}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -244,7 +291,13 @@ export default function TeamSettingsPage() {
                         {canChangeRole && assignableRoles.length > 0 ? (
                           <Select
                             value={member.role}
-                            onValueChange={(value) => handleRoleChange(member.userId, value, member.role)}
+                            onValueChange={(value) =>
+                              handleRoleChange(
+                                member.userId,
+                                value,
+                                member.role,
+                              )
+                            }
                           >
                             <SelectTrigger className="w-36 rounded-lg">
                               <SelectValue>
@@ -271,7 +324,10 @@ export default function TeamSettingsPage() {
                           </Select>
                         ) : (
                           <div className="w-36">
-                            <RoleBadge role={member.role as MemberRole} size="md" />
+                            <RoleBadge
+                              role={member.role as MemberRole}
+                              size="md"
+                            />
                           </div>
                         )}
 
@@ -301,14 +357,16 @@ export default function TeamSettingsPage() {
                   No team members yet
                 </h3>
                 <p className="text-slate-500 mb-6 max-w-sm mx-auto">
-                  Invite team members to collaborate on your links and analytics.
+                  Invite team members to collaborate on your links and
+                  analytics.
                 </p>
                 <PermissionGate resource="team" action="invite">
                   <Button
                     onClick={() => setInviteModalOpen(true)}
                     className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25"
                   >
-                    <UserPlus className="mr-2 h-4 w-4" /> Invite Your First Member
+                    <UserPlus className="mr-2 h-4 w-4" /> Invite Your First
+                    Member
                   </Button>
                 </PermissionGate>
               </div>
@@ -329,28 +387,57 @@ export default function TeamSettingsPage() {
               {Object.entries(ROLE_CONFIG).map(([role, config]) => {
                 const Icon = config.icon;
                 const permissions = {
-                  OWNER: ["Full access", "Manage billing", "Delete organization", "Transfer ownership"],
-                  ADMIN: ["Manage members", "Manage domains", "Access all links", "View analytics"],
-                  EDITOR: ["Create & edit links", "Manage tags", "View analytics", "Create bio pages"],
-                  VIEWER: ["View links", "View analytics", "View bio pages", "Read-only access"],
+                  OWNER: [
+                    "Full access",
+                    "Manage billing",
+                    "Delete organization",
+                    "Transfer ownership",
+                  ],
+                  ADMIN: [
+                    "Manage members",
+                    "Manage domains",
+                    "Access all links",
+                    "View analytics",
+                  ],
+                  EDITOR: [
+                    "Create & edit links",
+                    "Manage tags",
+                    "View analytics",
+                    "Create bio pages",
+                  ],
+                  VIEWER: [
+                    "View links",
+                    "View analytics",
+                    "View bio pages",
+                    "Read-only access",
+                  ],
                 };
                 return (
                   <div key={role} className="p-4 bg-slate-50 rounded-xl">
                     <div className="flex items-center gap-3 mb-3">
-                      <div className={`h-10 w-10 rounded-lg ${config.color} flex items-center justify-center`}>
+                      <div
+                        className={`h-10 w-10 rounded-lg ${config.color} flex items-center justify-center`}
+                      >
                         <Icon className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="font-semibold text-slate-900">{config.label}</p>
+                        <p className="font-semibold text-slate-900">
+                          {config.label}
+                        </p>
                       </div>
                     </div>
                     <ul className="space-y-1.5">
-                      {permissions[role as keyof typeof permissions]?.map((perm) => (
-                        <li key={perm} className="text-sm text-slate-600 flex items-center gap-2">
-                          <div className="h-1.5 w-1.5 rounded-full bg-slate-400" />
-                          {perm}
-                        </li>
-                      ))}
+                      {permissions[role as keyof typeof permissions]?.map(
+                        (perm) => (
+                          <li
+                            key={perm}
+                            className="text-sm text-slate-600 flex items-center gap-2"
+                          >
+                            <div className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                            {perm}
+                          </li>
+                        ),
+                      )}
                     </ul>
                   </div>
                 );

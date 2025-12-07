@@ -1,14 +1,26 @@
-import { IsString, IsOptional, IsNumber, IsIn, Min, Max, Matches } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsIn,
+  Min,
+  Max,
+  Matches,
+} from "class-validator";
 
 export class CreateQrConfigDto {
   @IsOptional()
   @IsString()
-  @Matches(/^#[0-9A-Fa-f]{6}$/, { message: 'Foreground color must be a valid hex color' })
+  @Matches(/^#[0-9A-Fa-f]{6}$/, {
+    message: "Foreground color must be a valid hex color",
+  })
   foregroundColor?: string;
 
   @IsOptional()
   @IsString()
-  @Matches(/^#[0-9A-Fa-f]{6}$/, { message: 'Background color must be a valid hex color' })
+  @Matches(/^#[0-9A-Fa-f]{6}$/, {
+    message: "Background color must be a valid hex color",
+  })
   backgroundColor?: string;
 
   @IsOptional()
@@ -22,7 +34,7 @@ export class CreateQrConfigDto {
   logoSizePercent?: number;
 
   @IsOptional()
-  @IsIn(['L', 'M', 'Q', 'H'])
+  @IsIn(["L", "M", "Q", "H"])
   errorCorrection?: string;
 
   @IsOptional()

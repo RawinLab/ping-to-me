@@ -18,7 +18,19 @@ import {
   Badge,
   Separator,
 } from "@pingtome/ui";
-import { User, Upload, Save, Mail, CheckCircle, AlertCircle, Camera, Shield, Key, CreditCard, ChevronRight } from "lucide-react";
+import {
+  User,
+  Upload,
+  Save,
+  Mail,
+  CheckCircle,
+  AlertCircle,
+  Camera,
+  Shield,
+  Key,
+  CreditCard,
+  ChevronRight,
+} from "lucide-react";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -28,9 +40,18 @@ const profileSchema = z.object({
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 const settingsNavItems = [
-  { title: "Profile", href: "/dashboard/settings/profile", icon: User, active: true },
+  {
+    title: "Profile",
+    href: "/dashboard/settings/profile",
+    icon: User,
+    active: true,
+  },
   { title: "Security", href: "/dashboard/settings/security", icon: Shield },
-  { title: "Two-Factor Auth", href: "/dashboard/settings/two-factor", icon: Key },
+  {
+    title: "Two-Factor Auth",
+    href: "/dashboard/settings/two-factor",
+    icon: Key,
+  },
   { title: "Billing", href: "/dashboard/billing", icon: CreditCard },
 ];
 
@@ -138,7 +159,9 @@ export default function ProfileSettingsPage() {
                 >
                   <Icon className="h-4 w-4" />
                   {item.title}
-                  {!item.active && <ChevronRight className="h-4 w-4 ml-auto text-slate-400" />}
+                  {!item.active && (
+                    <ChevronRight className="h-4 w-4 ml-auto text-slate-400" />
+                  )}
                 </Link>
               );
             })}
@@ -154,13 +177,20 @@ export default function ProfileSettingsPage() {
                     <User className="h-4 w-4 text-blue-600" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Personal Information</CardTitle>
-                    <CardDescription>Update your profile details and photo.</CardDescription>
+                    <CardTitle className="text-lg">
+                      Personal Information
+                    </CardTitle>
+                    <CardDescription>
+                      Update your profile details and photo.
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="p-6">
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-6"
+                >
                   {/* Avatar Section */}
                   <div className="flex items-center gap-6 p-4 bg-slate-50 rounded-xl">
                     <div className="relative group">
@@ -190,13 +220,21 @@ export default function ProfileSettingsPage() {
                       />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-slate-900">Profile Photo</h3>
+                      <h3 className="font-semibold text-slate-900">
+                        Profile Photo
+                      </h3>
                       <p className="text-sm text-slate-500 mb-3">
                         Click the image to upload a new photo
                       </p>
                       <div className="flex items-center gap-2">
                         <Label htmlFor="avatar-btn" className="cursor-pointer">
-                          <Button type="button" variant="outline" size="sm" asChild className="rounded-lg">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            asChild
+                            className="rounded-lg"
+                          >
                             <span>
                               <Upload className="mr-2 h-3.5 w-3.5" />
                               Upload
@@ -210,7 +248,9 @@ export default function ProfileSettingsPage() {
                           className="hidden"
                           onChange={handleAvatarChange}
                         />
-                        <span className="text-xs text-slate-400">JPG, PNG or GIF. Max 2MB.</span>
+                        <span className="text-xs text-slate-400">
+                          JPG, PNG or GIF. Max 2MB.
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -219,7 +259,10 @@ export default function ProfileSettingsPage() {
 
                   {/* Name Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-slate-700 font-medium">
+                    <Label
+                      htmlFor="name"
+                      className="text-slate-700 font-medium"
+                    >
                       Full Name
                     </Label>
                     <Input
@@ -238,7 +281,10 @@ export default function ProfileSettingsPage() {
 
                   {/* Email Field */}
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-slate-700 font-medium flex items-center gap-2">
+                    <Label
+                      htmlFor="email"
+                      className="text-slate-700 font-medium flex items-center gap-2"
+                    >
                       <Mail className="h-4 w-4 text-slate-400" />
                       Email Address
                     </Label>
@@ -250,13 +296,17 @@ export default function ProfileSettingsPage() {
                         className="h-11 rounded-lg bg-slate-50 border-slate-200 pr-24"
                         {...form.register("email")}
                       />
-                      <Badge variant="secondary" className="absolute right-3 top-1/2 -translate-y-1/2 bg-emerald-50 text-emerald-700 border-0">
+                      <Badge
+                        variant="secondary"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-emerald-50 text-emerald-700 border-0"
+                      >
                         <CheckCircle className="h-3 w-3 mr-1" />
                         Verified
                       </Badge>
                     </div>
                     <p className="text-xs text-slate-500">
-                      Email cannot be changed. Contact support if you need to update it.
+                      Email cannot be changed. Contact support if you need to
+                      update it.
                     </p>
                   </div>
 
@@ -296,7 +346,9 @@ export default function ProfileSettingsPage() {
             {/* Danger Zone */}
             <Card className="border-red-200 bg-red-50/30">
               <CardHeader>
-                <CardTitle className="text-lg text-red-700">Danger Zone</CardTitle>
+                <CardTitle className="text-lg text-red-700">
+                  Danger Zone
+                </CardTitle>
                 <CardDescription className="text-red-600/80">
                   Irreversible and destructive actions
                 </CardDescription>

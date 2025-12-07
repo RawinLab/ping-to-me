@@ -4,15 +4,15 @@ import {
   Injectable,
   ForbiddenException,
   Optional,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { PermissionService } from './permission.service';
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { PermissionService } from "./permission.service";
 import {
   PERMISSION_KEY,
   REQUIRE_ALL_PERMISSIONS_KEY,
   PermissionMetadata,
-} from './permission.decorator';
-import { AccessLogService, AccessResult } from './access-log.service';
+} from "./permission.decorator";
+import { AccessLogService, AccessResult } from "./access-log.service";
 
 /**
  * Permission Guard for NestJS RBAC system
@@ -70,14 +70,14 @@ export class PermissionGuard implements CanActivate {
     const user = request.user;
 
     if (!user) {
-      throw new ForbiddenException('User not authenticated');
+      throw new ForbiddenException("User not authenticated");
     }
 
     // Extract organization ID from request (try multiple sources)
     const organizationId = this.extractOrganizationId(request);
 
     if (!organizationId) {
-      throw new ForbiddenException('Organization context required');
+      throw new ForbiddenException("Organization context required");
     }
 
     // Extract resource ID for ownership checks (if needed)
@@ -225,7 +225,7 @@ export class PermissionGuard implements CanActivate {
     const { resource, action, context } = permission;
 
     // For 'own' context, we need to verify resource ownership
-    if (context === 'own' && resourceId) {
+    if (context === "own" && resourceId) {
       const ownsResource = await this.permissionService.checkResourceOwnership(
         userId,
         resource,
@@ -244,7 +244,7 @@ export class PermissionGuard implements CanActivate {
       resource as any,
       action as any,
       {
-        ownerId: context === 'own' ? userId : undefined,
+        ownerId: context === "own" ? userId : undefined,
         resourceId,
       },
     );
@@ -263,7 +263,7 @@ export class PermissionGuard implements CanActivate {
       request.params?.orgId ||
       request.params?.organizationId ||
       // For org-specific routes like /organizations/:id
-      (request.route?.path?.includes('/organizations/')
+      (request.route?.path?.includes("/organizations/")
         ? request.params?.id
         : undefined);
 
@@ -314,7 +314,7 @@ export class PermissionGuard implements CanActivate {
 
     throw new ForbiddenException({
       message: `Insufficient permissions for ${resource}:${action}`,
-      error: 'Forbidden',
+      error: "Forbidden",
       details: {
         requiredPermission: `${resource}:${action}`,
         userId: user.id,
@@ -334,9 +334,9 @@ export class PermissionGuard implements CanActivate {
     return {
       ipAddress:
         request.ip ||
-        request.headers?.['x-forwarded-for']?.split(',')[0]?.trim() ||
+        request.headers?.["x-forwarded-for"]?.split(",")[0]?.trim() ||
         request.connection?.remoteAddress,
-      userAgent: request.headers?.['user-agent'],
+      userAgent: request.headers?.["user-agent"],
       endpoint: request.originalUrl || request.url,
       method: request.method,
     };
@@ -379,8 +379,8 @@ export class PermissionGuard implements CanActivate {
     }
 
     // Also log to console in development for debugging
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[PermissionGuard]', {
+    if (process.env.NODE_ENV === "development") {
+      console.log("[PermissionGuard]", {
         userId,
         organizationId,
         permissions: permissions.map((p) => `${p.resource}:${p.action}`),

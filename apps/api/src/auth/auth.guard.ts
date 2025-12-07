@@ -3,9 +3,9 @@ import {
   ExecutionContext,
   Injectable,
   UnauthorizedException,
-} from '@nestjs/common';
-import { Request } from 'express';
-import * as jwt from 'jsonwebtoken';
+} from "@nestjs/common";
+import { Request } from "express";
+import * as jwt from "jsonwebtoken";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -18,10 +18,10 @@ export class AuthGuard implements CanActivate {
     try {
       const secret = process.env.JWT_SECRET;
       if (!secret) {
-        throw new Error('JWT_SECRET not configured');
+        throw new Error("JWT_SECRET not configured");
       }
       const payload = jwt.verify(token, secret) as jwt.JwtPayload;
-      request['user'] = { id: payload.sub, email: payload.email };
+      request["user"] = { id: payload.sub, email: payload.email };
     } catch {
       throw new UnauthorizedException();
     }
@@ -29,7 +29,7 @@ export class AuthGuard implements CanActivate {
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
+    const [type, token] = request.headers.authorization?.split(" ") ?? [];
+    return type === "Bearer" ? token : undefined;
   }
 }

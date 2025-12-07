@@ -1,12 +1,16 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
-import * as QRCode from 'qrcode';
-import sharp from 'sharp';
-import PDFDocument from 'pdfkit';
-import archiver from 'archiver';
-import { Writable } from 'stream';
-import { StorageService } from '../storage/storage.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateQrConfigDto } from './dto/qr-config.dto';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from "@nestjs/common";
+import * as QRCode from "qrcode";
+import sharp from "sharp";
+import PDFDocument from "pdfkit";
+import archiver from "archiver";
+import { Writable } from "stream";
+import { StorageService } from "../storage/storage.service";
+import { PrismaService } from "../prisma/prisma.service";
+import { CreateQrConfigDto } from "./dto/qr-config.dto";
 
 export interface QrCodeOptions {
   url: string;
@@ -16,7 +20,7 @@ export interface QrCodeOptions {
   logoSize?: number; // Logo size as percentage of QR code (10-30%)
   size?: number; // QR code size in pixels (default 300)
   margin?: number; // Margin around QR code (default 2)
-  errorCorrection?: 'L' | 'M' | 'Q' | 'H'; // Error correction level
+  errorCorrection?: "L" | "M" | "Q" | "H"; // Error correction level
 }
 
 export interface QrCodeConfigResponse {
@@ -39,7 +43,7 @@ export class QrCodeService {
   constructor(
     private readonly storageService: StorageService,
     private readonly prisma: PrismaService,
-  ) { }
+  ) {}
 
   async generateQrCode(url: string, slug: string) {
     try {
@@ -48,22 +52,29 @@ export class QrCodeService {
 
       // Convert Data URL to Buffer for upload
       const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
-      const buffer = Buffer.from(base64Data, 'base64');
+      const buffer = Buffer.from(base64Data, "base64");
 
       // Upload to R2
       const key = `qr/${slug}.png`;
-      const publicUrl = await this.storageService.uploadFile(key, buffer, 'image/png');
+      const publicUrl = await this.storageService.uploadFile(
+        key,
+        buffer,
+        "image/png",
+      );
 
       return { qrCodeUrl: publicUrl };
     } catch (err) {
-      console.error('QR Generation Error:', err);
-      throw new Error('Failed to generate QR code');
+      console.error("QR Generation Error:", err);
+      throw new Error("Failed to generate QR code");
     }
   }
 
-  async generateCustomQr(url: string, options: { color?: string; bgcolor?: string }) {
+  async generateCustomQr(
+    url: string,
+    options: { color?: string; bgcolor?: string },
+  ) {
     try {
-      const { color = '#000000', bgcolor = '#ffffff' } = options;
+      const { color = "#000000", bgcolor = "#ffffff" } = options;
 
       const dataUrl = await QRCode.toDataURL(url, {
         color: {
@@ -75,16 +86,18 @@ export class QrCodeService {
 
       return { dataUrl };
     } catch (err) {
-      console.error('QR Generation Error:', err);
-      throw new Error('Failed to generate QR code');
+      console.error("QR Generation Error:", err);
+      throw new Error("Failed to generate QR code");
     }
   }
 
-  async generateAdvancedQr(options: QrCodeOptions): Promise<{ dataUrl: string }> {
+  async generateAdvancedQr(
+    options: QrCodeOptions,
+  ): Promise<{ dataUrl: string }> {
     const {
       url,
-      foregroundColor = '#000000',
-      backgroundColor = '#FFFFFF',
+      foregroundColor = "#000000",
+      backgroundColor = "#FFFFFF",
       logo,
       logoSize = 20,
       size = 300,
@@ -96,24 +109,28 @@ export class QrCodeService {
     try {
       new URL(url);
     } catch (e) {
-      throw new BadRequestException('Invalid URL format');
+      throw new BadRequestException("Invalid URL format");
     }
 
     // Validate colors
     const hexColorRegex = /^#[0-9A-Fa-f]{6}$/;
     if (!hexColorRegex.test(foregroundColor)) {
-      throw new BadRequestException('Invalid foreground color format. Use hex format like #000000');
+      throw new BadRequestException(
+        "Invalid foreground color format. Use hex format like #000000",
+      );
     }
     if (!hexColorRegex.test(backgroundColor)) {
-      throw new BadRequestException('Invalid background color format. Use hex format like #FFFFFF');
+      throw new BadRequestException(
+        "Invalid background color format. Use hex format like #FFFFFF",
+      );
     }
 
     // Use provided error correction, or H when logo is present, or M as default
-    const errorCorrectionLevel = errorCorrection || (logo ? 'H' : 'M');
+    const errorCorrectionLevel = errorCorrection || (logo ? "H" : "M");
 
     // Generate QR code as PNG buffer
     const qrBuffer = await QRCode.toBuffer(url, {
-      type: 'png',
+      type: "png",
       width: size,
       margin,
       color: {
@@ -125,17 +142,28 @@ export class QrCodeService {
 
     // If no logo, return the QR code as base64
     if (!logo) {
-      return { dataUrl: `data:image/png;base64,${qrBuffer.toString('base64')}` };
+      return {
+        dataUrl: `data:image/png;base64,${qrBuffer.toString("base64")}`,
+      };
     }
 
     // Process with logo
     try {
-      const qrCodeWithLogo = await this.addLogoToQrCode(qrBuffer, logo, size, logoSize);
-      return { dataUrl: `data:image/png;base64,${qrCodeWithLogo.toString('base64')}` };
+      const qrCodeWithLogo = await this.addLogoToQrCode(
+        qrBuffer,
+        logo,
+        size,
+        logoSize,
+      );
+      return {
+        dataUrl: `data:image/png;base64,${qrCodeWithLogo.toString("base64")}`,
+      };
     } catch (e) {
-      console.error('Failed to add logo to QR code:', e);
+      console.error("Failed to add logo to QR code:", e);
       // Return QR code without logo if logo processing fails
-      return { dataUrl: `data:image/png;base64,${qrBuffer.toString('base64')}` };
+      return {
+        dataUrl: `data:image/png;base64,${qrBuffer.toString("base64")}`,
+      };
     }
   }
 
@@ -146,30 +174,34 @@ export class QrCodeService {
     logoSizePercent: number,
   ): Promise<Buffer> {
     // Calculate logo dimensions (clamp between 10% and 30%)
-    const logoMaxSize = Math.floor((qrSize * Math.min(Math.max(logoSizePercent, 10), 30)) / 100);
+    const logoMaxSize = Math.floor(
+      (qrSize * Math.min(Math.max(logoSizePercent, 10), 30)) / 100,
+    );
 
     // Get logo buffer
     let logoBuffer: Buffer;
-    if (logo.startsWith('data:')) {
+    if (logo.startsWith("data:")) {
       // Base64 encoded image
-      const base64Data = logo.split(',')[1];
-      logoBuffer = Buffer.from(base64Data, 'base64');
-    } else if (logo.startsWith('http://') || logo.startsWith('https://')) {
+      const base64Data = logo.split(",")[1];
+      logoBuffer = Buffer.from(base64Data, "base64");
+    } else if (logo.startsWith("http://") || logo.startsWith("https://")) {
       // URL - fetch the image
       const response = await fetch(logo);
       if (!response.ok) {
-        throw new Error('Failed to fetch logo from URL');
+        throw new Error("Failed to fetch logo from URL");
       }
       const arrayBuffer = await response.arrayBuffer();
       logoBuffer = Buffer.from(arrayBuffer);
     } else {
-      throw new BadRequestException('Logo must be a base64 data URI or a valid URL');
+      throw new BadRequestException(
+        "Logo must be a base64 data URI or a valid URL",
+      );
     }
 
     // Resize logo to fit
     const resizedLogo = await sharp(logoBuffer)
       .resize(logoMaxSize, logoMaxSize, {
-        fit: 'inside',
+        fit: "inside",
         background: { r: 255, g: 255, b: 255, alpha: 0 },
       })
       .png()
@@ -193,7 +225,7 @@ export class QrCodeService {
     const roundedBg = Buffer.from(
       `<svg width="${bgWidth}" height="${bgHeight}">
         <rect x="0" y="0" width="${bgWidth}" height="${bgHeight}" rx="8" ry="8" fill="white"/>
-      </svg>`
+      </svg>`,
     );
 
     // Composite: QR code + white background + logo
@@ -216,18 +248,21 @@ export class QrCodeService {
     return result;
   }
 
-  async generateSvgQr(url: string, options: { color?: string; bgcolor?: string; size?: number }): Promise<string> {
-    const { color = '#000000', bgcolor = '#FFFFFF', size = 300 } = options;
+  async generateSvgQr(
+    url: string,
+    options: { color?: string; bgcolor?: string; size?: number },
+  ): Promise<string> {
+    const { color = "#000000", bgcolor = "#FFFFFF", size = 300 } = options;
 
     const svg = await QRCode.toString(url, {
-      type: 'svg',
+      type: "svg",
       width: size,
       margin: 2,
       color: {
         dark: color,
         light: bgcolor,
       },
-      errorCorrectionLevel: 'M',
+      errorCorrectionLevel: "M",
     });
 
     return svg;
@@ -260,14 +295,17 @@ export class QrCodeService {
     };
   }
 
-  async saveQrConfig(linkId: string, dto: CreateQrConfigDto): Promise<QrCodeConfigResponse> {
+  async saveQrConfig(
+    linkId: string,
+    dto: CreateQrConfigDto,
+  ): Promise<QrCodeConfigResponse> {
     // Verify link exists
     const link = await this.prisma.link.findUnique({
       where: { id: linkId },
     });
 
     if (!link) {
-      throw new NotFoundException('Link not found');
+      throw new NotFoundException("Link not found");
     }
 
     // Upload logo to R2 if provided
@@ -281,11 +319,11 @@ export class QrCodeService {
       where: { linkId },
       create: {
         linkId,
-        foregroundColor: dto.foregroundColor || '#000000',
-        backgroundColor: dto.backgroundColor || '#FFFFFF',
+        foregroundColor: dto.foregroundColor || "#000000",
+        backgroundColor: dto.backgroundColor || "#FFFFFF",
         logoUrl,
         logoSizePercent: dto.logoSizePercent || 20,
-        errorCorrection: dto.errorCorrection || 'M',
+        errorCorrection: dto.errorCorrection || "M",
         borderSize: dto.borderSize ?? 2,
         size: dto.size || 300,
       },
@@ -320,27 +358,31 @@ export class QrCodeService {
     try {
       // Extract base64 data
       let buffer: Buffer;
-      if (base64.startsWith('data:')) {
-        const base64Data = base64.split(',')[1];
-        buffer = Buffer.from(base64Data, 'base64');
+      if (base64.startsWith("data:")) {
+        const base64Data = base64.split(",")[1];
+        buffer = Buffer.from(base64Data, "base64");
       } else {
-        buffer = Buffer.from(base64, 'base64');
+        buffer = Buffer.from(base64, "base64");
       }
 
       // Resize to max 200x200 for storage efficiency
       const resizedBuffer = await sharp(buffer)
-        .resize(200, 200, { fit: 'inside' })
+        .resize(200, 200, { fit: "inside" })
         .png()
         .toBuffer();
 
       // Upload to R2
       const key = `qr-logos/${linkId}.png`;
-      const publicUrl = await this.storageService.uploadFile(key, resizedBuffer, 'image/png');
+      const publicUrl = await this.storageService.uploadFile(
+        key,
+        resizedBuffer,
+        "image/png",
+      );
 
       return publicUrl;
     } catch (error) {
-      console.error('Failed to upload logo to R2:', error);
-      throw new BadRequestException('Failed to upload logo');
+      console.error("Failed to upload logo to R2:", error);
+      throw new BadRequestException("Failed to upload logo");
     }
   }
 
@@ -361,50 +403,51 @@ export class QrCodeService {
   }): Promise<Buffer> {
     const {
       url,
-      foregroundColor = '#000000',
-      backgroundColor = '#FFFFFF',
+      foregroundColor = "#000000",
+      backgroundColor = "#FFFFFF",
       size = 200,
       title,
     } = options;
 
     // Generate QR code as PNG buffer
     const qrBuffer = await QRCode.toBuffer(url, {
-      type: 'png',
+      type: "png",
       width: size,
       margin: 2,
       color: {
         dark: foregroundColor,
         light: backgroundColor,
       },
-      errorCorrectionLevel: 'M',
+      errorCorrectionLevel: "M",
     });
 
     // Create PDF
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
       const doc = new PDFDocument({
-        size: 'A4',
+        size: "A4",
         margin: 50,
       });
 
-      doc.on('data', (chunk) => chunks.push(chunk));
-      doc.on('end', () => resolve(Buffer.concat(chunks)));
-      doc.on('error', reject);
+      doc.on("data", (chunk) => chunks.push(chunk));
+      doc.on("end", () => resolve(Buffer.concat(chunks)));
+      doc.on("error", reject);
 
       // Add title if provided
       if (title) {
-        doc.fontSize(16).text(title, { align: 'center' });
+        doc.fontSize(16).text(title, { align: "center" });
         doc.moveDown();
       }
 
       // Add QR code image centered
-      const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+      const pageWidth =
+        doc.page.width - doc.page.margins.left - doc.page.margins.right;
       const x = doc.page.margins.left + (pageWidth - size) / 2;
       doc.image(qrBuffer, x, doc.y, { width: size, height: size });
       doc.moveDown(size / 12);
 
       // Add URL below QR code
-      doc.fontSize(10).text(url, { align: 'center', link: url });
+      doc.fontSize(10).text(url, { align: "center", link: url });
 
       doc.end();
     });
@@ -414,7 +457,7 @@ export class QrCodeService {
 
   async batchGenerateQr(
     linkIds: string[],
-    format: 'png' | 'svg' | 'pdf' = 'png',
+    format: "png" | "svg" | "pdf" = "png",
     size: number = 300,
   ): Promise<Buffer> {
     // Get links with their QR configs
@@ -424,13 +467,13 @@ export class QrCodeService {
     });
 
     if (links.length === 0) {
-      throw new NotFoundException('No links found');
+      throw new NotFoundException("No links found");
     }
 
     // Create ZIP archive
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
-      const archive = archiver('zip', { zlib: { level: 9 } });
+      const archive = archiver("zip", { zlib: { level: 9 } });
 
       const writableStream = new Writable({
         write(chunk, encoding, callback) {
@@ -439,30 +482,30 @@ export class QrCodeService {
         },
       });
 
-      writableStream.on('finish', () => resolve(Buffer.concat(chunks)));
-      archive.on('error', reject);
+      writableStream.on("finish", () => resolve(Buffer.concat(chunks)));
+      archive.on("error", reject);
 
       archive.pipe(writableStream);
 
       // Process each link
       const processLinks = async () => {
         for (const link of links) {
-          const shortUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3010'}/${link.slug}`;
+          const shortUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3010"}/${link.slug}`;
           const config = link.qrCode;
 
           try {
-            if (format === 'svg') {
+            if (format === "svg") {
               const svg = await this.generateSvgQr(shortUrl, {
-                color: config?.foregroundColor || '#000000',
-                bgcolor: config?.backgroundColor || '#FFFFFF',
+                color: config?.foregroundColor || "#000000",
+                bgcolor: config?.backgroundColor || "#FFFFFF",
                 size,
               });
               archive.append(svg, { name: `${link.slug}.svg` });
-            } else if (format === 'pdf') {
+            } else if (format === "pdf") {
               const pdfBuffer = await this.generatePdfQr({
                 url: shortUrl,
-                foregroundColor: config?.foregroundColor || '#000000',
-                backgroundColor: config?.backgroundColor || '#FFFFFF',
+                foregroundColor: config?.foregroundColor || "#000000",
+                backgroundColor: config?.backgroundColor || "#FFFFFF",
                 size,
                 title: link.title || link.slug,
               });
@@ -471,14 +514,15 @@ export class QrCodeService {
               // PNG format
               const { dataUrl } = await this.generateAdvancedQr({
                 url: shortUrl,
-                foregroundColor: config?.foregroundColor || '#000000',
-                backgroundColor: config?.backgroundColor || '#FFFFFF',
+                foregroundColor: config?.foregroundColor || "#000000",
+                backgroundColor: config?.backgroundColor || "#FFFFFF",
                 size,
                 margin: config?.borderSize || 2,
-                errorCorrection: (config?.errorCorrection as 'L' | 'M' | 'Q' | 'H') || 'M',
+                errorCorrection:
+                  (config?.errorCorrection as "L" | "M" | "Q" | "H") || "M",
               });
-              const base64Data = dataUrl.split(',')[1];
-              const buffer = Buffer.from(base64Data, 'base64');
+              const base64Data = dataUrl.split(",")[1];
+              const buffer = Buffer.from(base64Data, "base64");
               archive.append(buffer, { name: `${link.slug}.png` });
             }
           } catch (error) {

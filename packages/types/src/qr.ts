@@ -1,4 +1,4 @@
-export type ErrorCorrectionLevel = 'L' | 'M' | 'Q' | 'H';
+export type ErrorCorrectionLevel = "L" | "M" | "Q" | "H";
 
 export interface QrCodeConfig {
   id: string;
@@ -29,7 +29,7 @@ export interface UpdateQrConfigDto extends CreateQrConfigDto {}
 
 export interface BatchDownloadDto {
   linkIds: string[];
-  format?: 'png' | 'svg' | 'pdf';
+  format?: "png" | "svg" | "pdf";
   size?: number;
 }
 
@@ -38,7 +38,7 @@ export interface QrDownloadOptions {
   foregroundColor?: string;
   backgroundColor?: string;
   size?: number;
-  format?: 'png' | 'svg' | 'pdf';
+  format?: "png" | "svg" | "pdf";
   errorCorrection?: ErrorCorrectionLevel;
   borderSize?: number;
   logo?: string;

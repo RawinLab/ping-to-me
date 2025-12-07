@@ -37,7 +37,7 @@ export function LandingHeader() {
 
       setMobileMenuOpen(false);
     },
-    []
+    [],
   );
 
   return (
@@ -141,11 +141,7 @@ function UserMenu() {
           </Button>
         </Link>
         <Link href="/login">
-          <Button
-            size="sm"
-            variant="outline"
-            className="font-medium"
-          >
+          <Button size="sm" variant="outline" className="font-medium">
             Sign out
           </Button>
         </Link>

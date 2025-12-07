@@ -1,13 +1,17 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { BioPage, BioPageLink } from '@prisma/client';
-import { CreateBioLinkDto } from './dto/create-bio-link.dto';
-import { UpdateBioLinkDto } from './dto/update-bio-link.dto';
-import { ReorderLinksDto } from './dto/reorder-links.dto';
-import { BioEventType } from './dto/track-event.dto';
-import { UAParser } from 'ua-parser-js';
-import { QrCodeService } from '../qr/qr.service';
-import { AuditService } from '../audit/audit.service';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { BioPage, BioPageLink } from "@prisma/client";
+import { CreateBioLinkDto } from "./dto/create-bio-link.dto";
+import { UpdateBioLinkDto } from "./dto/update-bio-link.dto";
+import { ReorderLinksDto } from "./dto/reorder-links.dto";
+import { BioEventType } from "./dto/track-event.dto";
+import { UAParser } from "ua-parser-js";
+import { QrCodeService } from "../qr/qr.service";
+import { AuditService } from "../audit/audit.service";
 
 @Injectable()
 export class BioPageService {
@@ -15,12 +19,18 @@ export class BioPageService {
     private readonly prisma: PrismaService,
     private readonly qrService: QrCodeService,
     private readonly auditService: AuditService,
-  ) { }
+  ) {}
 
-  async createBioPage(userId: string, orgId: string, data: { slug: string; title: string }): Promise<BioPage> {
+  async createBioPage(
+    userId: string,
+    orgId: string,
+    data: { slug: string; title: string },
+  ): Promise<BioPage> {
     // Check slug availability
-    const existing = await this.prisma.bioPage.findUnique({ where: { slug: data.slug } });
-    if (existing) throw new Error('Slug already taken');
+    const existing = await this.prisma.bioPage.findUnique({
+      where: { slug: data.slug },
+    });
+    if (existing) throw new Error("Slug already taken");
 
     const bioPage = await this.prisma.bioPage.create({
       data: {
@@ -28,24 +38,26 @@ export class BioPageService {
         title: data.title,
         organizationId: orgId,
         content: { links: [] }, // Initial empty content
-        theme: { color: 'default' }, // Initial default theme
+        theme: { color: "default" }, // Initial default theme
       },
     });
 
     // Log bio page creation
-    this.auditService.logResourceEvent(
-      userId,
-      orgId,
-      'biopage.created',
-      'BioPage',
-      bioPage.id,
-      {
-        details: {
-          slug: bioPage.slug,
-          title: bioPage.title,
+    this.auditService
+      .logResourceEvent(
+        userId,
+        orgId,
+        "biopage.created",
+        "BioPage",
+        bioPage.id,
+        {
+          details: {
+            slug: bioPage.slug,
+            title: bioPage.title,
+          },
         },
-      },
-    ).catch(() => {}); // Fire and forget, don't block on errors
+      )
+      .catch(() => {}); // Fire and forget, don't block on errors
 
     return bioPage;
   }
@@ -55,7 +67,7 @@ export class BioPageService {
       where: { slug },
       include: {
         bioLinks: {
-          orderBy: { order: 'asc' },
+          orderBy: { order: "asc" },
           include: {
             link: {
               select: {
@@ -75,7 +87,7 @@ export class BioPageService {
       include: {
         bioLinks: {
           where: { isVisible: true },
-          orderBy: { order: 'asc' },
+          orderBy: { order: "asc" },
           include: {
             link: {
               select: {
@@ -89,7 +101,7 @@ export class BioPageService {
     });
 
     if (!page) {
-      throw new NotFoundException('Bio page not found');
+      throw new NotFoundException("Bio page not found");
     }
 
     // Increment view count atomically
@@ -129,7 +141,7 @@ export class BioPageService {
   async updateBioPage(id: string, userId: string, data: any): Promise<BioPage> {
     // Verify ownership (simplified) and get current state for audit logging
     const before = await this.prisma.bioPage.findUnique({ where: { id } });
-    if (!before) throw new Error('Page not found');
+    if (!before) throw new Error("Page not found");
 
     const bioPage = await this.prisma.bioPage.update({
       where: { id },
@@ -138,20 +150,22 @@ export class BioPageService {
 
     // Log bio page update with changes
     const changes = this.auditService.captureChanges(before, bioPage);
-    this.auditService.logResourceEvent(
-      userId,
-      bioPage.organizationId,
-      'biopage.updated',
-      'BioPage',
-      bioPage.id,
-      {
-        changes,
-        details: {
-          slug: bioPage.slug,
-          title: bioPage.title,
+    this.auditService
+      .logResourceEvent(
+        userId,
+        bioPage.organizationId,
+        "biopage.updated",
+        "BioPage",
+        bioPage.id,
+        {
+          changes,
+          details: {
+            slug: bioPage.slug,
+            title: bioPage.title,
+          },
         },
-      },
-    ).catch(() => {}); // Fire and forget, don't block on errors
+      )
+      .catch(() => {}); // Fire and forget, don't block on errors
 
     return bioPage;
   }
@@ -164,19 +178,21 @@ export class BioPageService {
 
     // Log bio page deletion
     if (bioPage) {
-      this.auditService.logResourceEvent(
-        userId,
-        bioPage.organizationId,
-        'biopage.deleted',
-        'BioPage',
-        bioPage.id,
-        {
-          details: {
-            slug: bioPage.slug,
-            title: bioPage.title,
+      this.auditService
+        .logResourceEvent(
+          userId,
+          bioPage.organizationId,
+          "biopage.deleted",
+          "BioPage",
+          bioPage.id,
+          {
+            details: {
+              slug: bioPage.slug,
+              title: bioPage.title,
+            },
           },
-        },
-      ).catch(() => {}); // Fire and forget, don't block on errors
+        )
+        .catch(() => {}); // Fire and forget, don't block on errors
     }
 
     return deleted;
@@ -187,7 +203,7 @@ export class BioPageService {
       where: { organizationId: orgId },
       include: {
         bioLinks: {
-          orderBy: { order: 'asc' },
+          orderBy: { order: "asc" },
           include: {
             link: {
               select: {
@@ -203,14 +219,17 @@ export class BioPageService {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     return pages;
   }
 
   // Helper method to verify bio page ownership
-  private async verifyBioPageOwnership(bioPageId: string, userId: string): Promise<BioPage> {
+  private async verifyBioPageOwnership(
+    bioPageId: string,
+    userId: string,
+  ): Promise<BioPage> {
     const bioPage = await this.prisma.bioPage.findUnique({
       where: { id: bioPageId },
       include: {
@@ -225,25 +244,29 @@ export class BioPageService {
     });
 
     if (!bioPage) {
-      throw new NotFoundException('Bio page not found');
+      throw new NotFoundException("Bio page not found");
     }
 
     // Check if user is a member of the organization
     if (bioPage.organization.members.length === 0) {
-      throw new ForbiddenException('Access denied');
+      throw new ForbiddenException("Access denied");
     }
 
     return bioPage;
   }
 
   // Add link to bio page
-  async addLink(bioPageId: string, userId: string, dto: CreateBioLinkDto): Promise<BioPageLink> {
+  async addLink(
+    bioPageId: string,
+    userId: string,
+    dto: CreateBioLinkDto,
+  ): Promise<BioPageLink> {
     await this.verifyBioPageOwnership(bioPageId, userId);
 
     // Get the current max order
     const maxOrderLink = await this.prisma.bioPageLink.findFirst({
       where: { bioPageId },
-      orderBy: { order: 'desc' },
+      orderBy: { order: "desc" },
     });
 
     const nextOrder = maxOrderLink ? maxOrderLink.order + 1 : 0;
@@ -265,7 +288,12 @@ export class BioPageService {
   }
 
   // Update link
-  async updateLink(bioPageId: string, linkId: string, userId: string, dto: UpdateBioLinkDto): Promise<BioPageLink> {
+  async updateLink(
+    bioPageId: string,
+    linkId: string,
+    userId: string,
+    dto: UpdateBioLinkDto,
+  ): Promise<BioPageLink> {
     await this.verifyBioPageOwnership(bioPageId, userId);
 
     const bioLink = await this.prisma.bioPageLink.findFirst({
@@ -273,7 +301,7 @@ export class BioPageService {
     });
 
     if (!bioLink) {
-      throw new NotFoundException('Bio page link not found');
+      throw new NotFoundException("Bio page link not found");
     }
 
     return this.prisma.bioPageLink.update({
@@ -293,7 +321,11 @@ export class BioPageService {
   }
 
   // Remove link
-  async removeLink(bioPageId: string, linkId: string, userId: string): Promise<BioPageLink> {
+  async removeLink(
+    bioPageId: string,
+    linkId: string,
+    userId: string,
+  ): Promise<BioPageLink> {
     await this.verifyBioPageOwnership(bioPageId, userId);
 
     const bioLink = await this.prisma.bioPageLink.findFirst({
@@ -301,7 +333,7 @@ export class BioPageService {
     });
 
     if (!bioLink) {
-      throw new NotFoundException('Bio page link not found');
+      throw new NotFoundException("Bio page link not found");
     }
 
     // Delete the link
@@ -312,7 +344,7 @@ export class BioPageService {
     // Reorder remaining links
     const remainingLinks = await this.prisma.bioPageLink.findMany({
       where: { bioPageId },
-      orderBy: { order: 'asc' },
+      orderBy: { order: "asc" },
     });
 
     // Update orders sequentially
@@ -321,15 +353,19 @@ export class BioPageService {
         this.prisma.bioPageLink.update({
           where: { id: link.id },
           data: { order: index },
-        })
-      )
+        }),
+      ),
     );
 
     return deletedLink;
   }
 
   // Reorder links
-  async reorderLinks(bioPageId: string, userId: string, dto: ReorderLinksDto): Promise<BioPageLink[]> {
+  async reorderLinks(
+    bioPageId: string,
+    userId: string,
+    dto: ReorderLinksDto,
+  ): Promise<BioPageLink[]> {
     await this.verifyBioPageOwnership(bioPageId, userId);
 
     // Verify all links belong to this bio page
@@ -339,7 +375,7 @@ export class BioPageService {
     });
 
     if (bioLinks.length !== linkIds.length) {
-      throw new NotFoundException('One or more bio page links not found');
+      throw new NotFoundException("One or more bio page links not found");
     }
 
     // Update orders in a transaction
@@ -348,14 +384,14 @@ export class BioPageService {
         this.prisma.bioPageLink.update({
           where: { id: ordering.id },
           data: { order: ordering.order },
-        })
-      )
+        }),
+      ),
     );
 
     // Return updated links
     return this.prisma.bioPageLink.findMany({
       where: { bioPageId },
-      orderBy: { order: 'asc' },
+      orderBy: { order: "asc" },
     });
   }
 
@@ -395,24 +431,24 @@ export class BioPageService {
     }
 
     // Parse user agent
-    let browser = 'Unknown';
-    let os = 'Unknown';
-    let device = 'desktop'; // Default to desktop
+    let browser = "Unknown";
+    let os = "Unknown";
+    let device = "desktop"; // Default to desktop
 
     if (userAgent) {
       const parser = new UAParser(userAgent);
       const result = parser.getResult();
-      browser = result.browser.name || 'Unknown';
-      os = result.os.name || 'Unknown';
+      browser = result.browser.name || "Unknown";
+      os = result.os.name || "Unknown";
 
       // UAParser returns undefined for desktop, 'mobile' or 'tablet' for others
       const deviceType = result.device.type;
-      if (deviceType === 'mobile') {
-        device = 'mobile';
-      } else if (deviceType === 'tablet') {
-        device = 'tablet';
+      if (deviceType === "mobile") {
+        device = "mobile";
+      } else if (deviceType === "tablet") {
+        device = "tablet";
       } else {
-        device = 'desktop';
+        device = "desktop";
       }
     }
 
@@ -436,7 +472,11 @@ export class BioPageService {
 
   // Analytics methods
 
-  async getAnalyticsSummary(bioPageId: string, userId: string, days: number = 30) {
+  async getAnalyticsSummary(
+    bioPageId: string,
+    userId: string,
+    days: number = 30,
+  ) {
     await this.verifyBioPageOwnership(bioPageId, userId);
 
     // Calculate date range
@@ -448,7 +488,7 @@ export class BioPageService {
     const totalViews = await this.prisma.bioPageAnalytics.count({
       where: {
         bioPageId,
-        eventType: 'page_view',
+        eventType: "page_view",
         timestamp: { gte: startDate },
       },
     });
@@ -457,17 +497,17 @@ export class BioPageService {
     const totalClicks = await this.prisma.bioPageAnalytics.count({
       where: {
         bioPageId,
-        eventType: 'link_click',
+        eventType: "link_click",
         timestamp: { gte: startDate },
       },
     });
 
     // Get unique visitors (count distinct IPs for page views)
     const uniqueVisitorsData = await this.prisma.bioPageAnalytics.groupBy({
-      by: ['ip'],
+      by: ["ip"],
       where: {
         bioPageId,
-        eventType: 'page_view',
+        eventType: "page_view",
         timestamp: { gte: startDate },
         ip: { not: null },
       },
@@ -476,39 +516,39 @@ export class BioPageService {
 
     // Get top 5 countries
     const countriesData = await this.prisma.bioPageAnalytics.groupBy({
-      by: ['country'],
+      by: ["country"],
       where: {
         bioPageId,
-        eventType: 'page_view',
+        eventType: "page_view",
         timestamp: { gte: startDate },
         country: { not: null },
       },
       _count: { id: true },
-      orderBy: { _count: { id: 'desc' } },
+      orderBy: { _count: { id: "desc" } },
       take: 5,
     });
 
     const topCountries = countriesData.map((c) => ({
-      country: c.country || 'Unknown',
+      country: c.country || "Unknown",
       views: c._count.id,
     }));
 
     // Get top 5 referrers
     const referrersData = await this.prisma.bioPageAnalytics.groupBy({
-      by: ['referrer'],
+      by: ["referrer"],
       where: {
         bioPageId,
-        eventType: 'page_view',
+        eventType: "page_view",
         timestamp: { gte: startDate },
         referrer: { not: null },
       },
       _count: { id: true },
-      orderBy: { _count: { id: 'desc' } },
+      orderBy: { _count: { id: "desc" } },
       take: 5,
     });
 
     const topReferrers = referrersData.map((r) => ({
-      referrer: r.referrer || 'Direct',
+      referrer: r.referrer || "Direct",
       count: r._count.id,
     }));
 
@@ -521,14 +561,18 @@ export class BioPageService {
     };
   }
 
-  async getAnalyticsTimeseries(bioPageId: string, userId: string, period: string = '30d') {
+  async getAnalyticsTimeseries(
+    bioPageId: string,
+    userId: string,
+    period: string = "30d",
+  ) {
     await this.verifyBioPageOwnership(bioPageId, userId);
 
     // Parse period to days
     const periodMap: Record<string, number> = {
-      '7d': 7,
-      '30d': 30,
-      '90d': 90,
+      "7d": 7,
+      "30d": 30,
+      "90d": 90,
     };
     const days = periodMap[period] || 30;
 
@@ -556,17 +600,17 @@ export class BioPageService {
     for (let i = 0; i < days; i++) {
       const date = new Date(startDate);
       date.setDate(date.getDate() + i);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = date.toISOString().split("T")[0];
       dataByDate[dateStr] = { views: 0, clicks: 0 };
     }
 
     // Count events by date
     events.forEach((event) => {
-      const dateStr = event.timestamp.toISOString().split('T')[0];
+      const dateStr = event.timestamp.toISOString().split("T")[0];
       if (dataByDate[dateStr]) {
-        if (event.eventType === 'page_view') {
+        if (event.eventType === "page_view") {
           dataByDate[dateStr].views++;
-        } else if (event.eventType === 'link_click') {
+        } else if (event.eventType === "link_click") {
           dataByDate[dateStr].clicks++;
         }
       }
@@ -598,10 +642,10 @@ export class BioPageService {
 
     // Get click counts from analytics
     const clicksData = await this.prisma.bioPageAnalytics.groupBy({
-      by: ['bioLinkId'],
+      by: ["bioLinkId"],
       where: {
         bioPageId,
-        eventType: 'link_click',
+        eventType: "link_click",
         bioLinkId: { not: null },
       },
       _count: { id: true },
@@ -632,7 +676,7 @@ export class BioPageService {
   async getBioPageQrCode(
     bioPageId: string,
     size: number = 300,
-    format: 'png' | 'svg' = 'png',
+    format: "png" | "svg" = "png",
   ): Promise<{ data: Buffer | string }> {
     // Get bio page to get the slug
     const bioPage = await this.prisma.bioPage.findUnique({
@@ -641,18 +685,18 @@ export class BioPageService {
     });
 
     if (!bioPage) {
-      throw new NotFoundException('Bio page not found');
+      throw new NotFoundException("Bio page not found");
     }
 
     // Construct public bio page URL
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3010';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3010";
     const bioPageUrl = `${appUrl}/bio/${bioPage.slug}`;
 
-    if (format === 'svg') {
+    if (format === "svg") {
       // Generate SVG QR code
       const svg = await this.qrService.generateSvgQr(bioPageUrl, {
-        color: '#000000',
-        bgcolor: '#FFFFFF',
+        color: "#000000",
+        bgcolor: "#FFFFFF",
         size,
       });
       return { data: svg };
@@ -660,16 +704,16 @@ export class BioPageService {
       // Generate PNG QR code
       const { dataUrl } = await this.qrService.generateAdvancedQr({
         url: bioPageUrl,
-        foregroundColor: '#000000',
-        backgroundColor: '#FFFFFF',
+        foregroundColor: "#000000",
+        backgroundColor: "#FFFFFF",
         size,
         margin: 2,
-        errorCorrection: 'M',
+        errorCorrection: "M",
       });
 
       // Convert base64 to buffer
-      const base64Data = dataUrl.split(',')[1];
-      const buffer = Buffer.from(base64Data, 'base64');
+      const base64Data = dataUrl.split(",")[1];
+      const buffer = Buffer.from(base64Data, "base64");
       return { data: buffer };
     }
   }

@@ -58,7 +58,9 @@ interface NavItem {
   href: string;
   icon: any;
   description: string;
-  requirePermission?: (permissions: ReturnType<typeof usePermission>) => boolean;
+  requirePermission?: (
+    permissions: ReturnType<typeof usePermission>,
+  ) => boolean;
   badge?: string;
   badgeVariant?: "default" | "secondary" | "outline";
 }
@@ -102,7 +104,7 @@ const manageItems: NavItem[] = [
     href: "/dashboard/domains",
     icon: Globe,
     description: "Custom branded domains",
-    requirePermission: (p) => p.canManageDomains() || p.can('domain', 'read'),
+    requirePermission: (p) => p.canManageDomains() || p.can("domain", "read"),
   },
   {
     title: "Folders",
@@ -140,14 +142,14 @@ const developerItems: NavItem[] = [
     href: "/dashboard/developer/api-keys",
     icon: Key,
     description: "Manage API access",
-    requirePermission: (p) => p.canCreateApiKey() || p.can('api-key', 'read'),
+    requirePermission: (p) => p.canCreateApiKey() || p.can("api-key", "read"),
   },
   {
     title: "Webhooks",
     href: "/dashboard/developer/webhooks",
     icon: Webhook,
     description: "Event notifications",
-    requirePermission: (p) => p.isAdminOrAbove || p.can('webhook', 'read'),
+    requirePermission: (p) => p.isAdminOrAbove || p.can("webhook", "read"),
   },
 ];
 
@@ -187,7 +189,10 @@ export default function DashboardLayout({
     if (item.href === "/dashboard/billing" && !permissions.isOwner) {
       return "View only";
     }
-    if (item.href === "/dashboard/developer/webhooks" && !permissions.isAdminOrAbove) {
+    if (
+      item.href === "/dashboard/developer/webhooks" &&
+      !permissions.isAdminOrAbove
+    ) {
       return "View only";
     }
     return undefined;
@@ -237,13 +242,17 @@ export default function DashboardLayout({
                       "group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200",
                       isActive
                         ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25"
-                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
                     )}
                   >
-                    <Icon className={cn(
-                      "h-[18px] w-[18px] transition-transform group-hover:scale-110",
-                      isActive ? "text-white" : "text-slate-400 group-hover:text-slate-600"
-                    )} />
+                    <Icon
+                      className={cn(
+                        "h-[18px] w-[18px] transition-transform group-hover:scale-110",
+                        isActive
+                          ? "text-white"
+                          : "text-slate-400 group-hover:text-slate-600",
+                      )}
+                    />
                     <span className="truncate flex-1">{item.title}</span>
                     {badge && (
                       <Badge
@@ -252,7 +261,7 @@ export default function DashboardLayout({
                           "text-[9px] px-1.5 py-0 h-4 border-0",
                           isActive
                             ? "bg-white/20 text-white"
-                            : "bg-amber-50 text-amber-600"
+                            : "bg-amber-50 text-amber-600",
                         )}
                       >
                         {badge}
@@ -262,7 +271,9 @@ export default function DashboardLayout({
                 </TooltipTrigger>
                 <TooltipContent side="right" className="hidden lg:block">
                   <p className="font-medium">{item.title}</p>
-                  <p className="text-xs text-muted-foreground">{item.description}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {item.description}
+                  </p>
                   {badge && (
                     <p className="text-xs text-amber-600 mt-1">{badge}</p>
                   )}
@@ -286,10 +297,12 @@ export default function DashboardLayout({
       )}
 
       {/* Sidebar */}
-      <aside className={cn(
-        "fixed md:sticky top-0 left-0 z-50 h-screen w-72 bg-white border-r border-slate-200/80 flex flex-col transition-transform duration-300 ease-in-out",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-      )}>
+      <aside
+        className={cn(
+          "fixed md:sticky top-0 left-0 z-50 h-screen w-72 bg-white border-r border-slate-200/80 flex flex-col transition-transform duration-300 ease-in-out",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+        )}
+      >
         {/* Logo */}
         <div className="p-5 border-b border-slate-100">
           <Link href="/dashboard" className="flex items-center gap-3">
@@ -300,7 +313,10 @@ export default function DashboardLayout({
               <span className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
                 PingTO.Me
               </span>
-              <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0 bg-blue-50 text-blue-600 border-0">
+              <Badge
+                variant="secondary"
+                className="ml-2 text-[10px] px-1.5 py-0 bg-blue-50 text-blue-600 border-0"
+              >
                 Beta
               </Badge>
             </div>
@@ -330,13 +346,19 @@ export default function DashboardLayout({
         <div className="mx-3 mb-3 p-4 bg-gradient-to-br from-violet-50 to-indigo-50 rounded-xl border border-violet-100">
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="h-4 w-4 text-violet-600" />
-            <span className="text-sm font-semibold text-violet-900">Upgrade to Pro</span>
+            <span className="text-sm font-semibold text-violet-900">
+              Upgrade to Pro
+            </span>
           </div>
           <p className="text-xs text-violet-600 mb-3">
             Unlock custom domains, advanced analytics & more.
           </p>
           <Link href="/pricing">
-            <Button size="sm" variant="outline" className="w-full h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100">
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full h-8 text-xs border-violet-200 text-violet-700 hover:bg-violet-100"
+            >
               View plans
             </Button>
           </Link>
@@ -350,7 +372,7 @@ export default function DashboardLayout({
               "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200",
               pathname.includes("/settings")
                 ? "bg-slate-100 text-slate-900"
-                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
             )}
           >
             <Settings className="h-[18px] w-[18px] text-slate-400" />
@@ -370,22 +392,28 @@ export default function DashboardLayout({
             className="md:hidden mr-2"
             onClick={() => setSidebarOpen(!sidebarOpen)}
           >
-            {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {sidebarOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
           </Button>
 
           {/* Search */}
           <div className="flex items-center gap-4 flex-1 max-w-xl">
-            <div className={cn(
-              "relative flex-1 transition-all duration-200",
-              searchFocused && "scale-[1.02]"
-            )}>
+            <div
+              className={cn(
+                "relative flex-1 transition-all duration-200",
+                searchFocused && "scale-[1.02]",
+              )}
+            >
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
                 type="search"
                 placeholder="Search links, QR codes..."
                 className={cn(
                   "pl-10 pr-12 h-10 bg-slate-50 border-slate-200 rounded-xl transition-all",
-                  "focus:bg-white focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  "focus:bg-white focus:border-blue-300 focus:ring-2 focus:ring-blue-100",
                 )}
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setSearchFocused(false)}
@@ -401,7 +429,11 @@ export default function DashboardLayout({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-500 hover:text-slate-700">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 text-slate-500 hover:text-slate-700"
+                  >
                     <HelpCircle className="h-[18px] w-[18px]" />
                   </Button>
                 </TooltipTrigger>
@@ -426,28 +458,45 @@ export default function DashboardLayout({
               <DropdownMenuContent align="end" className="w-56 rounded-xl p-2">
                 <DropdownMenuLabel className="px-2 py-1.5">
                   <p className="font-medium">My Account</p>
-                  <p className="text-xs font-normal text-muted-foreground">user@example.com</p>
+                  <p className="text-xs font-normal text-muted-foreground">
+                    user@example.com
+                  </p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="my-2" />
                 <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-                  <Link href="/dashboard/settings/profile" className="flex items-center">
+                  <Link
+                    href="/dashboard/settings/profile"
+                    className="flex items-center"
+                  >
                     <User className="mr-2 h-4 w-4 text-slate-500" />
                     Profile Settings
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-                  <Link href="/dashboard/settings/security" className="flex items-center">
+                  <Link
+                    href="/dashboard/settings/security"
+                    className="flex items-center"
+                  >
                     <Lock className="mr-2 h-4 w-4 text-slate-500" />
                     Security
                   </Link>
                 </DropdownMenuItem>
                 {permissions.canAccessBilling() && (
-                  <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-                    <Link href="/dashboard/billing" className="flex items-center">
+                  <DropdownMenuItem
+                    asChild
+                    className="rounded-lg cursor-pointer"
+                  >
+                    <Link
+                      href="/dashboard/billing"
+                      className="flex items-center"
+                    >
                       <CreditCard className="mr-2 h-4 w-4 text-slate-500" />
                       Billing
                       {!permissions.isOwner && (
-                        <Badge variant="secondary" className="ml-auto text-[9px] px-1.5 py-0 h-4 bg-amber-50 text-amber-600 border-0">
+                        <Badge
+                          variant="secondary"
+                          className="ml-auto text-[9px] px-1.5 py-0 h-4 bg-amber-50 text-amber-600 border-0"
+                        >
                           View only
                         </Badge>
                       )}

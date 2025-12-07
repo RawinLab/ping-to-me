@@ -7,7 +7,7 @@
  * Usage: pnpm --filter @pingtome/database db:migrate-bio-links
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -23,7 +23,7 @@ interface LegacyLinkContent {
 }
 
 async function main() {
-  console.log('Starting BioPageLink migration...\n');
+  console.log("Starting BioPageLink migration...\n");
 
   // Find all bio pages with content that has links
   const bioPages = await prisma.bioPage.findMany({
@@ -49,7 +49,9 @@ async function main() {
     try {
       // Skip if already has bioLinks
       if (bioPage.bioLinks.length > 0) {
-        console.log(`[SKIP] ${bioPage.slug}: Already has ${bioPage.bioLinks.length} bioLinks`);
+        console.log(
+          `[SKIP] ${bioPage.slug}: Already has ${bioPage.bioLinks.length} bioLinks`,
+        );
         skippedCount++;
         continue;
       }
@@ -63,10 +65,13 @@ async function main() {
         continue;
       }
 
-      console.log(`[MIGRATE] ${bioPage.slug}: Migrating ${legacyLinks.length} links...`);
+      console.log(
+        `[MIGRATE] ${bioPage.slug}: Migrating ${legacyLinks.length} links...`,
+      );
 
       // Check if links are objects (url/title) or strings (link IDs)
-      const isObjectFormat = legacyLinks.length > 0 && typeof legacyLinks[0] === 'object';
+      const isObjectFormat =
+        legacyLinks.length > 0 && typeof legacyLinks[0] === "object";
 
       let bioLinksData: Array<{
         bioPageId: string;
@@ -84,7 +89,7 @@ async function main() {
         bioLinksData = (legacyLinks as LegacyLink[]).map((link, index) => ({
           bioPageId: bioPage.id,
           externalUrl: link.url,
-          title: link.title || 'Untitled Link',
+          title: link.title || "Untitled Link",
           description: link.description,
           icon: link.icon,
           order: index,
@@ -119,7 +124,7 @@ async function main() {
             return {
               bioPageId: bioPage.id,
               linkId: link.id,
-              title: link.title || 'Untitled Link',
+              title: link.title || "Untitled Link",
               order: index,
               isVisible: true,
             };
@@ -140,22 +145,24 @@ async function main() {
     }
   }
 
-  console.log('\n--- Migration Summary ---');
+  console.log("\n--- Migration Summary ---");
   console.log(`Migrated: ${migratedCount}`);
   console.log(`Skipped: ${skippedCount}`);
   console.log(`Errors: ${errorCount}`);
-  console.log('------------------------\n');
+  console.log("------------------------\n");
 
   if (errorCount === 0) {
-    console.log('Migration completed successfully!');
+    console.log("Migration completed successfully!");
   } else {
-    console.log('Migration completed with errors. Please review the logs above.');
+    console.log(
+      "Migration completed with errors. Please review the logs above.",
+    );
   }
 }
 
 main()
   .catch((e) => {
-    console.error('Migration failed:', e);
+    console.error("Migration failed:", e);
     process.exit(1);
   })
   .finally(async () => {

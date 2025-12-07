@@ -178,7 +178,10 @@ export default function CreateLinkPage() {
   }, [updateQrPreview]);
 
   // Compress image if needed (max 500KB)
-  const compressImage = (file: File, maxSizeKB: number = 500): Promise<string> => {
+  const compressImage = (
+    file: File,
+    maxSizeKB: number = 500,
+  ): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -230,7 +233,9 @@ export default function CreateLinkPage() {
   };
 
   // Handle logo upload
-  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
     if (file) {
       try {
@@ -316,7 +321,8 @@ export default function CreateLinkPage() {
         const url = new URL(data.originalUrl);
         if (data.utmSource) url.searchParams.set("utm_source", data.utmSource);
         if (data.utmMedium) url.searchParams.set("utm_medium", data.utmMedium);
-        if (data.utmCampaign) url.searchParams.set("utm_campaign", data.utmCampaign);
+        if (data.utmCampaign)
+          url.searchParams.set("utm_campaign", data.utmCampaign);
         finalUrl = url.toString();
       }
 
@@ -325,7 +331,12 @@ export default function CreateLinkPage() {
         slug: data.slug || undefined,
         title: data.title || undefined,
         description: data.description || undefined,
-        tags: data.tags ? data.tags.split(",").map((t) => t.trim()).filter(Boolean) : undefined,
+        tags: data.tags
+          ? data.tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : undefined,
         expirationDate: data.expirationDate || undefined,
         password: data.password || undefined,
         deepLinkFallback: data.deepLinkFallback || undefined,
@@ -349,7 +360,10 @@ export default function CreateLinkPage() {
           await apiRequest(`/biopages/${selectedBioPage}`, {
             method: "PATCH",
             body: JSON.stringify({
-              content: { ...bioPage.content, links: [...currentLinks, link.id] },
+              content: {
+                ...bioPage.content,
+                links: [...currentLinks, link.id],
+              },
             }),
           });
         } catch (bioErr) {
@@ -422,7 +436,11 @@ export default function CreateLinkPage() {
                     size="icon"
                     onClick={() => copyToClipboard(createdLink.shortUrl)}
                   >
-                    {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                    {copied ? (
+                      <Check className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
                   </Button>
                   <Button variant="outline" size="icon" asChild>
                     <a
@@ -484,7 +502,9 @@ export default function CreateLinkPage() {
               </Button>
               <Button
                 className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                onClick={() => router.push(`/dashboard/links/${createdLink.id}/analytics`)}
+                onClick={() =>
+                  router.push(`/dashboard/links/${createdLink.id}/analytics`)
+                }
               >
                 View Analytics
               </Button>
@@ -524,7 +544,10 @@ export default function CreateLinkPage() {
 
           {/* Link Details Section */}
           <Card className="overflow-hidden">
-            <Collapsible open={linkDetailsOpen} onOpenChange={setLinkDetailsOpen}>
+            <Collapsible
+              open={linkDetailsOpen}
+              onOpenChange={setLinkDetailsOpen}
+            >
               <CollapsibleTrigger className="w-full">
                 <div className="flex items-center justify-between p-5 hover:bg-slate-50 transition-colors">
                   <div className="flex items-center gap-3">
@@ -544,7 +567,10 @@ export default function CreateLinkPage() {
                 <div className="px-5 pb-5 space-y-5 border-t pt-5">
                   <p className="text-sm text-muted-foreground">
                     You can create unlimited links.{" "}
-                    <Link href="/pricing" className="text-primary hover:underline">
+                    <Link
+                      href="/pricing"
+                      className="text-primary hover:underline"
+                    >
                       Upgrade for more features
                     </Link>
                     .
@@ -579,11 +605,14 @@ export default function CreateLinkPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="pingto.me">pingto.me</SelectItem>
-                          {hasCustomDomains && domains.filter(d => d.isVerified).map((d) => (
-                            <SelectItem key={d.id} value={d.hostname}>
-                              {d.hostname}
-                            </SelectItem>
-                          ))}
+                          {hasCustomDomains &&
+                            domains
+                              .filter((d) => d.isVerified)
+                              .map((d) => (
+                                <SelectItem key={d.id} value={d.hostname}>
+                                  {d.hostname}
+                                </SelectItem>
+                              ))}
                         </SelectContent>
                       </Select>
                       <span className="text-muted-foreground text-lg">/</span>
@@ -595,7 +624,10 @@ export default function CreateLinkPage() {
                     </div>
                     {!hasCustomDomains && domains.length === 0 && (
                       <p className="text-xs text-muted-foreground">
-                        <Link href="/pricing" className="text-primary hover:underline">
+                        <Link
+                          href="/pricing"
+                          className="text-primary hover:underline"
+                        >
                           Upgrade to Pro
                         </Link>{" "}
                         to use custom domains
@@ -606,7 +638,8 @@ export default function CreateLinkPage() {
                   {/* Title */}
                   <div className="space-y-2">
                     <Label htmlFor="title">
-                      Title <span className="text-muted-foreground">(optional)</span>
+                      Title{" "}
+                      <span className="text-muted-foreground">(optional)</span>
                     </Label>
                     <Input
                       id="title"
@@ -619,7 +652,8 @@ export default function CreateLinkPage() {
                   {/* Tags */}
                   <div className="space-y-2">
                     <Label htmlFor="tags">
-                      Tags <span className="text-muted-foreground">(optional)</span>
+                      Tags{" "}
+                      <span className="text-muted-foreground">(optional)</span>
                     </Label>
                     <Input
                       id="tags"
@@ -638,7 +672,10 @@ export default function CreateLinkPage() {
 
           {/* Sharing Options Section */}
           <Card className="overflow-hidden">
-            <Collapsible open={sharingOptionsOpen} onOpenChange={setSharingOptionsOpen}>
+            <Collapsible
+              open={sharingOptionsOpen}
+              onOpenChange={setSharingOptionsOpen}
+            >
               <CollapsibleTrigger className="w-full">
                 <div className="flex items-center justify-between p-5 hover:bg-slate-50 transition-colors">
                   <div className="flex items-center gap-3">
@@ -665,7 +702,8 @@ export default function CreateLinkPage() {
                       <div>
                         <p className="font-medium">Generate a QR Code</p>
                         <p className="text-sm text-muted-foreground">
-                          Create and customize a QR Code to connect with your audience offline.
+                          Create and customize a QR Code to connect with your
+                          audience offline.
                         </p>
                       </div>
                     </div>
@@ -683,7 +721,9 @@ export default function CreateLinkPage() {
                         <div className="flex-1 space-y-4">
                           {/* Code color */}
                           <div className="space-y-3">
-                            <Label className="text-sm font-medium">Code color</Label>
+                            <Label className="text-sm font-medium">
+                              Code color
+                            </Label>
                             <div className="flex flex-wrap gap-2">
                               {QR_COLOR_PRESETS.map((preset) => (
                                 <button
@@ -739,7 +779,9 @@ export default function CreateLinkPage() {
                                     type="button"
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => logoInputRef.current?.click()}
+                                    onClick={() =>
+                                      logoInputRef.current?.click()
+                                    }
                                     className="gap-2"
                                   >
                                     Add logo
@@ -749,7 +791,8 @@ export default function CreateLinkPage() {
                               )}
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              File type: PNG. 1:1 aspect ratio. Max size: 5MB, 2500x2500px
+                              File type: PNG. 1:1 aspect ratio. Max size: 5MB,
+                              2500x2500px
                             </p>
                           </div>
                         </div>
@@ -828,7 +871,10 @@ export default function CreateLinkPage() {
                           </Select>
                           {bioPages.length === 0 && (
                             <p className="text-xs text-muted-foreground mt-2">
-                              <Link href="/dashboard/bio" className="text-primary hover:underline">
+                              <Link
+                                href="/dashboard/bio"
+                                className="text-primary hover:underline"
+                              >
                                 Create a bio page
                               </Link>{" "}
                               first to add links to it
@@ -848,7 +894,10 @@ export default function CreateLinkPage() {
                         <div>
                           <p className="font-medium">Add to a Bio Page</p>
                           <p className="text-sm text-muted-foreground">
-                            <Link href="/pricing" className="text-primary hover:underline">
+                            <Link
+                              href="/pricing"
+                              className="text-primary hover:underline"
+                            >
                               Upgrade to Pro
                             </Link>{" "}
                             to create bio pages
@@ -943,7 +992,9 @@ export default function CreateLinkPage() {
                     <div className="space-y-2">
                       <Label htmlFor="expirationDate">
                         Expiration Date{" "}
-                        <span className="text-muted-foreground">(optional)</span>
+                        <span className="text-muted-foreground">
+                          (optional)
+                        </span>
                       </Label>
                       <Input
                         type="datetime-local"
@@ -954,7 +1005,9 @@ export default function CreateLinkPage() {
                     <div className="space-y-2">
                       <Label htmlFor="password">
                         Password Protection{" "}
-                        <span className="text-muted-foreground">(optional)</span>
+                        <span className="text-muted-foreground">
+                          (optional)
+                        </span>
                       </Label>
                       <Input
                         type="password"
@@ -970,7 +1023,9 @@ export default function CreateLinkPage() {
                     <Label>Redirect Type</Label>
                     <Select
                       value={redirectType}
-                      onValueChange={(value: "301" | "302") => setRedirectType(value)}
+                      onValueChange={(value: "301" | "302") =>
+                        setRedirectType(value)
+                      }
                     >
                       <SelectTrigger className="w-[200px]">
                         <SelectValue placeholder="Select redirect type" />

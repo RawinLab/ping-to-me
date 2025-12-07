@@ -42,7 +42,8 @@ export function useLinkReorder({
         });
         onSuccess?.();
       } catch (error) {
-        const err = error instanceof Error ? error : new Error("Failed to reorder links");
+        const err =
+          error instanceof Error ? error : new Error("Failed to reorder links");
         console.error("Failed to save link order:", error);
         onError?.(err);
         throw err;
@@ -50,7 +51,7 @@ export function useLinkReorder({
         setIsReordering(false);
       }
     },
-    [bioPageId, onSuccess, onError]
+    [bioPageId, onSuccess, onError],
   );
 
   const reorderLinks = useCallback(
@@ -82,7 +83,7 @@ export function useLinkReorder({
         }, 300);
       });
     },
-    [executeReorder]
+    [executeReorder],
   );
 
   return {

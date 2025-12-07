@@ -84,7 +84,10 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
 
     // Add to recent colors (max 6, no duplicates)
     setRecentColors((prev) => {
-      const updated = [color, ...prev.filter((c) => c.toUpperCase() !== color.toUpperCase())];
+      const updated = [
+        color,
+        ...prev.filter((c) => c.toUpperCase() !== color.toUpperCase()),
+      ];
       return updated.slice(0, 6);
     });
   };
@@ -128,9 +131,9 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
               className="h-6 w-6 rounded border border-gray-300 shadow-sm relative overflow-hidden"
               style={{
                 backgroundImage:
-                  'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)',
-                backgroundSize: '8px 8px',
-                backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px'
+                  "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)",
+                backgroundSize: "8px 8px",
+                backgroundPosition: "0 0, 0 4px, 4px -4px, -4px 0px",
               }}
             >
               <div
@@ -148,7 +151,9 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
               <div className="pb-3 border-b border-gray-200">
                 <div className="flex items-center gap-2 mb-3">
                   <Palette className="h-4 w-4 text-gray-600" />
-                  <h4 className="font-semibold text-sm text-gray-700">Recent</h4>
+                  <h4 className="font-semibold text-sm text-gray-700">
+                    Recent
+                  </h4>
                 </div>
                 <div className="flex gap-2">
                   {recentColors.map((color) => (
@@ -161,13 +166,14 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
                               "h-8 w-8 rounded-md border-2 transition-all hover:scale-110 relative overflow-hidden shadow-sm",
                               value.toUpperCase() === color.toUpperCase()
                                 ? "border-primary ring-2 ring-primary ring-offset-1"
-                                : "border-gray-300 hover:border-gray-400"
+                                : "border-gray-300 hover:border-gray-400",
                             )}
                             style={{
                               backgroundImage:
-                                'linear-gradient(45deg, #e5e5e5 25%, transparent 25%), linear-gradient(-45deg, #e5e5e5 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e5e5 75%), linear-gradient(-45deg, transparent 75%, #e5e5e5 75%)',
-                              backgroundSize: '6px 6px',
-                              backgroundPosition: '0 0, 0 3px, 3px -3px, -3px 0px'
+                                "linear-gradient(45deg, #e5e5e5 25%, transparent 25%), linear-gradient(-45deg, #e5e5e5 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e5e5 75%), linear-gradient(-45deg, transparent 75%, #e5e5e5 75%)",
+                              backgroundSize: "6px 6px",
+                              backgroundPosition:
+                                "0 0, 0 3px, 3px -3px, -3px 0px",
                             }}
                             onClick={() => handleColorSelect(color)}
                           >
@@ -177,7 +183,10 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
                             />
                             {value.toUpperCase() === color.toUpperCase() && (
                               <div className="absolute inset-0 flex items-center justify-center">
-                                <Check className="h-4 w-4 text-white drop-shadow-md" strokeWidth={3} />
+                                <Check
+                                  className="h-4 w-4 text-white drop-shadow-md"
+                                  strokeWidth={3}
+                                />
                               </div>
                             )}
                           </button>
@@ -194,7 +203,9 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
 
             {/* Preset Colors */}
             <div>
-              <h4 className="font-semibold text-sm mb-3 text-gray-700">Preset Colors</h4>
+              <h4 className="font-semibold text-sm mb-3 text-gray-700">
+                Preset Colors
+              </h4>
               <TooltipProvider>
                 <div className="grid grid-cols-6 gap-2">
                   {PREDEFINED_COLORS.map(({ color, name }) => (
@@ -206,21 +217,26 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
                             "h-8 w-8 rounded-md border-2 transition-all hover:scale-110 relative shadow-sm",
                             value.toUpperCase() === color.toUpperCase()
                               ? "border-primary ring-2 ring-primary ring-offset-1"
-                              : "border-gray-300 hover:border-gray-400"
+                              : "border-gray-300 hover:border-gray-400",
                           )}
                           style={{ backgroundColor: color }}
                           onClick={() => handleColorSelect(color)}
                         >
                           {value.toUpperCase() === color.toUpperCase() && (
                             <div className="absolute inset-0 flex items-center justify-center">
-                              <Check className="h-4 w-4 text-white drop-shadow-md" strokeWidth={3} />
+                              <Check
+                                className="h-4 w-4 text-white drop-shadow-md"
+                                strokeWidth={3}
+                              />
                             </div>
                           )}
                         </button>
                       </TooltipTrigger>
                       <TooltipContent>
                         <p className="text-xs">{name}</p>
-                        <p className="text-xs font-mono text-gray-400">{color}</p>
+                        <p className="text-xs font-mono text-gray-400">
+                          {color}
+                        </p>
                       </TooltipContent>
                     </Tooltip>
                   ))}
@@ -232,7 +248,10 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
             <div className="space-y-2 pt-3 border-t border-gray-200">
               <div className="flex items-center gap-2">
                 <Pipette className="h-4 w-4 text-gray-600" />
-                <Label htmlFor="hex-input" className="text-sm font-semibold text-gray-700">
+                <Label
+                  htmlFor="hex-input"
+                  className="text-sm font-semibold text-gray-700"
+                >
                   Custom Hex
                 </Label>
               </div>
@@ -247,7 +266,9 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
                     onBlur={handleHexInputBlur}
                     className={cn(
                       "font-mono text-sm pr-8",
-                      hexInput && !isInputValid && "border-red-500 focus-visible:ring-red-500"
+                      hexInput &&
+                        !isInputValid &&
+                        "border-red-500 focus-visible:ring-red-500",
                     )}
                   />
                   {hexInput && (
@@ -256,7 +277,9 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
                         <Check className="h-4 w-4 text-green-500" />
                       ) : (
                         <div className="h-4 w-4 rounded-full bg-red-500 flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">!</span>
+                          <span className="text-white text-xs font-bold">
+                            !
+                          </span>
                         </div>
                       )}
                     </div>
@@ -266,9 +289,9 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
                   className="h-10 w-10 rounded-md border-2 border-gray-300 flex-shrink-0 shadow-sm relative overflow-hidden"
                   style={{
                     backgroundImage:
-                      'linear-gradient(45deg, #e5e5e5 25%, transparent 25%), linear-gradient(-45deg, #e5e5e5 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e5e5 75%), linear-gradient(-45deg, transparent 75%, #e5e5e5 75%)',
-                    backgroundSize: '6px 6px',
-                    backgroundPosition: '0 0, 0 3px, 3px -3px, -3px 0px'
+                      "linear-gradient(45deg, #e5e5e5 25%, transparent 25%), linear-gradient(-45deg, #e5e5e5 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e5e5 75%), linear-gradient(-45deg, transparent 75%, #e5e5e5 75%)",
+                    backgroundSize: "6px 6px",
+                    backgroundPosition: "0 0, 0 3px, 3px -3px, -3px 0px",
                   }}
                 >
                   <div

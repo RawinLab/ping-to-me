@@ -1,6 +1,7 @@
 # Module 2.7: Quota/Plan Management Development Plan
 
 ## Document Information
+
 - **Module**: 2.7 Quota/Plan Management
 - **Version**: 1.0
 - **Created**: 2025-12-07
@@ -12,12 +13,14 @@
 ## 1. Executive Summary
 
 ### Current State
+
 - Basic Stripe integration working
 - Hardcoded plan definitions in PaymentsService
 - PlanType enum exists (FREE, PRO, ENTERPRISE)
 - Billing page UI exists with hardcoded usage display
 
 ### Critical Gaps
+
 - **No usage tracking at all** - System doesn't track resource usage
 - **No quota enforcement** - Users can exceed plan limits
 - **Hardcoded usage display** - Shows "23/50" always
@@ -29,13 +32,13 @@
 
 ### 2.7.1 Plan Definitions (Priority: HIGH)
 
-| Feature | Status | Priority |
-|---------|--------|----------|
-| PlanType enum | Implemented | - |
-| Hardcoded plan features | Implemented | - |
-| Database-driven plan config | NOT IMPLEMENTED | HIGH |
-| Feature flags per plan | NOT IMPLEMENTED | HIGH |
-| Plan comparison API | NOT IMPLEMENTED | MEDIUM |
+| Feature                     | Status          | Priority |
+| --------------------------- | --------------- | -------- |
+| PlanType enum               | Implemented     | -        |
+| Hardcoded plan features     | Implemented     | -        |
+| Database-driven plan config | NOT IMPLEMENTED | HIGH     |
+| Feature flags per plan      | NOT IMPLEMENTED | HIGH     |
+| Plan comparison API         | NOT IMPLEMENTED | MEDIUM   |
 
 **Plan Limits (per spec):**
 | Plan | Links/mo | Domains | Members | API calls | Analytics |
@@ -46,43 +49,43 @@
 
 ### 2.7.2 Usage Tracking (Priority: HIGH)
 
-| Feature | Status | Priority |
-|---------|--------|----------|
-| Track links created | NOT IMPLEMENTED | HIGH |
-| Track API calls | NOT IMPLEMENTED | HIGH |
-| Track domains added | NOT IMPLEMENTED | MEDIUM |
-| Track team members | NOT IMPLEMENTED | MEDIUM |
-| Monthly reset logic | NOT IMPLEMENTED | HIGH |
-| Historical usage storage | NOT IMPLEMENTED | MEDIUM |
+| Feature                  | Status          | Priority |
+| ------------------------ | --------------- | -------- |
+| Track links created      | NOT IMPLEMENTED | HIGH     |
+| Track API calls          | NOT IMPLEMENTED | HIGH     |
+| Track domains added      | NOT IMPLEMENTED | MEDIUM   |
+| Track team members       | NOT IMPLEMENTED | MEDIUM   |
+| Monthly reset logic      | NOT IMPLEMENTED | HIGH     |
+| Historical usage storage | NOT IMPLEMENTED | MEDIUM   |
 
 ### 2.7.3 Quota Enforcement (Priority: HIGH)
 
-| Feature | Status | Priority |
-|---------|--------|----------|
-| Block at link limit | NOT IMPLEMENTED | HIGH |
-| Block at domain limit | NOT IMPLEMENTED | HIGH |
-| Block at member limit | NOT IMPLEMENTED | HIGH |
-| API rate limiting | Partial (global) | MEDIUM |
-| Show upgrade prompt | NOT IMPLEMENTED | HIGH |
+| Feature               | Status           | Priority |
+| --------------------- | ---------------- | -------- |
+| Block at link limit   | NOT IMPLEMENTED  | HIGH     |
+| Block at domain limit | NOT IMPLEMENTED  | HIGH     |
+| Block at member limit | NOT IMPLEMENTED  | HIGH     |
+| API rate limiting     | Partial (global) | MEDIUM   |
+| Show upgrade prompt   | NOT IMPLEMENTED  | HIGH     |
 
 ### 2.7.4 Usage Dashboard (Priority: MEDIUM)
 
-| Feature | Status | Priority |
-|---------|--------|----------|
-| Current usage display | Hardcoded stub | HIGH |
-| Usage progress bars | Hardcoded stub | HIGH |
-| Usage alerts (80%) | NOT IMPLEMENTED | MEDIUM |
-| Historical usage charts | NOT IMPLEMENTED | LOW |
+| Feature                 | Status          | Priority |
+| ----------------------- | --------------- | -------- |
+| Current usage display   | Hardcoded stub  | HIGH     |
+| Usage progress bars     | Hardcoded stub  | HIGH     |
+| Usage alerts (80%)      | NOT IMPLEMENTED | MEDIUM   |
+| Historical usage charts | NOT IMPLEMENTED | LOW      |
 
 ### 2.7.5 Upgrade/Downgrade Flow (Priority: MEDIUM)
 
-| Feature | Status | Priority |
-|---------|--------|----------|
-| Stripe checkout | Implemented | - |
-| Webhook handling | Implemented | - |
-| Downgrade warnings | NOT IMPLEMENTED | HIGH |
-| Grace period | NOT IMPLEMENTED | MEDIUM |
-| Prorated billing | Stripe handles | - |
+| Feature            | Status          | Priority |
+| ------------------ | --------------- | -------- |
+| Stripe checkout    | Implemented     | -        |
+| Webhook handling   | Implemented     | -        |
+| Downgrade warnings | NOT IMPLEMENTED | HIGH     |
+| Grace period       | NOT IMPLEMENTED | MEDIUM   |
+| Prorated billing   | Stripe handles  | -        |
 
 ---
 
@@ -182,7 +185,7 @@ POST   /payments/webhook               - Stripe webhook
 export class QuotaService {
   async checkQuota(
     orgId: string,
-    resource: 'links' | 'domains' | 'members' | 'api_calls'
+    resource: "links" | "domains" | "members" | "api_calls",
   ): Promise<QuotaCheckResult> {
     const org = await this.getOrgWithPlan(orgId);
     const usage = await this.getCurrentUsage(orgId);
@@ -200,25 +203,25 @@ export class QuotaService {
       currentUsage,
       limit,
       remaining: limit - currentUsage,
-      percentUsed: (currentUsage / limit) * 100
+      percentUsed: (currentUsage / limit) * 100,
     };
   }
 
   async incrementUsage(
     orgId: string,
-    resource: 'links' | 'domains' | 'members' | 'api_calls'
+    resource: "links" | "domains" | "members" | "api_calls",
   ): Promise<void> {
     const yearMonth = this.getCurrentYearMonth();
     await this.prisma.usageTracking.upsert({
       where: { organizationId_yearMonth: { organizationId: orgId, yearMonth } },
       create: { organizationId: orgId, yearMonth, [resource]: 1 },
-      update: { [resource]: { increment: 1 } }
+      update: { [resource]: { increment: 1 } },
     });
   }
 
   async decrementUsage(
     orgId: string,
-    resource: 'links' | 'domains' | 'members'
+    resource: "links" | "domains" | "members",
   ): Promise<void> {
     // Similar to increment but decrement
   }
@@ -230,6 +233,7 @@ export class QuotaService {
 ## 6. Integration Points
 
 ### Links Service Integration
+
 ```typescript
 // apps/api/src/links/links.service.ts
 
@@ -260,6 +264,7 @@ async create(userId: string, dto: CreateLinkDto) {
 ```
 
 ### Similar integration needed for:
+
 - `domains.service.ts` - domain limit
 - `organization.service.ts` - member limit
 - API middleware - API call tracking
@@ -271,41 +276,41 @@ async create(userId: string, dto: CreateLinkDto) {
 ### E2E Tests: `apps/web/e2e/quota-plan.spec.ts`
 
 ```typescript
-test.describe('Quota & Plan Management', () => {
+test.describe("Quota & Plan Management", () => {
   // Plan Display
-  test('QPM-001: View available plans')
-  test('QPM-002: Compare plan features')
-  test('QPM-003: View current subscription')
+  test("QPM-001: View available plans");
+  test("QPM-002: Compare plan features");
+  test("QPM-003: View current subscription");
 
   // Usage Tracking
-  test('QPM-010: Usage increments on link creation')
-  test('QPM-011: Usage decrements on link deletion')
-  test('QPM-012: Usage resets monthly')
-  test('QPM-013: View usage history')
+  test("QPM-010: Usage increments on link creation");
+  test("QPM-011: Usage decrements on link deletion");
+  test("QPM-012: Usage resets monthly");
+  test("QPM-013: View usage history");
 
   // Quota Enforcement
-  test('QPM-020: Block link creation at limit')
-  test('QPM-021: Show upgrade prompt at limit')
-  test('QPM-022: Block domain addition at limit')
-  test('QPM-023: Block member invite at limit')
-  test('QPM-024: Unlimited plan allows unlimited resources')
+  test("QPM-020: Block link creation at limit");
+  test("QPM-021: Show upgrade prompt at limit");
+  test("QPM-022: Block domain addition at limit");
+  test("QPM-023: Block member invite at limit");
+  test("QPM-024: Unlimited plan allows unlimited resources");
 
   // Usage Dashboard
-  test('QPM-030: Display current usage')
-  test('QPM-031: Show usage progress bars')
-  test('QPM-032: Warning at 80% usage')
-  test('QPM-033: Alert at 100% usage')
+  test("QPM-030: Display current usage");
+  test("QPM-031: Show usage progress bars");
+  test("QPM-032: Warning at 80% usage");
+  test("QPM-033: Alert at 100% usage");
 
   // Upgrade/Downgrade
-  test('QPM-040: Upgrade to Pro plan')
-  test('QPM-041: Downgrade warning when exceeding')
-  test('QPM-042: Grace period on downgrade')
-  test('QPM-043: Cancel subscription')
+  test("QPM-040: Upgrade to Pro plan");
+  test("QPM-041: Downgrade warning when exceeding");
+  test("QPM-042: Grace period on downgrade");
+  test("QPM-043: Cancel subscription");
 
   // API Rate Limiting
-  test('QPM-050: API calls tracked per org')
-  test('QPM-051: API blocked at limit')
-  test('QPM-052: Rate limit headers in response')
+  test("QPM-050: API calls tracked per org");
+  test("QPM-051: API blocked at limit");
+  test("QPM-052: Rate limit headers in response");
 });
 ```
 
@@ -314,6 +319,7 @@ test.describe('Quota & Plan Management', () => {
 ## 8. Frontend Components
 
 ### Usage Dashboard Component
+
 ```typescript
 // apps/web/components/billing/UsageDashboard.tsx
 
@@ -332,6 +338,7 @@ interface UsageDashboardProps {
 ```
 
 ### Upgrade Prompt Modal
+
 ```typescript
 // apps/web/components/billing/UpgradePrompt.tsx
 
@@ -347,13 +354,13 @@ interface UsageDashboardProps {
 
 ## 9. Implementation Timeline
 
-| Phase | Duration | Deliverables |
-|-------|----------|--------------|
-| Phase 1 | 2 weeks | Database models, usage tracking service |
-| Phase 2 | 1 week | Quota enforcement in all services |
-| Phase 3 | 1 week | Usage dashboard UI, upgrade prompts |
-| Phase 4 | 1 week | Alerts, downgrade handling, polish |
-| **Total** | **5 weeks** | Complete Module 2.7 |
+| Phase     | Duration    | Deliverables                            |
+| --------- | ----------- | --------------------------------------- |
+| Phase 1   | 2 weeks     | Database models, usage tracking service |
+| Phase 2   | 1 week      | Quota enforcement in all services       |
+| Phase 3   | 1 week      | Usage dashboard UI, upgrade prompts     |
+| Phase 4   | 1 week      | Alerts, downgrade handling, polish      |
+| **Total** | **5 weeks** | Complete Module 2.7                     |
 
 ---
 

@@ -1,6 +1,7 @@
 # QR Analytics Feature
 
 ## Overview
+
 The analytics module now supports tracking click sources (DIRECT, QR, API) and provides dedicated QR analytics endpoints to help users understand how their links are being accessed.
 
 ## Changes Made
@@ -8,29 +9,33 @@ The analytics module now supports tracking click sources (DIRECT, QR, API) and p
 ### 1. Analytics Service Updates
 
 #### Updated `trackClick` Method
+
 - Added `source` parameter (optional): `'DIRECT' | 'QR' | 'API'`
 - Defaults to `DIRECT` if not specified
 - Stores the source in the database for analytics aggregation
 - Now also stores parsed device, browser, and OS information
 
 **Example:**
+
 ```typescript
 await analyticsService.trackClick({
-  slug: 'my-link',
+  slug: "my-link",
   timestamp: new Date().toISOString(),
-  userAgent: 'Mozilla/5.0...',
-  ip: '192.168.1.1',
-  country: 'US',
-  source: 'QR' // New parameter
+  userAgent: "Mozilla/5.0...",
+  ip: "192.168.1.1",
+  country: "US",
+  source: "QR", // New parameter
 });
 ```
 
 #### New `getQrAnalytics` Method
+
 Returns detailed breakdown of click sources for a specific link.
 
 **Endpoint:** `GET /links/:id/analytics/qr`
 
 **Response:**
+
 ```json
 {
   "totalClicks": 100,
@@ -42,6 +47,7 @@ Returns detailed breakdown of click sources for a specific link.
 ```
 
 **Features:**
+
 - Ownership verification (404 if link not found, 403 if unauthorized)
 - Counts clicks by source type
 - Calculates QR scan percentage
@@ -99,20 +105,21 @@ The Cloudflare Workers redirector already detects QR sources and sends the appro
 
 ```typescript
 // In apps/redirector/src/index.ts
-const clickSource = url.searchParams.get('utm_source') === 'qr' ||
-                    url.searchParams.get('qr') === '1'
-  ? 'QR'
-  : 'DIRECT';
+const clickSource =
+  url.searchParams.get("utm_source") === "qr" ||
+  url.searchParams.get("qr") === "1"
+    ? "QR"
+    : "DIRECT";
 
 await fetch(`${apiUrl}/analytics/track`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
     slug,
     timestamp: new Date().toISOString(),
-    userAgent: c.req.header('user-agent'),
-    ip: c.req.header('cf-connecting-ip'),
-    country: c.req.header('cf-ipcountry'),
+    userAgent: c.req.header("user-agent"),
+    ip: c.req.header("cf-connecting-ip"),
+    country: c.req.header("cf-ipcountry"),
     source: clickSource, // Sent to API
   }),
 });
@@ -123,11 +130,12 @@ await fetch(`${apiUrl}/analytics/track`, {
 ### Frontend Integration
 
 #### Display QR Analytics for a Link
+
 ```typescript
 const response = await fetch(`/api/links/${linkId}/analytics/qr`, {
   headers: {
-    'Authorization': `Bearer ${accessToken}`
-  }
+    Authorization: `Bearer ${accessToken}`,
+  },
 });
 
 const qrStats = await response.json();
@@ -139,11 +147,12 @@ console.log(`API Clicks: ${qrStats.apiClicks}`);
 ```
 
 #### Display Source Breakdown in Analytics Dashboard
+
 ```typescript
 const response = await fetch(`/api/links/${linkId}/analytics?days=30`, {
   headers: {
-    'Authorization': `Bearer ${accessToken}`
-  }
+    Authorization: `Bearer ${accessToken}`,
+  },
 });
 
 const analytics = await response.json();
@@ -198,6 +207,7 @@ Comprehensive unit tests are included in `analytics.service.spec.ts`:
 - ✅ Handle missing source types
 
 Run tests:
+
 ```bash
 cd apps/api
 pnpm test analytics.service.spec.ts
@@ -205,12 +215,12 @@ pnpm test analytics.service.spec.ts
 
 ## API Endpoints Summary
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/analytics/track` | None | Track a click (called by redirector) |
-| GET | `/analytics/dashboard` | JWT | Get dashboard metrics for user |
-| GET | `/links/:id/analytics` | JWT | Get detailed analytics for a link |
-| GET | `/links/:id/analytics/qr` | JWT | **NEW:** Get QR-specific analytics for a link |
+| Method | Endpoint                  | Auth | Description                                   |
+| ------ | ------------------------- | ---- | --------------------------------------------- |
+| POST   | `/analytics/track`        | None | Track a click (called by redirector)          |
+| GET    | `/analytics/dashboard`    | JWT  | Get dashboard metrics for user                |
+| GET    | `/links/:id/analytics`    | JWT  | Get detailed analytics for a link             |
+| GET    | `/links/:id/analytics/qr` | JWT  | **NEW:** Get QR-specific analytics for a link |
 
 ## Future Enhancements
 

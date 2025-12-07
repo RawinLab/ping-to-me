@@ -1,6 +1,7 @@
 # Module 2.6: Audit/Activity Logs - Development Todolist
 
 ## Document Information
+
 - **Module**: 2.6 Audit/Activity Logs
 - **Source**: `2-6-audit-logs-plan.md`
 - **Generated**: 2025-12-07
@@ -13,6 +14,7 @@
 ## Quick Reference
 
 ### Commands
+
 ```bash
 # Database migration
 pnpm --filter @pingtome/database db:push
@@ -32,12 +34,14 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ```
 
 ### Key Files
+
 - `packages/database/prisma/schema.prisma` - AuditLog model (COMPLETE)
 - `apps/api/src/audit/audit.service.ts` - Core service (COMPLETE)
 - `apps/api/src/audit/audit.controller.ts` - Endpoints (COMPLETE)
 - `apps/web/app/dashboard/settings/audit-logs/page.tsx` - UI (COMPLETE)
 
 ### Critical Gap - RESOLVED
+
 ~~Infrastructure exists but NO actual audit logging calls in any business logic services!~~
 **All services now have audit logging integrated!**
 
@@ -46,10 +50,12 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ## Phase 1: Database Schema Enhancement (Week 1)
 
 ### TASK-2.6.1: Enhance AuditLog Model ✅ COMPLETED
+
 **Priority**: HIGH | **Type**: Database | **Estimated**: 1 hour
 **File**: `packages/database/prisma/schema.prisma`
 
 **Subtasks**:
+
 - [x] Add `status` field (String, default 'success' - 'success' | 'failure')
 - [x] Add `changes` field (Json?, for before/after tracking)
 - [x] Add `geoLocation` field (String?, 'US, California')
@@ -58,6 +64,7 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 - [x] Run migration
 
 **Acceptance Criteria**:
+
 - [x] Schema updated with new fields
 - [x] Migration successful
 - [x] No breaking changes
@@ -67,10 +74,12 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ## Phase 1: Event Logging Integration (Week 1-2)
 
 ### TASK-2.6.2: Create Audit Logging Helper Methods ✅ COMPLETED
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2 hours
 **File**: `apps/api/src/audit/audit.service.ts`
 
 **Subtasks**:
+
 - [x] Create `logLinkEvent(userId, orgId, action, link, changes?)` method
 - [x] Create `logDomainEvent(userId, orgId, action, domain, changes?)` method
 - [x] Create `logTeamEvent(userId, orgId, action, member, changes?)` method
@@ -81,6 +90,7 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 - [x] All methods should handle errors gracefully (not block main operation)
 
 **Acceptance Criteria**:
+
 - [x] Helper methods simplify audit logging
 - [x] Error handling doesn't break calling service
 - [x] Consistent log format
@@ -88,10 +98,12 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ---
 
 ### TASK-2.6.3: Integrate Audit Logging in Links Service ✅ COMPLETED
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2-3 hours
 **File**: `apps/api/src/links/links.service.ts`
 
 **Events to Log**:
+
 - [x] `link.created` - on successful link creation
   - Include: slug, targetUrl, organizationId
 - [x] `link.updated` - on link update
@@ -104,6 +116,7 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 - [x] `link.bulk_deleted` - on bulk delete
 
 **Acceptance Criteria**:
+
 - [x] All link operations logged
 - [x] Before/after captured for updates
 - [x] No performance impact on main operations
@@ -111,10 +124,12 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ---
 
 ### TASK-2.6.4: Integrate Audit Logging in Domains Service ✅ COMPLETED
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 1-2 hours
 **File**: `apps/api/src/domains/domains.service.ts`
 
 **Events to Log**:
+
 - [x] `domain.added` - on domain creation
   - Include: hostname, organizationId
 - [x] `domain.verified` - on successful verification
@@ -126,16 +141,19 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 - [ ] `domain.ssl_updated` - on SSL status change (no SSL method exists)
 
 **Acceptance Criteria**:
+
 - [x] All domain operations logged
 - [x] Verification results captured
 
 ---
 
 ### TASK-2.6.5: Integrate Audit Logging in Organization Service ✅ COMPLETED
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2-3 hours
 **File**: `apps/api/src/organizations/organization.service.ts`
 
 **Events to Log**:
+
 - [x] `org.created` - on organization creation
   - Include: name, slug
 - [x] `org.updated` - on organization update
@@ -150,16 +168,19 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
   - Include: targetUserId
 
 **Acceptance Criteria**:
+
 - [x] All org/team operations logged
 - [x] Role changes include old and new values
 
 ---
 
 ### TASK-2.6.6: Integrate Audit Logging in Auth Service ✅ COMPLETED
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2 hours
 **File**: `apps/api/src/auth/auth.service.ts`
 
 **Events to Log**:
+
 - [x] `auth.login` - on successful login
   - Include: ipAddress, userAgent, success: true
 - [x] `auth.logout` - on logout
@@ -172,6 +193,7 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 - [x] `auth.password_reset_requested` - on password reset request
 
 **Acceptance Criteria**:
+
 - [x] Security events logged
 - [x] Failed logins capture reason
 - [x] No sensitive data logged
@@ -179,12 +201,14 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ---
 
 ### TASK-2.6.7: Integrate Audit Logging in Developer Service ⏭️ SKIPPED
+
 **Priority**: MEDIUM | **Type**: Backend | **Estimated**: 1-2 hours
 **File**: `apps/api/src/developer/developer.service.ts`
 
 **Status**: SKIPPED - Developer service file does not exist
 
 **Events to Log**:
+
 - [ ] `api_key.created` - on API key creation
 - [ ] `api_key.rotated` - on key rotation
 - [ ] `api_key.revoked` - on key revocation
@@ -192,25 +216,30 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ---
 
 ### TASK-2.6.8: Integrate Audit Logging in Payments Service ✅ COMPLETED
+
 **Priority**: MEDIUM | **Type**: Backend | **Estimated**: 1 hour
 **File**: `apps/api/src/payments/payments.service.ts`
 
 **Events to Log**:
+
 - [x] `billing.plan_changed` - on plan upgrade/downgrade
   - Include: oldPlan, newPlan
 - [x] `billing.subscription_cancelled` - on cancellation
 
 **Acceptance Criteria**:
+
 - [x] Billing changes logged
 - [x] Plan transition captured
 
 ---
 
 ### TASK-2.6.9: Integrate Audit Logging in Other Services ✅ COMPLETED
+
 **Priority**: MEDIUM | **Type**: Backend | **Estimated**: 2 hours
 **Files**: Multiple service files
 
 **Subtasks**:
+
 - [x] `apps/api/src/campaigns/campaigns.service.ts`
   - `campaign.created`, `campaign.updated`, `campaign.deleted`
 - [x] `apps/api/src/tags/tags.service.ts`
@@ -220,6 +249,7 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 - [ ] `apps/api/src/folders/folders.service.ts` (file does not exist)
 
 **Acceptance Criteria**:
+
 - [x] All major services have audit logging
 
 ---
@@ -227,10 +257,12 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ## Phase 2: Audit Log Enhancement (Week 2)
 
 ### TASK-2.6.10: Implement Before/After Change Tracking ✅ COMPLETED
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2-3 hours
 **File**: `apps/api/src/audit/audit.service.ts`
 
 **Subtasks**:
+
 - [x] Create `captureChanges(before, after)` helper method
 - [x] Compare objects and return only changed fields
 - [x] Format changes as `{ before: {...}, after: {...} }`
@@ -239,6 +271,7 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 - [x] Update log methods to accept and store changes
 
 **Acceptance Criteria**:
+
 - [x] Changes captured correctly
 - [x] Only changed fields stored
 - [x] Sensitive data excluded
@@ -246,10 +279,12 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ---
 
 ### TASK-2.6.11: Add Request Context to Audit Logs ✅ PARTIALLY COMPLETED
+
 **Priority**: MEDIUM | **Type**: Backend | **Estimated**: 2 hours
 **File**: `apps/api/src/audit/audit.service.ts`
 
 **Subtasks**:
+
 - [x] Create `AuditContext` interface (ipAddress, userAgent, requestId)
 - [ ] Create injectable `RequestContextService` to capture request details (optional)
 - [ ] Use NestJS `REQUEST` scope to access request in services (optional)
@@ -258,6 +293,7 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 - [x] Pass context to all audit log calls
 
 **Acceptance Criteria**:
+
 - [x] Request context captured (ipAddress, userAgent passed manually)
 - [ ] IP resolved to location (future enhancement)
 - [x] Request ID enables log correlation
@@ -265,10 +301,12 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ---
 
 ### TASK-2.6.12: Create Audit Log Retention Policy ✅ COMPLETED
+
 **Priority**: MEDIUM | **Type**: Backend | **Estimated**: 2 hours
 **File**: `apps/api/src/audit/audit.service.ts`
 
 **Subtasks**:
+
 - [x] Implement `cleanupOldLogs(retentionDays)` method
 - [x] Delete logs older than retention period
 - [ ] Make retention configurable per organization plan (future enhancement)
@@ -276,6 +314,7 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 - [x] Log cleanup results
 
 **Acceptance Criteria**:
+
 - [x] Old logs deleted automatically (method available)
 - [ ] Retention respects plan limits (future)
 - [ ] Cleanup runs daily (future)
@@ -285,10 +324,12 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ## Phase 2: Enhanced Log Viewer API (Week 2-3)
 
 ### TASK-2.6.13: Enhance List Logs Endpoint ✅ COMPLETED
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2-3 hours
 **File**: `apps/api/src/audit/audit.controller.ts`
 
 **Subtasks**:
+
 - [x] Enhance `GET /audit/logs` endpoint with filters:
   - `action` - filter by action type (link.created, etc.)
   - `resource` - filter by resource type (Link, Domain, etc.)
@@ -301,6 +342,7 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 - [ ] Include user details in response (name, email) - future enhancement
 
 **Acceptance Criteria**:
+
 - [x] All filters work correctly
 - [x] Can combine multiple filters
 - [ ] Response includes user info (future)
@@ -308,10 +350,12 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ---
 
 ### TASK-2.6.14: Create Organization-Scoped Logs Endpoint ✅ COMPLETED
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 1-2 hours
 **File**: `apps/api/src/organizations/organization.controller.ts`
 
 **Subtasks**:
+
 - [x] Add `GET /organizations/:id/audit-logs` endpoint
 - [x] Scope logs to organization
 - [x] Apply same filters as global endpoint
@@ -319,6 +363,7 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 - [x] Apply RBAC (OWNER/ADMIN can see all, others see own)
 
 **Acceptance Criteria**:
+
 - [x] Logs scoped to organization
 - [x] RBAC enforced
 - [x] Filters work
@@ -326,26 +371,31 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ---
 
 ### TASK-2.6.15: Create Single Log Detail Endpoint ✅ COMPLETED
+
 **Priority**: MEDIUM | **Type**: Backend | **Estimated**: 1 hour
 **File**: `apps/api/src/audit/audit.controller.ts`
 
 **Subtasks**:
+
 - [x] Add `GET /audit/logs/:id` endpoint
 - [x] Return full log details including changes
 - [ ] Include related resource details if available (future)
 - [x] Verify user has access to view
 
 **Acceptance Criteria**:
+
 - [x] Full log details returned
 - [x] Access control enforced
 
 ---
 
 ### TASK-2.6.16: Create Activity Summary Endpoint ✅ COMPLETED
+
 **Priority**: LOW | **Type**: Backend | **Estimated**: 2 hours
 **File**: `apps/api/src/audit/audit.controller.ts`
 
 **Subtasks**:
+
 - [x] Add `GET /audit/summary` endpoint
 - [x] Return activity counts by:
   - User (top 10 most active)
@@ -356,6 +406,7 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 - [x] Scope to organization
 
 **Acceptance Criteria**:
+
 - [x] Summary statistics returned
 - [x] Useful for activity dashboards
 
@@ -364,10 +415,12 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ## Phase 2: Export Functionality (Week 2-3)
 
 ### TASK-2.6.17: Implement CSV Export ✅ COMPLETED
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2-3 hours
 **File**: `apps/api/src/audit/audit.controller.ts`
 
 **Subtasks**:
+
 - [x] Implement CSV export in controller
 - [x] Apply same filters as list endpoint
 - [x] Generate CSV with columns:
@@ -376,22 +429,26 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 - [x] Add `POST /audit/logs/export?format=csv` endpoint
 
 **Acceptance Criteria**:
+
 - [x] CSV downloads correctly
 - [x] Filters respected
 
 ---
 
 ### TASK-2.6.18: Implement JSON Export ✅ COMPLETED
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 1-2 hours
 **File**: `apps/api/src/audit/audit.controller.ts`
 
 **Subtasks**:
+
 - [x] Implement JSON export in controller
 - [x] Apply same filters as list endpoint
 - [x] Include all log details including changes
 - [x] Add `POST /audit/logs/export?format=json` endpoint
 
 **Acceptance Criteria**:
+
 - [x] JSON downloads correctly
 - [x] Full details included
 
@@ -400,10 +457,12 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ## Phase 3: Frontend Enhancement (Week 3)
 
 ### TASK-2.6.19: Enhance Audit Log Viewer Page ✅ COMPLETED
+
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 3-4 hours
 **File**: `apps/web/app/dashboard/settings/audit-logs/page.tsx`
 
 **Subtasks**:
+
 - [x] Add date range picker (preset selector: 24h, 7d, 30d, 90d, all)
 - [x] Add action type filter dropdown
 - [x] Add resource type filter dropdown
@@ -414,18 +473,21 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 - [x] Add "Clear filters" button
 
 **Acceptance Criteria**:
+
 - [x] All filters functional
 - [x] Table updates with filter changes
 
 ---
 
 ### TASK-2.6.20: Create Log Detail Modal/Page ⏭️ DEFERRED
+
 **Priority**: MEDIUM | **Type**: Frontend | **Estimated**: 2-3 hours
 **File**: `apps/web/components/audit/AuditLogDetail.tsx` (new)
 
 **Status**: Deferred to future enhancement - basic details shown inline
 
 **Subtasks**:
+
 - [ ] Create detail view component
 - [ ] Display all log fields
 - [ ] Display changes in diff format (before/after)
@@ -434,10 +496,12 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ---
 
 ### TASK-2.6.21: Add Export Buttons ✅ COMPLETED
+
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 1-2 hours
 **File**: `apps/web/app/dashboard/settings/audit-logs/page.tsx`
 
 **Subtasks**:
+
 - [x] Add "Export CSV" button
 - [x] Add "Export JSON" button
 - [x] Export respects current filters
@@ -445,30 +509,35 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 - [x] Trigger file download on completion
 
 **Acceptance Criteria**:
+
 - [x] Exports work with current filters
 - [x] File downloads correctly
 
 ---
 
 ### TASK-2.6.22: Add Activity Summary Widget ⏭️ DEFERRED
+
 **Priority**: LOW | **Type**: Frontend | **Estimated**: 2-3 hours
 **File**: `apps/web/components/audit/ActivitySummary.tsx` (new)
 
 **Status**: Deferred to future enhancement
 
 **Subtasks**:
+
 - [ ] Create summary widget showing totals and charts
 - [ ] Can be added to audit logs page header
 
 ---
 
 ### TASK-2.6.23: Add API Client Methods for Audit ⏭️ DEFERRED
+
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 1-2 hours
 **File**: `apps/web/lib/api/audit.ts` (new)
 
 **Status**: Using apiRequest directly - dedicated client deferred
 
 **Subtasks**:
+
 - [ ] `listAuditLogs(orgId, filters)`
 - [ ] `getAuditLog(logId)`
 - [ ] `exportAuditLogs(orgId, format, filters)`
@@ -479,12 +548,14 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ## Phase 4: Testing (Week 3-4)
 
 ### TASK-2.6.24: Write Audit Service Unit Tests ✅ COMPLETED
+
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 3 hours
 **File**: `apps/api/src/audit/audit.service.spec.ts`
 
 **Status**: Unit tests pass (351 tests across all services)
 
 **Test Cases**:
+
 - [x] Log event created successfully (tested via integration)
 - [x] Changes captured correctly (tested via links.service.spec.ts)
 - [ ] Request context captured (manual testing)
@@ -493,16 +564,19 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 - [ ] Retention policy respected (method implemented)
 
 **Acceptance Criteria**:
+
 - [x] All tests pass
 - [x] Coverage > 80%
 
 ---
 
 ### TASK-2.6.25: Write E2E Tests - Logging Integration ✅ COMPLETED
+
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 3-4 hours
 **File**: `apps/web/e2e/audit-logs.spec.ts`
 
 **Test Cases**:
+
 - [x] AUD-001: Link creation creates audit log
 - [x] AUD-002: Link update logs before/after values
 - [x] AUD-003: Link deletion creates audit log
@@ -513,10 +587,12 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ---
 
 ### TASK-2.6.26: Write E2E Tests - Log Viewer ✅ COMPLETED
+
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 2-3 hours
 **File**: `apps/web/e2e/audit-logs.spec.ts`
 
 **Test Cases**:
+
 - [x] AUD-010: View audit logs
 - [x] AUD-011: Filter by action
 - [x] AUD-012: Filter by resource
@@ -529,10 +605,12 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ---
 
 ### TASK-2.6.27: Write E2E Tests - Export ✅ COMPLETED
+
 **Priority**: MEDIUM | **Type**: Testing | **Estimated**: 1-2 hours
 **File**: `apps/web/e2e/audit-logs.spec.ts`
 
 **Test Cases**:
+
 - [x] AUD-020: Export logs as CSV
 - [x] AUD-021: Export logs as JSON
 - [x] AUD-022: Export respects filters
@@ -540,10 +618,12 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 ---
 
 ### TASK-2.6.28: Write E2E Tests - Access Control ✅ COMPLETED
+
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 2 hours
 **File**: `apps/web/e2e/audit-logs.spec.ts`
 
 **Test Cases**:
+
 - [x] AUD-030: OWNER can view all org logs
 - [x] AUD-031: ADMIN can view all org logs
 - [x] AUD-032: EDITOR can only view own activity
@@ -554,18 +634,19 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 
 ## Summary
 
-| Phase | Task Count | Status |
-|-------|------------|--------|
-| Database Schema | 1 task | ✅ COMPLETE |
-| Event Logging Integration | 8 tasks | ✅ 7/8 COMPLETE (Developer skipped) |
-| Audit Log Enhancement | 3 tasks | ✅ COMPLETE |
-| Enhanced Log Viewer API | 4 tasks | ✅ COMPLETE |
-| Export Functionality | 2 tasks | ✅ COMPLETE |
-| Frontend Enhancement | 5 tasks | ✅ 3/5 COMPLETE (2 deferred) |
-| Testing | 5 tasks | ✅ 5/5 COMPLETE |
-| **Total** | **28 tasks** | **✅ ~95% COMPLETE** |
+| Phase                     | Task Count   | Status                              |
+| ------------------------- | ------------ | ----------------------------------- |
+| Database Schema           | 1 task       | ✅ COMPLETE                         |
+| Event Logging Integration | 8 tasks      | ✅ 7/8 COMPLETE (Developer skipped) |
+| Audit Log Enhancement     | 3 tasks      | ✅ COMPLETE                         |
+| Enhanced Log Viewer API   | 4 tasks      | ✅ COMPLETE                         |
+| Export Functionality      | 2 tasks      | ✅ COMPLETE                         |
+| Frontend Enhancement      | 5 tasks      | ✅ 3/5 COMPLETE (2 deferred)        |
+| Testing                   | 5 tasks      | ✅ 5/5 COMPLETE                     |
+| **Total**                 | **28 tasks** | **✅ ~95% COMPLETE**                |
 
 ### Completed Work:
+
 - Schema enhanced with status, changes, geoLocation, requestId
 - All helper methods created in AuditService
 - Audit logging integrated in: Links, Domains, Organizations, Auth, Payments, Campaigns, Tags, BioPages
@@ -575,10 +656,12 @@ npx playwright test apps/web/e2e/audit-logs.spec.ts
 - E2E tests created and passing (21 tests, 1 skipped)
 
 ### Deferred/Optional Work:
+
 - (Optional) Activity summary widget
 - (Optional) Dedicated API client
 - (Optional) Log detail modal
 
 ### Git Commits:
+
 - `f3bbffd` - feat(audit): implement comprehensive audit logging system (Module 2.6)
 - `57bc357` - docs: update Module 2.6 todolist with completion status

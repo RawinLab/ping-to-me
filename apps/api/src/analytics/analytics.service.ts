@@ -1,11 +1,15 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { PrismaClient, ClickSource } from '@prisma/client';
-import { UAParser } from 'ua-parser-js';
-import { PrismaService } from '../prisma/prisma.service';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from "@nestjs/common";
+import { PrismaClient, ClickSource } from "@prisma/client";
+import { UAParser } from "ua-parser-js";
+import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()
 export class AnalyticsService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async trackClick(data: {
     slug: string;
@@ -15,21 +19,23 @@ export class AnalyticsService {
     country?: string;
     source?: ClickSource;
   }) {
-    const link = await this.prisma.link.findUnique({ where: { slug: data.slug } });
+    const link = await this.prisma.link.findUnique({
+      where: { slug: data.slug },
+    });
     if (!link) return; // Ignore invalid slugs
 
-    let browser = 'Unknown';
-    let os = 'Unknown';
-    let device = 'Desktop'; // Default to desktop
+    let browser = "Unknown";
+    let os = "Unknown";
+    let device = "Desktop"; // Default to desktop
 
     if (data.userAgent) {
       const parser = new UAParser(data.userAgent);
       const result = parser.getResult();
-      browser = result.browser.name || 'Unknown';
-      os = result.os.name || 'Unknown';
-      device = result.device.type || 'Desktop'; // type is undefined for desktop usually
-      if (device === 'mobile') device = 'Mobile';
-      if (device === 'tablet') device = 'Tablet';
+      browser = result.browser.name || "Unknown";
+      os = result.os.name || "Unknown";
+      device = result.device.type || "Desktop"; // type is undefined for desktop usually
+      if (device === "mobile") device = "Mobile";
+      if (device === "tablet") device = "Tablet";
     }
 
     return this.prisma.clickEvent.create({
@@ -38,7 +44,7 @@ export class AnalyticsService {
         timestamp: new Date(data.timestamp),
         userAgent: data.userAgent,
         ip: data.ip,
-        country: data.country || 'Unknown',
+        country: data.country || "Unknown",
         source: data.source || ClickSource.DIRECT,
         // Store parsed data for analytics aggregation
         browser,
@@ -52,10 +58,10 @@ export class AnalyticsService {
     // Verify ownership
     const link = await this.prisma.link.findUnique({ where: { id: linkId } });
     if (!link) {
-      throw new NotFoundException('Link not found');
+      throw new NotFoundException("Link not found");
     }
     if (link.userId !== userId) {
-      throw new ForbiddenException('Access denied');
+      throw new ForbiddenException("Access denied");
     }
 
     // Calculate date range
@@ -68,7 +74,7 @@ export class AnalyticsService {
         linkId,
         timestamp: { gte: startDate },
       },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
       take: 1000, // Increase limit for aggregation
     });
 
@@ -80,7 +86,9 @@ export class AnalyticsService {
     });
 
     // Also get all-time total for display
-    const allTimeClicks = await this.prisma.clickEvent.count({ where: { linkId } });
+    const allTimeClicks = await this.prisma.clickEvent.count({
+      where: { linkId },
+    });
 
     // Calculate weekly stats
     const sevenDaysAgo = new Date(now);
@@ -105,7 +113,9 @@ export class AnalyticsService {
     // Calculate weekly change percentage
     let weeklyChange = 0;
     if (clicksPrevious7Days > 0) {
-      weeklyChange = Math.round(((clicksLast7Days - clicksPrevious7Days) / clicksPrevious7Days) * 100);
+      weeklyChange = Math.round(
+        ((clicksLast7Days - clicksPrevious7Days) / clicksPrevious7Days) * 100,
+      );
     } else if (clicksLast7Days > 0) {
       weeklyChange = 100;
     }
@@ -120,27 +130,27 @@ export class AnalyticsService {
     const sources: Record<string, number> = {};
     const clicksByDate: Record<string, number> = {};
 
-    clicks.forEach(click => {
+    clicks.forEach((click) => {
       // Country
-      const country = click.country || 'Unknown';
+      const country = click.country || "Unknown";
       countries[country] = (countries[country] || 0) + 1;
 
       // City
-      const city = click.city || 'Unknown';
-      if (city !== 'Unknown') {
+      const city = click.city || "Unknown";
+      if (city !== "Unknown") {
         cities[city] = (cities[city] || 0) + 1;
       }
 
       // Referrer
-      const referrer = click.referrer || 'direct';
+      const referrer = click.referrer || "direct";
       referrers[referrer] = (referrers[referrer] || 0) + 1;
 
       // Source
-      const source = click.source || 'DIRECT';
+      const source = click.source || "DIRECT";
       sources[source] = (sources[source] || 0) + 1;
 
       // Clicks by date for chart
-      const date = click.timestamp.toISOString().split('T')[0];
+      const date = click.timestamp.toISOString().split("T")[0];
       clicksByDate[date] = (clicksByDate[date] || 0) + 1;
 
       // Parse UA for each click (since we didn't store it)
@@ -148,17 +158,19 @@ export class AnalyticsService {
         const parser = new UAParser(click.userAgent);
         const result = parser.getResult();
 
-        const deviceType = result.device.type ?
-          (result.device.type.charAt(0).toUpperCase() + result.device.type.slice(1)) : 'Desktop';
+        const deviceType = result.device.type
+          ? result.device.type.charAt(0).toUpperCase() +
+            result.device.type.slice(1)
+          : "Desktop";
         devices[deviceType] = (devices[deviceType] || 0) + 1;
 
-        const browserName = result.browser.name || 'Unknown';
+        const browserName = result.browser.name || "Unknown";
         browsers[browserName] = (browsers[browserName] || 0) + 1;
 
-        const osName = result.os.name || 'Unknown';
+        const osName = result.os.name || "Unknown";
         os[osName] = (os[osName] || 0) + 1;
       } else {
-        devices['Unknown'] = (devices['Unknown'] || 0) + 1;
+        devices["Unknown"] = (devices["Unknown"] || 0) + 1;
       }
     });
 
@@ -188,11 +200,17 @@ export class AnalyticsService {
   async getDashboardMetrics(userId: string, days: number = 30) {
     // Get all links for user
     const links = await this.prisma.link.findMany({
-      where: { userId, status: 'ACTIVE' },
-      select: { id: true, slug: true, originalUrl: true, title: true, createdAt: true },
+      where: { userId, status: "ACTIVE" },
+      select: {
+        id: true,
+        slug: true,
+        originalUrl: true,
+        title: true,
+        createdAt: true,
+      },
     });
 
-    const linkIds = links.map(l => l.id);
+    const linkIds = links.map((l) => l.id);
     const totalLinks = links.length;
 
     // Calculate date range
@@ -215,7 +233,7 @@ export class AnalyticsService {
     // Get recent clicks across all links
     const recentClicks = await this.prisma.clickEvent.findMany({
       where: { linkId: { in: linkIds } },
-      orderBy: { timestamp: 'desc' },
+      orderBy: { timestamp: "desc" },
       take: 10,
       include: { link: true },
     });
@@ -224,9 +242,15 @@ export class AnalyticsService {
     const clicksInRange = await this.prisma.clickEvent.findMany({
       where: {
         linkId: { in: linkIds },
-        timestamp: { gte: startDate }
+        timestamp: { gte: startDate },
       },
-      select: { timestamp: true, linkId: true, country: true, referrer: true, userAgent: true }
+      select: {
+        timestamp: true,
+        linkId: true,
+        country: true,
+        referrer: true,
+        userAgent: true,
+      },
     });
 
     // Aggregate by date
@@ -235,45 +259,47 @@ export class AnalyticsService {
     const referrers: Record<string, number> = {};
     const devices: Record<string, number> = {};
 
-    clicksInRange.forEach(click => {
+    clicksInRange.forEach((click) => {
       // By date
-      const date = click.timestamp.toISOString().split('T')[0];
+      const date = click.timestamp.toISOString().split("T")[0];
       clicksByDate[date] = (clicksByDate[date] || 0) + 1;
 
       // By country
-      const country = click.country || 'Unknown';
+      const country = click.country || "Unknown";
       countries[country] = (countries[country] || 0) + 1;
 
       // By referrer
-      const referrer = click.referrer || 'direct';
+      const referrer = click.referrer || "direct";
       referrers[referrer] = (referrers[referrer] || 0) + 1;
 
       // By device (parse UA)
       if (click.userAgent) {
         const parser = new UAParser(click.userAgent);
         const result = parser.getResult();
-        const deviceType = result.device.type ?
-          (result.device.type.charAt(0).toUpperCase() + result.device.type.slice(1)) : 'Desktop';
+        const deviceType = result.device.type
+          ? result.device.type.charAt(0).toUpperCase() +
+            result.device.type.slice(1)
+          : "Desktop";
         devices[deviceType] = (devices[deviceType] || 0) + 1;
       } else {
-        devices['Unknown'] = (devices['Unknown'] || 0) + 1;
+        devices["Unknown"] = (devices["Unknown"] || 0) + 1;
       }
     });
 
     // Get top performing links
     const linkClickCounts = await this.prisma.clickEvent.groupBy({
-      by: ['linkId'],
+      by: ["linkId"],
       where: {
         linkId: { in: linkIds },
         timestamp: { gte: startDate },
       },
       _count: { id: true },
-      orderBy: { _count: { id: 'desc' } },
+      orderBy: { _count: { id: "desc" } },
       take: 5,
     });
 
-    const topLinks = linkClickCounts.map(lc => {
-      const link = links.find(l => l.id === lc.linkId);
+    const topLinks = linkClickCounts.map((lc) => {
+      const link = links.find((l) => l.id === lc.linkId);
       return {
         id: link?.id,
         slug: link?.slug,
@@ -303,10 +329,10 @@ export class AnalyticsService {
     // Verify ownership
     const link = await this.prisma.link.findUnique({ where: { id: linkId } });
     if (!link) {
-      throw new NotFoundException('Link not found');
+      throw new NotFoundException("Link not found");
     }
     if (link.userId !== userId) {
-      throw new ForbiddenException('Access denied');
+      throw new ForbiddenException("Access denied");
     }
 
     // Get total clicks
@@ -316,7 +342,7 @@ export class AnalyticsService {
 
     // Count clicks by source
     const sourceStats = await this.prisma.clickEvent.groupBy({
-      by: ['source'],
+      by: ["source"],
       where: { linkId },
       _count: { id: true },
     });
@@ -330,22 +356,21 @@ export class AnalyticsService {
     sourceStats.forEach((stat) => {
       const count = stat._count.id;
       switch (stat.source) {
-        case 'QR':
+        case "QR":
           qrScans = count;
           break;
-        case 'DIRECT':
+        case "DIRECT":
           directClicks = count;
           break;
-        case 'API':
+        case "API":
           apiClicks = count;
           break;
       }
     });
 
     // Calculate QR percentage
-    const qrPercentage = totalClicks > 0
-      ? Math.round((qrScans / totalClicks) * 100)
-      : 0;
+    const qrPercentage =
+      totalClicks > 0 ? Math.round((qrScans / totalClicks) * 100) : 0;
 
     return {
       totalClicks,

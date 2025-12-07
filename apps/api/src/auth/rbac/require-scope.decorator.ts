@@ -1,9 +1,9 @@
-import { SetMetadata } from '@nestjs/common';
+import { SetMetadata } from "@nestjs/common";
 
 /**
  * Metadata key for accessing API scope requirements in guards
  */
-export const SCOPE_KEY = 'api_scope';
+export const SCOPE_KEY = "api_scope";
 
 /**
  * RequireScope decorator for API token-based authorization

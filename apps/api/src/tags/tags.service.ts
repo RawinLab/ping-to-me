@@ -1,13 +1,13 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { AuditService } from '../audit/audit.service';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { AuditService } from "../audit/audit.service";
 
 @Injectable()
 export class TagsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
-  ) { }
+  ) {}
 
   async create(userId: string, orgId: string, name: string, color?: string) {
     const tag = await this.prisma.tag.create({
@@ -19,19 +19,14 @@ export class TagsService {
     });
 
     // Log tag creation
-    this.auditService.logResourceEvent(
-      userId,
-      orgId,
-      'tag.created',
-      'Tag',
-      tag.id,
-      {
+    this.auditService
+      .logResourceEvent(userId, orgId, "tag.created", "Tag", tag.id, {
         details: {
           name: tag.name,
           color: tag.color,
         },
-      },
-    ).catch(() => {}); // Fire and forget, don't block on errors
+      })
+      .catch(() => {}); // Fire and forget, don't block on errors
 
     return tag;
   }
@@ -42,12 +37,16 @@ export class TagsService {
         organizationId: orgId,
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
   }
 
-  async update(userId: string, id: string, data: { name?: string; color?: string }) {
+  async update(
+    userId: string,
+    id: string,
+    data: { name?: string; color?: string },
+  ) {
     // Get current state for audit logging
     const before = await this.prisma.tag.findUnique({ where: { id } });
 
@@ -61,19 +60,21 @@ export class TagsService {
     // Log tag update with changes
     if (before) {
       const changes = this.auditService.captureChanges(before, tag);
-      this.auditService.logResourceEvent(
-        userId,
-        before.organizationId,
-        'tag.updated',
-        'Tag',
-        tag.id,
-        {
-          changes,
-          details: {
-            name: tag.name,
+      this.auditService
+        .logResourceEvent(
+          userId,
+          before.organizationId,
+          "tag.updated",
+          "Tag",
+          tag.id,
+          {
+            changes,
+            details: {
+              name: tag.name,
+            },
           },
-        },
-      ).catch(() => {}); // Fire and forget, don't block on errors
+        )
+        .catch(() => {}); // Fire and forget, don't block on errors
     }
 
     return tag;
@@ -89,18 +90,20 @@ export class TagsService {
 
     // Log tag deletion
     if (tag) {
-      this.auditService.logResourceEvent(
-        userId,
-        tag.organizationId,
-        'tag.deleted',
-        'Tag',
-        tag.id,
-        {
-          details: {
-            name: tag.name,
+      this.auditService
+        .logResourceEvent(
+          userId,
+          tag.organizationId,
+          "tag.deleted",
+          "Tag",
+          tag.id,
+          {
+            details: {
+              name: tag.name,
+            },
           },
-        },
-      ).catch(() => {}); // Fire and forget, don't block on errors
+        )
+        .catch(() => {}); // Fire and forget, don't block on errors
     }
 
     return deleted;

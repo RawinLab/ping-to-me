@@ -74,6 +74,7 @@ See the [Developer Quickstart](specs/001-core-platform/quickstart.md) guide for 
 The project uses Playwright for end-to-end testing with two modes:
 
 #### Mode 1: Mocked API (Default)
+
 Tests run with mocked API responses - fast and isolated.
 
 ```bash
@@ -82,6 +83,7 @@ npx playwright test
 ```
 
 #### Mode 2: Real Database
+
 Tests run against a real database with seeded test data - more realistic.
 
 ```bash
@@ -97,12 +99,12 @@ E2E_USE_REAL_DB=true npx playwright test --project=real-db
 
 After seeding, you can use these test accounts:
 
-| Role   | Email                        | Password          |
-|--------|------------------------------|-------------------|
-| Owner  | e2e-owner@pingtome.test      | TestPassword123!  |
-| Admin  | e2e-admin@pingtome.test      | TestPassword123!  |
-| Editor | e2e-editor@pingtome.test     | TestPassword123!  |
-| Viewer | e2e-viewer@pingtome.test     | TestPassword123!  |
+| Role   | Email                    | Password         |
+| ------ | ------------------------ | ---------------- |
+| Owner  | e2e-owner@pingtome.test  | TestPassword123! |
+| Admin  | e2e-admin@pingtome.test  | TestPassword123! |
+| Editor | e2e-editor@pingtome.test | TestPassword123! |
+| Viewer | e2e-viewer@pingtome.test | TestPassword123! |
 
 ### Seeded Test Data Includes
 

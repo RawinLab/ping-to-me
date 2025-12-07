@@ -1,22 +1,31 @@
-import { CanActivate, ExecutionContext, Injectable, ForbiddenException } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { PrismaClient, MemberRole } from '@pingtome/database';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  ForbiddenException,
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { PrismaClient, MemberRole } from "@pingtome/database";
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   private prisma = new PrismaClient();
 
-  constructor(private reflector: Reflector) { }
+  constructor(private reflector: Reflector) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredRoles = this.reflector.get<MemberRole[]>('roles', context.getHandler());
+    const requiredRoles = this.reflector.get<MemberRole[]>(
+      "roles",
+      context.getHandler(),
+    );
     if (!requiredRoles) {
       return true;
     }
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    const orgId = request.params.id || request.body.orgId || request.query.orgId; // Assumes orgId is in params/body/query
+    const orgId =
+      request.params.id || request.body.orgId || request.query.orgId; // Assumes orgId is in params/body/query
 
     if (!user || !orgId) {
       return false;
@@ -32,12 +41,12 @@ export class RolesGuard implements CanActivate {
     });
 
     if (!membership) {
-      throw new ForbiddenException('Not a member of this organization');
+      throw new ForbiddenException("Not a member of this organization");
     }
 
     const hasRole = requiredRoles.includes(membership.role);
     if (!hasRole) {
-      throw new ForbiddenException('Insufficient permissions');
+      throw new ForbiddenException("Insufficient permissions");
     }
 
     return true;

@@ -8,7 +8,7 @@ export {
   type PermissionScope,
   type Resource,
   type Action,
-} from './permission-matrix';
+} from "./permission-matrix";
 
 // Role Hierarchy - role level utilities
 export {
@@ -18,7 +18,7 @@ export {
   isRoleAbove,
   canManageRole,
   getAssignableRoles,
-} from './role-hierarchy';
+} from "./role-hierarchy";
 
 // Permission Decorator - route-level permission decorators
 export {
@@ -27,13 +27,13 @@ export {
   PERMISSION_KEY,
   REQUIRE_ALL_PERMISSIONS_KEY,
   type PermissionMetadata,
-} from './permission.decorator';
+} from "./permission.decorator";
 
 // Permission Service - permission checking service
-export { PermissionService } from './permission.service';
+export { PermissionService } from "./permission.service";
 
 // Permission Guard - NestJS guard for route protection
-export { PermissionGuard } from './permission.guard';
+export { PermissionGuard } from "./permission.guard";
 
 // API Scopes - token-based granular access control
 export {
@@ -45,17 +45,14 @@ export {
   scopeCoversAction,
   getResourceScopes,
   parseScopes,
-} from './api-scopes';
+} from "./api-scopes";
 
 // API Scope Decorator - route-level scope requirement decorator
-export {
-  RequireScope,
-  SCOPE_KEY,
-} from './require-scope.decorator';
+export { RequireScope, SCOPE_KEY } from "./require-scope.decorator";
 
 // Access Log Service - for RBAC access auditing
 export {
   AccessLogService,
   AccessResult,
   type AccessLogData,
-} from './access-log.service';
+} from "./access-log.service";

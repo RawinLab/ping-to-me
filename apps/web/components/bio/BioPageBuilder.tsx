@@ -42,7 +42,7 @@ import {
   Palette,
   Settings,
   Smartphone,
-  Save
+  Save,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeSelector } from "@/components/bio/ThemeSelector";
@@ -50,7 +50,10 @@ import { ColorPicker } from "@/components/bio/ColorPicker";
 import { BackgroundPicker } from "@/components/bio/BackgroundPicker";
 import { ButtonStyleSelector } from "@/components/bio/ButtonStyleSelector";
 import { SortableLinkList } from "@/components/bio/SortableLinkList";
-import { LinkStyleEditor, type BioPageLink } from "@/components/bio/LinkStyleEditor";
+import {
+  LinkStyleEditor,
+  type BioPageLink,
+} from "@/components/bio/LinkStyleEditor";
 import { SocialLinksEditor } from "@/components/bio/SocialLinksEditor";
 import { LayoutSelector } from "@/components/bio/LayoutSelector";
 import { BioPagePreview } from "@/components/bio/BioPagePreview";
@@ -86,7 +89,7 @@ export function BioPageBuilder({
 
   // Bio links state (using new BioPageLink model)
   const [bioLinks, setBioLinks] = useState<BioPageLink[]>(
-    existingPage?.bioLinks || []
+    existingPage?.bioLinks || [],
   );
 
   // Link editor state
@@ -99,19 +102,19 @@ export function BioPageBuilder({
 
   // Theme state
   const [selectedTheme, setSelectedTheme] = useState<string>(
-    existingPage?.theme?.name || "minimal"
+    existingPage?.theme?.name || "minimal",
   );
   const [customTheme, setCustomTheme] = useState<BioPageTheme>(
-    existingPage?.theme || DEFAULT_THEME
+    existingPage?.theme || DEFAULT_THEME,
   );
   const [layout, setLayout] = useState<"stacked" | "grid">(
-    existingPage?.layout || "stacked"
+    existingPage?.layout || "stacked",
   );
   const [showBranding, setShowBranding] = useState<boolean>(
-    existingPage?.showBranding ?? true
+    existingPage?.showBranding ?? true,
   );
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>(
-    existingPage?.socialLinks || []
+    existingPage?.socialLinks || [],
   );
 
   // Reorder hook
@@ -237,15 +240,18 @@ export function BioPageBuilder({
     if (!link) return;
 
     try {
-      const newBioLink = await apiRequest(`/biopages/${existingPage.id}/links`, {
-        method: "POST",
-        body: JSON.stringify({
-          linkId: link.id,
-          title: link.title || link.slug,
-          description: null,
-          order: bioLinks.length,
-        }),
-      });
+      const newBioLink = await apiRequest(
+        `/biopages/${existingPage.id}/links`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            linkId: link.id,
+            title: link.title || link.slug,
+            description: null,
+            order: bioLinks.length,
+          }),
+        },
+      );
       setBioLinks([...bioLinks, newBioLink]);
     } catch (error) {
       console.error("Failed to add link:", error);
@@ -282,7 +288,8 @@ export function BioPageBuilder({
   const handleReorder = async (orderings: { id: string; order: number }[]) => {
     // Optimistic update
     const reorderedLinks = bioLinks.map((link) => {
-      const newOrder = orderings.find((o) => o.id === link.id)?.order ?? link.order;
+      const newOrder =
+        orderings.find((o) => o.id === link.id)?.order ?? link.order;
       return { ...link, order: newOrder };
     });
     setBioLinks(reorderedLinks);
@@ -314,7 +321,7 @@ export function BioPageBuilder({
         {
           method: "PATCH",
           body: JSON.stringify(updates),
-        }
+        },
       );
       setBioLinks(bioLinks.map((l) => (l.id === editingLink.id ? updated : l)));
     } catch (error) {
@@ -331,9 +338,11 @@ export function BioPageBuilder({
     const newVisibility = !link.isVisible;
 
     // Optimistic update
-    setBioLinks(bioLinks.map((l) =>
-      l.id === linkId ? { ...l, isVisible: newVisibility } : l
-    ));
+    setBioLinks(
+      bioLinks.map((l) =>
+        l.id === linkId ? { ...l, isVisible: newVisibility } : l,
+      ),
+    );
 
     try {
       await apiRequest(`/biopages/${existingPage.id}/links/${linkId}`, {
@@ -343,9 +352,11 @@ export function BioPageBuilder({
     } catch (error) {
       console.error("Failed to toggle visibility:", error);
       // Revert on error
-      setBioLinks(bioLinks.map((l) =>
-        l.id === linkId ? { ...l, isVisible: !newVisibility } : l
-      ));
+      setBioLinks(
+        bioLinks.map((l) =>
+          l.id === linkId ? { ...l, isVisible: !newVisibility } : l,
+        ),
+      );
     }
   };
 
@@ -355,7 +366,9 @@ export function BioPageBuilder({
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b py-4 -mx-6 px-6">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">Bio Page Editor</h2>
+            <h2 className="text-2xl font-bold tracking-tight">
+              Bio Page Editor
+            </h2>
             <p className="text-sm text-muted-foreground">
               Customize your link-in-bio page with live preview
             </p>
@@ -386,9 +399,14 @@ export function BioPageBuilder({
               </div>
             </CardHeader>
             <CardContent className="pt-6">
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
                 <div className="space-y-2">
-                  <Label htmlFor="slug" className="text-sm font-medium">Slug</Label>
+                  <Label htmlFor="slug" className="text-sm font-medium">
+                    Slug
+                  </Label>
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground text-sm whitespace-nowrap">
                       pingto.me/bio/
@@ -408,7 +426,9 @@ export function BioPageBuilder({
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="title" className="text-sm font-medium">Page Title</Label>
+                  <Label htmlFor="title" className="text-sm font-medium">
+                    Page Title
+                  </Label>
                   <Input
                     id="title"
                     {...form.register("title")}
@@ -421,7 +441,9 @@ export function BioPageBuilder({
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+                  <Label htmlFor="description" className="text-sm font-medium">
+                    Description
+                  </Label>
                   <Textarea
                     id="description"
                     {...form.register("description")}
@@ -438,15 +460,24 @@ export function BioPageBuilder({
             <CardContent className="pt-6">
               <Tabs defaultValue="links" className="w-full">
                 <TabsList className="grid w-full grid-cols-3 mb-6 bg-muted p-1">
-                  <TabsTrigger value="links" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                  <TabsTrigger
+                    value="links"
+                    className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  >
                     <LinkIcon className="h-4 w-4" />
                     <span className="hidden sm:inline">Links</span>
                   </TabsTrigger>
-                  <TabsTrigger value="theme" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                  <TabsTrigger
+                    value="theme"
+                    className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  >
                     <Palette className="h-4 w-4" />
                     <span className="hidden sm:inline">Theme</span>
                   </TabsTrigger>
-                  <TabsTrigger value="settings" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                  <TabsTrigger
+                    value="settings"
+                    className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                  >
                     <Settings className="h-4 w-4" />
                     <span className="hidden sm:inline">Settings</span>
                   </TabsTrigger>
@@ -463,7 +494,12 @@ export function BioPageBuilder({
                           </SelectTrigger>
                           <SelectContent>
                             {availableLinks
-                              .filter((link) => !bioLinks.some((bl) => bl.link?.slug === link.slug))
+                              .filter(
+                                (link) =>
+                                  !bioLinks.some(
+                                    (bl) => bl.link?.slug === link.slug,
+                                  ),
+                              )
                               .map((link) => (
                                 <SelectItem key={link.id} value={link.id}>
                                   {link.title || link.slug} ({link.originalUrl})
@@ -492,7 +528,9 @@ export function BioPageBuilder({
                     <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg bg-muted/20">
                       <FileText className="h-12 w-12 mx-auto mb-3 opacity-40" />
                       <p className="font-medium">Save the bio page first</p>
-                      <p className="text-sm mt-1">Then you can add and manage links</p>
+                      <p className="text-sm mt-1">
+                        Then you can add and manage links
+                      </p>
                     </div>
                   )}
                 </TabsContent>
@@ -543,7 +581,9 @@ export function BioPageBuilder({
                         />
 
                         <div className="space-y-2">
-                          <Label className="text-sm font-medium">Background</Label>
+                          <Label className="text-sm font-medium">
+                            Background
+                          </Label>
                           <BackgroundPicker
                             backgroundType={customTheme.backgroundType}
                             backgroundColor={customTheme.backgroundColor}
@@ -576,10 +616,7 @@ export function BioPageBuilder({
                         <Settings className="h-4 w-4" />
                         Layout Options
                       </Label>
-                      <LayoutSelector
-                        value={layout}
-                        onChange={setLayout}
-                      />
+                      <LayoutSelector value={layout} onChange={setLayout} />
                     </div>
 
                     {/* Social Links Editor */}
@@ -600,7 +637,8 @@ export function BioPageBuilder({
                           Show PingTO.Me Branding
                         </Label>
                         <p className="text-xs text-muted-foreground">
-                          Display &quot;Powered by PingTO.Me&quot; at the bottom of your page
+                          Display &quot;Powered by PingTO.Me&quot; at the bottom
+                          of your page
                         </p>
                       </div>
                       <Switch
@@ -635,13 +673,15 @@ export function BioPageBuilder({
                 avatarUrl={existingPage?.avatarUrl}
                 theme={customTheme}
                 layout={layout}
-                bioLinks={bioLinks.filter((link) => link.isVisible !== false).map((link) => ({
-                  id: link.id,
-                  title: link.title,
-                  description: link.description || undefined,
-                  icon: link.icon || undefined,
-                  externalUrl: link.link?.originalUrl || undefined,
-                }))}
+                bioLinks={bioLinks
+                  .filter((link) => link.isVisible !== false)
+                  .map((link) => ({
+                    id: link.id,
+                    title: link.title,
+                    description: link.description || undefined,
+                    icon: link.icon || undefined,
+                    externalUrl: link.link?.originalUrl || undefined,
+                  }))}
                 socialLinks={socialLinks}
                 showBranding={showBranding}
               />
@@ -667,7 +707,8 @@ export function BioPageBuilder({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Link</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this link? This action cannot be undone.
+              Are you sure you want to delete this link? This action cannot be
+              undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

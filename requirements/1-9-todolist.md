@@ -7,15 +7,15 @@
 
 ## Progress Summary
 
-| Phase | Status | Commit |
-|-------|--------|--------|
+| Phase                  | Status       | Commit    |
+| ---------------------- | ------------ | --------- |
 | Phase 1: Core Bio Page | ✅ Completed | `7e86fa4` |
-| Phase 2: Theme System | ✅ Completed | `fdc0901` |
+| Phase 2: Theme System  | ✅ Completed | `fdc0901` |
 | Phase 3: Drag-and-Drop | ✅ Completed | `9f2743b` |
-| Phase 4: Social Links | ✅ Completed | `744772e` |
-| Phase 5: Analytics | ✅ Completed | `77983b4` |
-| Phase 6: Advanced | ✅ Completed | `ceb3548` |
-| Final: E2E Tests | ✅ Completed | `e60ad05` |
+| Phase 4: Social Links  | ✅ Completed | `744772e` |
+| Phase 5: Analytics     | ✅ Completed | `77983b4` |
+| Phase 6: Advanced      | ✅ Completed | `ceb3548` |
+| Final: E2E Tests       | ✅ Completed | `e60ad05` |
 
 ---
 
@@ -28,11 +28,13 @@ This todolist breaks down the Bio Page module implementation into actionable tas
 ## Pre-Implementation Setup
 
 ### SETUP-001: Analyze Current Implementation
+
 **Priority**: Pre-requisite
 **Estimated Complexity**: Low
 **Agent Type**: Explore
 
 **Prompt**:
+
 ```
 Analyze the current Bio Page implementation in the pingtome project:
 
@@ -54,6 +56,7 @@ Analyze the current Bio Page implementation in the pingtome project:
 ```
 
 **Acceptance Criteria**:
+
 - [ ] All existing files documented
 - [ ] Current bugs identified with locations
 - [ ] Implementation gaps listed
@@ -66,10 +69,12 @@ Analyze the current Bio Page implementation in the pingtome project:
 **Dependencies**: SETUP-001
 
 ### TASK-001: Create Public Bio Page Endpoint
+
 **Complexity**: Medium
 **Agent Type**: backend-architect
 
 **Prompt**:
+
 ```
 Create a public endpoint for Bio Pages that doesn't require authentication.
 
@@ -93,6 +98,7 @@ Follow existing NestJS patterns in the project.
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Endpoint accessible without auth token
 - [ ] Returns complete page data with links
 - [ ] 404 response for invalid slugs
@@ -101,10 +107,12 @@ Follow existing NestJS patterns in the project.
 ---
 
 ### TASK-002: Fix Public Bio Page Frontend
+
 **Complexity**: Medium
 **Agent Type**: typescript-pro
 
 **Prompt**:
+
 ```
 Fix the public bio page rendering at apps/web/app/bio/[slug]/page.tsx
 
@@ -122,6 +130,7 @@ Use the project's axios instance pattern but without auth interceptor.
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Public page loads without login
 - [ ] All links display correctly
 - [ ] 404 shows for non-existent pages
@@ -130,10 +139,12 @@ Use the project's axios instance pattern but without auth interceptor.
 ---
 
 ### TASK-003: Fix Organization Context in BioPageBuilder
+
 **Complexity**: Low
 **Agent Type**: typescript-pro
 
 **Prompt**:
+
 ```
 Fix hardcoded orgId in Bio Page components.
 
@@ -153,6 +164,7 @@ Do NOT add organization selector UI - just fix the hardcoded value.
 ```
 
 **Acceptance Criteria**:
+
 - [ ] No hardcoded "default" orgId
 - [ ] Uses actual user's organization
 - [ ] Works with existing auth system
@@ -160,11 +172,13 @@ Do NOT add organization selector UI - just fix the hardcoded value.
 ---
 
 ### TASK-004: Create BioPageLink Database Model
+
 **Complexity**: Medium
 **Agent Type**: backend-architect
 
 **Prompt**:
-```
+
+````
 Add BioPageLink model to properly manage bio page links.
 
 Location: packages/database/prisma/schema.prisma
@@ -192,14 +206,17 @@ model BioPageLink {
 
   @@index([bioPageId, order])
 }
-```
+````
 
 Also update BioPage model to add relation:
+
 - Add: links BioPageLink[]
 
 After modifying schema:
+
 1. Run: pnpm --filter @pingtome/database db:generate
 2. Run: pnpm --filter @pingtome/database db:push
+
 ```
 
 **Acceptance Criteria**:
@@ -216,28 +233,33 @@ After modifying schema:
 
 **Prompt**:
 ```
+
 Create CRUD endpoints for managing BioPageLinks.
 
 Location: apps/api/src/biopages/
 
 Add these endpoints to biopages.controller.ts:
+
 1. POST /biopages/:id/links - Add link to bio page
 2. PATCH /biopages/:id/links/:linkId - Update link
 3. DELETE /biopages/:id/links/:linkId - Remove link
 4. PATCH /biopages/:id/links/reorder - Reorder links (accepts array of {id, order})
 
 Add corresponding service methods in biopages.service.ts:
+
 - addLink(bioPageId, dto): Create link with auto-increment order
 - updateLink(bioPageId, linkId, dto): Update link properties
 - removeLink(bioPageId, linkId): Delete and reorder remaining
 - reorderLinks(bioPageId, orderings): Batch update orders
 
 Create DTOs:
+
 - CreateBioPageLinkDto
 - UpdateBioPageLinkDto
 - ReorderLinksDto
 
 Include proper authorization checks (user must own bio page).
+
 ```
 
 **Acceptance Criteria**:
@@ -254,11 +276,13 @@ Include proper authorization checks (user must own bio page).
 
 **Prompt**:
 ```
+
 Create a migration script to convert existing JSON links to the new BioPageLink model.
 
 Location: packages/database/prisma/
 
 Create migration script that:
+
 1. Finds all BioPages with links stored as JSON
 2. For each link in JSON array:
    - Creates a BioPageLink record
@@ -267,6 +291,7 @@ Create migration script that:
 3. After migration, optionally clear the JSON links field
 
 The script should:
+
 - Be idempotent (safe to run multiple times)
 - Log progress
 - Handle errors gracefully
@@ -274,6 +299,7 @@ The script should:
 
 Add to package.json scripts:
 "db:migrate-bio-links": "ts-node prisma/scripts/migrate-bio-links.ts"
+
 ```
 
 **Acceptance Criteria**:
@@ -290,9 +316,11 @@ Add to package.json scripts:
 
 **Prompt**:
 ```
+
 Verify Phase 1 implementation is complete:
 
 Manual Testing Checklist:
+
 1. Start dev server: pnpm dev
 2. Test public page access:
    - Visit /bio/[existing-slug] without login
@@ -312,6 +340,7 @@ Run build to check for errors:
 pnpm build
 
 Report any issues found with specific error messages.
+
 ```
 
 **Acceptance Criteria**:
@@ -333,6 +362,7 @@ Report any issues found with specific error messages.
 
 **Prompt**:
 ```
+
 Create TypeScript types for Bio Page theming system.
 
 Location: packages/types/src/biopage.ts (create new file)
@@ -345,43 +375,44 @@ export type BackgroundType = 'solid' | 'gradient' | 'image';
 export type ButtonStyle = 'rounded' | 'square' | 'pill';
 
 export interface BioPageTheme {
-  name: ThemeName;
-  primaryColor: string;
-  backgroundColor: string;
-  buttonColor: string;
-  buttonTextColor: string;
-  textColor: string;
-  fontFamily: string;
-  backgroundType: BackgroundType;
-  backgroundImage?: string;
-  backgroundGradient?: string;
-  buttonStyle: ButtonStyle;
-  buttonShadow: boolean;
+name: ThemeName;
+primaryColor: string;
+backgroundColor: string;
+buttonColor: string;
+buttonTextColor: string;
+textColor: string;
+fontFamily: string;
+backgroundType: BackgroundType;
+backgroundImage?: string;
+backgroundGradient?: string;
+buttonStyle: ButtonStyle;
+buttonShadow: boolean;
 }
 
 export interface SocialLink {
-  platform: SocialPlatform;
-  url: string;
-  order: number;
+platform: SocialPlatform;
+url: string;
+order: number;
 }
 
 export type SocialPlatform =
-  | 'instagram' | 'twitter' | 'tiktok' | 'youtube'
-  | 'facebook' | 'linkedin' | 'github' | 'email' | 'whatsapp';
+| 'instagram' | 'twitter' | 'tiktok' | 'youtube'
+| 'facebook' | 'linkedin' | 'github' | 'email' | 'whatsapp';
 
 export interface BioPageConfig {
-  id: string;
-  slug: string;
-  title: string;
-  description?: string;
-  avatarUrl?: string;
-  theme: BioPageTheme;
-  layout: LayoutType;
-  socialLinks: SocialLink[];
-  showBranding: boolean;
+id: string;
+slug: string;
+title: string;
+description?: string;
+avatarUrl?: string;
+theme: BioPageTheme;
+layout: LayoutType;
+socialLinks: SocialLink[];
+showBranding: boolean;
 }
 
 Export all types from packages/types/src/index.ts
+
 ```
 
 **Acceptance Criteria**:
@@ -398,6 +429,7 @@ Export all types from packages/types/src/index.ts
 
 **Prompt**:
 ```
+
 Create predefined theme presets for Bio Pages.
 
 Location: apps/web/lib/biopage-themes.ts (create new file)
@@ -412,14 +444,17 @@ Create 6 theme presets with the BioPageTheme structure:
 6. pastel - Soft pastel colors
 
 Each preset should include:
+
 - All required BioPageTheme fields
 - Coordinated color schemes
 - Appropriate font families (use web-safe or Google Fonts available in project)
 
 Export:
+
 - THEME_PRESETS: Record<ThemeName, BioPageTheme>
 - getThemePreset(name: ThemeName): BioPageTheme
 - DEFAULT_THEME: BioPageTheme (use 'minimal')
+
 ```
 
 **Acceptance Criteria**:
@@ -436,11 +471,13 @@ Export:
 
 **Prompt**:
 ```
+
 Create a ThemeSelector component for choosing Bio Page themes.
 
 Location: apps/web/components/bio/ThemeSelector.tsx
 
 Requirements:
+
 1. Display theme presets as preview cards (grid layout)
 2. Each card shows:
    - Mini preview of the theme (colored box with button sample)
@@ -453,6 +490,7 @@ Requirements:
 5. Responsive: 2 columns on mobile, 3 on desktop
 
 Use existing shadcn components from @pingtome/ui or apps/web/components/ui
+
 ```
 
 **Acceptance Criteria**:
@@ -469,11 +507,13 @@ Use existing shadcn components from @pingtome/ui or apps/web/components/ui
 
 **Prompt**:
 ```
+
 Create a ColorPicker component for custom theme colors.
 
 Location: apps/web/components/bio/ColorPicker.tsx
 
 Requirements:
+
 1. Show current color as a swatch
 2. Click to open popover with:
    - Predefined color palette (8-12 colors)
@@ -485,11 +525,13 @@ Requirements:
    - label?: string
 
 Use:
+
 - shadcn/ui Popover
 - Input for hex value
 - Validate hex format
 
 Keep it simple - no need for full color wheel.
+
 ```
 
 **Acceptance Criteria**:
@@ -506,11 +548,13 @@ Keep it simple - no need for full color wheel.
 
 **Prompt**:
 ```
+
 Create a BackgroundPicker component for bio page backgrounds.
 
 Location: apps/web/components/bio/BackgroundPicker.tsx
 
 Requirements:
+
 1. Three modes: Solid, Gradient, Image
 2. Tab or radio to switch modes
 3. Solid mode: ColorPicker for background color
@@ -530,6 +574,7 @@ Requirements:
    - onChange: (updates) => void
 
 Use Tabs from shadcn/ui
+
 ```
 
 **Acceptance Criteria**:
@@ -546,11 +591,13 @@ Use Tabs from shadcn/ui
 
 **Prompt**:
 ```
+
 Create a ButtonStyleSelector component for bio page link buttons.
 
 Location: apps/web/components/bio/ButtonStyleSelector.tsx
 
 Requirements:
+
 1. Show 3 button style options as visual previews:
    - rounded (slight border-radius)
    - square (no border-radius)
@@ -562,6 +609,7 @@ Requirements:
 4. Include toggle for button shadow on/off
 
 Use shadcn/ui RadioGroup or custom toggle buttons
+
 ```
 
 **Acceptance Criteria**:
@@ -578,11 +626,13 @@ Use shadcn/ui RadioGroup or custom toggle buttons
 
 **Prompt**:
 ```
+
 Update BioPageBuilder to include theme customization UI.
 
 Location: apps/web/components/bio/BioPageBuilder.tsx
 
 Add Theme Customization Section:
+
 1. Add tabs or sections: "Links" | "Theme" | "Social"
 2. Theme tab includes:
    - ThemeSelector for preset selection
@@ -598,6 +648,7 @@ Add Theme Customization Section:
 
 Preserve existing link management functionality.
 Wire up all components to update the bio page state.
+
 ```
 
 **Acceptance Criteria**:
@@ -614,11 +665,13 @@ Wire up all components to update the bio page state.
 
 **Prompt**:
 ```
+
 Create a mobile preview component for Bio Page editor.
 
 Location: apps/web/components/bio/BioPagePreview.tsx
 
 Requirements:
+
 1. Mobile phone mockup frame (iPhone-like)
 2. Inside frame, render BioPageRenderer with current config
 3. Real-time updates as user edits
@@ -630,6 +683,7 @@ Requirements:
 
 The preview should use the same BioPageRenderer component
 that's used for the public page.
+
 ```
 
 **Acceptance Criteria**:
@@ -646,11 +700,13 @@ that's used for the public page.
 
 **Prompt**:
 ```
+
 Update BioPageRenderer to apply theme styles correctly.
 
 Location: apps/web/components/bio/BioPageRenderer.tsx
 
 Requirements:
+
 1. Accept theme configuration from BioPageConfig
 2. Apply theme styles:
    - Background (solid/gradient/image)
@@ -664,6 +720,7 @@ Requirements:
 
 Use inline styles or CSS variables for dynamic theming.
 Test that all 6 preset themes render correctly.
+
 ```
 
 **Acceptance Criteria**:
@@ -680,9 +737,11 @@ Test that all 6 preset themes render correctly.
 
 **Prompt**:
 ```
+
 Verify Phase 2 theme system is complete:
 
 Testing Checklist:
+
 1. Go to bio page editor
 2. Switch to Theme tab
 3. Select each preset theme - verify preview updates
@@ -697,6 +756,7 @@ Testing Checklist:
 Run: pnpm build
 
 Report issues with screenshots or specific errors.
+
 ```
 
 **Acceptance Criteria**:
@@ -718,14 +778,17 @@ Report issues with screenshots or specific errors.
 
 **Prompt**:
 ```
+
 Install dnd-kit for drag-and-drop functionality.
 
 Commands to run in apps/web:
 pnpm add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
 
 Verify installation:
+
 - Check package.json has dependencies
 - Run pnpm build to ensure no conflicts
+
 ```
 
 **Acceptance Criteria**:
@@ -741,11 +804,13 @@ Verify installation:
 
 **Prompt**:
 ```
+
 Create a drag-and-drop sortable link list for bio page editor.
 
 Location: apps/web/components/bio/SortableLinkList.tsx
 
 Requirements:
+
 1. Use @dnd-kit/core and @dnd-kit/sortable
 2. Display links as draggable cards
 3. Each card shows:
@@ -765,6 +830,7 @@ Requirements:
 
 Add smooth animations during drag.
 Handle empty state with "Add your first link" message.
+
 ```
 
 **Acceptance Criteria**:
@@ -781,11 +847,13 @@ Handle empty state with "Add your first link" message.
 
 **Prompt**:
 ```
+
 Create a LinkStyleEditor for customizing individual link appearance.
 
 Location: apps/web/components/bio/LinkStyleEditor.tsx
 
 Requirements:
+
 1. Modal or slide-over panel
 2. Edit fields:
    - Title (text input)
@@ -801,6 +869,7 @@ Requirements:
    - onClose: () => void
 
 Use shadcn/ui Dialog for the modal.
+
 ```
 
 **Acceptance Criteria**:
@@ -817,11 +886,13 @@ Use shadcn/ui Dialog for the modal.
 
 **Prompt**:
 ```
+
 Implement optimistic updates for link reordering.
 
 Location: apps/web/components/bio/BioPageBuilder.tsx (or separate hook)
 
 Requirements:
+
 1. When user drags to reorder:
    - Immediately update UI (optimistic)
    - Call PATCH /biopages/:id/links/reorder in background
@@ -833,6 +904,7 @@ Requirements:
 4. Show subtle loading indicator during save
 
 Use React Query or SWR patterns if project uses them.
+
 ```
 
 **Acceptance Criteria**:
@@ -849,9 +921,11 @@ Use React Query or SWR patterns if project uses them.
 
 **Prompt**:
 ```
+
 Verify Phase 3 drag-and-drop is complete:
 
 Testing Checklist:
+
 1. Open bio page editor
 2. Add 3+ links if not present
 3. Drag first link to last position
@@ -865,6 +939,7 @@ Testing Checklist:
 Run: pnpm build
 
 Report issues found.
+
 ```
 
 **Acceptance Criteria**:
@@ -886,11 +961,13 @@ Report issues found.
 
 **Prompt**:
 ```
+
 Create a SocialLinksEditor for managing social media icons.
 
 Location: apps/web/components/bio/SocialLinksEditor.tsx
 
 Requirements:
+
 1. Support platforms: Instagram, Twitter/X, TikTok, YouTube, Facebook, LinkedIn, GitHub, Email, WhatsApp
 2. UI:
    - List of added social links
@@ -908,6 +985,7 @@ Requirements:
    - onChange: (links: SocialLink[]) => void
 
 Icons: Use Lucide icons or simple SVG icons for platforms.
+
 ```
 
 **Acceptance Criteria**:
@@ -924,11 +1002,13 @@ Icons: Use Lucide icons or simple SVG icons for platforms.
 
 **Prompt**:
 ```
+
 Create a LayoutSelector for choosing bio page link layout.
 
 Location: apps/web/components/bio/LayoutSelector.tsx
 
 Requirements:
+
 1. Three layout options with visual previews:
    - stacked (vertical list - default)
    - grid (2-3 columns)
@@ -939,6 +1019,7 @@ Requirements:
    - onChange: (layout: LayoutType) => void
 
 Use RadioGroup or custom toggle buttons.
+
 ```
 
 **Acceptance Criteria**:
@@ -955,11 +1036,13 @@ Use RadioGroup or custom toggle buttons.
 
 **Prompt**:
 ```
+
 Update BioPageRenderer to support multiple layout types.
 
 Location: apps/web/components/bio/BioPageRenderer.tsx
 
 Requirements:
+
 1. stacked layout: Vertical list (current behavior)
 2. grid layout:
    - 2 columns on mobile
@@ -970,6 +1053,7 @@ Requirements:
 
 Use CSS grid or flexbox for layouts.
 Test with varying number of links (1, 2, 5, 10).
+
 ```
 
 **Acceptance Criteria**:
@@ -986,11 +1070,13 @@ Test with varying number of links (1, 2, 5, 10).
 
 **Prompt**:
 ```
+
 Add social links rendering to BioPageRenderer.
 
 Location: apps/web/components/bio/BioPageRenderer.tsx
 
 Requirements:
+
 1. Display social icons in a row (below avatar, above links)
 2. Each icon:
    - Clickable link to social URL
@@ -1001,6 +1087,7 @@ Requirements:
 4. Hide section if no social links
 
 Create platform icon mapping component if needed.
+
 ```
 
 **Acceptance Criteria**:
@@ -1017,9 +1104,11 @@ Create platform icon mapping component if needed.
 
 **Prompt**:
 ```
+
 Verify Phase 4 social links and layouts:
 
 Testing Checklist:
+
 1. Add social links:
    - Add Instagram link
    - Add Twitter link
@@ -1034,6 +1123,7 @@ Testing Checklist:
 Run: pnpm build
 
 Report issues.
+
 ```
 
 **Acceptance Criteria**:
@@ -1055,11 +1145,13 @@ Report issues.
 
 **Prompt**:
 ```
+
 Add BioPageAnalytics model for tracking bio page events.
 
 Location: packages/database/prisma/schema.prisma
 
 Add model:
+
 ```prisma
 model BioPageAnalytics {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -1083,9 +1175,10 @@ model BioPageAnalytics {
 ```
 
 Add relation to BioPage:
-  analytics BioPageAnalytics[]
+analytics BioPageAnalytics[]
 
 Run db:generate and db:push after adding.
+
 ```
 
 **Acceptance Criteria**:
@@ -1102,6 +1195,7 @@ Run db:generate and db:push after adding.
 
 **Prompt**:
 ```
+
 Create endpoint for tracking bio page analytics.
 
 Location: apps/api/src/biopages/
@@ -1110,12 +1204,13 @@ Add endpoint: POST /biopages/:id/track (public, no auth)
 
 Request body:
 {
-  eventType: 'page_view' | 'link_click',
-  bioLinkId?: string, // required if link_click
-  referrer?: string
+eventType: 'page_view' | 'link_click',
+bioLinkId?: string, // required if link_click
+referrer?: string
 }
 
 Implementation:
+
 1. Parse user agent for device/browser/os
 2. Get country from IP (use existing geo service if available, or skip)
 3. Create BioPageAnalytics record
@@ -1123,6 +1218,7 @@ Implementation:
 5. Non-blocking (don't slow down client)
 
 Rate limit: 10 requests per IP per minute per page.
+
 ```
 
 **Acceptance Criteria**:
@@ -1139,11 +1235,13 @@ Rate limit: 10 requests per IP per minute per page.
 
 **Prompt**:
 ```
+
 Add analytics tracking to public bio page.
 
 Location: apps/web/app/bio/[slug]/page.tsx and BioPageRenderer.tsx
 
 Requirements:
+
 1. Track page_view on page load (once per session)
 2. Track link_click when user clicks a link
 3. Use navigator.sendBeacon for non-blocking requests
@@ -1152,8 +1250,10 @@ Requirements:
 
 Create tracking utility:
 apps/web/lib/bio-analytics.ts
+
 - trackBioPageView(pageId)
 - trackBioLinkClick(pageId, linkId)
+
 ```
 
 **Acceptance Criteria**:
@@ -1170,6 +1270,7 @@ apps/web/lib/bio-analytics.ts
 
 **Prompt**:
 ```
+
 Create endpoints for bio page analytics data.
 
 Location: apps/api/src/biopages/
@@ -1187,6 +1288,7 @@ Add endpoints (all require auth):
 
 Use Prisma aggregations for efficient queries.
 Include proper date filtering.
+
 ```
 
 **Acceptance Criteria**:
@@ -1203,11 +1305,13 @@ Include proper date filtering.
 
 **Prompt**:
 ```
+
 Build the analytics dashboard for bio pages.
 
 Location: apps/web/app/dashboard/biopages/[slug]/analytics/page.tsx
 
 Requirements:
+
 1. Summary cards at top:
    - Total views
    - Total clicks
@@ -1220,6 +1324,7 @@ Requirements:
 
 Use existing chart library in project (recharts or similar).
 Match dashboard design patterns from other analytics pages.
+
 ```
 
 **Acceptance Criteria**:
@@ -1236,9 +1341,11 @@ Match dashboard design patterns from other analytics pages.
 
 **Prompt**:
 ```
+
 Verify Phase 5 analytics:
 
 Testing Checklist:
+
 1. View public bio page (incognito)
 2. Click on a link
 3. Login to dashboard
@@ -1251,6 +1358,7 @@ Testing Checklist:
 Run: pnpm build
 
 Report issues.
+
 ```
 
 **Acceptance Criteria**:
@@ -1272,6 +1380,7 @@ Report issues.
 
 **Prompt**:
 ```
+
 Add QR code endpoint for bio pages.
 
 Location: apps/api/src/biopages/
@@ -1281,6 +1390,7 @@ Add endpoint: GET /biopages/:id/qr?size=300&format=png
 Use existing QR service from apps/api/src/qr/.
 Generate QR for public bio page URL.
 Support size and format parameters.
+
 ```
 
 **Acceptance Criteria**:
@@ -1296,11 +1406,13 @@ Support size and format parameters.
 
 **Prompt**:
 ```
+
 Create share modal for bio pages.
 
 Location: apps/web/components/bio/ShareModal.tsx
 
 Features:
+
 1. Copy URL button
 2. QR code display
 3. Download QR button
@@ -1308,6 +1420,7 @@ Features:
 5. Embed code (iframe snippet)
 
 Use from bio page editor and dashboard.
+
 ```
 
 **Acceptance Criteria**:
@@ -1324,17 +1437,20 @@ Use from bio page editor and dashboard.
 
 **Prompt**:
 ```
+
 Add Open Graph and Twitter Card meta tags to public bio pages.
 
 Location: apps/web/app/bio/[slug]/page.tsx
 
 Add metadata:
+
 - title: bio page title
 - description: bio page description
 - og:image: avatar URL or generated image
 - twitter:card: summary
 
 Use Next.js metadata API.
+
 ```
 
 **Acceptance Criteria**:
@@ -1352,12 +1468,14 @@ Use Next.js metadata API.
 
 **Prompt**:
 ```
+
 Create/update E2E tests for Bio Page module.
 
 Location: apps/web/e2e/biopage.spec.ts
 
 Cover all scenarios from requirements doc (BIO-001 through BIO-063).
 Focus on critical paths:
+
 - Create bio page
 - Add and reorder links
 - Apply theme
@@ -1365,6 +1483,7 @@ Focus on critical paths:
 - Analytics tracking
 
 Use Playwright with existing test patterns.
+
 ```
 
 **Acceptance Criteria**:
@@ -1380,15 +1499,18 @@ Use Playwright with existing test patterns.
 
 **Prompt**:
 ```
+
 Final verification of Bio Page module:
 
 Run and report results:
+
 1. pnpm lint (fix any issues)
 2. pnpm build (must pass)
 3. pnpm --filter web test (unit tests)
 4. npx playwright test e2e/biopage.spec.ts
 
 Document any remaining issues or tech debt.
+
 ```
 
 **Acceptance Criteria**:
@@ -1432,3 +1554,4 @@ Document any remaining issues or tech debt.
 4. **Verification**: Run verification tasks after each phase before proceeding.
 
 5. **Error Handling**: Each task should include proper error handling matching project patterns.
+```

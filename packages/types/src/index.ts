@@ -3,7 +3,7 @@ export interface User {
   email: string;
 }
 
-export * from './auth';
-export * from './links';
-export * from './qr';
-export * from './biopage';
+export * from "./auth";
+export * from "./links";
+export * from "./qr";
+export * from "./biopage";

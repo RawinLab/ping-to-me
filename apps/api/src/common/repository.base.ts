@@ -1,9 +1,9 @@
-import { PrismaClient } from '@pingtome/database';
-import { Injectable } from '@nestjs/common';
+import { PrismaClient } from "@pingtome/database";
+import { Injectable } from "@nestjs/common";
 
 @Injectable()
 export abstract class BaseRepository<T, CreateDto, UpdateDto> {
-  constructor(protected readonly prisma: PrismaClient) { }
+  constructor(protected readonly prisma: PrismaClient) {}
 
   abstract create(data: CreateDto): Promise<T>;
   abstract findAll(): Promise<T[]>;

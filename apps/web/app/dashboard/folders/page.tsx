@@ -19,7 +19,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@pingtome/ui";
-import { Plus, Folder, Trash2, FolderOpen, Link2, ExternalLink, Palette } from "lucide-react";
+import {
+  Plus,
+  Folder,
+  Trash2,
+  FolderOpen,
+  Link2,
+  ExternalLink,
+  Palette,
+} from "lucide-react";
 import Link from "next/link";
 
 interface FolderData {
@@ -86,7 +94,7 @@ export default function FoldersPage() {
   const handleDelete = async (id: string) => {
     if (
       !confirm(
-        "Are you sure you want to delete this folder? Links will be unassigned but not deleted."
+        "Are you sure you want to delete this folder? Links will be unassigned but not deleted.",
       )
     )
       return;
@@ -150,7 +158,9 @@ export default function FoldersPage() {
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-slate-700 font-medium">Folder Name</Label>
+                  <Label htmlFor="name" className="text-slate-700 font-medium">
+                    Folder Name
+                  </Label>
                   <Input
                     id="name"
                     placeholder="My Folder"
@@ -225,7 +235,9 @@ export default function FoldersPage() {
                   <Folder className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-blue-700">{folders.length}</p>
+                  <p className="text-2xl font-bold text-blue-700">
+                    {folders.length}
+                  </p>
                   <p className="text-sm text-blue-600">Total Folders</p>
                 </div>
               </div>
@@ -238,7 +250,9 @@ export default function FoldersPage() {
                   <Link2 className="h-5 w-5 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-emerald-700">{totalLinks}</p>
+                  <p className="text-2xl font-bold text-emerald-700">
+                    {totalLinks}
+                  </p>
                   <p className="text-sm text-emerald-600">Links Organized</p>
                 </div>
               </div>
@@ -258,9 +272,13 @@ export default function FoldersPage() {
                   No folders yet
                 </h3>
                 <p className="text-slate-500 mb-6 max-w-sm mx-auto">
-                  Create your first folder to start organizing your links for easier management.
+                  Create your first folder to start organizing your links for
+                  easier management.
                 </p>
-                <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                <Dialog
+                  open={createDialogOpen}
+                  onOpenChange={setCreateDialogOpen}
+                >
                   <DialogTrigger asChild>
                     <Button className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
                       <Plus className="mr-2 h-4 w-4" /> Create Your First Folder
@@ -287,7 +305,9 @@ export default function FoldersPage() {
                     <div className="flex items-center gap-3">
                       <div
                         className="h-12 w-12 rounded-xl flex items-center justify-center"
-                        style={{ backgroundColor: `${folder.color || "#3b82f6"}20` }}
+                        style={{
+                          backgroundColor: `${folder.color || "#3b82f6"}20`,
+                        }}
                       >
                         <Folder
                           className="h-6 w-6"
@@ -300,7 +320,8 @@ export default function FoldersPage() {
                         </CardTitle>
                         <CardDescription className="flex items-center gap-1.5">
                           <Link2 className="h-3.5 w-3.5" />
-                          {folder._count.links} {folder._count.links === 1 ? "link" : "links"}
+                          {folder._count.links}{" "}
+                          {folder._count.links === 1 ? "link" : "links"}
                         </CardDescription>
                       </div>
                     </div>

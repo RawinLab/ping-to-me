@@ -6,12 +6,14 @@
 ## Overview
 
 The audit logging system tracks all significant actions performed in the application, including:
+
 - Resource CRUD operations (links, domains, organizations, etc.)
 - Security events (login, logout, 2FA changes, password changes)
 - Team management (invites, role changes, member removal)
 - Billing events (plan changes, subscription cancellation)
 
 **Key Design Principles:**
+
 - Non-blocking: Audit logging never blocks the main operation
 - Sensitive data exclusion: Passwords, tokens, and secrets are never logged
 - Change tracking: Before/after values for update operations
@@ -78,7 +80,7 @@ interface AuditLogData {
   action: string;
   resource: string;
   resourceId?: string;
-  status?: 'success' | 'failure';
+  status?: "success" | "failure";
   details?: Record<string, any>;
   changes?: {
     before?: Record<string, any>;
@@ -106,30 +108,30 @@ Actions follow the format: `{resource}.{action}`
 
 ### Resource Events
 
-| Resource | Actions |
-|----------|---------|
-| Link | `link.created`, `link.updated`, `link.deleted`, `link.archived`, `link.restored`, `link.bulk_created`, `link.bulk_deleted` |
-| Domain | `domain.added`, `domain.verified`, `domain.failed`, `domain.removed`, `domain.ssl_updated` |
-| Organization | `org.created`, `org.updated`, `org.settings_changed`, `org.deleted` |
-| Team | `member.invited`, `member.joined`, `member.role_changed`, `member.removed` |
-| API Key | `api_key.created`, `api_key.rotated`, `api_key.revoked` |
-| Billing | `billing.plan_changed`, `billing.subscription_cancelled`, `billing.payment_failed`, `billing.payment_succeeded` |
-| Campaign | `campaign.created`, `campaign.updated`, `campaign.deleted` |
-| Tag | `tag.created`, `tag.updated`, `tag.deleted` |
-| Bio Page | `biopage.created`, `biopage.updated`, `biopage.deleted` |
+| Resource     | Actions                                                                                                                    |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Link         | `link.created`, `link.updated`, `link.deleted`, `link.archived`, `link.restored`, `link.bulk_created`, `link.bulk_deleted` |
+| Domain       | `domain.added`, `domain.verified`, `domain.failed`, `domain.removed`, `domain.ssl_updated`                                 |
+| Organization | `org.created`, `org.updated`, `org.settings_changed`, `org.deleted`                                                        |
+| Team         | `member.invited`, `member.joined`, `member.role_changed`, `member.removed`                                                 |
+| API Key      | `api_key.created`, `api_key.rotated`, `api_key.revoked`                                                                    |
+| Billing      | `billing.plan_changed`, `billing.subscription_cancelled`, `billing.payment_failed`, `billing.payment_succeeded`            |
+| Campaign     | `campaign.created`, `campaign.updated`, `campaign.deleted`                                                                 |
+| Tag          | `tag.created`, `tag.updated`, `tag.deleted`                                                                                |
+| Bio Page     | `biopage.created`, `biopage.updated`, `biopage.deleted`                                                                    |
 
 ### Security Events
 
-| Action | Description |
-|--------|-------------|
-| `auth.login` | Successful login |
-| `auth.logout` | User logout |
-| `auth.failed_login` | Failed login attempt |
-| `auth.2fa_enabled` | Two-factor authentication enabled |
-| `auth.2fa_disabled` | Two-factor authentication disabled |
-| `auth.password_changed` | Password changed |
-| `auth.password_reset_requested` | Password reset requested |
-| `auth.email_verified` | Email address verified |
+| Action                          | Description                        |
+| ------------------------------- | ---------------------------------- |
+| `auth.login`                    | Successful login                   |
+| `auth.logout`                   | User logout                        |
+| `auth.failed_login`             | Failed login attempt               |
+| `auth.2fa_enabled`              | Two-factor authentication enabled  |
+| `auth.2fa_disabled`             | Two-factor authentication disabled |
+| `auth.password_changed`         | Password changed                   |
+| `auth.password_reset_requested` | Password reset requested           |
+| `auth.email_verified`           | Email address verified             |
 
 ---
 
@@ -140,7 +142,7 @@ Actions follow the format: `{resource}.{action}`
 The `AuditModule` is global, so `AuditService` is available in any module:
 
 ```typescript
-import { AuditService } from '../audit/audit.service';
+import { AuditService } from "../audit/audit.service";
 
 @Injectable()
 export class MyService {
@@ -156,12 +158,12 @@ export class MyService {
 await this.auditService.logLinkEvent(
   userId,
   organizationId,
-  'link.created',
+  "link.created",
   { id: link.id, slug: link.slug, targetUrl: link.targetUrl },
   {
     context: { ipAddress, userAgent },
-    details: { customField: 'value' },
-  }
+    details: { customField: "value" },
+  },
 );
 
 // For updates with change tracking
@@ -169,9 +171,9 @@ const changes = this.auditService.captureChanges(beforeLink, afterLink);
 await this.auditService.logLinkEvent(
   userId,
   organizationId,
-  'link.updated',
+  "link.updated",
   { id: link.id, slug: link.slug },
-  { changes }
+  { changes },
 );
 ```
 
@@ -181,21 +183,21 @@ await this.auditService.logLinkEvent(
 await this.auditService.logDomainEvent(
   userId,
   organizationId,
-  'domain.added',
+  "domain.added",
   { id: domain.id, hostname: domain.hostname },
-  { context: { ipAddress, userAgent } }
+  { context: { ipAddress, userAgent } },
 );
 
 // For verification failure
 await this.auditService.logDomainEvent(
   userId,
   organizationId,
-  'domain.failed',
+  "domain.failed",
   { id: domain.id, hostname: domain.hostname },
   {
-    status: 'failure',
-    details: { error: 'DNS record not found' },
-  }
+    status: "failure",
+    details: { error: "DNS record not found" },
+  },
 );
 ```
 
@@ -205,63 +207,52 @@ await this.auditService.logDomainEvent(
 await this.auditService.logTeamEvent(
   userId,
   organizationId,
-  'member.invited',
-  { email: invitedEmail, role: 'EDITOR' },
-  { context: { ipAddress, userAgent } }
+  "member.invited",
+  { email: invitedEmail, role: "EDITOR" },
+  { context: { ipAddress, userAgent } },
 );
 
 // Role change with before/after
 await this.auditService.logTeamEvent(
   userId,
   organizationId,
-  'member.role_changed',
+  "member.role_changed",
   { userId: targetUserId, role: newRole },
   {
     changes: {
       before: { role: oldRole },
       after: { role: newRole },
     },
-  }
+  },
 );
 ```
 
 #### Organization Events
 
 ```typescript
-await this.auditService.logOrgEvent(
-  userId,
-  organizationId,
-  'org.updated',
-  {
-    changes: this.auditService.captureChanges(beforeOrg, afterOrg),
-    context: { ipAddress, userAgent },
-  }
-);
+await this.auditService.logOrgEvent(userId, organizationId, "org.updated", {
+  changes: this.auditService.captureChanges(beforeOrg, afterOrg),
+  context: { ipAddress, userAgent },
+});
 ```
 
 #### Security Events
 
 ```typescript
 // Login success
-await this.auditService.logSecurityEvent(
-  userId,
-  'auth.login',
-  { context: { ipAddress, userAgent } }
-);
+await this.auditService.logSecurityEvent(userId, "auth.login", {
+  context: { ipAddress, userAgent },
+});
 
 // Failed login (userId may be null)
-await this.auditService.logSecurityEvent(
-  null,
-  'auth.failed_login',
-  {
-    status: 'failure',
-    details: { email: attemptedEmail, reason: 'Invalid password' },
-    context: { ipAddress, userAgent },
-  }
-);
+await this.auditService.logSecurityEvent(null, "auth.failed_login", {
+  status: "failure",
+  details: { email: attemptedEmail, reason: "Invalid password" },
+  context: { ipAddress, userAgent },
+});
 
 // 2FA enabled
-await this.auditService.logSecurityEvent(userId, 'auth.2fa_enabled');
+await this.auditService.logSecurityEvent(userId, "auth.2fa_enabled");
 ```
 
 #### Billing Events
@@ -270,14 +261,14 @@ await this.auditService.logSecurityEvent(userId, 'auth.2fa_enabled');
 await this.auditService.logBillingEvent(
   userId,
   organizationId,
-  'billing.plan_changed',
+  "billing.plan_changed",
   {
     changes: {
-      before: { plan: 'FREE' },
-      after: { plan: 'PRO' },
+      before: { plan: "FREE" },
+      after: { plan: "PRO" },
     },
-    details: { stripeSubscriptionId: 'sub_xxx' },
-  }
+    details: { stripeSubscriptionId: "sub_xxx" },
+  },
 );
 ```
 
@@ -287,8 +278,8 @@ await this.auditService.logBillingEvent(
 await this.auditService.logApiKeyEvent(
   userId,
   organizationId,
-  'api_key.created',
-  { id: apiKey.id, name: apiKey.name, scopes: apiKey.scopes }
+  "api_key.created",
+  { id: apiKey.id, name: apiKey.name, scopes: apiKey.scopes },
 );
 ```
 
@@ -300,10 +291,10 @@ For resources without a specific helper:
 await this.auditService.logResourceEvent(
   userId,
   organizationId,
-  'webhook.created',
-  'Webhook',
+  "webhook.created",
+  "Webhook",
   webhook.id,
-  { details: { url: webhook.url, events: webhook.events } }
+  { details: { url: webhook.url, events: webhook.events } },
 );
 ```
 
@@ -328,13 +319,14 @@ const changes = this.auditService.captureChanges(beforeEntity, afterEntity);
 await this.auditService.logLinkEvent(
   userId,
   organizationId,
-  'link.updated',
+  "link.updated",
   { id: afterEntity.id, slug: afterEntity.slug },
-  { changes }
+  { changes },
 );
 ```
 
 **Sensitive fields automatically excluded:**
+
 - `password`, `passwordHash`
 - `twoFactorSecret`, `secret`
 - `token`, `accessToken`, `refreshToken`
@@ -397,6 +389,7 @@ GET /audit/summary?orgId=xxx&startDate=xxx&endDate=xxx
 ```
 
 **Response:**
+
 ```json
 {
   "total": 150,
@@ -422,6 +415,7 @@ GET /organizations/:id/audit-logs
 ```
 
 RBAC enforced:
+
 - **OWNER/ADMIN**: Can view all logs in organization
 - **EDITOR/VIEWER**: Can only view their own activity
 
@@ -434,6 +428,7 @@ RBAC enforced:
 Located at `/dashboard/settings/audit-logs`
 
 Features:
+
 - Date range presets (24h, 7d, 30d, 90d, all time)
 - Filter by action, resource, status
 - Search functionality
@@ -443,12 +438,12 @@ Features:
 ### API Client Usage
 
 ```typescript
-import { apiRequest } from '@/lib/api';
+import { apiRequest } from "@/lib/api";
 
 // Fetch logs
-const { logs, total } = await apiRequest('/audit/logs', {
+const { logs, total } = await apiRequest("/audit/logs", {
   params: {
-    action: 'link.created',
+    action: "link.created",
     startDate: new Date().toISOString(),
     limit: 20,
   },
@@ -458,10 +453,10 @@ const { logs, total } = await apiRequest('/audit/logs', {
 const response = await fetch(
   `${process.env.NEXT_PUBLIC_API_URL}/audit/logs/export?format=csv`,
   {
-    method: 'POST',
-    credentials: 'include',
+    method: "POST",
+    credentials: "include",
     headers: { Authorization: `Bearer ${accessToken}` },
-  }
+  },
 );
 const blob = await response.blob();
 ```
@@ -476,7 +471,7 @@ When creating a new module, follow these steps:
 
 ```typescript
 // apps/api/src/new-feature/new-feature.service.ts
-import { AuditService } from '../audit/audit.service';
+import { AuditService } from "../audit/audit.service";
 
 @Injectable()
 export class NewFeatureService {
@@ -568,26 +563,26 @@ If you want nice labels in the audit log viewer:
 
 const ACTION_CONFIG = {
   // ... existing actions
-  'newfeature.created': {
-    label: 'Feature Created',
-    color: 'bg-emerald-100 text-emerald-700',
+  "newfeature.created": {
+    label: "Feature Created",
+    color: "bg-emerald-100 text-emerald-700",
     icon: Plus,
   },
-  'newfeature.updated': {
-    label: 'Feature Updated',
-    color: 'bg-blue-100 text-blue-700',
+  "newfeature.updated": {
+    label: "Feature Updated",
+    color: "bg-blue-100 text-blue-700",
     icon: Edit,
   },
-  'newfeature.deleted': {
-    label: 'Feature Deleted',
-    color: 'bg-red-100 text-red-700',
+  "newfeature.deleted": {
+    label: "Feature Deleted",
+    color: "bg-red-100 text-red-700",
     icon: Trash2,
   },
 };
 
 const RESOURCE_CONFIG = {
   // ... existing resources
-  NewFeature: { label: 'New Feature', icon: Star },
+  NewFeature: { label: "New Feature", icon: Star },
 };
 ```
 
@@ -624,6 +619,7 @@ const deletedCount = await this.auditService.cleanupOldLogs(90);
 ```
 
 **Note:** Consider organization plan limits when implementing retention:
+
 - Free: 30 days
 - Pro: 90 days
 - Enterprise: 365 days
@@ -633,11 +629,13 @@ const deletedCount = await this.auditService.cleanupOldLogs(90);
 ## Testing
 
 ### Unit Tests Location
+
 ```
 apps/api/src/audit/__tests__/audit.service.spec.ts
 ```
 
 ### E2E Tests
+
 ```
 apps/web/e2e/audit-logs.spec.ts
 ```

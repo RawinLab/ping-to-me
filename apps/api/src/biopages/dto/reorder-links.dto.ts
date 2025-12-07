@@ -1,5 +1,5 @@
-import { IsArray, IsUUID, IsNumber, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsArray, IsUUID, IsNumber, ValidateNested } from "class-validator";
+import { Type } from "class-transformer";
 
 class LinkOrderDto {
   @IsUUID()

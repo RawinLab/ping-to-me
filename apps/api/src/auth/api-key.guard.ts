@@ -1,13 +1,18 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
-import { ApiKeyService } from '../developer/api-keys.service';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from "@nestjs/common";
+import { ApiKeyService } from "../developer/api-keys.service";
 
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
-  constructor(private apiKeyService: ApiKeyService) { }
+  constructor(private apiKeyService: ApiKeyService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const apiKey = request.headers['x-api-key'];
+    const apiKey = request.headers["x-api-key"];
 
     if (!apiKey) {
       return true; // Allow if no key (might be handled by other guards or public)
@@ -21,12 +26,12 @@ export class ApiKeyGuard implements CanActivate {
 
     const validKey = await this.apiKeyService.validateApiKey(apiKey);
     if (!validKey) {
-      throw new UnauthorizedException('Invalid API Key');
+      throw new UnauthorizedException("Invalid API Key");
     }
 
     // Attach org context to request
     request.organization = validKey.organization;
-    request.user = { id: 'api-key', isApiKey: true }; // Placeholder user
+    request.user = { id: "api-key", isApiKey: true }; // Placeholder user
 
     return true;
   }

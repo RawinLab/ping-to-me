@@ -1,19 +1,19 @@
-import { Injectable } from '@nestjs/common';
-import { MemberRole } from '@pingtome/database';
-import { PrismaService } from '../../prisma/prisma.service';
+import { Injectable } from "@nestjs/common";
+import { MemberRole } from "@pingtome/database";
+import { PrismaService } from "../../prisma/prisma.service";
 import {
   getPermissions,
   hasPermission,
   PermissionScope,
   Resource,
   Action,
-} from './permission-matrix';
+} from "./permission-matrix";
 import {
   canManageRole,
   isRoleAtLeast,
   isRoleAbove,
   getAssignableRoles,
-} from './role-hierarchy';
+} from "./role-hierarchy";
 
 @Injectable()
 export class PermissionService {
@@ -129,7 +129,7 @@ export class PermissionService {
   ): Promise<boolean> {
     try {
       switch (resourceType.toLowerCase()) {
-        case 'link': {
+        case "link": {
           // User-owned resource
           const link = await this.prisma.link.findUnique({
             where: { id: resourceId },
@@ -138,16 +138,16 @@ export class PermissionService {
           return link?.userId === userId;
         }
 
-        case 'api-key': {
+        case "api-key": {
           // Organization-owned but we can check if it belongs to user's org
           // Note: ApiKey doesn't have userId, only organizationId
           // This check should happen at permission level
           return true;
         }
 
-        case 'biopage':
-        case 'campaign':
-        case 'tag': {
+        case "biopage":
+        case "campaign":
+        case "tag": {
           // Organization-owned resources - no direct user ownership
           // Ownership is handled by organization membership and role permissions
           // Return true here, actual permission check happens in hasPermission()
@@ -205,28 +205,28 @@ export class PermissionService {
   ): boolean {
     for (const scope of scopes) {
       switch (scope) {
-        case '*':
+        case "*":
           // Full access granted
           return true;
 
-        case 'own':
+        case "own":
           // Check if user owns the resource
           if (context?.ownerId === userId) {
             return true;
           }
           break;
 
-        case 'organization':
+        case "organization":
           // Access to any resource in the organization
           // If no specific owner is specified, allow
           // If owner is specified and it's in the org, we assume it's valid
           return true;
 
-        case 'limited':
+        case "limited":
           // Allow with limited functionality (treat as true for basic check)
           return true;
 
-        case 'exclude-owner':
+        case "exclude-owner":
           // Allow unless target is an owner (handled by caller)
           return true;
 

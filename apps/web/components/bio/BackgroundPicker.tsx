@@ -110,7 +110,7 @@ function parseGradient(gradient?: string): GradientConfig {
 
   // Match linear-gradient pattern
   const match = gradient.match(
-    /linear-gradient\((to\s+(?:bottom|right|bottom right)),\s*([^,]+),\s*([^)]+)\)/
+    /linear-gradient\((to\s+(?:bottom|right|bottom right)),\s*([^,]+),\s*([^)]+)\)/,
   );
 
   if (!match) return defaultConfig;
@@ -153,7 +153,7 @@ export function BackgroundPicker({
   onChange,
 }: BackgroundPickerProps) {
   const [gradientConfig, setGradientConfig] = React.useState<GradientConfig>(
-    () => parseGradient(backgroundGradient)
+    () => parseGradient(backgroundGradient),
   );
   const [imageUrl, setImageUrl] = React.useState(backgroundImage || "");
   const [imageOpacity, setImageOpacity] = React.useState(100);
@@ -181,9 +181,7 @@ export function BackgroundPicker({
   };
 
   // Handle gradient changes
-  const handleGradientChange = (
-    updates: Partial<GradientConfig>
-  ) => {
+  const handleGradientChange = (updates: Partial<GradientConfig>) => {
     const newConfig = { ...gradientConfig, ...updates };
     setGradientConfig(newConfig);
 
@@ -308,7 +306,7 @@ export function BackgroundPicker({
                       gradientConfig.startColor === preset.startColor &&
                         gradientConfig.endColor === preset.endColor
                         ? "border-primary ring-2 ring-primary ring-offset-2"
-                        : "border-border"
+                        : "border-border",
                     )}
                   >
                     <div
@@ -346,13 +344,14 @@ export function BackgroundPicker({
               <ColorPicker
                 label="End Color"
                 value={gradientConfig.endColor}
-                onChange={(color) =>
-                  handleGradientChange({ endColor: color })
-                }
+                onChange={(color) => handleGradientChange({ endColor: color })}
               />
 
               <div className="space-y-3">
-                <Label htmlFor="gradient-direction" className="text-sm font-medium">
+                <Label
+                  htmlFor="gradient-direction"
+                  className="text-sm font-medium"
+                >
                   Direction
                 </Label>
                 <div className="grid grid-cols-3 gap-2">
@@ -366,7 +365,7 @@ export function BackgroundPicker({
                       "hover:bg-accent hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
                       gradientConfig.direction === "vertical"
                         ? "border-primary bg-accent"
-                        : "border-border"
+                        : "border-border",
                     )}
                   >
                     <ArrowDown className="h-5 w-5" />
@@ -382,7 +381,7 @@ export function BackgroundPicker({
                       "hover:bg-accent hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
                       gradientConfig.direction === "horizontal"
                         ? "border-primary bg-accent"
-                        : "border-border"
+                        : "border-border",
                     )}
                   >
                     <ArrowRight className="h-5 w-5" />
@@ -398,7 +397,7 @@ export function BackgroundPicker({
                       "hover:bg-accent hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
                       gradientConfig.direction === "diagonal"
                         ? "border-primary bg-accent"
-                        : "border-border"
+                        : "border-border",
                     )}
                   >
                     <ArrowDownRight className="h-5 w-5" />
@@ -444,7 +443,8 @@ export function BackgroundPicker({
                   onChange={(e) => handleImageUrlChange(e.target.value)}
                   className={cn(
                     "transition-all",
-                    imageError && "border-destructive focus-visible:ring-destructive"
+                    imageError &&
+                      "border-destructive focus-visible:ring-destructive",
                   )}
                 />
                 {imageError ? (
@@ -490,7 +490,8 @@ export function BackgroundPicker({
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Add a dark overlay to improve text readability (0% = fully visible, 100% = no overlay)
+                  Add a dark overlay to improve text readability (0% = fully
+                  visible, 100% = no overlay)
                 </p>
               </div>
             </div>

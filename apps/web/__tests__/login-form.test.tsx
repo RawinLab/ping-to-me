@@ -38,7 +38,7 @@ describe("LoginForm", () => {
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /sign in with email/i })
+      screen.getByRole("button", { name: /sign in with email/i }),
     ).toBeInTheDocument();
   });
 
@@ -53,7 +53,7 @@ describe("LoginForm", () => {
     });
 
     fireEvent.click(
-      screen.getByRole("button", { name: /sign in with email/i })
+      screen.getByRole("button", { name: /sign in with email/i }),
     );
 
     await waitFor(() => {
@@ -79,7 +79,7 @@ describe("LoginForm", () => {
     });
 
     fireEvent.click(
-      screen.getByRole("button", { name: /sign in with email/i })
+      screen.getByRole("button", { name: /sign in with email/i }),
     );
 
     await waitFor(() => {

@@ -3,9 +3,27 @@
 import { LinksTable, LinksTableRef } from "@/components/links/LinksTable";
 import { DateFilterModal } from "@/components/links/DateFilterModal";
 import { FiltersModal, FilterValues } from "@/components/links/FiltersModal";
-import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@pingtome/ui";
+import {
+  Button,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@pingtome/ui";
 import Link from "next/link";
-import { Plus, Search, Calendar, SlidersHorizontal, List, Table2, LayoutGrid, Download, X } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Calendar,
+  SlidersHorizontal,
+  List,
+  Table2,
+  LayoutGrid,
+  Download,
+  X,
+} from "lucide-react";
 import { useState, useRef } from "react";
 import { format } from "date-fns";
 import { usePermission } from "@/hooks/usePermission";
@@ -26,7 +44,10 @@ export default function LinksPage() {
   const [filtersModalOpen, setFiltersModalOpen] = useState(false);
 
   // Filter values
-  const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
+  const [dateRange, setDateRange] = useState<{
+    start: Date | null;
+    end: Date | null;
+  }>({
     start: null,
     end: null,
   });
@@ -37,8 +58,14 @@ export default function LinksPage() {
   });
 
   const hasDateFilter = dateRange.start !== null || dateRange.end !== null;
-  const hasActiveFilters = tagFilters.tags.length > 0 || tagFilters.linkType !== "all" || tagFilters.hasQrCode !== "all";
-  const activeFilterCount = (tagFilters.tags.length > 0 ? 1 : 0) + (tagFilters.linkType !== "all" ? 1 : 0) + (tagFilters.hasQrCode !== "all" ? 1 : 0);
+  const hasActiveFilters =
+    tagFilters.tags.length > 0 ||
+    tagFilters.linkType !== "all" ||
+    tagFilters.hasQrCode !== "all";
+  const activeFilterCount =
+    (tagFilters.tags.length > 0 ? 1 : 0) +
+    (tagFilters.linkType !== "all" ? 1 : 0) +
+    (tagFilters.hasQrCode !== "all" ? 1 : 0);
 
   const handleDateFilterApply = (start: Date | null, end: Date | null) => {
     setDateRange({ start, end });
@@ -62,8 +89,12 @@ export default function LinksPage() {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Links</h1>
-            <p className="text-sm text-slate-500 mt-1">Manage and track your shortened URLs</p>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+              Links
+            </h1>
+            <p className="text-sm text-slate-500 mt-1">
+              Manage and track your shortened URLs
+            </p>
           </div>
           <PermissionGate resource="link" action="create">
             <Link href="/dashboard/links/new">
@@ -91,8 +122,12 @@ export default function LinksPage() {
             className={`bg-white border-slate-200 rounded-xl h-11 gap-2 hover:bg-slate-50 transition-all ${hasDateFilter ? "border-blue-500 bg-blue-50 hover:bg-blue-100/80" : ""}`}
             onClick={() => setDateFilterModalOpen(true)}
           >
-            <Calendar className={`h-4 w-4 ${hasDateFilter ? "text-blue-600" : "text-slate-500"}`} />
-            <span className={`text-sm font-medium ${hasDateFilter ? "text-blue-700" : "text-slate-700"}`}>
+            <Calendar
+              className={`h-4 w-4 ${hasDateFilter ? "text-blue-600" : "text-slate-500"}`}
+            />
+            <span
+              className={`text-sm font-medium ${hasDateFilter ? "text-blue-700" : "text-slate-700"}`}
+            >
               {hasDateFilter
                 ? `${dateRange.start ? format(dateRange.start, "MMM d") : ""} - ${dateRange.end ? format(dateRange.end, "MMM d") : ""}`
                 : "Filter by date"}
@@ -115,9 +150,15 @@ export default function LinksPage() {
             className={`bg-white border-slate-200 rounded-xl h-11 gap-2 hover:bg-slate-50 transition-all ${hasActiveFilters ? "border-blue-500 bg-blue-50 hover:bg-blue-100/80" : ""}`}
             onClick={() => setFiltersModalOpen(true)}
           >
-            <SlidersHorizontal className={`h-4 w-4 ${hasActiveFilters ? "text-blue-600" : "text-slate-500"}`} />
-            <span className={`text-sm font-medium ${hasActiveFilters ? "text-blue-700" : "text-slate-700"}`}>
-              {hasActiveFilters ? `${activeFilterCount} filter${activeFilterCount > 1 ? "s" : ""} active` : "Add filters"}
+            <SlidersHorizontal
+              className={`h-4 w-4 ${hasActiveFilters ? "text-blue-600" : "text-slate-500"}`}
+            />
+            <span
+              className={`text-sm font-medium ${hasActiveFilters ? "text-blue-700" : "text-slate-700"}`}
+            >
+              {hasActiveFilters
+                ? `${activeFilterCount} filter${activeFilterCount > 1 ? "s" : ""} active`
+                : "Add filters"}
             </span>
             {hasActiveFilters && (
               <button
@@ -189,11 +230,33 @@ export default function LinksPage() {
                 <SelectValue placeholder="Show: All" />
               </SelectTrigger>
               <SelectContent className="bg-white border-slate-200 rounded-xl shadow-lg">
-                <SelectItem value="all" className="rounded-lg cursor-pointer">Show: All</SelectItem>
-                <SelectItem value="active" className="rounded-lg cursor-pointer">Show: Active</SelectItem>
-                <SelectItem value="disabled" className="rounded-lg cursor-pointer">Show: Disabled</SelectItem>
-                <SelectItem value="expired" className="rounded-lg cursor-pointer">Show: Expired</SelectItem>
-                <SelectItem value="archived" className="rounded-lg cursor-pointer">Show: Archived</SelectItem>
+                <SelectItem value="all" className="rounded-lg cursor-pointer">
+                  Show: All
+                </SelectItem>
+                <SelectItem
+                  value="active"
+                  className="rounded-lg cursor-pointer"
+                >
+                  Show: Active
+                </SelectItem>
+                <SelectItem
+                  value="disabled"
+                  className="rounded-lg cursor-pointer"
+                >
+                  Show: Disabled
+                </SelectItem>
+                <SelectItem
+                  value="expired"
+                  className="rounded-lg cursor-pointer"
+                >
+                  Show: Expired
+                </SelectItem>
+                <SelectItem
+                  value="archived"
+                  className="rounded-lg cursor-pointer"
+                >
+                  Show: Archived
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

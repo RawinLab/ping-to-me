@@ -48,7 +48,7 @@ export function NotificationCenter() {
     try {
       await apiRequest(`/notifications/${id}/read`, { method: "PATCH" });
       setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+        prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {

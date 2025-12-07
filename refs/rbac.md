@@ -32,21 +32,40 @@ apps/web/components/PermissionGate.tsx # Component for conditional rendering
 ```typescript
 // Resources that can be controlled by RBAC
 type Resource =
-  | 'link' | 'analytics' | 'organization' | 'team' | 'domain'
-  | 'billing' | 'api-key' | 'audit' | 'biopage' | 'campaign' | 'tag';
+  | "link"
+  | "analytics"
+  | "organization"
+  | "team"
+  | "domain"
+  | "billing"
+  | "api-key"
+  | "audit"
+  | "biopage"
+  | "campaign"
+  | "tag";
 
 // Actions that can be performed on resources
 type Action =
-  | 'create' | 'read' | 'update' | 'delete' | 'bulk' | 'export'
-  | 'invite' | 'verify' | 'manage' | 'update-role' | 'remove' | 'revoke';
+  | "create"
+  | "read"
+  | "update"
+  | "delete"
+  | "bulk"
+  | "export"
+  | "invite"
+  | "verify"
+  | "manage"
+  | "update-role"
+  | "remove"
+  | "revoke";
 
 // Permission scope defines access boundary
 type PermissionScope =
-  | '*'              // Full access to all resources
-  | 'own'            // Access only to resources owned by the user
-  | 'organization'   // Access to all resources within the organization
-  | 'limited'        // Limited access (e.g., some settings but not all)
-  | 'exclude-owner'; // Access to all except owner (for team management)
+  | "*" // Full access to all resources
+  | "own" // Access only to resources owned by the user
+  | "organization" // Access to all resources within the organization
+  | "limited" // Limited access (e.g., some settings but not all)
+  | "exclude-owner"; // Access to all except owner (for team management)
 ```
 
 ---
@@ -56,14 +75,15 @@ type PermissionScope =
 ```typescript
 // Higher number = more permissions
 ROLE_HIERARCHY = {
-  OWNER: 4,   // Full access, can delete org, manage billing
-  ADMIN: 3,   // Most access, cannot delete org or manage billing
-  EDITOR: 2,  // Create/edit own content, view org content
-  VIEWER: 1,  // Read-only access
+  OWNER: 4, // Full access, can delete org, manage billing
+  ADMIN: 3, // Most access, cannot delete org or manage billing
+  EDITOR: 2, // Create/edit own content, view org content
+  VIEWER: 1, // Read-only access
 };
 ```
 
 **Key Rules:**
+
 - A user can only manage roles **below** their level
 - OWNER can assign any role
 - ADMIN can assign ADMIN, EDITOR, VIEWER (not OWNER)
@@ -74,44 +94,44 @@ ROLE_HIERARCHY = {
 
 ## Permission Matrix Summary
 
-| Resource       | OWNER | ADMIN | EDITOR | VIEWER |
-|----------------|-------|-------|--------|--------|
-| link:create    | ✓     | ✓     | ✓      | ✗      |
-| link:read      | ✓     | ✓     | own/org| org    |
-| link:update    | ✓     | ✓     | own    | ✗      |
-| link:delete    | ✓     | ✓     | own    | ✗      |
-| link:bulk      | ✓     | org   | ✗      | ✗      |
-| link:export    | ✓     | ✓     | own    | ✗      |
-| analytics:read | ✓     | ✓     | own/org| org    |
-| analytics:export| ✓    | ✓     | ✗      | ✗      |
-| organization:read | ✓  | ✓     | ✓      | ✓      |
-| organization:update | ✓| limited| ✗     | ✗      |
-| organization:delete | ✓| ✗     | ✗      | ✗      |
-| team:read      | ✓     | ✓     | ✓      | ✓      |
-| team:invite    | ✓     | excl-owner | ✗  | ✗      |
-| team:update-role| ✓    | excl-owner | ✗  | ✗      |
-| team:remove    | ✓     | excl-owner | ✗  | ✗      |
-| domain:create  | ✓     | ✓     | ✗      | ✗      |
-| domain:read    | ✓     | ✓     | ✓      | ✓      |
-| domain:update  | ✓     | ✓     | ✗      | ✗      |
-| domain:delete  | ✓     | ✓     | ✗      | ✗      |
-| domain:verify  | ✓     | ✓     | ✗      | ✗      |
-| billing:read   | ✓     | ✓     | ✗      | ✗      |
-| billing:manage | ✓     | ✗     | ✗      | ✗      |
-| api-key:create | ✓     | ✓     | ✗      | ✗      |
-| api-key:read   | ✓     | own/org| ✗     | ✗      |
-| api-key:revoke | ✓     | own   | ✗      | ✗      |
-| audit:read     | ✓     | ✓     | ✗      | ✗      |
-| audit:export   | ✓     | ✗     | ✗      | ✗      |
-| biopage:create | ✓     | ✓     | ✓      | ✗      |
-| biopage:read   | ✓     | ✓     | own/org| org    |
-| biopage:update | ✓     | own/org| own   | ✗      |
-| biopage:delete | ✓     | own/org| own   | ✗      |
-| campaign:*     | ✓     | ✓     | read   | read   |
-| tag:create     | ✓     | ✓     | ✓      | ✗      |
-| tag:read       | ✓     | ✓     | ✓      | ✓      |
-| tag:update     | ✓     | ✓     | own    | ✗      |
-| tag:delete     | ✓     | ✓     | ✗      | ✗      |
+| Resource            | OWNER | ADMIN      | EDITOR  | VIEWER |
+| ------------------- | ----- | ---------- | ------- | ------ |
+| link:create         | ✓     | ✓          | ✓       | ✗      |
+| link:read           | ✓     | ✓          | own/org | org    |
+| link:update         | ✓     | ✓          | own     | ✗      |
+| link:delete         | ✓     | ✓          | own     | ✗      |
+| link:bulk           | ✓     | org        | ✗       | ✗      |
+| link:export         | ✓     | ✓          | own     | ✗      |
+| analytics:read      | ✓     | ✓          | own/org | org    |
+| analytics:export    | ✓     | ✓          | ✗       | ✗      |
+| organization:read   | ✓     | ✓          | ✓       | ✓      |
+| organization:update | ✓     | limited    | ✗       | ✗      |
+| organization:delete | ✓     | ✗          | ✗       | ✗      |
+| team:read           | ✓     | ✓          | ✓       | ✓      |
+| team:invite         | ✓     | excl-owner | ✗       | ✗      |
+| team:update-role    | ✓     | excl-owner | ✗       | ✗      |
+| team:remove         | ✓     | excl-owner | ✗       | ✗      |
+| domain:create       | ✓     | ✓          | ✗       | ✗      |
+| domain:read         | ✓     | ✓          | ✓       | ✓      |
+| domain:update       | ✓     | ✓          | ✗       | ✗      |
+| domain:delete       | ✓     | ✓          | ✗       | ✗      |
+| domain:verify       | ✓     | ✓          | ✗       | ✗      |
+| billing:read        | ✓     | ✓          | ✗       | ✗      |
+| billing:manage      | ✓     | ✗          | ✗       | ✗      |
+| api-key:create      | ✓     | ✓          | ✗       | ✗      |
+| api-key:read        | ✓     | own/org    | ✗       | ✗      |
+| api-key:revoke      | ✓     | own        | ✗       | ✗      |
+| audit:read          | ✓     | ✓          | ✗       | ✗      |
+| audit:export        | ✓     | ✗          | ✗       | ✗      |
+| biopage:create      | ✓     | ✓          | ✓       | ✗      |
+| biopage:read        | ✓     | ✓          | own/org | org    |
+| biopage:update      | ✓     | own/org    | own     | ✗      |
+| biopage:delete      | ✓     | own/org    | own     | ✗      |
+| campaign:\*         | ✓     | ✓          | read    | read   |
+| tag:create          | ✓     | ✓          | ✓       | ✗      |
+| tag:read            | ✓     | ✓          | ✓       | ✓      |
+| tag:update          | ✓     | ✓          | own     | ✗      |
+| tag:delete          | ✓     | ✓          | ✗       | ✗      |
 
 ---
 
@@ -120,32 +140,31 @@ ROLE_HIERARCHY = {
 ### 1. Protect Controller Endpoints
 
 ```typescript
-import { UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { PermissionGuard, Permission } from '../auth/rbac';
+import { UseGuards } from "@nestjs/common";
+import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { PermissionGuard, Permission } from "../auth/rbac";
 
-@Controller('links')
+@Controller("links")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class LinksController {
-
   @Get()
-  @Permission({ resource: 'link', action: 'read' })
+  @Permission({ resource: "link", action: "read" })
   findAll() {}
 
   @Post()
-  @Permission({ resource: 'link', action: 'create' })
+  @Permission({ resource: "link", action: "create" })
   create() {}
 
   // 'own' context - user can only update their own links
-  @Patch(':id')
-  @Permission({ resource: 'link', action: 'update', context: 'own' })
+  @Patch(":id")
+  @Permission({ resource: "link", action: "update", context: "own" })
   update() {}
 
   // Multiple permissions (OR) - user needs ANY of these
-  @Delete(':id')
+  @Delete(":id")
   @Permission([
-    { resource: 'link', action: 'delete' },
-    { resource: 'link', action: 'bulk' }
+    { resource: "link", action: "delete" },
+    { resource: "link", action: "bulk" },
   ])
   delete() {}
 }
@@ -167,7 +186,7 @@ exportLinkAnalytics() {}
 ### 3. Use PermissionService in Business Logic
 
 ```typescript
-import { PermissionService } from '../auth/rbac';
+import { PermissionService } from "../auth/rbac";
 
 @Injectable()
 export class MyService {
@@ -176,34 +195,42 @@ export class MyService {
   async doSomething(userId: string, orgId: string) {
     // Check single permission
     const canCreate = await this.permissionService.hasPermission(
-      userId, orgId, 'link', 'create'
+      userId,
+      orgId,
+      "link",
+      "create",
     );
 
     // Check multiple permissions (ANY)
     const canModify = await this.permissionService.hasAnyPermission(
-      userId, orgId, [
-        { resource: 'link', action: 'update' },
-        { resource: 'link', action: 'delete' }
-      ]
+      userId,
+      orgId,
+      [
+        { resource: "link", action: "update" },
+        { resource: "link", action: "delete" },
+      ],
     );
 
     // Check multiple permissions (ALL)
     const canExport = await this.permissionService.hasAllPermissions(
-      userId, orgId, [
-        { resource: 'link', action: 'read' },
-        { resource: 'analytics', action: 'export' }
-      ]
+      userId,
+      orgId,
+      [
+        { resource: "link", action: "read" },
+        { resource: "analytics", action: "export" },
+      ],
     );
 
     // Check if user can manage another member's role
     const canManage = await this.permissionService.canManageMember(
-      userId, orgId, 'EDITOR'
+      userId,
+      orgId,
+      "EDITOR",
     );
 
     // Get roles user can assign
-    const assignableRoles = await this.permissionService.getAssignableRolesForUser(
-      userId, orgId
-    );
+    const assignableRoles =
+      await this.permissionService.getAssignableRolesForUser(userId, orgId);
   }
 }
 ```
@@ -211,6 +238,7 @@ export class MyService {
 ### 4. Organization ID Extraction
 
 The `PermissionGuard` automatically extracts `organizationId` from:
+
 1. Route params: `:orgId`, `:organizationId`, or `:id` (for `/organizations/:id`)
 2. Request body: `body.organizationId` or `body.orgId`
 3. Query params: `query.organizationId` or `query.orgId`
@@ -224,14 +252,14 @@ The `PermissionGuard` automatically extracts `organizationId` from:
 ### 1. usePermission Hook
 
 ```tsx
-import { usePermission } from '@/hooks/usePermission';
+import { usePermission } from "@/hooks/usePermission";
 
 function MyComponent() {
   const {
     // Base permission checks
-    can,              // can(resource, action) => boolean
-    canAny,           // canAny([{resource, action}]) => boolean
-    canAll,           // canAll([{resource, action}]) => boolean
+    can, // can(resource, action) => boolean
+    canAny, // canAny([{resource, action}]) => boolean
+    canAll, // canAll([{resource, action}]) => boolean
 
     // Link permissions
     canCreateLink,
@@ -255,7 +283,7 @@ function MyComponent() {
     canExportAnalytics,
 
     // Role checks
-    role,             // Current role: 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER'
+    role, // Current role: 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER'
     isOwner,
     isAdmin,
     isEditor,
@@ -263,14 +291,14 @@ function MyComponent() {
     isAdminOrAbove,
 
     // Role management
-    canManageRole,    // canManageRole(targetRole) => boolean
+    canManageRole, // canManageRole(targetRole) => boolean
     getAssignableRoles,
   } = usePermission();
 
   return (
     <div>
       {canCreateLink() && <CreateButton />}
-      {can('billing', 'manage') && <BillingSettings />}
+      {can("billing", "manage") && <BillingSettings />}
     </div>
   );
 }
@@ -339,21 +367,39 @@ For the Developer API, use scopes in format `{resource}:{action}`:
 ```typescript
 type ApiScope =
   // Link scopes
-  | 'link:read' | 'link:create' | 'link:update' | 'link:delete' | 'link:export' | 'link:bulk'
+  | "link:read"
+  | "link:create"
+  | "link:update"
+  | "link:delete"
+  | "link:export"
+  | "link:bulk"
   // Analytics scopes
-  | 'analytics:read' | 'analytics:export'
+  | "analytics:read"
+  | "analytics:export"
   // Domain scopes
-  | 'domain:read' | 'domain:create' | 'domain:verify' | 'domain:delete'
+  | "domain:read"
+  | "domain:create"
+  | "domain:verify"
+  | "domain:delete"
   // Campaign scopes
-  | 'campaign:read' | 'campaign:create' | 'campaign:update' | 'campaign:delete'
+  | "campaign:read"
+  | "campaign:create"
+  | "campaign:update"
+  | "campaign:delete"
   // Tag scopes
-  | 'tag:read' | 'tag:create' | 'tag:update' | 'tag:delete'
+  | "tag:read"
+  | "tag:create"
+  | "tag:update"
+  | "tag:delete"
   // BioPage scopes
-  | 'biopage:read' | 'biopage:create' | 'biopage:update' | 'biopage:delete'
+  | "biopage:read"
+  | "biopage:create"
+  | "biopage:update"
+  | "biopage:delete"
   // Team scopes
-  | 'team:read'
+  | "team:read"
   // Admin scope (full access)
-  | 'admin';
+  | "admin";
 ```
 
 ### Scope Groups (Predefined Sets)
@@ -481,28 +527,27 @@ export const SCOPE_DESCRIPTIONS: Record<ApiScope, string> = {
 
 ```typescript
 // apps/api/src/new-resource/new-resource.controller.ts
-import { UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { PermissionGuard, Permission } from '../auth/rbac';
+import { UseGuards } from "@nestjs/common";
+import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { PermissionGuard, Permission } from "../auth/rbac";
 
-@Controller('new-resource')
+@Controller("new-resource")
 @UseGuards(JwtAuthGuard, PermissionGuard)
 export class NewResourceController {
-
   @Get()
-  @Permission({ resource: 'new-resource', action: 'read' })
+  @Permission({ resource: "new-resource", action: "read" })
   findAll() {}
 
   @Post()
-  @Permission({ resource: 'new-resource', action: 'create' })
+  @Permission({ resource: "new-resource", action: "create" })
   create() {}
 
-  @Patch(':id')
-  @Permission({ resource: 'new-resource', action: 'update', context: 'own' })
+  @Patch(":id")
+  @Permission({ resource: "new-resource", action: "update", context: "own" })
   update() {}
 
-  @Delete(':id')
-  @Permission({ resource: 'new-resource', action: 'delete', context: 'own' })
+  @Delete(":id")
+  @Permission({ resource: "new-resource", action: "delete", context: "own" })
   delete() {}
 }
 ```
@@ -511,8 +556,8 @@ export class NewResourceController {
 
 ```tsx
 // In your React components
-import { PermissionGate } from '@/components/PermissionGate';
-import { usePermission } from '@/hooks/usePermission';
+import { PermissionGate } from "@/components/PermissionGate";
+import { usePermission } from "@/hooks/usePermission";
 
 function NewResourcePage() {
   const { can } = usePermission();
@@ -523,7 +568,7 @@ function NewResourcePage() {
         <CreateButton />
       </PermissionGate>
 
-      {items.map(item => (
+      {items.map((item) => (
         <div key={item.id}>
           {item.name}
           <PermissionGate resource="new-resource" action="update">
@@ -556,6 +601,7 @@ function NewResourcePage() {
 ## Testing RBAC
 
 ### Unit Tests Location
+
 ```
 apps/api/src/auth/rbac/__tests__/
 ├── permission-matrix.spec.ts
@@ -564,11 +610,13 @@ apps/api/src/auth/rbac/__tests__/
 ```
 
 ### E2E Tests
+
 ```
 apps/web/e2e/rbac.spec.ts
 ```
 
 ### Key Test Scenarios
+
 - OWNER has all permissions
 - ADMIN cannot delete organization or manage billing
 - ADMIN cannot manage OWNER

@@ -8,22 +8,29 @@
 /**
  * Available theme presets for bio pages
  */
-export type ThemeName = 'minimal' | 'dark' | 'colorful' | 'neon' | 'gradient' | 'pastel' | 'custom';
+export type ThemeName =
+  | "minimal"
+  | "dark"
+  | "colorful"
+  | "neon"
+  | "gradient"
+  | "pastel"
+  | "custom";
 
 /**
  * Layout types for bio link display
  */
-export type LayoutType = 'stacked' | 'grid';
+export type LayoutType = "stacked" | "grid";
 
 /**
  * Background rendering styles
  */
-export type BackgroundType = 'solid' | 'gradient' | 'image';
+export type BackgroundType = "solid" | "gradient" | "image";
 
 /**
  * Button shape styles
  */
-export type ButtonStyle = 'rounded' | 'square' | 'pill';
+export type ButtonStyle = "rounded" | "square" | "pill";
 
 /**
  * Complete theme configuration for a bio page
@@ -70,15 +77,15 @@ export interface BioPageTheme {
  * Supported social media platforms
  */
 export type SocialPlatform =
-  | 'instagram'
-  | 'twitter'
-  | 'tiktok'
-  | 'youtube'
-  | 'facebook'
-  | 'linkedin'
-  | 'github'
-  | 'email'
-  | 'whatsapp';
+  | "instagram"
+  | "twitter"
+  | "tiktok"
+  | "youtube"
+  | "facebook"
+  | "linkedin"
+  | "github"
+  | "email"
+  | "whatsapp";
 
 /**
  * Social media link configuration

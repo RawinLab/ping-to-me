@@ -22,7 +22,24 @@ import {
   Badge,
   Checkbox,
 } from "@pingtome/ui";
-import { Plus, Webhook, Trash2, ExternalLink, Key, ChevronRight, Code, Terminal, Copy, Check, Zap, Link2, MousePointer, Trash, RefreshCw, Eye } from "lucide-react";
+import {
+  Plus,
+  Webhook,
+  Trash2,
+  ExternalLink,
+  Key,
+  ChevronRight,
+  Code,
+  Terminal,
+  Copy,
+  Check,
+  Zap,
+  Link2,
+  MousePointer,
+  Trash,
+  RefreshCw,
+  Eye,
+} from "lucide-react";
 import { format } from "date-fns";
 
 interface WebhookData {
@@ -35,15 +52,45 @@ interface WebhookData {
 
 const developerNavItems = [
   { title: "API Keys", href: "/dashboard/developer/api-keys", icon: Key },
-  { title: "Webhooks", href: "/dashboard/developer/webhooks", icon: Webhook, active: true },
+  {
+    title: "Webhooks",
+    href: "/dashboard/developer/webhooks",
+    icon: Webhook,
+    active: true,
+  },
 ];
 
 const AVAILABLE_EVENTS = [
-  { id: "link.created", label: "Link Created", icon: Plus, color: "text-emerald-600 bg-emerald-100" },
-  { id: "link.clicked", label: "Link Clicked", icon: MousePointer, color: "text-blue-600 bg-blue-100" },
-  { id: "link.deleted", label: "Link Deleted", icon: Trash, color: "text-red-600 bg-red-100" },
-  { id: "link.updated", label: "Link Updated", icon: RefreshCw, color: "text-amber-600 bg-amber-100" },
-  { id: "bio.viewed", label: "Bio Page Viewed", icon: Eye, color: "text-purple-600 bg-purple-100" },
+  {
+    id: "link.created",
+    label: "Link Created",
+    icon: Plus,
+    color: "text-emerald-600 bg-emerald-100",
+  },
+  {
+    id: "link.clicked",
+    label: "Link Clicked",
+    icon: MousePointer,
+    color: "text-blue-600 bg-blue-100",
+  },
+  {
+    id: "link.deleted",
+    label: "Link Deleted",
+    icon: Trash,
+    color: "text-red-600 bg-red-100",
+  },
+  {
+    id: "link.updated",
+    label: "Link Updated",
+    icon: RefreshCw,
+    color: "text-amber-600 bg-amber-100",
+  },
+  {
+    id: "bio.viewed",
+    label: "Bio Page Viewed",
+    icon: Eye,
+    color: "text-purple-600 bg-purple-100",
+  },
 ];
 
 export default function WebhooksPage() {
@@ -108,7 +155,7 @@ export default function WebhooksPage() {
     setSelectedEvents((prev) =>
       prev.includes(eventId)
         ? prev.filter((e) => e !== eventId)
-        : [...prev, eventId]
+        : [...prev, eventId],
     );
   };
 
@@ -183,7 +230,9 @@ export default function WebhooksPage() {
                 >
                   <Icon className="h-4 w-4" />
                   {item.title}
-                  {!item.active && <ChevronRight className="h-4 w-4 ml-auto text-slate-400" />}
+                  {!item.active && (
+                    <ChevronRight className="h-4 w-4 ml-auto text-slate-400" />
+                  )}
                 </Link>
               );
             })}
@@ -194,10 +243,17 @@ export default function WebhooksPage() {
             {/* Header with Add Button */}
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-semibold text-slate-900">Webhooks</h2>
-                <p className="text-sm text-slate-500">Receive real-time notifications for events.</p>
+                <h2 className="text-xl font-semibold text-slate-900">
+                  Webhooks
+                </h2>
+                <p className="text-sm text-slate-500">
+                  Receive real-time notifications for events.
+                </p>
               </div>
-              <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+              <Dialog
+                open={createDialogOpen}
+                onOpenChange={setCreateDialogOpen}
+              >
                 <DialogTrigger asChild>
                   <Button className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
                     <Plus className="mr-2 h-4 w-4" /> Add Webhook
@@ -210,12 +266,18 @@ export default function WebhooksPage() {
                       Add Webhook
                     </DialogTitle>
                     <DialogDescription>
-                      Configure a webhook endpoint to receive event notifications.
+                      Configure a webhook endpoint to receive event
+                      notifications.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <Label htmlFor="url" className="text-slate-700 font-medium">Endpoint URL</Label>
+                      <Label
+                        htmlFor="url"
+                        className="text-slate-700 font-medium"
+                      >
+                        Endpoint URL
+                      </Label>
                       <Input
                         id="url"
                         type="url"
@@ -226,7 +288,9 @@ export default function WebhooksPage() {
                       />
                     </div>
                     <div className="space-y-3">
-                      <Label className="text-slate-700 font-medium">Events to Subscribe</Label>
+                      <Label className="text-slate-700 font-medium">
+                        Events to Subscribe
+                      </Label>
                       <div className="space-y-2">
                         {AVAILABLE_EVENTS.map((event) => {
                           const EventIcon = event.icon;
@@ -245,7 +309,9 @@ export default function WebhooksPage() {
                                 checked={selectedEvents.includes(event.id)}
                                 onCheckedChange={() => toggleEvent(event.id)}
                               />
-                              <div className={`h-8 w-8 rounded-lg ${event.color} flex items-center justify-center`}>
+                              <div
+                                className={`h-8 w-8 rounded-lg ${event.color} flex items-center justify-center`}
+                              >
                                 <EventIcon className="h-4 w-4" />
                               </div>
                               <Label
@@ -273,7 +339,9 @@ export default function WebhooksPage() {
                     </Button>
                     <Button
                       onClick={handleCreate}
-                      disabled={creating || !newUrl || selectedEvents.length === 0}
+                      disabled={
+                        creating || !newUrl || selectedEvents.length === 0
+                      }
                       className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
                     >
                       {creating ? "Creating..." : "Create Webhook"}
@@ -287,7 +355,10 @@ export default function WebhooksPage() {
             {webhooks.length > 0 ? (
               <div className="space-y-4">
                 {webhooks.map((webhook) => (
-                  <Card key={webhook.id} className="border-slate-200 shadow-sm hover:shadow-md transition-all">
+                  <Card
+                    key={webhook.id}
+                    className="border-slate-200 shadow-sm hover:shadow-md transition-all"
+                  >
                     <CardContent className="p-5">
                       <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                         <div className="flex items-start gap-4 flex-1 min-w-0">
@@ -310,7 +381,9 @@ export default function WebhooksPage() {
                             </div>
                             <div className="flex flex-wrap gap-2">
                               {webhook.events.map((event) => {
-                                const eventInfo = AVAILABLE_EVENTS.find((e) => e.id === event);
+                                const eventInfo = AVAILABLE_EVENTS.find(
+                                  (e) => e.id === event,
+                                );
                                 return (
                                   <Badge
                                     key={event}
@@ -322,7 +395,11 @@ export default function WebhooksPage() {
                               })}
                             </div>
                             <p className="text-xs text-slate-400 mt-2">
-                              Created {format(new Date(webhook.createdAt), "MMM d, yyyy")}
+                              Created{" "}
+                              {format(
+                                new Date(webhook.createdAt),
+                                "MMM d, yyyy",
+                              )}
                             </p>
                           </div>
                         </div>
@@ -350,12 +427,17 @@ export default function WebhooksPage() {
                       No webhooks configured
                     </h3>
                     <p className="text-slate-500 mb-6 max-w-sm mx-auto">
-                      Add a webhook to receive real-time notifications when events happen in your account.
+                      Add a webhook to receive real-time notifications when
+                      events happen in your account.
                     </p>
-                    <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                    <Dialog
+                      open={createDialogOpen}
+                      onOpenChange={setCreateDialogOpen}
+                    >
                       <DialogTrigger asChild>
                         <Button className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
-                          <Plus className="mr-2 h-4 w-4" /> Add Your First Webhook
+                          <Plus className="mr-2 h-4 w-4" /> Add Your First
+                          Webhook
                         </Button>
                       </DialogTrigger>
                     </Dialog>
@@ -383,7 +465,9 @@ export default function WebhooksPage() {
                 <div className="flex items-center justify-between px-4 py-2 bg-slate-900">
                   <div className="flex items-center gap-2">
                     <Terminal className="h-4 w-4 text-slate-400" />
-                    <span className="text-xs text-slate-400 font-medium">JSON</span>
+                    <span className="text-xs text-slate-400 font-medium">
+                      JSON
+                    </span>
                   </div>
                   <button
                     onClick={copyPayload}
@@ -404,14 +488,56 @@ export default function WebhooksPage() {
                 </div>
                 <pre className="bg-slate-800 p-4 overflow-x-auto text-sm">
                   <code className="text-slate-300 font-mono">
-{`{
-  `}<span className="text-purple-400">&quot;event&quot;</span>{`: `}<span className="text-emerald-400">&quot;link.created&quot;</span>{`,
-  `}<span className="text-purple-400">&quot;timestamp&quot;</span>{`: `}<span className="text-emerald-400">&quot;2024-01-15T10:30:00Z&quot;</span>{`,
-  `}<span className="text-purple-400">&quot;data&quot;</span>{`: {
-    `}<span className="text-purple-400">&quot;id&quot;</span>{`: `}<span className="text-emerald-400">&quot;abc123&quot;</span>{`,
-    `}<span className="text-purple-400">&quot;slug&quot;</span>{`: `}<span className="text-emerald-400">&quot;my-link&quot;</span>{`,
-    `}<span className="text-purple-400">&quot;originalUrl&quot;</span>{`: `}<span className="text-emerald-400">&quot;https://example.com&quot;</span>{`,
-    `}<span className="text-purple-400">&quot;shortUrl&quot;</span>{`: `}<span className="text-emerald-400">&quot;https://pingto.me/my-link&quot;</span>{`
+                    {`{
+  `}
+                    <span className="text-purple-400">&quot;event&quot;</span>
+                    {`: `}
+                    <span className="text-emerald-400">
+                      &quot;link.created&quot;
+                    </span>
+                    {`,
+  `}
+                    <span className="text-purple-400">
+                      &quot;timestamp&quot;
+                    </span>
+                    {`: `}
+                    <span className="text-emerald-400">
+                      &quot;2024-01-15T10:30:00Z&quot;
+                    </span>
+                    {`,
+  `}
+                    <span className="text-purple-400">&quot;data&quot;</span>
+                    {`: {
+    `}
+                    <span className="text-purple-400">&quot;id&quot;</span>
+                    {`: `}
+                    <span className="text-emerald-400">&quot;abc123&quot;</span>
+                    {`,
+    `}
+                    <span className="text-purple-400">&quot;slug&quot;</span>
+                    {`: `}
+                    <span className="text-emerald-400">
+                      &quot;my-link&quot;
+                    </span>
+                    {`,
+    `}
+                    <span className="text-purple-400">
+                      &quot;originalUrl&quot;
+                    </span>
+                    {`: `}
+                    <span className="text-emerald-400">
+                      &quot;https://example.com&quot;
+                    </span>
+                    {`,
+    `}
+                    <span className="text-purple-400">
+                      &quot;shortUrl&quot;
+                    </span>
+                    {`: `}
+                    <span className="text-emerald-400">
+                      &quot;https://pingto.me/my-link&quot;
+                    </span>
+                    {`
   }
 }`}
                   </code>
@@ -435,13 +561,22 @@ export default function WebhooksPage() {
                   {AVAILABLE_EVENTS.map((event) => {
                     const EventIcon = event.icon;
                     return (
-                      <div key={event.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                        <div className={`h-10 w-10 rounded-lg ${event.color} flex items-center justify-center`}>
+                      <div
+                        key={event.id}
+                        className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl"
+                      >
+                        <div
+                          className={`h-10 w-10 rounded-lg ${event.color} flex items-center justify-center`}
+                        >
                           <EventIcon className="h-5 w-5" />
                         </div>
                         <div>
-                          <p className="font-medium text-slate-900 text-sm">{event.label}</p>
-                          <code className="text-xs text-slate-500">{event.id}</code>
+                          <p className="font-medium text-slate-900 text-sm">
+                            {event.label}
+                          </p>
+                          <code className="text-xs text-slate-500">
+                            {event.id}
+                          </code>
                         </div>
                       </div>
                     );

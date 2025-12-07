@@ -124,9 +124,7 @@ function ThemeCard({
     >
       <Card
         className={`relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] ${
-          isSelected
-            ? "ring-[3px] ring-blue-500 shadow-lg"
-            : "hover:shadow-md"
+          isSelected ? "ring-[3px] ring-blue-500 shadow-lg" : "hover:shadow-md"
         }`}
       >
         <CardContent className="p-4">

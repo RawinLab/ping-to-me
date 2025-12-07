@@ -1,4 +1,4 @@
-import { MemberRole } from '@pingtome/database';
+import { MemberRole } from "@pingtome/database";
 
 /**
  * Role hierarchy levels - higher number = more permissions

@@ -1,10 +1,10 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
-import { MailService } from '../mail/mail.service';
-import { AuditService } from '../audit/audit.service';
-import { randomUUID } from 'crypto';
+import { Injectable, BadRequestException } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { JwtService } from "@nestjs/jwt";
+import * as bcrypt from "bcrypt";
+import { MailService } from "../mail/mail.service";
+import { AuditService } from "../audit/audit.service";
+import { randomUUID } from "crypto";
 
 @Injectable()
 export class AuthService {
@@ -13,7 +13,7 @@ export class AuthService {
     private jwtService: JwtService,
     private mailService: MailService,
     private auditService: AuditService,
-  ) { }
+  ) {}
 
   async register(email: string, password?: string, name?: string) {
     const existingUser = await this.prisma.user.findUnique({
@@ -21,10 +21,12 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new BadRequestException('User already exists');
+      throw new BadRequestException("User already exists");
     }
 
-    const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
+    const hashedPassword = password
+      ? await bcrypt.hash(password, 10)
+      : undefined;
 
     const user = await this.prisma.user.create({
       data: {
@@ -42,7 +44,7 @@ export class AuthService {
         members: {
           create: {
             userId: user.id,
-            role: 'OWNER',
+            role: "OWNER",
           },
         },
       },
@@ -76,7 +78,7 @@ export class AuthService {
     });
 
     if (!verificationToken || verificationToken.expires < new Date()) {
-      throw new BadRequestException('Invalid or expired token');
+      throw new BadRequestException("Invalid or expired token");
     }
 
     const updatedUser = await this.prisma.user.update({
@@ -87,12 +89,16 @@ export class AuthService {
     await this.prisma.verificationToken.delete({ where: { token } });
 
     // Audit log: Email verified
-    await this.auditService.logSecurityEvent(updatedUser.id, 'auth.email_verified', {
-      status: 'success',
-      details: { email: updatedUser.email },
-    });
+    await this.auditService.logSecurityEvent(
+      updatedUser.id,
+      "auth.email_verified",
+      {
+        status: "success",
+        details: { email: updatedUser.email },
+      },
+    );
 
-    return { message: 'Email verified successfully' };
+    return { message: "Email verified successfully" };
   }
 
   async forgotPassword(email: string) {
@@ -113,10 +119,14 @@ export class AuthService {
     await this.mailService.sendPasswordResetEmail(email, token);
 
     // Audit log: Password reset requested (no userId for non-authenticated user)
-    await this.auditService.logSecurityEvent(null, 'auth.password_reset_requested', {
-      status: 'success',
-      details: { email },
-    });
+    await this.auditService.logSecurityEvent(
+      null,
+      "auth.password_reset_requested",
+      {
+        status: "success",
+        details: { email },
+      },
+    );
   }
 
   async resetPassword(token: string, newPassword: string) {
@@ -125,7 +135,7 @@ export class AuthService {
     });
 
     if (!verificationToken || verificationToken.expires < new Date()) {
-      throw new BadRequestException('Invalid or expired token');
+      throw new BadRequestException("Invalid or expired token");
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -138,12 +148,16 @@ export class AuthService {
     await this.prisma.verificationToken.delete({ where: { token } });
 
     // Audit log: Password changed via reset
-    await this.auditService.logSecurityEvent(updatedUser.id, 'auth.password_changed', {
-      status: 'success',
-      details: { method: 'reset', email: updatedUser.email },
-    });
+    await this.auditService.logSecurityEvent(
+      updatedUser.id,
+      "auth.password_changed",
+      {
+        status: "success",
+        details: { method: "reset", email: updatedUser.email },
+      },
+    );
 
-    return { message: 'Password reset successfully' };
+    return { message: "Password reset successfully" };
   }
 
   async validateUser(email: string, pass: string): Promise<any> {
@@ -154,11 +168,11 @@ export class AuthService {
     }
 
     // Audit log: Failed login attempt (don't log password)
-    await this.auditService.logSecurityEvent(null, 'auth.failed_login', {
-      status: 'failure',
+    await this.auditService.logSecurityEvent(null, "auth.failed_login", {
+      status: "failure",
       details: {
         email,
-        reason: !user ? 'user_not_found' : 'invalid_password'
+        reason: !user ? "user_not_found" : "invalid_password",
       },
     });
 
@@ -169,15 +183,15 @@ export class AuthService {
     const payload = { sub: user.id, email: user.email, role: user.role };
 
     // Audit log: Successful login
-    await this.auditService.logSecurityEvent(user.id, 'auth.login', {
-      status: 'success',
+    await this.auditService.logSecurityEvent(user.id, "auth.login", {
+      status: "success",
       context: { ipAddress, userAgent },
       details: { email: user.email },
     });
 
     return {
       accessToken: this.jwtService.sign(payload),
-      refreshToken: this.jwtService.sign(payload, { expiresIn: '7d' }),
+      refreshToken: this.jwtService.sign(payload, { expiresIn: "7d" }),
     };
   }
 
@@ -188,7 +202,7 @@ export class AuthService {
     };
   }
 
-  async validateOAuthUser(profile: any, provider: 'google' | 'github') {
+  async validateOAuthUser(profile: any, provider: "google" | "github") {
     const { id, emails, photos, displayName } = profile;
     const email = emails[0].value;
     const avatarUrl = photos[0].value;
@@ -208,7 +222,7 @@ export class AuthService {
             create: {
               provider,
               providerAccountId: id,
-              type: 'oauth',
+              type: "oauth",
             },
           },
         },
@@ -222,7 +236,7 @@ export class AuthService {
           members: {
             create: {
               userId: user.id,
-              role: 'OWNER',
+              role: "OWNER",
             },
           },
         },
@@ -239,7 +253,7 @@ export class AuthService {
             userId: user.id,
             provider,
             providerAccountId: id,
-            type: 'oauth',
+            type: "oauth",
           },
         });
       }

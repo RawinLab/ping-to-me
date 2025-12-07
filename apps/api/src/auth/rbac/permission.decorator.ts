@@ -1,4 +1,4 @@
-import { SetMetadata } from '@nestjs/common';
+import { SetMetadata } from "@nestjs/common";
 
 /**
  * Permission metadata interface for RBAC system
@@ -13,18 +13,18 @@ import { SetMetadata } from '@nestjs/common';
 export interface PermissionMetadata {
   resource: string;
   action: string;
-  context?: 'own' | 'organization' | null;
+  context?: "own" | "organization" | null;
 }
 
 /**
  * Metadata key for accessing permission data in guards
  */
-export const PERMISSION_KEY = 'permission';
+export const PERMISSION_KEY = "permission";
 
 /**
  * Metadata key for accessing require-all-permissions data in guards
  */
-export const REQUIRE_ALL_PERMISSIONS_KEY = 'require_all_permissions';
+export const REQUIRE_ALL_PERMISSIONS_KEY = "require_all_permissions";
 
 /**
  * Permission decorator for route-level RBAC

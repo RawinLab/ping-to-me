@@ -204,7 +204,10 @@ export function LinkStyleEditor({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description" className="flex items-center gap-2">
+                <Label
+                  htmlFor="description"
+                  className="flex items-center gap-2"
+                >
                   <FileText className="h-4 w-4 text-muted-foreground" />
                   Description
                 </Label>
@@ -222,7 +225,10 @@ export function LinkStyleEditor({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="thumbnailUrl" className="flex items-center gap-2">
+                <Label
+                  htmlFor="thumbnailUrl"
+                  className="flex items-center gap-2"
+                >
                   <ImageIcon className="h-4 w-4 text-muted-foreground" />
                   Thumbnail URL
                 </Label>
@@ -383,7 +389,9 @@ export function LinkStyleEditor({
                     <ul className="text-xs text-blue-800 space-y-1.5">
                       <li className="flex items-start gap-1.5">
                         <span className="text-blue-600 mt-0.5">•</span>
-                        <span>Use contrasting colors for better readability</span>
+                        <span>
+                          Use contrasting colors for better readability
+                        </span>
                       </li>
                       <li className="flex items-start gap-1.5">
                         <span className="text-blue-600 mt-0.5">•</span>
@@ -404,11 +412,7 @@ export function LinkStyleEditor({
         </div>
 
         <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            className="gap-2"
-          >
+          <Button variant="outline" onClick={handleClose} className="gap-2">
             <X className="h-4 w-4" />
             Cancel
           </Button>

@@ -52,6 +52,7 @@
   ```
 
 - [x] **TASK-003**: Generate Prisma client
+
   ```bash
   pnpm --filter @pingtome/database db:generate
   ```
@@ -73,7 +74,7 @@
     backgroundColor: string;
     logoUrl?: string;
     logoSizePercent: number;
-    errorCorrection: 'L' | 'M' | 'Q' | 'H';
+    errorCorrection: "L" | "M" | "Q" | "H";
     borderSize: number;
     size: number;
     qrCodeUrl?: string;
@@ -86,21 +87,22 @@
     backgroundColor?: string;
     logo?: string; // base64
     logoSizePercent?: number;
-    errorCorrection?: 'L' | 'M' | 'Q' | 'H';
+    errorCorrection?: "L" | "M" | "Q" | "H";
     borderSize?: number;
     size?: number;
   }
 
   export interface BatchDownloadDto {
     linkIds: string[];
-    format?: 'png' | 'svg' | 'pdf';
+    format?: "png" | "svg" | "pdf";
     size?: number;
   }
   ```
 
 - [x] **TASK-006**: Export จาก `packages/types/src/index.ts`
+
   ```typescript
-  export * from './qr';
+  export * from "./qr";
   ```
 
 - [x] **TASK-007**: Build types package
@@ -113,7 +115,15 @@
 - [x] **TASK-008**: สร้าง `apps/api/src/qr/dto/qr-config.dto.ts`
 
   ```typescript
-  import { IsString, IsOptional, IsNumber, IsIn, Min, Max, Matches } from 'class-validator';
+  import {
+    IsString,
+    IsOptional,
+    IsNumber,
+    IsIn,
+    Min,
+    Max,
+    Matches,
+  } from "class-validator";
 
   export class CreateQrConfigDto {
     @IsOptional()
@@ -137,7 +147,7 @@
     logoSizePercent?: number;
 
     @IsOptional()
-    @IsIn(['L', 'M', 'Q', 'H'])
+    @IsIn(["L", "M", "Q", "H"])
     errorCorrection?: string;
 
     @IsOptional()
@@ -183,6 +193,7 @@
 - [x] **VERIFY-001**: รัน `pnpm build` - ไม่มี error
 - [x] **VERIFY-002**: รัน `pnpm dev` - server ทำงานปกติ
 - [x] **VERIFY-003**: ทดสอบ API ด้วย curl หรือ Postman
+
   ```bash
   # Get QR config
   curl -H "Authorization: Bearer TOKEN" http://localhost:3001/links/LINK_ID/qr
@@ -222,6 +233,7 @@
 ### 2.2 PDF Generation
 
 - [x] **TASK-013**: Install pdfkit
+
   ```bash
   pnpm --filter @pingtome/api add pdfkit
   pnpm --filter @pingtome/api add -D @types/pdfkit
@@ -252,6 +264,7 @@
 ### 2.3 Batch Download
 
 - [x] **TASK-016**: Install archiver
+
   ```bash
   pnpm --filter @pingtome/api add archiver
   pnpm --filter @pingtome/api add -D @types/archiver
@@ -260,7 +273,13 @@
 - [x] **TASK-017**: สร้าง `apps/api/src/qr/dto/batch-download.dto.ts`
 
   ```typescript
-  import { IsArray, IsString, IsOptional, IsIn, IsNumber } from 'class-validator';
+  import {
+    IsArray,
+    IsString,
+    IsOptional,
+    IsIn,
+    IsNumber,
+  } from "class-validator";
 
   export class BatchDownloadDto {
     @IsArray()
@@ -268,7 +287,7 @@
     linkIds: string[];
 
     @IsOptional()
-    @IsIn(['png', 'svg', 'pdf'])
+    @IsIn(["png", "svg", "pdf"])
     format?: string;
 
     @IsOptional()
@@ -313,14 +332,18 @@
 
   ```tsx
   const ERROR_CORRECTIONS = [
-    { value: 'L', label: 'Low (7%)', description: 'ทนทานต่อความเสียหายต่ำ' },
-    { value: 'M', label: 'Medium (15%)', description: 'ทนทานปานกลาง (แนะนำ)' },
-    { value: 'Q', label: 'Quartile (25%)', description: 'ทนทานสูง' },
-    { value: 'H', label: 'High (30%)', description: 'ทนทานสูงสุด (ใช้กับ logo)' },
+    { value: "L", label: "Low (7%)", description: "ทนทานต่อความเสียหายต่ำ" },
+    { value: "M", label: "Medium (15%)", description: "ทนทานปานกลาง (แนะนำ)" },
+    { value: "Q", label: "Quartile (25%)", description: "ทนทานสูง" },
+    {
+      value: "H",
+      label: "High (30%)",
+      description: "ทนทานสูงสุด (ใช้กับ logo)",
+    },
   ];
 
   // Add state
-  const [errorCorrection, setErrorCorrection] = useState<string>('M');
+  const [errorCorrection, setErrorCorrection] = useState<string>("M");
 
   // Add Select component
   <Select value={errorCorrection} onValueChange={setErrorCorrection}>
@@ -328,13 +351,13 @@
       <SelectValue placeholder="Error Correction" />
     </SelectTrigger>
     <SelectContent>
-      {ERROR_CORRECTIONS.map(ec => (
+      {ERROR_CORRECTIONS.map((ec) => (
         <SelectItem key={ec.value} value={ec.value}>
           {ec.label}
         </SelectItem>
       ))}
     </SelectContent>
-  </Select>
+  </Select>;
   ```
 
 - [x] **TASK-021**: เพิ่ม Border Size slider
@@ -352,7 +375,7 @@
       onChange={(e) => setBorderSize(parseInt(e.target.value))}
       className="w-full"
     />
-  </div>
+  </div>;
   ```
 
 - [x] **TASK-022**: เพิ่ม PDF download button
@@ -395,7 +418,7 @@
 
   const saveConfig = async () => {
     await apiRequest(`/links/${linkId}/qr`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify({
         foregroundColor,
         backgroundColor,
@@ -415,7 +438,7 @@
   ```tsx
   interface QrCodeCustomizerProps {
     url: string;
-    linkId?: string;  // NEW: for saving config
+    linkId?: string; // NEW: for saving config
     initialQrCode?: string;
     trigger?: React.ReactNode;
   }
@@ -428,16 +451,19 @@
 - [x] **TASK-025**: อัพเดต QrCodeModal ให้ใช้ QrCodeCustomizer พร้อม linkId
 
 - [ ] **TASK-026**: (Optional) เพิ่ม Batch Download button
+
   > Note: Batch download is available via API, frontend integration deferred
 
   ```tsx
   // In toolbar when links are selected
-  {selectedLinks.length > 0 && (
-    <Button onClick={handleBatchDownloadQr}>
-      <Download className="mr-2 h-4 w-4" />
-      Download {selectedLinks.length} QR Codes
-    </Button>
-  )}
+  {
+    selectedLinks.length > 0 && (
+      <Button onClick={handleBatchDownloadQr}>
+        <Download className="mr-2 h-4 w-4" />
+        Download {selectedLinks.length} QR Codes
+      </Button>
+    );
+  }
   ```
 
 ### 3.4 Verification
@@ -478,7 +504,7 @@
 
   ```typescript
   // ถ้า URL มี ?utm_source=qr หรือ ?qr=1
-  const source = url.searchParams.get('utm_source') === 'qr' ? 'QR' : 'DIRECT';
+  const source = url.searchParams.get("utm_source") === "qr" ? "QR" : "DIRECT";
   ```
 
 ### 4.3 Analytics Endpoint
@@ -513,30 +539,30 @@
 - [x] **TASK-032**: เขียน unit tests สำหรับ QrService methods ใหม่ (39 test cases)
 
   ```typescript
-  describe('QrService', () => {
-    describe('getQrConfig', () => {
-      it('should return null for non-existent link');
-      it('should return config for existing link');
+  describe("QrService", () => {
+    describe("getQrConfig", () => {
+      it("should return null for non-existent link");
+      it("should return config for existing link");
     });
 
-    describe('saveQrConfig', () => {
-      it('should create new config');
-      it('should update existing config');
-      it('should upload logo to R2');
+    describe("saveQrConfig", () => {
+      it("should create new config");
+      it("should update existing config");
+      it("should upload logo to R2");
     });
 
-    describe('generateAdvancedQr', () => {
-      it('should apply error correction L');
-      it('should apply error correction H');
-      it('should apply custom margin');
+    describe("generateAdvancedQr", () => {
+      it("should apply error correction L");
+      it("should apply error correction H");
+      it("should apply custom margin");
     });
 
-    describe('generatePdfQr', () => {
-      it('should generate valid PDF buffer');
+    describe("generatePdfQr", () => {
+      it("should generate valid PDF buffer");
     });
 
-    describe('batchGenerateQr', () => {
-      it('should generate ZIP with all QRs');
+    describe("batchGenerateQr", () => {
+      it("should generate ZIP with all QRs");
     });
   });
   ```
@@ -548,24 +574,24 @@
 - [x] **TASK-033**: เขียน E2E tests เพิ่มเติม (46 test cases)
 
   ```typescript
-  test.describe('QR Code Customizer', () => {
-    test('should load saved config when opening', async ({ page }) => {
+  test.describe("QR Code Customizer", () => {
+    test("should load saved config when opening", async ({ page }) => {
       // ...
     });
 
-    test('should save config when clicking save', async ({ page }) => {
+    test("should save config when clicking save", async ({ page }) => {
       // ...
     });
 
-    test('error correction dropdown should work', async ({ page }) => {
+    test("error correction dropdown should work", async ({ page }) => {
       // ...
     });
 
-    test('border size slider should work', async ({ page }) => {
+    test("border size slider should work", async ({ page }) => {
       // ...
     });
 
-    test('PDF download should work', async ({ page }) => {
+    test("PDF download should work", async ({ page }) => {
       // ...
     });
   });
@@ -574,6 +600,7 @@
 ### 5.3 Run Tests
 
 - [x] **VERIFY-012**: รัน unit tests
+
   ```bash
   pnpm --filter @pingtome/api test
   ```

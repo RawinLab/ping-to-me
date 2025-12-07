@@ -14,7 +14,13 @@ interface StatsCardProps {
   icon?: React.ReactNode;
 }
 
-export function StatsCard({ title, value, subtitle, trend, icon }: StatsCardProps) {
+export function StatsCard({
+  title,
+  value,
+  subtitle,
+  trend,
+  icon,
+}: StatsCardProps) {
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <CardContent className="p-6">

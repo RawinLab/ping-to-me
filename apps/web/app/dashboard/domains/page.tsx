@@ -11,7 +11,19 @@ import {
   Button,
   Badge,
 } from "@pingtome/ui";
-import { Plus, Trash2, RefreshCw, CheckCircle, Globe, ExternalLink, Shield, Copy, Check, AlertTriangle, Sparkles } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  RefreshCw,
+  CheckCircle,
+  Globe,
+  ExternalLink,
+  Shield,
+  Copy,
+  Check,
+  AlertTriangle,
+  Sparkles,
+} from "lucide-react";
 import { format } from "date-fns";
 import { AddDomainModal } from "@/components/domains/AddDomainModal";
 
@@ -162,7 +174,8 @@ export default function DomainsPage() {
                   No custom domains yet
                 </h3>
                 <p className="text-slate-500 mb-6 max-w-sm mx-auto">
-                  Add your own domain to create branded short links and improve trust with your audience.
+                  Add your own domain to create branded short links and improve
+                  trust with your audience.
                 </p>
                 <AddDomainModal orgId={orgId} onSuccess={fetchDomains}>
                   <Button className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
@@ -183,11 +196,13 @@ export default function DomainsPage() {
                   <div className="flex flex-col lg:flex-row lg:items-center gap-4 p-5">
                     {/* Domain Info */}
                     <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${
-                        domain.isVerified
-                          ? "bg-gradient-to-br from-emerald-100 to-teal-100"
-                          : "bg-gradient-to-br from-amber-100 to-orange-100"
-                      }`}>
+                      <div
+                        className={`h-12 w-12 rounded-xl flex items-center justify-center ${
+                          domain.isVerified
+                            ? "bg-gradient-to-br from-emerald-100 to-teal-100"
+                            : "bg-gradient-to-br from-amber-100 to-orange-100"
+                        }`}
+                      >
                         {domain.isVerified ? (
                           <Shield className="h-6 w-6 text-emerald-600" />
                         ) : (
@@ -200,7 +215,9 @@ export default function DomainsPage() {
                             {domain.hostname}
                           </h3>
                           <button
-                            onClick={() => copyToClipboard(domain.hostname, domain.id)}
+                            onClick={() =>
+                              copyToClipboard(domain.hostname, domain.id)
+                            }
                             className="text-slate-400 hover:text-slate-600 transition-colors"
                           >
                             {copiedId === domain.id ? (
@@ -219,14 +236,18 @@ export default function DomainsPage() {
                           </a>
                         </div>
                         <div className="flex items-center gap-3 text-sm text-slate-500">
-                          <span>Added {format(new Date(domain.createdAt), "MMM d, yyyy")}</span>
+                          <span>
+                            Added{" "}
+                            {format(new Date(domain.createdAt), "MMM d, yyyy")}
+                          </span>
                           {domain.isVerified ? (
                             <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0">
                               <CheckCircle className="mr-1 h-3 w-3" /> Verified
                             </Badge>
                           ) : (
                             <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-0">
-                              <RefreshCw className="mr-1 h-3 w-3" /> Pending Verification
+                              <RefreshCw className="mr-1 h-3 w-3" /> Pending
+                              Verification
                             </Badge>
                           )}
                         </div>
@@ -268,11 +289,20 @@ export default function DomainsPage() {
                       </p>
                       <div className="flex items-center gap-2 bg-white rounded-lg border border-slate-200 p-3 font-mono text-sm">
                         <span className="text-slate-400">CNAME</span>
-                        <span className="text-slate-900">{domain.hostname}</span>
+                        <span className="text-slate-900">
+                          {domain.hostname}
+                        </span>
                         <span className="text-slate-400">→</span>
-                        <span className="text-blue-600">redirect.pingto.me</span>
+                        <span className="text-blue-600">
+                          redirect.pingto.me
+                        </span>
                         <button
-                          onClick={() => copyToClipboard("redirect.pingto.me", `cname-${domain.id}`)}
+                          onClick={() =>
+                            copyToClipboard(
+                              "redirect.pingto.me",
+                              `cname-${domain.id}`,
+                            )
+                          }
                           className="ml-auto text-slate-400 hover:text-slate-600"
                         >
                           {copiedId === `cname-${domain.id}` ? (
@@ -302,7 +332,9 @@ export default function DomainsPage() {
                   Unlock More Custom Domains
                 </h3>
                 <p className="text-sm text-slate-600">
-                  Upgrade to Pro to add unlimited custom domains and access advanced DNS features like wildcard subdomains and SSL management.
+                  Upgrade to Pro to add unlimited custom domains and access
+                  advanced DNS features like wildcard subdomains and SSL
+                  management.
                 </p>
               </div>
               <Button className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/25 whitespace-nowrap">

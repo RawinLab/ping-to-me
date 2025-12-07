@@ -1,10 +1,14 @@
-import { Injectable, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateLinkDto, LinkResponse, LinkStatus } from '@pingtome/types';
-import { nanoid } from 'nanoid';
-import { toDataURL } from 'qrcode';
-import { QrCodeService } from '../qr/qr.service';
-import { AuditService } from '../audit/audit.service';
+import {
+  Injectable,
+  BadRequestException,
+  ForbiddenException,
+} from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { CreateLinkDto, LinkResponse, LinkStatus } from "@pingtome/types";
+import { nanoid } from "nanoid";
+import { toDataURL } from "qrcode";
+import { QrCodeService } from "../qr/qr.service";
+import { AuditService } from "../audit/audit.service";
 
 @Injectable()
 export class LinksService {
@@ -12,14 +16,14 @@ export class LinksService {
     private prisma: PrismaService,
     private qrCodeService: QrCodeService,
     private auditService: AuditService,
-  ) { }
+  ) {}
 
   async create(userId: string, dto: CreateLinkDto): Promise<LinkResponse> {
     // 1. Validate URL format (basic check, can be enhanced)
     try {
       new URL(dto.originalUrl);
     } catch (e) {
-      throw new BadRequestException('Invalid URL format');
+      throw new BadRequestException("Invalid URL format");
     }
 
     // 2. Check for blocked domains
@@ -30,16 +34,23 @@ export class LinksService {
     });
 
     if (blocked) {
-      throw new ForbiddenException('This domain is blocked');
+      throw new ForbiddenException("This domain is blocked");
     }
 
     // 3. Generate or use custom slug
     let slug = dto.slug;
     if (slug) {
       // Check for reserved slugs
-      const reserved = ['api', 'admin', 'dashboard', 'auth', 'login', 'register'];
+      const reserved = [
+        "api",
+        "admin",
+        "dashboard",
+        "auth",
+        "login",
+        "register",
+      ];
       if (reserved.includes(slug.toLowerCase())) {
-        throw new BadRequestException('This slug is reserved');
+        throw new BadRequestException("This slug is reserved");
       }
 
       // Check for uniqueness
@@ -47,7 +58,7 @@ export class LinksService {
         where: { slug },
       });
       if (existing) {
-        throw new BadRequestException('This slug is already taken');
+        throw new BadRequestException("This slug is already taken");
       }
     } else {
       // Auto-generate with retry
@@ -61,7 +72,9 @@ export class LinksService {
         retries--;
       }
       if (retries === 0) {
-        throw new BadRequestException('Failed to generate unique slug, please try again');
+        throw new BadRequestException(
+          "Failed to generate unique slug, please try again",
+        );
       }
     }
 
@@ -73,7 +86,9 @@ export class LinksService {
         title: dto.title,
         description: dto.description,
         tags: dto.tags || [],
-        expirationDate: dto.expirationDate ? new Date(dto.expirationDate) : null,
+        expirationDate: dto.expirationDate
+          ? new Date(dto.expirationDate)
+          : null,
         passwordHash: dto.password, // TODO: Hash this in US6
         redirectType: dto.redirectType || 301,
         deepLinkFallback: dto.deepLinkFallback,
@@ -86,17 +101,25 @@ export class LinksService {
     await this.syncToKv(link);
 
     // 6. Audit log - link created (async, non-blocking)
-    this.auditService.logLinkEvent(userId, null, 'link.created', {
-      id: link.id,
-      slug: link.slug,
-      targetUrl: link.originalUrl,
-    }, {
-      details: {
-        title: link.title,
-        tags: link.tags,
-        redirectType: link.redirectType,
-      },
-    }).catch(err => console.error('Audit log failed:', err));
+    this.auditService
+      .logLinkEvent(
+        userId,
+        null,
+        "link.created",
+        {
+          id: link.id,
+          slug: link.slug,
+          targetUrl: link.originalUrl,
+        },
+        {
+          details: {
+            title: link.title,
+            tags: link.tags,
+            redirectType: link.redirectType,
+          },
+        },
+      )
+      .catch((err) => console.error("Audit log failed:", err));
 
     // 7. Return response with QR options
     return this.mapToResponse(link, {
@@ -112,7 +135,7 @@ export class LinksService {
     const apiToken = process.env.CF_API_TOKEN;
 
     if (!accountId || !namespaceId || !apiToken) {
-      console.warn('Cloudflare KV credentials missing, skipping sync');
+      console.warn("Cloudflare KV credentials missing, skipping sync");
       return;
     }
 
@@ -128,10 +151,10 @@ export class LinksService {
       const response = await fetch(
         `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces/${namespaceId}/values/${kvKey}`,
         {
-          method: 'PUT',
+          method: "PUT",
           headers: {
             Authorization: `Bearer ${apiToken}`,
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: kvValue,
         },
@@ -139,17 +162,27 @@ export class LinksService {
 
       if (!response.ok) {
         const error = await response.text();
-        console.error('Failed to sync to KV:', error);
+        console.error("Failed to sync to KV:", error);
       }
     } catch (error) {
-      console.error('Error syncing to KV:', error);
+      console.error("Error syncing to KV:", error);
     }
   }
 
   async findAll(
     userId: string,
-    params: { page: number; limit: number; tag?: string; campaignId?: string; search?: string; status?: string },
-  ): Promise<{ data: LinkResponse[]; meta: { total: number; page: number; limit: number; totalPages: number } }> {
+    params: {
+      page: number;
+      limit: number;
+      tag?: string;
+      campaignId?: string;
+      search?: string;
+      status?: string;
+    },
+  ): Promise<{
+    data: LinkResponse[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+  }> {
     const { page, limit, tag, campaignId, search, status } = params;
     const skip = (page - 1) * limit;
 
@@ -159,7 +192,7 @@ export class LinksService {
     };
 
     // Filter by status
-    if (status && status !== 'all') {
+    if (status && status !== "all") {
       where.status = status;
     }
 
@@ -173,9 +206,9 @@ export class LinksService {
 
     if (search) {
       where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { originalUrl: { contains: search, mode: 'insensitive' } },
-        { slug: { contains: search, mode: 'insensitive' } },
+        { title: { contains: search, mode: "insensitive" } },
+        { originalUrl: { contains: search, mode: "insensitive" } },
+        { slug: { contains: search, mode: "insensitive" } },
       ];
     }
 
@@ -184,7 +217,7 @@ export class LinksService {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       this.prisma.link.count({ where }),
     ]);
@@ -206,15 +239,15 @@ export class LinksService {
     });
 
     if (!link) {
-      throw new BadRequestException('Link not found');
+      throw new BadRequestException("Link not found");
     }
 
     if (link.status !== LinkStatus.ACTIVE) {
-      throw new ForbiddenException('Link is not active');
+      throw new ForbiddenException("Link is not active");
     }
 
     if (link.expirationDate && new Date() > link.expirationDate) {
-      throw new ForbiddenException('Link has expired');
+      throw new ForbiddenException("Link has expired");
     }
 
     return {
@@ -228,7 +261,7 @@ export class LinksService {
   async findOne(userId: string, id: string): Promise<LinkResponse> {
     const link = await this.prisma.link.findUnique({ where: { id } });
     if (!link || link.userId !== userId) {
-      throw new ForbiddenException('Access denied');
+      throw new ForbiddenException("Access denied");
     }
     return this.mapToResponse(link);
   }
@@ -236,7 +269,7 @@ export class LinksService {
   async delete(userId: string, id: string) {
     const link = await this.prisma.link.findUnique({ where: { id } });
     if (!link || link.userId !== userId) {
-      throw new ForbiddenException('Access denied');
+      throw new ForbiddenException("Access denied");
     }
 
     // Delete from KV
@@ -245,15 +278,23 @@ export class LinksService {
     const deleted = await this.prisma.link.delete({ where: { id } });
 
     // Audit log - link deleted (async, non-blocking)
-    this.auditService.logLinkEvent(userId, null, 'link.deleted', {
-      id: link.id,
-      slug: link.slug,
-      targetUrl: link.originalUrl,
-    }, {
-      details: {
-        title: link.title,
-      },
-    }).catch(err => console.error('Audit log failed:', err));
+    this.auditService
+      .logLinkEvent(
+        userId,
+        null,
+        "link.deleted",
+        {
+          id: link.id,
+          slug: link.slug,
+          targetUrl: link.originalUrl,
+        },
+        {
+          details: {
+            title: link.title,
+          },
+        },
+      )
+      .catch((err) => console.error("Audit log failed:", err));
 
     return deleted;
   }
@@ -271,21 +312,28 @@ export class LinksService {
       await fetch(
         `https://api.cloudflare.com/client/v4/accounts/${accountId}/storage/kv/namespaces/${namespaceId}/values/${slug}`,
         {
-          method: 'DELETE',
+          method: "DELETE",
           headers: {
             Authorization: `Bearer ${apiToken}`,
           },
         },
       );
     } catch (error) {
-      console.error('Error deleting from KV:', error);
+      console.error("Error deleting from KV:", error);
     }
   }
 
-  async update(userId: string, id: string, data: Partial<CreateLinkDto> & { status?: LinkStatus; campaignId?: string | null }) {
+  async update(
+    userId: string,
+    id: string,
+    data: Partial<CreateLinkDto> & {
+      status?: LinkStatus;
+      campaignId?: string | null;
+    },
+  ) {
     const link = await this.prisma.link.findUnique({ where: { id } });
     if (!link || link.userId !== userId) {
-      throw new ForbiddenException('Access denied');
+      throw new ForbiddenException("Access denied");
     }
 
     // Validate new URL if provided
@@ -293,7 +341,7 @@ export class LinksService {
       try {
         new URL(data.originalUrl);
       } catch (e) {
-        throw new BadRequestException('Invalid URL format');
+        throw new BadRequestException("Invalid URL format");
       }
     }
 
@@ -316,7 +364,9 @@ export class LinksService {
         title: data.title,
         description: data.description,
         tags: data.tags,
-        expirationDate: data.expirationDate ? new Date(data.expirationDate) : undefined,
+        expirationDate: data.expirationDate
+          ? new Date(data.expirationDate)
+          : undefined,
         status: data.status,
         passwordHash: data.password,
         deepLinkFallback: data.deepLinkFallback,
@@ -341,13 +391,21 @@ export class LinksService {
     // Audit log - link updated with changes (async, non-blocking)
     const changes = this.auditService.captureChanges(before, after);
     if (changes) {
-      this.auditService.logLinkEvent(userId, null, 'link.updated', {
-        id: link.id,
-        slug: link.slug,
-        targetUrl: updated.originalUrl,
-      }, {
-        changes,
-      }).catch(err => console.error('Audit log failed:', err));
+      this.auditService
+        .logLinkEvent(
+          userId,
+          null,
+          "link.updated",
+          {
+            id: link.id,
+            slug: link.slug,
+            targetUrl: updated.originalUrl,
+          },
+          {
+            changes,
+          },
+        )
+        .catch((err) => console.error("Audit log failed:", err));
     }
 
     return this.mapToResponse(updated);
@@ -369,8 +427,8 @@ export class LinksService {
         if (qrOptions?.qrColor || qrOptions?.qrLogo) {
           const result = await this.qrCodeService.generateAdvancedQr({
             url: shortUrl,
-            foregroundColor: qrOptions.qrColor || '#000000',
-            backgroundColor: '#FFFFFF',
+            foregroundColor: qrOptions.qrColor || "#000000",
+            backgroundColor: "#FFFFFF",
             logo: qrOptions.qrLogo,
             logoSize: 20,
             size: 300,
@@ -381,12 +439,12 @@ export class LinksService {
           qrCode = await toDataURL(shortUrl);
         }
       } catch (e) {
-        console.error('Failed to generate QR code:', e);
+        console.error("Failed to generate QR code:", e);
         // Fallback to simple QR if advanced fails
         try {
           qrCode = await toDataURL(shortUrl);
         } catch (e2) {
-          console.error('Failed to generate fallback QR code:', e2);
+          console.error("Failed to generate fallback QR code:", e2);
         }
       }
     }
@@ -410,7 +468,7 @@ export class LinksService {
     };
   }
   async importLinks(userId: string, fileBuffer: Buffer) {
-    const { parse } = await import('csv-parse/sync');
+    const { parse } = await import("csv-parse/sync");
 
     const records = parse(fileBuffer, {
       columns: true,
@@ -434,11 +492,13 @@ export class LinksService {
           slug: record.slug || undefined,
           title: record.title || undefined,
           description: record.description || undefined,
-          tags: record.tags ? record.tags.split(',').map((t: string) => t.trim()) : [],
+          tags: record.tags
+            ? record.tags.split(",").map((t: string) => t.trim())
+            : [],
         };
 
         if (!dto.originalUrl) {
-          throw new Error('Missing originalUrl');
+          throw new Error("Missing originalUrl");
         }
 
         await this.create(userId, dto);
@@ -454,15 +514,23 @@ export class LinksService {
 
     // Audit log - bulk import (async, non-blocking)
     if (results.success > 0) {
-      this.auditService.logLinkEvent(userId, null, 'link.bulk_created', {
-        id: 'bulk-import',
-      }, {
-        details: {
-          totalImported: results.success,
-          totalFailed: results.failed,
-          totalRecords: results.total,
-        },
-      }).catch(err => console.error('Audit log failed:', err));
+      this.auditService
+        .logLinkEvent(
+          userId,
+          null,
+          "link.bulk_created",
+          {
+            id: "bulk-import",
+          },
+          {
+            details: {
+              totalImported: results.success,
+              totalFailed: results.failed,
+              totalRecords: results.total,
+            },
+          },
+        )
+        .catch((err) => console.error("Audit log failed:", err));
     }
 
     return results;
@@ -471,24 +539,36 @@ export class LinksService {
   async exportLinks(userId: string) {
     const links = await this.prisma.link.findMany({
       where: { userId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
-    const { stringify } = await import('csv-stringify/sync');
+    const { stringify } = await import("csv-stringify/sync");
 
-    const csv = stringify(links.map(link => ({
-      originalUrl: link.originalUrl,
-      slug: link.slug,
-      title: link.title || '',
-      description: link.description || '',
-      tags: link.tags.join(', '),
-      status: link.status,
-      createdAt: link.createdAt.toISOString(),
-      clicks: 0, // TODO: Add click count if available
-    })), {
-      header: true,
-      columns: ['originalUrl', 'slug', 'title', 'description', 'tags', 'status', 'createdAt', 'clicks'],
-    });
+    const csv = stringify(
+      links.map((link) => ({
+        originalUrl: link.originalUrl,
+        slug: link.slug,
+        title: link.title || "",
+        description: link.description || "",
+        tags: link.tags.join(", "),
+        status: link.status,
+        createdAt: link.createdAt.toISOString(),
+        clicks: 0, // TODO: Add click count if available
+      })),
+      {
+        header: true,
+        columns: [
+          "originalUrl",
+          "slug",
+          "title",
+          "description",
+          "tags",
+          "status",
+          "createdAt",
+          "clicks",
+        ],
+      },
+    );
 
     return csv;
   }
@@ -527,14 +607,22 @@ export class LinksService {
 
     // Audit log - bulk delete (async, non-blocking)
     if (result.count > 0) {
-      this.auditService.logLinkEvent(userId, null, 'link.bulk_deleted', {
-        id: 'bulk-delete',
-      }, {
-        details: {
-          deletedCount: result.count,
-          requestedCount: ids.length,
-        },
-      }).catch(err => console.error('Audit log failed:', err));
+      this.auditService
+        .logLinkEvent(
+          userId,
+          null,
+          "link.bulk_deleted",
+          {
+            id: "bulk-delete",
+          },
+          {
+            details: {
+              deletedCount: result.count,
+              requestedCount: ids.length,
+            },
+          },
+        )
+        .catch((err) => console.error("Audit log failed:", err));
     }
 
     return result;
@@ -567,5 +655,3 @@ export class LinksService {
     return { success: true, count: links.length, tagName };
   }
 }
-
-

@@ -68,55 +68,238 @@ interface AuditLogEntry {
 }
 
 // Enhanced action config to support new action format like 'link.created'
-const ACTION_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
+const ACTION_CONFIG: Record<
+  string,
+  { label: string; color: string; icon: any }
+> = {
   // Legacy actions
-  CREATE: { label: "Create", color: "bg-emerald-100 text-emerald-700", icon: Plus },
-  UPDATE: { label: "Update", color: "bg-blue-100 text-blue-700", icon: RefreshCw },
+  CREATE: {
+    label: "Create",
+    color: "bg-emerald-100 text-emerald-700",
+    icon: Plus,
+  },
+  UPDATE: {
+    label: "Update",
+    color: "bg-blue-100 text-blue-700",
+    icon: RefreshCw,
+  },
   DELETE: { label: "Delete", color: "bg-red-100 text-red-700", icon: Trash2 },
-  LOGIN: { label: "Login", color: "bg-purple-100 text-purple-700", icon: LogIn },
-  LOGOUT: { label: "Logout", color: "bg-slate-100 text-slate-700", icon: LogOut },
+  LOGIN: {
+    label: "Login",
+    color: "bg-purple-100 text-purple-700",
+    icon: LogIn,
+  },
+  LOGOUT: {
+    label: "Logout",
+    color: "bg-slate-100 text-slate-700",
+    icon: LogOut,
+  },
   // New action format
-  "link.created": { label: "Link Created", color: "bg-emerald-100 text-emerald-700", icon: Plus },
-  "link.updated": { label: "Link Updated", color: "bg-blue-100 text-blue-700", icon: Edit },
-  "link.deleted": { label: "Link Deleted", color: "bg-red-100 text-red-700", icon: Trash2 },
-  "link.archived": { label: "Link Archived", color: "bg-amber-100 text-amber-700", icon: FolderOpen },
-  "link.restored": { label: "Link Restored", color: "bg-green-100 text-green-700", icon: RefreshCw },
-  "link.bulk_created": { label: "Bulk Create", color: "bg-emerald-100 text-emerald-700", icon: Plus },
-  "link.bulk_deleted": { label: "Bulk Delete", color: "bg-red-100 text-red-700", icon: Trash2 },
-  "domain.added": { label: "Domain Added", color: "bg-emerald-100 text-emerald-700", icon: Globe },
-  "domain.verified": { label: "Domain Verified", color: "bg-green-100 text-green-700", icon: CheckCircle },
-  "domain.failed": { label: "Domain Failed", color: "bg-red-100 text-red-700", icon: XCircle },
-  "domain.removed": { label: "Domain Removed", color: "bg-red-100 text-red-700", icon: Trash2 },
-  "domain.ssl_updated": { label: "SSL Updated", color: "bg-blue-100 text-blue-700", icon: Shield },
-  "member.invited": { label: "Member Invited", color: "bg-purple-100 text-purple-700", icon: UserPlus },
-  "member.joined": { label: "Member Joined", color: "bg-green-100 text-green-700", icon: Users },
-  "member.role_changed": { label: "Role Changed", color: "bg-blue-100 text-blue-700", icon: Shield },
-  "member.removed": { label: "Member Removed", color: "bg-red-100 text-red-700", icon: UserMinus },
-  "org.created": { label: "Org Created", color: "bg-emerald-100 text-emerald-700", icon: Plus },
-  "org.updated": { label: "Org Updated", color: "bg-blue-100 text-blue-700", icon: Edit },
-  "org.settings_changed": { label: "Settings Changed", color: "bg-amber-100 text-amber-700", icon: Settings },
-  "org.deleted": { label: "Org Deleted", color: "bg-red-100 text-red-700", icon: Trash2 },
-  "auth.login": { label: "Login", color: "bg-purple-100 text-purple-700", icon: LogIn },
-  "auth.logout": { label: "Logout", color: "bg-slate-100 text-slate-700", icon: LogOut },
-  "auth.failed_login": { label: "Failed Login", color: "bg-red-100 text-red-700", icon: XCircle },
-  "auth.2fa_enabled": { label: "2FA Enabled", color: "bg-green-100 text-green-700", icon: Shield },
-  "auth.2fa_disabled": { label: "2FA Disabled", color: "bg-amber-100 text-amber-700", icon: Shield },
-  "auth.password_changed": { label: "Password Changed", color: "bg-blue-100 text-blue-700", icon: Key },
-  "auth.email_verified": { label: "Email Verified", color: "bg-green-100 text-green-700", icon: Mail },
-  "api_key.created": { label: "API Key Created", color: "bg-emerald-100 text-emerald-700", icon: Key },
-  "api_key.rotated": { label: "API Key Rotated", color: "bg-blue-100 text-blue-700", icon: RefreshCw },
-  "api_key.revoked": { label: "API Key Revoked", color: "bg-red-100 text-red-700", icon: Trash2 },
-  "billing.plan_changed": { label: "Plan Changed", color: "bg-purple-100 text-purple-700", icon: CreditCard },
-  "billing.subscription_cancelled": { label: "Subscription Cancelled", color: "bg-red-100 text-red-700", icon: XCircle },
-  "campaign.created": { label: "Campaign Created", color: "bg-emerald-100 text-emerald-700", icon: Plus },
-  "campaign.updated": { label: "Campaign Updated", color: "bg-blue-100 text-blue-700", icon: Edit },
-  "campaign.deleted": { label: "Campaign Deleted", color: "bg-red-100 text-red-700", icon: Trash2 },
-  "tag.created": { label: "Tag Created", color: "bg-emerald-100 text-emerald-700", icon: Tag },
-  "tag.updated": { label: "Tag Updated", color: "bg-blue-100 text-blue-700", icon: Edit },
-  "tag.deleted": { label: "Tag Deleted", color: "bg-red-100 text-red-700", icon: Trash2 },
-  "biopage.created": { label: "Bio Page Created", color: "bg-emerald-100 text-emerald-700", icon: Plus },
-  "biopage.updated": { label: "Bio Page Updated", color: "bg-blue-100 text-blue-700", icon: Edit },
-  "biopage.deleted": { label: "Bio Page Deleted", color: "bg-red-100 text-red-700", icon: Trash2 },
+  "link.created": {
+    label: "Link Created",
+    color: "bg-emerald-100 text-emerald-700",
+    icon: Plus,
+  },
+  "link.updated": {
+    label: "Link Updated",
+    color: "bg-blue-100 text-blue-700",
+    icon: Edit,
+  },
+  "link.deleted": {
+    label: "Link Deleted",
+    color: "bg-red-100 text-red-700",
+    icon: Trash2,
+  },
+  "link.archived": {
+    label: "Link Archived",
+    color: "bg-amber-100 text-amber-700",
+    icon: FolderOpen,
+  },
+  "link.restored": {
+    label: "Link Restored",
+    color: "bg-green-100 text-green-700",
+    icon: RefreshCw,
+  },
+  "link.bulk_created": {
+    label: "Bulk Create",
+    color: "bg-emerald-100 text-emerald-700",
+    icon: Plus,
+  },
+  "link.bulk_deleted": {
+    label: "Bulk Delete",
+    color: "bg-red-100 text-red-700",
+    icon: Trash2,
+  },
+  "domain.added": {
+    label: "Domain Added",
+    color: "bg-emerald-100 text-emerald-700",
+    icon: Globe,
+  },
+  "domain.verified": {
+    label: "Domain Verified",
+    color: "bg-green-100 text-green-700",
+    icon: CheckCircle,
+  },
+  "domain.failed": {
+    label: "Domain Failed",
+    color: "bg-red-100 text-red-700",
+    icon: XCircle,
+  },
+  "domain.removed": {
+    label: "Domain Removed",
+    color: "bg-red-100 text-red-700",
+    icon: Trash2,
+  },
+  "domain.ssl_updated": {
+    label: "SSL Updated",
+    color: "bg-blue-100 text-blue-700",
+    icon: Shield,
+  },
+  "member.invited": {
+    label: "Member Invited",
+    color: "bg-purple-100 text-purple-700",
+    icon: UserPlus,
+  },
+  "member.joined": {
+    label: "Member Joined",
+    color: "bg-green-100 text-green-700",
+    icon: Users,
+  },
+  "member.role_changed": {
+    label: "Role Changed",
+    color: "bg-blue-100 text-blue-700",
+    icon: Shield,
+  },
+  "member.removed": {
+    label: "Member Removed",
+    color: "bg-red-100 text-red-700",
+    icon: UserMinus,
+  },
+  "org.created": {
+    label: "Org Created",
+    color: "bg-emerald-100 text-emerald-700",
+    icon: Plus,
+  },
+  "org.updated": {
+    label: "Org Updated",
+    color: "bg-blue-100 text-blue-700",
+    icon: Edit,
+  },
+  "org.settings_changed": {
+    label: "Settings Changed",
+    color: "bg-amber-100 text-amber-700",
+    icon: Settings,
+  },
+  "org.deleted": {
+    label: "Org Deleted",
+    color: "bg-red-100 text-red-700",
+    icon: Trash2,
+  },
+  "auth.login": {
+    label: "Login",
+    color: "bg-purple-100 text-purple-700",
+    icon: LogIn,
+  },
+  "auth.logout": {
+    label: "Logout",
+    color: "bg-slate-100 text-slate-700",
+    icon: LogOut,
+  },
+  "auth.failed_login": {
+    label: "Failed Login",
+    color: "bg-red-100 text-red-700",
+    icon: XCircle,
+  },
+  "auth.2fa_enabled": {
+    label: "2FA Enabled",
+    color: "bg-green-100 text-green-700",
+    icon: Shield,
+  },
+  "auth.2fa_disabled": {
+    label: "2FA Disabled",
+    color: "bg-amber-100 text-amber-700",
+    icon: Shield,
+  },
+  "auth.password_changed": {
+    label: "Password Changed",
+    color: "bg-blue-100 text-blue-700",
+    icon: Key,
+  },
+  "auth.email_verified": {
+    label: "Email Verified",
+    color: "bg-green-100 text-green-700",
+    icon: Mail,
+  },
+  "api_key.created": {
+    label: "API Key Created",
+    color: "bg-emerald-100 text-emerald-700",
+    icon: Key,
+  },
+  "api_key.rotated": {
+    label: "API Key Rotated",
+    color: "bg-blue-100 text-blue-700",
+    icon: RefreshCw,
+  },
+  "api_key.revoked": {
+    label: "API Key Revoked",
+    color: "bg-red-100 text-red-700",
+    icon: Trash2,
+  },
+  "billing.plan_changed": {
+    label: "Plan Changed",
+    color: "bg-purple-100 text-purple-700",
+    icon: CreditCard,
+  },
+  "billing.subscription_cancelled": {
+    label: "Subscription Cancelled",
+    color: "bg-red-100 text-red-700",
+    icon: XCircle,
+  },
+  "campaign.created": {
+    label: "Campaign Created",
+    color: "bg-emerald-100 text-emerald-700",
+    icon: Plus,
+  },
+  "campaign.updated": {
+    label: "Campaign Updated",
+    color: "bg-blue-100 text-blue-700",
+    icon: Edit,
+  },
+  "campaign.deleted": {
+    label: "Campaign Deleted",
+    color: "bg-red-100 text-red-700",
+    icon: Trash2,
+  },
+  "tag.created": {
+    label: "Tag Created",
+    color: "bg-emerald-100 text-emerald-700",
+    icon: Tag,
+  },
+  "tag.updated": {
+    label: "Tag Updated",
+    color: "bg-blue-100 text-blue-700",
+    icon: Edit,
+  },
+  "tag.deleted": {
+    label: "Tag Deleted",
+    color: "bg-red-100 text-red-700",
+    icon: Trash2,
+  },
+  "biopage.created": {
+    label: "Bio Page Created",
+    color: "bg-emerald-100 text-emerald-700",
+    icon: Plus,
+  },
+  "biopage.updated": {
+    label: "Bio Page Updated",
+    color: "bg-blue-100 text-blue-700",
+    icon: Edit,
+  },
+  "biopage.deleted": {
+    label: "Bio Page Deleted",
+    color: "bg-red-100 text-red-700",
+    icon: Trash2,
+  },
 };
 
 const RESOURCE_CONFIG: Record<string, { label: string; icon: any }> = {
@@ -132,9 +315,20 @@ const RESOURCE_CONFIG: Record<string, { label: string; icon: any }> = {
   Subscription: { label: "Subscription", icon: CreditCard },
 };
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
-  success: { label: "Success", color: "bg-green-100 text-green-700", icon: CheckCircle },
-  failure: { label: "Failure", color: "bg-red-100 text-red-700", icon: XCircle },
+const STATUS_CONFIG: Record<
+  string,
+  { label: string; color: string; icon: any }
+> = {
+  success: {
+    label: "Success",
+    color: "bg-green-100 text-green-700",
+    icon: CheckCircle,
+  },
+  failure: {
+    label: "Failure",
+    color: "bg-red-100 text-red-700",
+    icon: XCircle,
+  },
 };
 
 // Date range presets
@@ -181,7 +375,16 @@ export default function AuditLogsPage() {
     }
 
     return params.toString();
-  }, [page, actionFilter, resourceFilter, statusFilter, searchQuery, datePreset, startDate, endDate]);
+  }, [
+    page,
+    actionFilter,
+    resourceFilter,
+    statusFilter,
+    searchQuery,
+    datePreset,
+    startDate,
+    endDate,
+  ]);
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
@@ -203,9 +406,17 @@ export default function AuditLogsPage() {
   // Reset page when filters change
   useEffect(() => {
     setPage(0);
-  }, [actionFilter, resourceFilter, statusFilter, searchQuery, datePreset, startDate, endDate]);
+  }, [
+    actionFilter,
+    resourceFilter,
+    statusFilter,
+    searchQuery,
+    datePreset,
+    startDate,
+    endDate,
+  ]);
 
-  const handleExport = async (format: 'csv' | 'json') => {
+  const handleExport = async (format: "csv" | "json") => {
     setExporting(true);
     try {
       const params = new URLSearchParams();
@@ -218,27 +429,30 @@ export default function AuditLogsPage() {
         params.set("endDate", new Date().toISOString());
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/audit/logs/export?${params.toString()}`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/audit/logs/export?${params.toString()}`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+          },
         },
-      });
+      );
 
-      if (!response.ok) throw new Error('Export failed');
+      if (!response.ok) throw new Error("Export failed");
 
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `audit-logs-${format === 'csv' ? 'export.csv' : 'export.json'}`;
+      a.download = `audit-logs-${format === "csv" ? "export.csv" : "export.json"}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Export failed:', error);
+      console.error("Export failed:", error);
     } finally {
       setExporting(false);
     }
@@ -256,18 +470,25 @@ export default function AuditLogsPage() {
   };
 
   const totalPages = Math.ceil(total / limit);
-  const hasFilters = actionFilter || resourceFilter || statusFilter || searchQuery || datePreset !== 7;
+  const hasFilters =
+    actionFilter ||
+    resourceFilter ||
+    statusFilter ||
+    searchQuery ||
+    datePreset !== 7;
 
   // Get unique actions from logs for filter dropdown
-  const uniqueActions = Array.from(new Set(logs.map(l => l.action)));
+  const uniqueActions = Array.from(new Set(logs.map((l) => l.action)));
 
   // Helper to get action config with fallback
   const getActionConfig = (action: string) => {
-    return ACTION_CONFIG[action] || {
-      label: action.replace('.', ' ').replace(/_/g, ' '),
-      color: "bg-slate-100 text-slate-700",
-      icon: History
-    };
+    return (
+      ACTION_CONFIG[action] || {
+        label: action.replace(".", " ").replace(/_/g, " "),
+        color: "bg-slate-100 text-slate-700",
+        icon: History,
+      }
+    );
   };
 
   return (
@@ -288,7 +509,7 @@ export default function AuditLogsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleExport('csv')}
+              onClick={() => handleExport("csv")}
               disabled={exporting}
               className="rounded-lg"
             >
@@ -298,7 +519,7 @@ export default function AuditLogsPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleExport('json')}
+              onClick={() => handleExport("json")}
               disabled={exporting}
               className="rounded-lg"
             >
@@ -335,14 +556,20 @@ export default function AuditLogsPage() {
               <div className="flex flex-wrap gap-4 items-center">
                 {/* Date Range Preset */}
                 <div className="w-48">
-                  <Select value={String(datePreset)} onValueChange={(v) => setDatePreset(Number(v))}>
+                  <Select
+                    value={String(datePreset)}
+                    onValueChange={(v) => setDatePreset(Number(v))}
+                  >
                     <SelectTrigger className="rounded-lg">
                       <Calendar className="mr-2 h-4 w-4" />
                       <SelectValue placeholder="Date Range" />
                     </SelectTrigger>
                     <SelectContent>
                       {DATE_PRESETS.map((preset) => (
-                        <SelectItem key={preset.days} value={String(preset.days)}>
+                        <SelectItem
+                          key={preset.days}
+                          value={String(preset.days)}
+                        >
                           {preset.label}
                         </SelectItem>
                       ))}
@@ -358,24 +585,29 @@ export default function AuditLogsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">All Actions</SelectItem>
-                      {Object.entries(ACTION_CONFIG).slice(0, 20).map(([key, config]) => {
-                        const Icon = config.icon;
-                        return (
-                          <SelectItem key={key} value={key}>
-                            <div className="flex items-center gap-2">
-                              <Icon className="h-4 w-4" />
-                              {config.label}
-                            </div>
-                          </SelectItem>
-                        );
-                      })}
+                      {Object.entries(ACTION_CONFIG)
+                        .slice(0, 20)
+                        .map(([key, config]) => {
+                          const Icon = config.icon;
+                          return (
+                            <SelectItem key={key} value={key}>
+                              <div className="flex items-center gap-2">
+                                <Icon className="h-4 w-4" />
+                                {config.label}
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
                     </SelectContent>
                   </Select>
                 </div>
 
                 {/* Resource Filter */}
                 <div className="w-48">
-                  <Select value={resourceFilter} onValueChange={setResourceFilter}>
+                  <Select
+                    value={resourceFilter}
+                    onValueChange={setResourceFilter}
+                  >
                     <SelectTrigger className="rounded-lg">
                       <SelectValue placeholder="All Resources" />
                     </SelectTrigger>
@@ -445,7 +677,9 @@ export default function AuditLogsPage() {
                 <div>
                   <CardTitle className="text-lg">Activity Log</CardTitle>
                   <CardDescription>
-                    {loading ? "Loading..." : `Showing ${logs.length} of ${total} entries`}
+                    {loading
+                      ? "Loading..."
+                      : `Showing ${logs.length} of ${total} entries`}
                   </CardDescription>
                 </div>
               </div>
@@ -455,7 +689,9 @@ export default function AuditLogsPage() {
                 onClick={() => fetchLogs()}
                 className="rounded-lg"
               >
-                <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                <RefreshCw
+                  className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
+                />
                 Refresh
               </Button>
             </div>
@@ -465,7 +701,10 @@ export default function AuditLogsPage() {
               <div className="p-8">
                 <div className="space-y-4">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="animate-pulse flex items-center gap-4 p-4 bg-slate-50 rounded-xl">
+                    <div
+                      key={i}
+                      className="animate-pulse flex items-center gap-4 p-4 bg-slate-50 rounded-xl"
+                    >
                       <div className="h-10 w-10 bg-slate-200 rounded-lg" />
                       <div className="flex-1 space-y-2">
                         <div className="h-4 bg-slate-200 rounded w-1/3" />
@@ -481,14 +720,22 @@ export default function AuditLogsPage() {
                   {logs.map((log) => {
                     const actionConfig = getActionConfig(log.action);
                     const ActionIcon = actionConfig.icon;
-                    const resourceConfig = RESOURCE_CONFIG[log.resource] || { label: log.resource, icon: FileText };
+                    const resourceConfig = RESOURCE_CONFIG[log.resource] || {
+                      label: log.resource,
+                      icon: FileText,
+                    };
                     const ResourceIcon = resourceConfig.icon;
-                    const statusConfig = STATUS_CONFIG[log.status || 'success'];
+                    const statusConfig = STATUS_CONFIG[log.status || "success"];
 
                     return (
-                      <div key={log.id} className="flex items-start gap-4 p-4 hover:bg-slate-50 transition-colors">
+                      <div
+                        key={log.id}
+                        className="flex items-start gap-4 p-4 hover:bg-slate-50 transition-colors"
+                      >
                         {/* Action Icon */}
-                        <div className={`h-10 w-10 rounded-xl ${actionConfig.color} flex items-center justify-center flex-shrink-0`}>
+                        <div
+                          className={`h-10 w-10 rounded-xl ${actionConfig.color} flex items-center justify-center flex-shrink-0`}
+                        >
                           <ActionIcon className="h-5 w-5" />
                         </div>
 
@@ -501,17 +748,21 @@ export default function AuditLogsPage() {
                             <span className="text-slate-400">•</span>
                             <div className="flex items-center gap-1.5 text-sm text-slate-600">
                               <ResourceIcon className="h-3.5 w-3.5" />
-                              <span className="font-medium">{resourceConfig.label}</span>
+                              <span className="font-medium">
+                                {resourceConfig.label}
+                              </span>
                               {log.resourceId && (
                                 <code className="text-xs text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
                                   {log.resourceId.substring(0, 8)}...
                                 </code>
                               )}
                             </div>
-                            {log.status && log.status !== 'success' && (
+                            {log.status && log.status !== "success" && (
                               <>
                                 <span className="text-slate-400">•</span>
-                                <Badge className={`${statusConfig.color} border-0`}>
+                                <Badge
+                                  className={`${statusConfig.color} border-0`}
+                                >
                                   {statusConfig.label}
                                 </Badge>
                               </>
@@ -519,28 +770,38 @@ export default function AuditLogsPage() {
                           </div>
 
                           {/* Details */}
-                          {log.details && Object.keys(log.details).length > 0 && (
-                            <p className="text-sm text-slate-500 truncate max-w-lg mb-1">
-                              {Object.entries(log.details)
-                                .filter(([k]) => k !== 'changes')
-                                .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`)
-                                .join(' | ')}
-                            </p>
-                          )}
+                          {log.details &&
+                            Object.keys(log.details).length > 0 && (
+                              <p className="text-sm text-slate-500 truncate max-w-lg mb-1">
+                                {Object.entries(log.details)
+                                  .filter(([k]) => k !== "changes")
+                                  .map(
+                                    ([k, v]) =>
+                                      `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`,
+                                  )
+                                  .join(" | ")}
+                              </p>
+                            )}
 
                           {/* Changes */}
-                          {log.changes && (log.changes.before || log.changes.after) && (
-                            <div className="text-xs text-slate-400 bg-slate-50 rounded px-2 py-1 mt-1 inline-block">
-                              <span className="font-medium">Changes:</span>{' '}
-                              {Object.keys(log.changes.after || log.changes.before || {}).join(', ')}
-                            </div>
-                          )}
+                          {log.changes &&
+                            (log.changes.before || log.changes.after) && (
+                              <div className="text-xs text-slate-400 bg-slate-50 rounded px-2 py-1 mt-1 inline-block">
+                                <span className="font-medium">Changes:</span>{" "}
+                                {Object.keys(
+                                  log.changes.after || log.changes.before || {},
+                                ).join(", ")}
+                              </div>
+                            )}
 
                           {/* Metadata */}
                           <div className="flex items-center gap-4 mt-2 text-xs text-slate-400 flex-wrap">
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              {format(new Date(log.createdAt), "MMM d, yyyy HH:mm:ss")}
+                              {format(
+                                new Date(log.createdAt),
+                                "MMM d, yyyy HH:mm:ss",
+                              )}
                             </span>
                             {log.ipAddress && (
                               <span className="flex items-center gap-1">
@@ -580,7 +841,9 @@ export default function AuditLogsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+                      onClick={() =>
+                        setPage(Math.min(totalPages - 1, page + 1))
+                      }
                       disabled={page >= totalPages - 1}
                       className="rounded-lg"
                     >

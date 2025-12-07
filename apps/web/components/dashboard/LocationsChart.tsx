@@ -21,8 +21,14 @@ const CHART_COLORS = {
   indigo: "#6366F1",
 };
 
-export function LocationsChart({ countries, cities = [], onExport }: LocationsChartProps) {
-  const [activeTab, setActiveTab] = useState<"countries" | "cities">("countries");
+export function LocationsChart({
+  countries,
+  cities = [],
+  onExport,
+}: LocationsChartProps) {
+  const [activeTab, setActiveTab] = useState<"countries" | "cities">(
+    "countries",
+  );
   const [expanded, setExpanded] = useState(false);
   const data = activeTab === "countries" ? countries : cities;
   const maxValue = Math.max(...data.map((d) => d.value), 1);
@@ -37,7 +43,10 @@ export function LocationsChart({ countries, cities = [], onExport }: LocationsCh
         <div className="flex items-center gap-2">
           <div className="flex bg-muted rounded-full p-1">
             <button
-              onClick={() => { setActiveTab("countries"); setExpanded(false); }}
+              onClick={() => {
+                setActiveTab("countries");
+                setExpanded(false);
+              }}
               className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${
                 activeTab === "countries"
                   ? "bg-white text-foreground shadow-sm"
@@ -47,7 +56,10 @@ export function LocationsChart({ countries, cities = [], onExport }: LocationsCh
               Countries
             </button>
             <button
-              onClick={() => { setActiveTab("cities"); setExpanded(false); }}
+              onClick={() => {
+                setActiveTab("cities");
+                setExpanded(false);
+              }}
               className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${
                 activeTab === "cities"
                   ? "bg-white text-foreground shadow-sm"
@@ -72,13 +84,17 @@ export function LocationsChart({ countries, cities = [], onExport }: LocationsCh
             <span className="text-right">Clicks</span>
             <span className="w-12 text-right">%</span>
           </div>
-          <div className={`space-y-3 transition-all duration-300 ${expanded ? '' : 'max-h-[240px]'} overflow-hidden`}>
+          <div
+            className={`space-y-3 transition-all duration-300 ${expanded ? "" : "max-h-[240px]"} overflow-hidden`}
+          >
             {data.slice(0, displayCount).map((item, index) => (
               <div
                 key={item.name}
                 className="grid grid-cols-[auto_1fr_auto_auto] gap-x-4 items-center"
               >
-                <span className="w-6 text-sm text-muted-foreground">{index + 1}</span>
+                <span className="w-6 text-sm text-muted-foreground">
+                  {index + 1}
+                </span>
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium">{item.name}</span>
                   <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden min-w-[100px]">
@@ -91,7 +107,9 @@ export function LocationsChart({ countries, cities = [], onExport }: LocationsCh
                     />
                   </div>
                 </div>
-                <span className="text-sm font-medium text-right">{item.value.toLocaleString()}</span>
+                <span className="text-sm font-medium text-right">
+                  {item.value.toLocaleString()}
+                </span>
                 <span className="w-12 text-sm text-muted-foreground text-right">
                   {item.percentage}%
                 </span>

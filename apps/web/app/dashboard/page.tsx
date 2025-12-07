@@ -2,7 +2,15 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Button, Card, CardContent, CardHeader, CardTitle, Badge, Progress } from "@pingtome/ui";
+import {
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Badge,
+  Progress,
+} from "@pingtome/ui";
 import { apiRequest } from "../../lib/api";
 import { LinksTable } from "../../components/links/LinksTable";
 import { ImportLinksModal } from "../../components/links/ImportLinksModal";
@@ -56,7 +64,7 @@ export default function DashboardPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/links/export`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
       if (!res.ok) throw new Error("Export failed");
       const blob = await res.blob();
@@ -77,9 +85,18 @@ export default function DashboardPage() {
       clicks: item.count,
     })) || [];
 
-  const weeklyClicks = chartData.slice(-7).reduce((sum: number, d: any) => sum + (d.clicks || 0), 0);
-  const previousWeekClicks = chartData.slice(-14, -7).reduce((sum: number, d: any) => sum + (d.clicks || 0), 0);
-  const weeklyChange = previousWeekClicks > 0 ? Math.round(((weeklyClicks - previousWeekClicks) / previousWeekClicks) * 100) : 0;
+  const weeklyClicks = chartData
+    .slice(-7)
+    .reduce((sum: number, d: any) => sum + (d.clicks || 0), 0);
+  const previousWeekClicks = chartData
+    .slice(-14, -7)
+    .reduce((sum: number, d: any) => sum + (d.clicks || 0), 0);
+  const weeklyChange =
+    previousWeekClicks > 0
+      ? Math.round(
+          ((weeklyClicks - previousWeekClicks) / previousWeekClicks) * 100,
+        )
+      : 0;
 
   return (
     <div className="p-6 lg:p-8 space-y-8">
@@ -90,7 +107,10 @@ export default function DashboardPage() {
             <h1 className="text-2xl lg:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
               Welcome back
             </h1>
-            <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-0 font-medium">
+            <Badge
+              variant="secondary"
+              className="bg-emerald-50 text-emerald-700 border-0 font-medium"
+            >
               <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5 animate-pulse" />
               Live
             </Badge>
@@ -101,17 +121,29 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           <ImportLinksModal onSuccess={() => setRefreshKey((prev) => prev + 1)}>
-            <Button variant="outline" size="sm" className="gap-2 h-9 rounded-lg border-slate-200 hover:bg-slate-50">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 h-9 rounded-lg border-slate-200 hover:bg-slate-50"
+            >
               <Upload className="h-4 w-4" />
               Import
             </Button>
           </ImportLinksModal>
-          <Button variant="outline" size="sm" className="gap-2 h-9 rounded-lg border-slate-200 hover:bg-slate-50" onClick={handleExport}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 h-9 rounded-lg border-slate-200 hover:bg-slate-50"
+            onClick={handleExport}
+          >
             <Download className="h-4 w-4" />
             Export
           </Button>
           <Link href="/dashboard/links/new">
-            <Button size="sm" className="gap-2 h-9 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
+            <Button
+              size="sm"
+              className="gap-2 h-9 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25"
+            >
               <Plus className="h-4 w-4" />
               Create Link
             </Button>
@@ -129,7 +161,9 @@ export default function DashboardPage() {
               <div>
                 <p className="text-blue-100 text-sm font-medium">Total Links</p>
                 <p className="text-4xl font-bold mt-2">
-                  {loading ? "..." : metrics?.totalLinks?.toLocaleString() || "0"}
+                  {loading
+                    ? "..."
+                    : metrics?.totalLinks?.toLocaleString() || "0"}
                 </p>
                 <p className="text-blue-100 text-xs mt-2 flex items-center gap-1">
                   <TrendingUp className="h-3 w-3" />
@@ -149,9 +183,15 @@ export default function DashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-emerald-100 text-sm font-medium">Total Engagements</p>
+                <p className="text-emerald-100 text-sm font-medium">
+                  Total Engagements
+                </p>
                 <p className="text-4xl font-bold mt-2">
-                  {loading ? "..." : metrics?.allTimeClicks?.toLocaleString() || metrics?.totalClicks?.toLocaleString() || "0"}
+                  {loading
+                    ? "..."
+                    : metrics?.allTimeClicks?.toLocaleString() ||
+                      metrics?.totalClicks?.toLocaleString() ||
+                      "0"}
                 </p>
                 <p className="text-emerald-100 text-xs mt-2 flex items-center gap-1">
                   <MousePointerClick className="h-3 w-3" />
@@ -178,8 +218,7 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-1.5 mt-2">
                   {weeklyChange >= 0 ? (
                     <span className="text-xs bg-white/20 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                      <TrendingUp className="h-3 w-3" />
-                      +{weeklyChange}%
+                      <TrendingUp className="h-3 w-3" />+{weeklyChange}%
                     </span>
                   ) : (
                     <span className="text-xs bg-white/20 px-1.5 py-0.5 rounded flex items-center gap-0.5">
@@ -205,7 +244,13 @@ export default function DashboardPage() {
               <div>
                 <p className="text-amber-100 text-sm font-medium">Today</p>
                 <p className="text-4xl font-bold mt-2">
-                  {loading ? "..." : chartData.length > 0 ? (chartData[chartData.length - 1]?.clicks || 0).toLocaleString() : "0"}
+                  {loading
+                    ? "..."
+                    : chartData.length > 0
+                      ? (
+                          chartData[chartData.length - 1]?.clicks || 0
+                        ).toLocaleString()
+                      : "0"}
                 </p>
                 <p className="text-amber-100 text-xs mt-2 flex items-center gap-1">
                   <Clock className="h-3 w-3" />
@@ -305,7 +350,11 @@ export default function DashboardPage() {
               </p>
             </div>
             <Link href="/dashboard/analytics">
-              <Button variant="ghost" size="sm" className="gap-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              >
                 View Analytics
                 <ExternalLink className="h-3.5 w-3.5" />
               </Button>
@@ -321,13 +370,19 @@ export default function DashboardPage() {
       <Card className="border-slate-200 shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 pb-4">
           <div>
-            <CardTitle className="text-lg font-semibold text-slate-900">Recent Links</CardTitle>
+            <CardTitle className="text-lg font-semibold text-slate-900">
+              Recent Links
+            </CardTitle>
             <p className="text-sm text-slate-500 mt-0.5">
               Your most recently created links
             </p>
           </div>
           <Link href="/dashboard/links">
-            <Button variant="outline" size="sm" className="gap-1.5 rounded-lg border-slate-200 hover:bg-slate-50">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 rounded-lg border-slate-200 hover:bg-slate-50"
+            >
               View All
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -347,9 +402,12 @@ export default function DashboardPage() {
                 <Sparkles className="h-8 w-8 text-white" />
               </div>
               <div className="flex-1">
-                <h3 className="text-xl font-bold mb-2">Get Started with PingTO.Me</h3>
+                <h3 className="text-xl font-bold mb-2">
+                  Get Started with PingTO.Me
+                </h3>
                 <p className="text-slate-300 mb-4">
-                  Create your first few links to unlock powerful analytics and tracking features.
+                  Create your first few links to unlock powerful analytics and
+                  tracking features.
                 </p>
                 <div className="flex flex-wrap gap-3">
                   <Link href="/dashboard/links/new">
@@ -359,7 +417,10 @@ export default function DashboardPage() {
                     </Button>
                   </Link>
                   <Link href="/docs">
-                    <Button variant="outline" className="border-slate-600 text-white hover:bg-slate-700 gap-2">
+                    <Button
+                      variant="outline"
+                      className="border-slate-600 text-white hover:bg-slate-700 gap-2"
+                    >
                       <Globe className="h-4 w-4" />
                       Read the docs
                     </Button>
@@ -371,9 +432,14 @@ export default function DashboardPage() {
             <div className="mt-6 pt-6 border-t border-slate-700">
               <div className="flex items-center justify-between text-sm mb-2">
                 <span className="text-slate-400">Getting started progress</span>
-                <span className="text-white font-medium">{Math.min(metrics.totalLinks, 5)} / 5 links</span>
+                <span className="text-white font-medium">
+                  {Math.min(metrics.totalLinks, 5)} / 5 links
+                </span>
               </div>
-              <Progress value={Math.min((metrics.totalLinks / 5) * 100, 100)} className="h-2 bg-slate-700" />
+              <Progress
+                value={Math.min((metrics.totalLinks / 5) * 100, 100)}
+                className="h-2 bg-slate-700"
+              />
             </div>
           </CardContent>
         </Card>

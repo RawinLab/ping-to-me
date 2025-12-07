@@ -1,15 +1,15 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function main() {
   const blockedDomains = [
-    { domain: 'phishing.com', reason: 'Phishing' },
-    { domain: 'malware.com', reason: 'Malware' },
-    { domain: 'spam.com', reason: 'Spam' },
+    { domain: "phishing.com", reason: "Phishing" },
+    { domain: "malware.com", reason: "Malware" },
+    { domain: "spam.com", reason: "Spam" },
   ];
 
-  console.log('Seeding blocked domains...');
+  console.log("Seeding blocked domains...");
   for (const item of blockedDomains) {
     await prisma.blockedDomain.upsert({
       where: { domain: item.domain },
@@ -17,7 +17,7 @@ async function main() {
       create: item,
     });
   }
-  console.log('Seeding completed.');
+  console.log("Seeding completed.");
 }
 
 main()

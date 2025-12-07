@@ -1,8 +1,8 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
-import { AuditService } from '../audit/audit.service';
-import Stripe from 'stripe';
+import { Injectable, BadRequestException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { PrismaService } from "../prisma/prisma.service";
+import { AuditService } from "../audit/audit.service";
+import Stripe from "stripe";
 
 @Injectable()
 export class PaymentsService {
@@ -13,7 +13,7 @@ export class PaymentsService {
     private prisma: PrismaService,
     private auditService: AuditService,
   ) {
-    const stripeKey = this.configService.get<string>('STRIPE_SECRET_KEY');
+    const stripeKey = this.configService.get<string>("STRIPE_SECRET_KEY");
     if (stripeKey) {
       this.stripe = new Stripe(stripeKey);
     }
@@ -22,46 +22,42 @@ export class PaymentsService {
   // Pricing plans configuration
   readonly plans = [
     {
-      id: 'free',
-      name: 'Free',
+      id: "free",
+      name: "Free",
       price: 0,
-      interval: 'month',
-      features: [
-        '10 short links',
-        'Basic analytics',
-        'Standard support',
-      ],
+      interval: "month",
+      features: ["10 short links", "Basic analytics", "Standard support"],
       limits: { links: 10, customDomains: 0 },
     },
     {
-      id: 'pro',
-      name: 'Pro',
+      id: "pro",
+      name: "Pro",
       price: 9,
-      interval: 'month',
+      interval: "month",
       priceId: process.env.STRIPE_PRO_PRICE_ID,
       features: [
-        'Unlimited short links',
-        'Advanced analytics',
-        'Custom domains',
-        '1 Bio page',
-        'Priority support',
+        "Unlimited short links",
+        "Advanced analytics",
+        "Custom domains",
+        "1 Bio page",
+        "Priority support",
       ],
       limits: { links: -1, customDomains: 3 },
     },
     {
-      id: 'business',
-      name: 'Business',
+      id: "business",
+      name: "Business",
       price: 29,
-      interval: 'month',
+      interval: "month",
       priceId: process.env.STRIPE_BUSINESS_PRICE_ID,
       features: [
-        'Unlimited short links',
-        'Full analytics & reports',
-        'Unlimited custom domains',
-        'Unlimited Bio pages',
-        'Team collaboration',
-        'API access',
-        'Dedicated support',
+        "Unlimited short links",
+        "Full analytics & reports",
+        "Unlimited custom domains",
+        "Unlimited Bio pages",
+        "Team collaboration",
+        "API access",
+        "Dedicated support",
       ],
       limits: { links: -1, customDomains: -1 },
     },
@@ -71,14 +67,19 @@ export class PaymentsService {
     return this.plans;
   }
 
-  async createCheckoutSession(userId: string, priceId: string, successUrl: string, cancelUrl: string) {
+  async createCheckoutSession(
+    userId: string,
+    priceId: string,
+    successUrl: string,
+    cancelUrl: string,
+  ) {
     if (!this.stripe) {
-      throw new BadRequestException('Stripe is not configured');
+      throw new BadRequestException("Stripe is not configured");
     }
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
-      throw new BadRequestException('User not found');
+      throw new BadRequestException("User not found");
     }
 
     // Get or create Stripe customer
@@ -97,14 +98,14 @@ export class PaymentsService {
 
     const session = await this.stripe.checkout.sessions.create({
       customer: customerId,
-      payment_method_types: ['card'],
+      payment_method_types: ["card"],
       line_items: [
         {
           price: priceId,
           quantity: 1,
         },
       ],
-      mode: 'subscription',
+      mode: "subscription",
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: { userId },
@@ -115,12 +116,12 @@ export class PaymentsService {
 
   async createBillingPortalSession(userId: string, returnUrl: string) {
     if (!this.stripe) {
-      throw new BadRequestException('Stripe is not configured');
+      throw new BadRequestException("Stripe is not configured");
     }
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user?.stripeCustomerId) {
-      throw new BadRequestException('No billing account found');
+      throw new BadRequestException("No billing account found");
     }
 
     const session = await this.stripe.billingPortal.sessions.create({
@@ -133,36 +134,42 @@ export class PaymentsService {
 
   async handleWebhook(payload: Buffer, signature: string) {
     if (!this.stripe) {
-      throw new BadRequestException('Stripe is not configured');
+      throw new BadRequestException("Stripe is not configured");
     }
 
-    const webhookSecret = this.configService.get<string>('STRIPE_WEBHOOK_SECRET');
+    const webhookSecret = this.configService.get<string>(
+      "STRIPE_WEBHOOK_SECRET",
+    );
 
     let event: Stripe.Event;
     try {
-      event = this.stripe.webhooks.constructEvent(payload, signature, webhookSecret || '');
+      event = this.stripe.webhooks.constructEvent(
+        payload,
+        signature,
+        webhookSecret || "",
+      );
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
+      const message = err instanceof Error ? err.message : "Unknown error";
       throw new BadRequestException(`Webhook error: ${message}`);
     }
 
     switch (event.type) {
-      case 'checkout.session.completed': {
+      case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         await this.handleCheckoutComplete(session);
         break;
       }
-      case 'customer.subscription.updated': {
+      case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
         await this.handleSubscriptionUpdated(subscription);
         break;
       }
-      case 'customer.subscription.deleted': {
+      case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
         await this.handleSubscriptionDeleted(subscription);
         break;
       }
-      case 'invoice.paid': {
+      case "invoice.paid": {
         const invoice = event.data.object as Stripe.Invoice;
         await this.handleInvoicePaid(invoice);
         break;
@@ -180,19 +187,21 @@ export class PaymentsService {
 
     // Get subscription details
     const subscription = await this.stripe.subscriptions.retrieve(
-      session.subscription as string
+      session.subscription as string,
     );
 
     const priceId = subscription.items.data[0]?.price.id;
-    const plan = this.plans.find(p => p.priceId === priceId);
+    const plan = this.plans.find((p) => p.priceId === priceId);
 
     await this.prisma.user.update({
       where: { id: userId },
       data: {
         subscriptionId: subscription.id,
         subscriptionStatus: subscription.status,
-        plan: plan?.id || 'pro',
-        planExpiresAt: new Date((subscription as any).current_period_end * 1000),
+        plan: plan?.id || "pro",
+        planExpiresAt: new Date(
+          (subscription as any).current_period_end * 1000,
+        ),
       },
     });
   }
@@ -201,49 +210,53 @@ export class PaymentsService {
     if (!this.stripe) return;
 
     const customer = await this.stripe.customers.retrieve(
-      subscription.customer as string
+      subscription.customer as string,
     );
 
-    if ('deleted' in customer && customer.deleted) return;
+    if ("deleted" in customer && customer.deleted) return;
 
     const userId = (customer as Stripe.Customer).metadata?.userId;
     if (!userId) return;
 
     // Get current user data for before state
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    const oldPlan = user?.plan || 'free';
+    const oldPlan = user?.plan || "free";
 
     const priceId = subscription.items.data[0]?.price.id;
-    const plan = this.plans.find(p => p.priceId === priceId);
-    const newPlan = plan?.id || 'free';
+    const plan = this.plans.find((p) => p.priceId === priceId);
+    const newPlan = plan?.id || "free";
 
     await this.prisma.user.update({
       where: { id: userId },
       data: {
         subscriptionStatus: subscription.status,
         plan: newPlan,
-        planExpiresAt: new Date((subscription as any).current_period_end * 1000),
+        planExpiresAt: new Date(
+          (subscription as any).current_period_end * 1000,
+        ),
       },
     });
 
     // Log plan change if plan actually changed
     if (oldPlan !== newPlan) {
       // Billing is user-specific, use userId as organizationId for audit logging
-      this.auditService.logBillingEvent(
-        userId,
-        userId, // Billing is tied to user, not organization
-        'billing.plan_changed',
-        {
-          changes: {
-            before: { plan: oldPlan },
-            after: { plan: newPlan },
+      this.auditService
+        .logBillingEvent(
+          userId,
+          userId, // Billing is tied to user, not organization
+          "billing.plan_changed",
+          {
+            changes: {
+              before: { plan: oldPlan },
+              after: { plan: newPlan },
+            },
+            details: {
+              subscriptionId: subscription.id,
+              status: subscription.status,
+            },
           },
-          details: {
-            subscriptionId: subscription.id,
-            status: subscription.status,
-          },
-        },
-      ).catch(() => {}); // Fire and forget, don't block on errors
+        )
+        .catch(() => {}); // Fire and forget, don't block on errors
     }
   }
 
@@ -251,10 +264,10 @@ export class PaymentsService {
     if (!this.stripe) return;
 
     const customer = await this.stripe.customers.retrieve(
-      subscription.customer as string
+      subscription.customer as string,
     );
 
-    if ('deleted' in customer && customer.deleted) return;
+    if ("deleted" in customer && customer.deleted) return;
 
     const userId = (customer as Stripe.Customer).metadata?.userId;
     if (!userId) return;
@@ -263,36 +276,38 @@ export class PaymentsService {
       where: { id: userId },
       data: {
         subscriptionId: null,
-        subscriptionStatus: 'canceled',
-        plan: 'free',
+        subscriptionStatus: "canceled",
+        plan: "free",
       },
     });
 
     // Log subscription cancellation - billing is user-specific
-    this.auditService.logBillingEvent(
-      userId,
-      userId, // Billing is tied to user, not organization
-      'billing.subscription_cancelled',
-      {
-        details: {
-          subscriptionId: subscription.id,
-          canceledAt: new Date(subscription.canceled_at || Date.now()),
+    this.auditService
+      .logBillingEvent(
+        userId,
+        userId, // Billing is tied to user, not organization
+        "billing.subscription_cancelled",
+        {
+          details: {
+            subscriptionId: subscription.id,
+            canceledAt: new Date(subscription.canceled_at || Date.now()),
+          },
         },
-      },
-    ).catch(() => {}); // Fire and forget, don't block on errors
+      )
+      .catch(() => {}); // Fire and forget, don't block on errors
   }
 
   private async handleInvoicePaid(invoice: Stripe.Invoice) {
     // Could be used to store invoice history
-    console.log('Invoice paid:', invoice.id);
+    console.log("Invoice paid:", invoice.id);
   }
 
   async getSubscription(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
     return {
-      plan: user?.plan || 'free',
-      status: user?.subscriptionStatus || 'inactive',
+      plan: user?.plan || "free",
+      status: user?.subscriptionStatus || "inactive",
       expiresAt: user?.planExpiresAt,
     };
   }
@@ -312,7 +327,7 @@ export class PaymentsService {
       limit: 10,
     });
 
-    return invoices.data.map(invoice => ({
+    return invoices.data.map((invoice) => ({
       id: invoice.id,
       date: new Date(invoice.created * 1000),
       amount: (invoice.amount_paid || 0) / 100,

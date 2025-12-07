@@ -157,7 +157,7 @@ function detectPlatformFromUrl(url: string): SocialPlatform | null {
  */
 function validatePlatformUrl(
   platform: SocialPlatform,
-  url: string
+  url: string,
 ): { valid: boolean; error?: string } {
   const config = PLATFORM_CONFIG[platform];
   const normalizedUrl = url.toLowerCase().trim();
@@ -177,13 +177,14 @@ function validatePlatformUrl(
     }
     return {
       valid: false,
-      error: 'Email should be in format "mailto:email@example.com" or "email@example.com"',
+      error:
+        'Email should be in format "mailto:email@example.com" or "email@example.com"',
     };
   }
 
   // Check if URL matches any of the platform's patterns
   const matches = config.urlPatterns.some((pattern) =>
-    pattern.test(normalizedUrl)
+    pattern.test(normalizedUrl),
   );
 
   if (!matches) {
@@ -244,10 +245,7 @@ function SortableSocialLinkItem({
     <div
       ref={setNodeRef}
       style={style}
-      className={cn(
-        "mb-2 transition-opacity",
-        isDragging && "opacity-50 z-50"
-      )}
+      className={cn("mb-2 transition-opacity", isDragging && "opacity-50 z-50")}
     >
       <Card className="hover:shadow-md transition-shadow">
         <CardContent className="p-3">
@@ -329,7 +327,7 @@ export function SocialLinksEditor({
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   /**
@@ -343,10 +341,10 @@ export function SocialLinksEditor({
     }
 
     const oldIndex = sortedLinks.findIndex(
-      (_, idx) => `social-${idx}` === active.id
+      (_, idx) => `social-${idx}` === active.id,
     );
     const newIndex = sortedLinks.findIndex(
-      (_, idx) => `social-${idx}` === over.id
+      (_, idx) => `social-${idx}` === over.id,
     );
 
     if (oldIndex === -1 || newIndex === -1) {
@@ -397,12 +395,12 @@ export function SocialLinksEditor({
     const isDuplicate = socialLinks.some(
       (link) =>
         link.platform === selectedPlatform ||
-        link.url.toLowerCase() === normalizedUrl.toLowerCase()
+        link.url.toLowerCase() === normalizedUrl.toLowerCase(),
     );
 
     if (isDuplicate) {
       setUrlError(
-        `${PLATFORM_CONFIG[selectedPlatform].label} link already exists`
+        `${PLATFORM_CONFIG[selectedPlatform].label} link already exists`,
       );
       return;
     }

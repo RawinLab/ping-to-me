@@ -8,8 +8,8 @@ import {
   IsDateString,
   ArrayMinSize,
   MaxLength,
-} from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+} from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 /**
  * DTO for creating a new API key with scopes and optional restrictions
@@ -20,8 +20,8 @@ export class CreateApiKeyDto {
    * @example "Production API Key"
    */
   @ApiProperty({
-    description: 'Human-readable name for the API key',
-    example: 'Production API Key',
+    description: "Human-readable name for the API key",
+    example: "Production API Key",
     maxLength: 100,
   })
   @IsString()
@@ -34,8 +34,8 @@ export class CreateApiKeyDto {
    * @example "550e8400-e29b-41d4-a716-446655440000"
    */
   @ApiProperty({
-    description: 'Organization ID this API key belongs to',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+    description: "Organization ID this API key belongs to",
+    example: "550e8400-e29b-41d4-a716-446655440000",
   })
   @IsString()
   @IsNotEmpty()
@@ -49,9 +49,9 @@ export class CreateApiKeyDto {
   @ApiPropertyOptional({
     description:
       'Array of permission scopes. If not provided, defaults to ["admin"] for full access',
-    example: ['link:read', 'link:create', 'analytics:read'],
+    example: ["link:read", "link:create", "analytics:read"],
     type: [String],
-    default: ['admin'],
+    default: ["admin"],
   })
   @IsArray()
   @IsOptional()
@@ -66,8 +66,8 @@ export class CreateApiKeyDto {
    */
   @ApiPropertyOptional({
     description:
-      'Optional IP whitelist. Supports IPv4 addresses and CIDR notation',
-    example: ['192.168.1.1', '10.0.0.0/8'],
+      "Optional IP whitelist. Supports IPv4 addresses and CIDR notation",
+    example: ["192.168.1.1", "10.0.0.0/8"],
     type: [String],
   })
   @IsArray()
@@ -82,7 +82,7 @@ export class CreateApiKeyDto {
    */
   @ApiPropertyOptional({
     description:
-      'Optional rate limit in requests per minute. If not set, organization default applies',
+      "Optional rate limit in requests per minute. If not set, organization default applies",
     example: 1000,
     minimum: 1,
   })
@@ -98,8 +98,8 @@ export class CreateApiKeyDto {
    */
   @ApiPropertyOptional({
     description:
-      'Optional expiration date (ISO 8601). If not set, key never expires',
-    example: '2024-12-31T23:59:59Z',
+      "Optional expiration date (ISO 8601). If not set, key never expires",
+    example: "2024-12-31T23:59:59Z",
   })
   @IsDateString()
   @IsOptional()

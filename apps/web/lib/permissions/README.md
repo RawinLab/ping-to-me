@@ -13,42 +13,42 @@ This module provides a TypeScript implementation of the permission matrix that m
 ### Basic Permission Checks
 
 ```typescript
-import { hasPermission } from '@/lib/permissions';
+import { hasPermission } from "@/lib/permissions";
 
 // Check if ADMIN can create links
-const canCreate = hasPermission('ADMIN', 'link', 'create');
+const canCreate = hasPermission("ADMIN", "link", "create");
 // => true
 
 // Check if VIEWER can delete links
-const canDelete = hasPermission('VIEWER', 'link', 'delete');
+const canDelete = hasPermission("VIEWER", "link", "delete");
 // => false
 ```
 
 ### Permission Scopes
 
 ```typescript
-import { getPermissions } from '@/lib/permissions';
+import { getPermissions } from "@/lib/permissions";
 
 // Get permission scopes for EDITOR creating links
-const scopes = getPermissions('EDITOR', 'link', 'create');
+const scopes = getPermissions("EDITOR", "link", "create");
 // => ['*'] - full access to create
 
 // Get permission scopes for EDITOR updating links
-const updateScopes = getPermissions('EDITOR', 'link', 'update');
+const updateScopes = getPermissions("EDITOR", "link", "update");
 // => ['own'] - can only update own links
 ```
 
 ### Role Hierarchy
 
 ```typescript
-import { isRoleAtLeast, isRoleAbove, ROLE_LEVELS } from '@/lib/permissions';
+import { isRoleAtLeast, isRoleAbove, ROLE_LEVELS } from "@/lib/permissions";
 
 // Check if user has at least ADMIN role
-const isAdmin = isRoleAtLeast('OWNER', 'ADMIN');
+const isAdmin = isRoleAtLeast("OWNER", "ADMIN");
 // => true
 
 // Check if user's role is above another role
-const canManage = isRoleAbove('ADMIN', 'EDITOR');
+const canManage = isRoleAbove("ADMIN", "EDITOR");
 // => true
 
 // Get role level
@@ -59,50 +59,46 @@ const level = ROLE_LEVELS.ADMIN;
 ### Team Management
 
 ```typescript
-import { canManageRole, getAssignableRoles } from '@/lib/permissions';
+import { canManageRole, getAssignableRoles } from "@/lib/permissions";
 
 // Check if ADMIN can manage EDITOR role
-const canManageEditor = canManageRole('ADMIN', 'EDITOR');
+const canManageEditor = canManageRole("ADMIN", "EDITOR");
 // => true
 
 // Check if ADMIN can manage OWNER role
-const canManageOwner = canManageRole('ADMIN', 'OWNER');
+const canManageOwner = canManageRole("ADMIN", "OWNER");
 // => false
 
 // Get roles that ADMIN can assign
-const assignableRoles = getAssignableRoles('ADMIN');
+const assignableRoles = getAssignableRoles("ADMIN");
 // => ['ADMIN', 'EDITOR', 'VIEWER']
 ```
 
 ### Scope Context Checks
 
 ```typescript
-import { hasPermissionWithScope } from '@/lib/permissions';
+import { hasPermissionWithScope } from "@/lib/permissions";
 
 // Check if EDITOR can update their own link
-const canUpdateOwn = hasPermissionWithScope(
-  'EDITOR',
-  'link',
-  'update',
-  { userId: 'user-123', ownerId: 'user-123' }
-);
+const canUpdateOwn = hasPermissionWithScope("EDITOR", "link", "update", {
+  userId: "user-123",
+  ownerId: "user-123",
+});
 // => true
 
 // Check if EDITOR can update someone else's link
-const canUpdateOthers = hasPermissionWithScope(
-  'EDITOR',
-  'link',
-  'update',
-  { userId: 'user-123', ownerId: 'user-456' }
-);
+const canUpdateOthers = hasPermissionWithScope("EDITOR", "link", "update", {
+  userId: "user-123",
+  ownerId: "user-456",
+});
 // => false
 
 // Check if ADMIN can manage OWNER role
 const canManageOwnerRole = hasPermissionWithScope(
-  'ADMIN',
-  'team',
-  'update-role',
-  { targetRole: 'OWNER' }
+  "ADMIN",
+  "team",
+  "update-role",
+  { targetRole: "OWNER" },
 );
 // => false (exclude-owner scope)
 ```
@@ -110,61 +106,67 @@ const canManageOwnerRole = hasPermissionWithScope(
 ## Types
 
 ### MemberRole
+
 ```typescript
-type MemberRole = 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER';
+type MemberRole = "OWNER" | "ADMIN" | "EDITOR" | "VIEWER";
 ```
 
 ### Resource
+
 ```typescript
 type Resource =
-  | 'link'
-  | 'analytics'
-  | 'organization'
-  | 'team'
-  | 'domain'
-  | 'billing'
-  | 'api-key'
-  | 'audit'
-  | 'biopage'
-  | 'campaign'
-  | 'tag';
+  | "link"
+  | "analytics"
+  | "organization"
+  | "team"
+  | "domain"
+  | "billing"
+  | "api-key"
+  | "audit"
+  | "biopage"
+  | "campaign"
+  | "tag";
 ```
 
 ### Action
+
 ```typescript
 type Action =
-  | 'create'
-  | 'read'
-  | 'update'
-  | 'delete'
-  | 'bulk'
-  | 'export'
-  | 'invite'
-  | 'verify'
-  | 'manage'
-  | 'update-role'
-  | 'remove'
-  | 'revoke';
+  | "create"
+  | "read"
+  | "update"
+  | "delete"
+  | "bulk"
+  | "export"
+  | "invite"
+  | "verify"
+  | "manage"
+  | "update-role"
+  | "remove"
+  | "revoke";
 ```
 
 ### PermissionScope
+
 ```typescript
 type PermissionScope =
-  | '*'                // Full access
-  | 'own'              // Only resources owned by user
-  | 'organization'     // All resources in organization
-  | 'limited'          // Limited access
-  | 'exclude-owner';   // All except OWNER role
+  | "*" // Full access
+  | "own" // Only resources owned by user
+  | "organization" // All resources in organization
+  | "limited" // Limited access
+  | "exclude-owner"; // All except OWNER role
 ```
 
 ## Role Permissions Summary
 
 ### OWNER
+
 - Full access to everything (`*`)
 - Can manage billing
 - Can modify all team member roles including other owners
 
 ### ADMIN
+
 - Most access to resources
 - Can read billing but not manage it
 - Cannot delete organization
@@ -172,12 +174,14 @@ type PermissionScope =
 - Can manage ADMIN, EDITOR, and VIEWER roles
 
 ### EDITOR
+
 - Can create links, biopages, tags
 - Can only update/delete own content (`own` scope)
 - Can read organization content
 - Cannot manage team, domains, billing, or API keys
 
 ### VIEWER
+
 - Read-only access to organization content
 - Cannot create, update, or delete anything
 

@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useMemo } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useMemo } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   hasPermission,
   canManageRole,
@@ -9,7 +9,7 @@ import {
   type Resource,
   type Action,
   type MemberRole,
-} from '@/lib/permissions';
+} from "@/lib/permissions";
 
 interface PermissionCheck {
   resource: Resource;
@@ -60,41 +60,43 @@ export function usePermission() {
      */
     const canAll = (permissions: PermissionCheck[]): boolean => {
       if (!role) return false;
-      return permissions.every((p) => hasPermission(role, p.resource, p.action));
+      return permissions.every((p) =>
+        hasPermission(role, p.resource, p.action),
+      );
     };
 
     // Convenience methods for common permission checks
-    const canCreateLink = () => can('link', 'create');
-    const canEditLink = () => can('link', 'update');
-    const canDeleteLink = () => can('link', 'delete');
-    const canExportLinks = () => can('link', 'export');
-    const canBulkLinks = () => can('link', 'bulk');
+    const canCreateLink = () => can("link", "create");
+    const canEditLink = () => can("link", "update");
+    const canDeleteLink = () => can("link", "delete");
+    const canExportLinks = () => can("link", "export");
+    const canBulkLinks = () => can("link", "bulk");
 
-    const canManageTeam = () => can('team', 'invite');
-    const canInviteMembers = () => can('team', 'invite');
-    const canUpdateRoles = () => can('team', 'update-role');
-    const canRemoveMembers = () => can('team', 'remove');
+    const canManageTeam = () => can("team", "invite");
+    const canInviteMembers = () => can("team", "invite");
+    const canUpdateRoles = () => can("team", "update-role");
+    const canRemoveMembers = () => can("team", "remove");
 
-    const canAccessBilling = () => can('billing', 'read');
-    const canManageBilling = () => can('billing', 'manage');
+    const canAccessBilling = () => can("billing", "read");
+    const canManageBilling = () => can("billing", "manage");
 
-    const canAccessAudit = () => can('audit', 'read');
-    const canExportAudit = () => can('audit', 'export');
+    const canAccessAudit = () => can("audit", "read");
+    const canExportAudit = () => can("audit", "export");
 
-    const canManageDomains = () => can('domain', 'create');
-    const canVerifyDomains = () => can('domain', 'verify');
+    const canManageDomains = () => can("domain", "create");
+    const canVerifyDomains = () => can("domain", "verify");
 
-    const canCreateApiKey = () => can('api-key', 'create');
-    const canRevokeApiKey = () => can('api-key', 'revoke');
+    const canCreateApiKey = () => can("api-key", "create");
+    const canRevokeApiKey = () => can("api-key", "revoke");
 
-    const canExportAnalytics = () => can('analytics', 'export');
+    const canExportAnalytics = () => can("analytics", "export");
 
     // Role check helpers
-    const isOwner = role === 'OWNER';
-    const isAdmin = role === 'ADMIN' || role === 'OWNER';
-    const isEditor = role === 'EDITOR' || role === 'ADMIN' || role === 'OWNER';
-    const isEditorOrAbove = ['OWNER', 'ADMIN', 'EDITOR'].includes(role || '');
-    const isAdminOrAbove = ['OWNER', 'ADMIN'].includes(role || '');
+    const isOwner = role === "OWNER";
+    const isAdmin = role === "ADMIN" || role === "OWNER";
+    const isEditor = role === "EDITOR" || role === "ADMIN" || role === "OWNER";
+    const isEditorOrAbove = ["OWNER", "ADMIN", "EDITOR"].includes(role || "");
+    const isAdminOrAbove = ["OWNER", "ADMIN"].includes(role || "");
 
     return {
       // Current role
@@ -146,8 +148,8 @@ export function usePermission() {
 
       // Role management
       canManageRole: (targetRole: MemberRole) =>
-        canManageRole(role || 'VIEWER', targetRole),
-      getAssignableRoles: () => getAssignableRoles(role || 'VIEWER'),
+        canManageRole(role || "VIEWER", targetRole),
+      getAssignableRoles: () => getAssignableRoles(role || "VIEWER"),
     };
   }, [memberships, currentOrgId]);
 }

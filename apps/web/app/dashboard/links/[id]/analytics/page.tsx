@@ -115,7 +115,7 @@ export default function LinkAnalyticsPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/links/${id}/analytics/export`,
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
       if (!res.ok) throw new Error("Export failed");
       const blob = await res.blob();
@@ -167,7 +167,10 @@ export default function LinkAnalyticsPage() {
     .map(([name, value]) => ({
       name,
       value: value as number,
-      percentage: totalClicks > 0 ? Math.round(((value as number) / totalClicks) * 100) : 0,
+      percentage:
+        totalClicks > 0
+          ? Math.round(((value as number) / totalClicks) * 100)
+          : 0,
     }))
     .sort((a, b) => b.value - a.value);
 
@@ -176,23 +179,33 @@ export default function LinkAnalyticsPage() {
     .map(([name, value]) => ({
       name,
       value: value as number,
-      percentage: totalClicks > 0 ? Math.round(((value as number) / totalClicks) * 100) : 0,
+      percentage:
+        totalClicks > 0
+          ? Math.round(((value as number) / totalClicks) * 100)
+          : 0,
     }))
     .sort((a, b) => b.value - a.value);
 
   // Process device data
-  const devicesData = Object.entries(data.devices || {}).map(([name, value]) => ({
-    name,
-    value: value as number,
-    color: DEVICE_COLORS[name as keyof typeof DEVICE_COLORS] || DEVICE_COLORS.Other,
-  }));
+  const devicesData = Object.entries(data.devices || {}).map(
+    ([name, value]) => ({
+      name,
+      value: value as number,
+      color:
+        DEVICE_COLORS[name as keyof typeof DEVICE_COLORS] ||
+        DEVICE_COLORS.Other,
+    }),
+  );
 
   // Process referrers data
   const referrersData = Object.entries(data.referrers || {})
     .map(([name, value]) => ({
       name,
       value: value as number,
-      percentage: totalClicks > 0 ? Math.round(((value as number) / totalClicks) * 100) : 0,
+      percentage:
+        totalClicks > 0
+          ? Math.round(((value as number) / totalClicks) * 100)
+          : 0,
     }))
     .sort((a, b) => b.value - a.value);
 
@@ -244,7 +257,9 @@ export default function LinkAnalyticsPage() {
                       <ExternalLink className="h-3.5 w-3.5" />
                     </a>
                     <p className="text-sm text-slate-500 flex items-center gap-1">
-                      <span className="truncate max-w-md">{link.originalUrl}</span>
+                      <span className="truncate max-w-md">
+                        {link.originalUrl}
+                      </span>
                     </p>
                   </div>
                 </div>
@@ -255,7 +270,11 @@ export default function LinkAnalyticsPage() {
                     className="rounded-lg"
                     onClick={() => copyToClipboard(`https://${getShortUrl()}`)}
                   >
-                    {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                    {copied ? (
+                      <Check className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
                   </Button>
                   <Button variant="outline" size="icon" className="rounded-lg">
                     <Pencil className="h-4 w-4" />
@@ -289,11 +308,16 @@ export default function LinkAnalyticsPage() {
           <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-blue-600">Total Engagements</p>
-                <p className="text-4xl font-bold tracking-tight">{allTimeClicks.toLocaleString()}</p>
+                <p className="text-sm font-medium text-blue-600">
+                  Total Engagements
+                </p>
+                <p className="text-4xl font-bold tracking-tight">
+                  {allTimeClicks.toLocaleString()}
+                </p>
                 {dateRange !== "90d" && totalClicks !== allTimeClicks && (
                   <p className="text-xs text-muted-foreground">
-                    {totalClicks.toLocaleString()} in last {dateRange === "7d" ? "7" : "30"} days
+                    {totalClicks.toLocaleString()} in last{" "}
+                    {dateRange === "7d" ? "7" : "30"} days
                   </p>
                 )}
               </div>
@@ -302,15 +326,21 @@ export default function LinkAnalyticsPage() {
           <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-slate-500">Last 7 days</p>
-                <p className="text-4xl font-bold tracking-tight">{clicksLast7Days.toLocaleString()}</p>
+                <p className="text-sm font-medium text-slate-500">
+                  Last 7 days
+                </p>
+                <p className="text-4xl font-bold tracking-tight">
+                  {clicksLast7Days.toLocaleString()}
+                </p>
               </div>
             </CardContent>
           </Card>
           <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-slate-500">Weekly change</p>
+                <p className="text-sm font-medium text-slate-500">
+                  Weekly change
+                </p>
                 <div className="flex items-center gap-2">
                   {weeklyChange !== 0 ? (
                     <>
@@ -324,11 +354,14 @@ export default function LinkAnalyticsPage() {
                           weeklyChange > 0 ? "text-emerald-500" : "text-red-500"
                         }`}
                       >
-                        {weeklyChange > 0 ? "+" : ""}{weeklyChange}%
+                        {weeklyChange > 0 ? "+" : ""}
+                        {weeklyChange}%
                       </span>
                     </>
                   ) : (
-                    <span className="text-4xl font-bold tracking-tight text-slate-400">0%</span>
+                    <span className="text-4xl font-bold tracking-tight text-slate-400">
+                      0%
+                    </span>
                   )}
                 </div>
               </div>
@@ -358,7 +391,9 @@ export default function LinkAnalyticsPage() {
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                      <span className="font-medium text-slate-700">QR Scans</span>
+                      <span className="font-medium text-slate-700">
+                        QR Scans
+                      </span>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-slate-500">
@@ -366,19 +401,26 @@ export default function LinkAnalyticsPage() {
                       </span>
                       <span className="font-semibold text-purple-600 w-12 text-right">
                         {qrData.totalClicks > 0
-                          ? Math.round((qrData.qrScans / qrData.totalClicks) * 100)
-                          : 0}%
+                          ? Math.round(
+                              (qrData.qrScans / qrData.totalClicks) * 100,
+                            )
+                          : 0}
+                        %
                       </span>
                     </div>
                   </div>
                   <Progress
-                    value={qrData.totalClicks > 0
-                      ? (qrData.qrScans / qrData.totalClicks) * 100
-                      : 0}
+                    value={
+                      qrData.totalClicks > 0
+                        ? (qrData.qrScans / qrData.totalClicks) * 100
+                        : 0
+                    }
                     className="h-2 bg-purple-100"
-                    style={{
-                      "--progress-background": "#a855f7",
-                    } as React.CSSProperties}
+                    style={
+                      {
+                        "--progress-background": "#a855f7",
+                      } as React.CSSProperties
+                    }
                   />
                 </div>
 
@@ -387,7 +429,9 @@ export default function LinkAnalyticsPage() {
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                      <span className="font-medium text-slate-700">Direct Clicks</span>
+                      <span className="font-medium text-slate-700">
+                        Direct Clicks
+                      </span>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-slate-500">
@@ -395,19 +439,26 @@ export default function LinkAnalyticsPage() {
                       </span>
                       <span className="font-semibold text-blue-600 w-12 text-right">
                         {qrData.totalClicks > 0
-                          ? Math.round((qrData.directClicks / qrData.totalClicks) * 100)
-                          : 0}%
+                          ? Math.round(
+                              (qrData.directClicks / qrData.totalClicks) * 100,
+                            )
+                          : 0}
+                        %
                       </span>
                     </div>
                   </div>
                   <Progress
-                    value={qrData.totalClicks > 0
-                      ? (qrData.directClicks / qrData.totalClicks) * 100
-                      : 0}
+                    value={
+                      qrData.totalClicks > 0
+                        ? (qrData.directClicks / qrData.totalClicks) * 100
+                        : 0
+                    }
                     className="h-2 bg-blue-100"
-                    style={{
-                      "--progress-background": "#3b82f6",
-                    } as React.CSSProperties}
+                    style={
+                      {
+                        "--progress-background": "#3b82f6",
+                      } as React.CSSProperties
+                    }
                   />
                 </div>
 
@@ -416,7 +467,9 @@ export default function LinkAnalyticsPage() {
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                      <span className="font-medium text-slate-700">API Clicks</span>
+                      <span className="font-medium text-slate-700">
+                        API Clicks
+                      </span>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-slate-500">
@@ -424,19 +477,26 @@ export default function LinkAnalyticsPage() {
                       </span>
                       <span className="font-semibold text-green-600 w-12 text-right">
                         {qrData.totalClicks > 0
-                          ? Math.round((qrData.apiClicks / qrData.totalClicks) * 100)
-                          : 0}%
+                          ? Math.round(
+                              (qrData.apiClicks / qrData.totalClicks) * 100,
+                            )
+                          : 0}
+                        %
                       </span>
                     </div>
                   </div>
                   <Progress
-                    value={qrData.totalClicks > 0
-                      ? (qrData.apiClicks / qrData.totalClicks) * 100
-                      : 0}
+                    value={
+                      qrData.totalClicks > 0
+                        ? (qrData.apiClicks / qrData.totalClicks) * 100
+                        : 0
+                    }
                     className="h-2 bg-green-100"
-                    style={{
-                      "--progress-background": "#10b981",
-                    } as React.CSSProperties}
+                    style={
+                      {
+                        "--progress-background": "#10b981",
+                      } as React.CSSProperties
+                    }
                   />
                 </div>
 
@@ -444,7 +504,9 @@ export default function LinkAnalyticsPage() {
                 <div className="pt-4 border-t border-slate-200">
                   <div className="flex items-center justify-between text-sm font-semibold">
                     <span className="text-slate-900">Total Clicks</span>
-                    <span className="text-slate-900">{qrData.totalClicks.toLocaleString()}</span>
+                    <span className="text-slate-900">
+                      {qrData.totalClicks.toLocaleString()}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -467,7 +529,9 @@ export default function LinkAnalyticsPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-slate-900">QR Code</h3>
-                    <p className="text-sm text-slate-500">Download or customize</p>
+                    <p className="text-sm text-slate-500">
+                      Download or customize
+                    </p>
                   </div>
                 </div>
                 <Button variant="outline" className="rounded-lg">
@@ -486,7 +550,9 @@ export default function LinkAnalyticsPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-slate-900">Bio Page</h3>
-                    <p className="text-sm text-slate-500">Add to your bio page</p>
+                    <p className="text-sm text-slate-500">
+                      Add to your bio page
+                    </p>
                   </div>
                 </div>
                 <Button variant="outline" className="rounded-lg">
@@ -503,7 +569,17 @@ export default function LinkAnalyticsPage() {
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <Calendar className="h-4 w-4" />
             <span>
-              {format(new Date(Date.now() - (dateRange === "7d" ? 7 : dateRange === "30d" ? 30 : 90) * 24 * 60 * 60 * 1000), "MMM d, yyyy")}
+              {format(
+                new Date(
+                  Date.now() -
+                    (dateRange === "7d" ? 7 : dateRange === "30d" ? 30 : 90) *
+                      24 *
+                      60 *
+                      60 *
+                      1000,
+                ),
+                "MMM d, yyyy",
+              )}
               {" → "}
               {format(new Date(), "MMM d, yyyy")}
             </span>
@@ -520,7 +596,11 @@ export default function LinkAnalyticsPage() {
                     : "text-slate-500 hover:text-slate-700"
                 } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
               >
-                {range === "7d" ? "7 Days" : range === "30d" ? "30 Days" : "90 Days"}
+                {range === "7d"
+                  ? "7 Days"
+                  : range === "30d"
+                    ? "30 Days"
+                    : "90 Days"}
               </button>
             ))}
           </div>
@@ -530,11 +610,19 @@ export default function LinkAnalyticsPage() {
         <EngagementsChart data={chartData} onExport={handleExport} />
 
         {/* Locations */}
-        <LocationsChart countries={countriesData} cities={citiesData} onExport={handleExport} />
+        <LocationsChart
+          countries={countriesData}
+          cities={citiesData}
+          onExport={handleExport}
+        />
 
         {/* Referrers and Devices */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <ReferrersChart data={referrersData} totalClicks={totalClicks} onExport={handleExport} />
+          <ReferrersChart
+            data={referrersData}
+            totalClicks={totalClicks}
+            onExport={handleExport}
+          />
           <DevicesChart
             data={devicesData}
             totalClicks={totalClicks}
@@ -545,7 +633,9 @@ export default function LinkAnalyticsPage() {
         {/* Recent Activity */}
         <Card className="overflow-hidden border-0 shadow-md">
           <CardHeader className="flex flex-row items-center justify-between border-b bg-slate-50/50">
-            <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
+            <CardTitle className="text-lg font-semibold">
+              Recent Activity
+            </CardTitle>
             <Button variant="ghost" size="icon" onClick={handleExport}>
               <Download className="h-4 w-4 text-blue-600" />
             </Button>
@@ -581,7 +671,10 @@ export default function LinkAnalyticsPage() {
                 ))}
                 {(!data.recentClicks || data.recentClicks.length === 0) && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-slate-500">
+                    <TableCell
+                      colSpan={5}
+                      className="text-center py-8 text-slate-500"
+                    >
                       No recent activity
                     </TableCell>
                   </TableRow>

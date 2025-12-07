@@ -49,8 +49,8 @@ export function Hero() {
                 </span>
               </h1>
               <p className="max-w-[540px] text-lg text-muted-foreground md:text-xl leading-relaxed">
-                Transform long URLs into powerful short links. Track every
-                click with real-time analytics and boost your marketing ROI.
+                Transform long URLs into powerful short links. Track every click
+                with real-time analytics and boost your marketing ROI.
               </p>
             </div>
 
@@ -178,7 +178,12 @@ function HeroIllustration() {
               label="Total Clicks"
               trend="+12%"
             />
-            <StatCard icon={Link2} value="156" label="Active Links" trend="+8" />
+            <StatCard
+              icon={Link2}
+              value="156"
+              label="Active Links"
+              trend="+8"
+            />
             <StatCard icon={Globe} value="89" label="Countries" trend="+5" />
           </div>
 
@@ -188,7 +193,9 @@ function HeroIllustration() {
               <h4 className="text-sm font-semibold text-slate-700">
                 Recent Links
               </h4>
-              <span className="text-xs text-blue-600 font-medium">View all</span>
+              <span className="text-xs text-blue-600 font-medium">
+                View all
+              </span>
             </div>
             <div className="space-y-2">
               <LinkRow
@@ -326,15 +333,16 @@ function FloatingQRCard() {
             <div
               key={i}
               className={`rounded-sm ${
-                [0, 1, 2, 5, 6, 11, 12, 17, 18, 23, 24, 29, 30, 31, 32, 35].includes(
-                  i
-                )
+                [
+                  0, 1, 2, 5, 6, 11, 12, 17, 18, 23, 24, 29, 30, 31, 32, 35,
+                ].includes(i)
                   ? "bg-slate-800"
-                  : [7, 8, 9, 10, 13, 14, 15, 16, 19, 20, 21, 22, 25, 26, 27, 28].includes(
-                      i
-                    )
-                  ? "bg-slate-800/70"
-                  : "bg-transparent"
+                  : [
+                        7, 8, 9, 10, 13, 14, 15, 16, 19, 20, 21, 22, 25, 26, 27,
+                        28,
+                      ].includes(i)
+                    ? "bg-slate-800/70"
+                    : "bg-transparent"
               }`}
             />
           ))}

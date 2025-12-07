@@ -23,7 +23,11 @@ const CHART_COLORS = {
   other: "#8B5CF6",
 };
 
-export function DevicesChart({ data, totalClicks, onExport }: DevicesChartProps) {
+export function DevicesChart({
+  data,
+  totalClicks,
+  onExport,
+}: DevicesChartProps) {
   // Add colors to data if not present
   const chartData = data.map((item, index) => ({
     ...item,
@@ -64,7 +68,9 @@ export function DevicesChart({ data, totalClicks, onExport }: DevicesChartProps)
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-3xl font-bold">{totalClicks.toLocaleString()}</span>
+              <span className="text-3xl font-bold">
+                {totalClicks.toLocaleString()}
+              </span>
               <span className="text-xs text-muted-foreground uppercase tracking-wider">
                 CLICKS
               </span>
@@ -72,15 +78,22 @@ export function DevicesChart({ data, totalClicks, onExport }: DevicesChartProps)
           </div>
           <div className="flex flex-col gap-2 mt-6 w-full">
             {chartData.map((item) => (
-              <div key={item.name} className="flex items-center justify-between">
+              <div
+                key={item.name}
+                className="flex items-center justify-between"
+              >
                 <div className="flex items-center gap-2">
                   <div
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="text-sm text-muted-foreground">{item.name}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {item.name}
+                  </span>
                 </div>
-                <span className="text-sm font-medium">{item.value.toLocaleString()}</span>
+                <span className="text-sm font-medium">
+                  {item.value.toLocaleString()}
+                </span>
               </div>
             ))}
           </div>

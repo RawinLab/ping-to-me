@@ -59,7 +59,7 @@ export function BioPageClient({ slug }: { slug: string }) {
       // This endpoint does not require authentication
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
       const response = await axios.get<BioPageData>(
-        `${apiUrl}/biopages/public/${slug}`
+        `${apiUrl}/biopages/public/${slug}`,
       );
 
       setPageData(response.data);
@@ -127,15 +127,13 @@ export function BioPageClient({ slug }: { slug: string }) {
             Page Not Found
           </h1>
           <p className="text-lg text-gray-600 mb-8">
-            The bio page you&apos;re looking for doesn&apos;t exist or has been removed.
+            The bio page you&apos;re looking for doesn&apos;t exist or has been
+            removed.
           </p>
 
           {/* Go Home Button */}
           <Link href="/">
-            <Button
-              size="lg"
-              className="inline-flex items-center gap-2"
-            >
+            <Button size="lg" className="inline-flex items-center gap-2">
               <Home className="h-4 w-4" />
               Go Home
             </Button>

@@ -58,12 +58,12 @@ describe("AuthContext", () => {
     render(
       <AuthProvider>
         <TestComponent />
-      </AuthProvider>
+      </AuthProvider>,
     );
 
     expect(screen.getByText("Loading...")).toBeInTheDocument();
     await waitFor(() =>
-      expect(screen.getByText("Not Logged In")).toBeInTheDocument()
+      expect(screen.getByText("Not Logged In")).toBeInTheDocument(),
     );
   });
 
@@ -85,12 +85,12 @@ describe("AuthContext", () => {
     render(
       <AuthProvider>
         <TestComponent />
-      </AuthProvider>
+      </AuthProvider>,
     );
 
     expect(screen.getByText("Loading...")).toBeInTheDocument();
     await waitFor(() =>
-      expect(screen.getByText("Welcome Test User")).toBeInTheDocument()
+      expect(screen.getByText("Welcome Test User")).toBeInTheDocument(),
     );
   });
 
@@ -110,11 +110,11 @@ describe("AuthContext", () => {
     render(
       <AuthProvider>
         <TestComponent />
-      </AuthProvider>
+      </AuthProvider>,
     );
 
     await waitFor(() =>
-      expect(screen.getByText("Not Logged In")).toBeInTheDocument()
+      expect(screen.getByText("Not Logged In")).toBeInTheDocument(),
     );
 
     const loginButton = screen.getByText("Login");
@@ -123,7 +123,7 @@ describe("AuthContext", () => {
     });
 
     await waitFor(() =>
-      expect(screen.getByText("Welcome Test User")).toBeInTheDocument()
+      expect(screen.getByText("Welcome Test User")).toBeInTheDocument(),
     );
     expect(mockPush).toHaveBeenCalledWith("/dashboard");
   });
@@ -150,11 +150,11 @@ describe("AuthContext", () => {
     render(
       <AuthProvider>
         <TestComponent />
-      </AuthProvider>
+      </AuthProvider>,
     );
 
     await waitFor(() =>
-      expect(screen.getByText("Welcome Test User")).toBeInTheDocument()
+      expect(screen.getByText("Welcome Test User")).toBeInTheDocument(),
     );
 
     const logoutButton = screen.getByText("Logout");
@@ -163,7 +163,7 @@ describe("AuthContext", () => {
     });
 
     await waitFor(() =>
-      expect(screen.getByText("Not Logged In")).toBeInTheDocument()
+      expect(screen.getByText("Not Logged In")).toBeInTheDocument(),
     );
     expect(mockPush).toHaveBeenCalledWith("/login");
     expect(setAccessToken).toHaveBeenCalledWith(null);

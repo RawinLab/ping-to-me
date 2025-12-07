@@ -97,23 +97,33 @@ export default function AnalyticsPage() {
     .map(([name, value]) => ({
       name,
       value: value as number,
-      percentage: totalClicks > 0 ? Math.round(((value as number) / totalClicks) * 100) : 0,
+      percentage:
+        totalClicks > 0
+          ? Math.round(((value as number) / totalClicks) * 100)
+          : 0,
     }))
     .sort((a, b) => b.value - a.value);
 
   // Process device data
-  const devicesData = Object.entries(data.devices || {}).map(([name, value]) => ({
-    name,
-    value: value as number,
-    color: DEVICE_COLORS[name as keyof typeof DEVICE_COLORS] || DEVICE_COLORS.Other,
-  }));
+  const devicesData = Object.entries(data.devices || {}).map(
+    ([name, value]) => ({
+      name,
+      value: value as number,
+      color:
+        DEVICE_COLORS[name as keyof typeof DEVICE_COLORS] ||
+        DEVICE_COLORS.Other,
+    }),
+  );
 
   // Process referrers data
   const referrersData = Object.entries(data.referrers || {})
     .map(([name, value]) => ({
       name,
       value: value as number,
-      percentage: totalClicks > 0 ? Math.round(((value as number) / totalClicks) * 100) : 0,
+      percentage:
+        totalClicks > 0
+          ? Math.round(((value as number) / totalClicks) * 100)
+          : 0,
     }))
     .sort((a, b) => b.value - a.value);
 
@@ -142,11 +152,16 @@ export default function AnalyticsPage() {
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-blue-600">Total Engagements</p>
-                  <p className="text-4xl font-bold tracking-tight">{allTimeClicks.toLocaleString()}</p>
+                  <p className="text-sm font-medium text-blue-600">
+                    Total Engagements
+                  </p>
+                  <p className="text-4xl font-bold tracking-tight">
+                    {allTimeClicks.toLocaleString()}
+                  </p>
                   {dateRange !== "90d" && totalClicks !== allTimeClicks && (
                     <p className="text-xs text-muted-foreground">
-                      {totalClicks.toLocaleString()} in last {dateRange === "7d" ? "7" : "30"} days
+                      {totalClicks.toLocaleString()} in last{" "}
+                      {dateRange === "7d" ? "7" : "30"} days
                     </p>
                   )}
                 </div>
@@ -160,8 +175,12 @@ export default function AnalyticsPage() {
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-slate-500">Active Links</p>
-                  <p className="text-4xl font-bold tracking-tight">{totalLinks.toLocaleString()}</p>
+                  <p className="text-sm font-medium text-slate-500">
+                    Active Links
+                  </p>
+                  <p className="text-4xl font-bold tracking-tight">
+                    {totalLinks.toLocaleString()}
+                  </p>
                 </div>
                 <div className="p-3 bg-emerald-50 rounded-xl">
                   <Link2 className="h-6 w-6 text-emerald-600" />
@@ -173,12 +192,22 @@ export default function AnalyticsPage() {
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-slate-500">Avg. per Link</p>
+                  <p className="text-sm font-medium text-slate-500">
+                    Avg. per Link
+                  </p>
                   <p className="text-4xl font-bold tracking-tight">
-                    {totalLinks > 0 ? Math.round(totalClicks / totalLinks).toLocaleString() : 0}
+                    {totalLinks > 0
+                      ? Math.round(totalClicks / totalLinks).toLocaleString()
+                      : 0}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    clicks in last {dateRange === "7d" ? "7" : dateRange === "30d" ? "30" : "90"} days
+                    clicks in last{" "}
+                    {dateRange === "7d"
+                      ? "7"
+                      : dateRange === "30d"
+                        ? "30"
+                        : "90"}{" "}
+                    days
                   </p>
                 </div>
                 <div className="p-3 bg-purple-50 rounded-xl">
@@ -194,7 +223,17 @@ export default function AnalyticsPage() {
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <Calendar className="h-4 w-4" />
             <span>
-              {format(new Date(Date.now() - (dateRange === "7d" ? 7 : dateRange === "30d" ? 30 : 90) * 24 * 60 * 60 * 1000), "MMM d, yyyy")}
+              {format(
+                new Date(
+                  Date.now() -
+                    (dateRange === "7d" ? 7 : dateRange === "30d" ? 30 : 90) *
+                      24 *
+                      60 *
+                      60 *
+                      1000,
+                ),
+                "MMM d, yyyy",
+              )}
               {" → "}
               {format(new Date(), "MMM d, yyyy")}
             </span>
@@ -211,7 +250,11 @@ export default function AnalyticsPage() {
                     : "text-slate-500 hover:text-slate-700"
                 } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
               >
-                {range === "7d" ? "7 Days" : range === "30d" ? "30 Days" : "90 Days"}
+                {range === "7d"
+                  ? "7 Days"
+                  : range === "30d"
+                    ? "30 Days"
+                    : "90 Days"}
               </button>
             ))}
           </div>
@@ -235,8 +278,12 @@ export default function AnalyticsPage() {
                   <TableRow className="bg-slate-50/50">
                     <TableHead className="font-semibold">#</TableHead>
                     <TableHead className="font-semibold">Link</TableHead>
-                    <TableHead className="font-semibold text-right">Clicks</TableHead>
-                    <TableHead className="font-semibold text-right">Actions</TableHead>
+                    <TableHead className="font-semibold text-right">
+                      Clicks
+                    </TableHead>
+                    <TableHead className="font-semibold text-right">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -253,13 +300,17 @@ export default function AnalyticsPage() {
                               alt=""
                               className="w-4 h-4"
                               onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = "none";
+                                (e.target as HTMLImageElement).style.display =
+                                  "none";
                               }}
                             />
                           </div>
                           <div className="min-w-0">
                             <p className="font-medium text-slate-900 truncate">
-                              {link.title || (link.originalUrl ? new URL(link.originalUrl).hostname : link.slug)}
+                              {link.title ||
+                                (link.originalUrl
+                                  ? new URL(link.originalUrl).hostname
+                                  : link.slug)}
                             </p>
                             <p className="text-xs text-blue-600 truncate">
                               pingto.me/{link.slug}
@@ -276,7 +327,9 @@ export default function AnalyticsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => router.push(`/dashboard/links/${link.id}/analytics`)}
+                          onClick={() =>
+                            router.push(`/dashboard/links/${link.id}/analytics`)
+                          }
                         >
                           View
                           <ExternalLink className="h-3 w-3 ml-1" />
@@ -291,11 +344,19 @@ export default function AnalyticsPage() {
         )}
 
         {/* Locations */}
-        <LocationsChart countries={countriesData} cities={[]} onExport={handleExport} />
+        <LocationsChart
+          countries={countriesData}
+          cities={[]}
+          onExport={handleExport}
+        />
 
         {/* Referrers and Devices */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <ReferrersChart data={referrersData} totalClicks={totalClicks} onExport={handleExport} />
+          <ReferrersChart
+            data={referrersData}
+            totalClicks={totalClicks}
+            onExport={handleExport}
+          />
           <DevicesChart
             data={devicesData}
             totalClicks={totalClicks}
@@ -307,7 +368,9 @@ export default function AnalyticsPage() {
         {data.recentClicks && data.recentClicks.length > 0 && (
           <Card className="overflow-hidden border-0 shadow-md">
             <CardHeader className="flex flex-row items-center justify-between border-b bg-slate-50/50">
-              <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
+              <CardTitle className="text-lg font-semibold">
+                Recent Activity
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <Table>

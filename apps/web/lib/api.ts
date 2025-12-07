@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from "axios";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -29,7 +29,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error: any) => Promise.reject(error)
+  (error: any) => Promise.reject(error),
 );
 
 // Response interceptor to handle 401 and refresh
@@ -47,7 +47,7 @@ api.interceptors.response.use(
     // If 401 and not already retrying
     if (error.response?.status === 401 && !originalRequest._retry) {
       // Skip refresh for the refresh endpoint itself
-      if (originalRequest.url?.includes('/auth/refresh')) {
+      if (originalRequest.url?.includes("/auth/refresh")) {
         return Promise.reject(error);
       }
 
@@ -70,7 +70,7 @@ api.interceptors.response.use(
         const res = await axios.post(
           `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
           {},
-          { withCredentials: true }
+          { withCredentials: true },
         );
 
         const { accessToken: newToken } = res.data;
@@ -92,7 +92,7 @@ api.interceptors.response.use(
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export const setAccessToken = (token: string | null) => {
@@ -109,7 +109,7 @@ export const initializeAuth = async (): Promise<boolean> => {
     const res = await axios.post(
       `${process.env.NEXT_PUBLIC_API_URL}/auth/refresh`,
       {},
-      { withCredentials: true }
+      { withCredentials: true },
     );
     setAccessToken(res.data.accessToken);
     return true;
@@ -118,11 +118,14 @@ export const initializeAuth = async (): Promise<boolean> => {
   }
 };
 
-export const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
-  const method = options.method || 'GET';
+export const apiRequest = async (
+  endpoint: string,
+  options: RequestInit = {},
+) => {
+  const method = options.method || "GET";
   let data: any = undefined;
 
-  if (options.body && typeof options.body === 'string') {
+  if (options.body && typeof options.body === "string") {
     try {
       data = JSON.parse(options.body);
     } catch (e) {

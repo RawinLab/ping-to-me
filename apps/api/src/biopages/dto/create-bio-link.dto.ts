@@ -1,4 +1,10 @@
-import { IsOptional, IsUUID, IsUrl, IsString, IsNotEmpty } from 'class-validator';
+import {
+  IsOptional,
+  IsUUID,
+  IsUrl,
+  IsString,
+  IsNotEmpty,
+} from "class-validator";
 
 export class CreateBioLinkDto {
   @IsOptional()

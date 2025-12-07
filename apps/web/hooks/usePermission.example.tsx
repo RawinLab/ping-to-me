@@ -4,7 +4,7 @@
  * This file demonstrates how to use the usePermission hook in various scenarios.
  */
 
-import { usePermission } from './usePermission';
+import { usePermission } from "./usePermission";
 
 // Example 1: Basic permission check
 function DeleteLinkButton({ linkId }: { linkId: string }) {
@@ -14,11 +14,7 @@ function DeleteLinkButton({ linkId }: { linkId: string }) {
     return null; // Hide button if no permission
   }
 
-  return (
-    <button onClick={() => handleDelete(linkId)}>
-      Delete Link
-    </button>
-  );
+  return <button onClick={() => handleDelete(linkId)}>Delete Link</button>;
 }
 
 // Example 2: Using the generic can() method
@@ -27,10 +23,10 @@ function LinkActions() {
 
   return (
     <div>
-      <button disabled={!can('link', 'create')}>Create</button>
-      <button disabled={!can('link', 'update')}>Edit</button>
-      <button disabled={!can('link', 'delete')}>Delete</button>
-      <button disabled={!can('link', 'export')}>Export</button>
+      <button disabled={!can("link", "create")}>Create</button>
+      <button disabled={!can("link", "update")}>Edit</button>
+      <button disabled={!can("link", "delete")}>Delete</button>
+      <button disabled={!can("link", "export")}>Export</button>
     </div>
   );
 }
@@ -52,20 +48,17 @@ function BulkOperationsButton() {
   const { canAll } = usePermission();
 
   const canPerformBulk = canAll([
-    { resource: 'link', action: 'bulk' },
-    { resource: 'link', action: 'delete' },
+    { resource: "link", action: "bulk" },
+    { resource: "link", action: "delete" },
   ]);
 
-  return (
-    <button disabled={!canPerformBulk}>
-      Bulk Delete
-    </button>
-  );
+  return <button disabled={!canPerformBulk}>Bulk Delete</button>;
 }
 
 // Example 5: Team management
 function TeamMemberRow({ member }: { member: { role: string } }) {
-  const { canManageRole, canRemoveMembers, getAssignableRoles } = usePermission();
+  const { canManageRole, canRemoveMembers, getAssignableRoles } =
+    usePermission();
 
   const canManageThisMember = canManageRole(member.role as any);
   const assignableRoles = getAssignableRoles();
@@ -76,8 +69,10 @@ function TeamMemberRow({ member }: { member: { role: string } }) {
       {canManageThisMember && (
         <>
           <select>
-            {assignableRoles.map(role => (
-              <option key={role} value={role}>{role}</option>
+            {assignableRoles.map((role) => (
+              <option key={role} value={role}>
+                {role}
+              </option>
             ))}
           </select>
           {canRemoveMembers() && <button>Remove</button>}
@@ -132,9 +127,9 @@ function ExportButton() {
   const { canAny } = usePermission();
 
   const canExportAnything = canAny([
-    { resource: 'link', action: 'export' },
-    { resource: 'analytics', action: 'export' },
-    { resource: 'audit', action: 'export' },
+    { resource: "link", action: "export" },
+    { resource: "analytics", action: "export" },
+    { resource: "audit", action: "export" },
   ]);
 
   if (!canExportAnything) {
@@ -153,10 +148,10 @@ function UserRoleBadge() {
   }
 
   const getBadgeColor = () => {
-    if (isOwner) return 'bg-purple-500';
-    if (isAdmin) return 'bg-blue-500';
-    if (isEditor) return 'bg-green-500';
-    return 'bg-gray-500';
+    if (isOwner) return "bg-purple-500";
+    if (isAdmin) return "bg-blue-500";
+    if (isEditor) return "bg-green-500";
+    return "bg-gray-500";
   };
 
   return (
@@ -168,5 +163,5 @@ function UserRoleBadge() {
 
 // Helper function (not exported in the example)
 function handleDelete(linkId: string) {
-  console.log('Deleting link:', linkId);
+  console.log("Deleting link:", linkId);
 }

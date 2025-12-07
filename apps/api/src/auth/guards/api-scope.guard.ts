@@ -4,11 +4,11 @@ import {
   Injectable,
   ForbiddenException,
   UnauthorizedException,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { PrismaService } from '../../prisma/prisma.service';
-import { SCOPE_KEY } from '../rbac/require-scope.decorator';
-import * as crypto from 'crypto';
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { PrismaService } from "../../prisma/prisma.service";
+import { SCOPE_KEY } from "../rbac/require-scope.decorator";
+import * as crypto from "crypto";
 
 /**
  * API Scope Guard for token-based API authorization
@@ -83,7 +83,7 @@ export class ApiScopeGuard implements CanActivate {
       }
 
       throw new UnauthorizedException(
-        'API key or valid authentication required',
+        "API key or valid authentication required",
       );
     }
 
@@ -104,19 +104,16 @@ export class ApiScopeGuard implements CanActivate {
     });
 
     if (!apiKeyRecord) {
-      throw new UnauthorizedException('Invalid API key');
+      throw new UnauthorizedException("Invalid API key");
     }
 
     // Check if key is expired
     if (apiKeyRecord.expiresAt && apiKeyRecord.expiresAt < new Date()) {
-      throw new ForbiddenException('API key has expired');
+      throw new ForbiddenException("API key has expired");
     }
 
     // Check IP whitelist if configured
-    if (
-      apiKeyRecord.ipWhitelist &&
-      apiKeyRecord.ipWhitelist.length > 0
-    ) {
+    if (apiKeyRecord.ipWhitelist && apiKeyRecord.ipWhitelist.length > 0) {
       const clientIp = this.extractClientIp(request);
       const isIpAllowed = this.checkIpWhitelist(
         clientIp,
@@ -135,12 +132,12 @@ export class ApiScopeGuard implements CanActivate {
 
     if (!hasScope) {
       const requiredScopes = Array.isArray(requiredScope)
-        ? requiredScope.join(', ')
+        ? requiredScope.join(", ")
         : requiredScope;
 
       throw new ForbiddenException({
-        message: 'Insufficient API key scopes',
-        error: 'Forbidden',
+        message: "Insufficient API key scopes",
+        error: "Forbidden",
         details: {
           requiredScopes,
           availableScopes: apiKeyRecord.scopes,
@@ -152,7 +149,7 @@ export class ApiScopeGuard implements CanActivate {
     // Update lastUsedAt timestamp (non-blocking)
     this.updateLastUsedAt(apiKeyRecord.id).catch((error) => {
       // Log error but don't block request
-      console.error('Failed to update API key lastUsedAt:', error);
+      console.error("Failed to update API key lastUsedAt:", error);
     });
 
     // Attach API key metadata to request for potential use in controllers
@@ -164,7 +161,7 @@ export class ApiScopeGuard implements CanActivate {
     };
 
     // Log access for audit (optional)
-    this.logApiAccess(apiKeyRecord, requiredScope, 'granted');
+    this.logApiAccess(apiKeyRecord, requiredScope, "granted");
 
     return true;
   }
@@ -175,14 +172,14 @@ export class ApiScopeGuard implements CanActivate {
    */
   private extractApiKey(request: any): string | undefined {
     // Try x-api-key header
-    const xApiKey = request.headers['x-api-key'];
+    const xApiKey = request.headers["x-api-key"];
     if (xApiKey) {
       return xApiKey;
     }
 
     // Try Authorization: Bearer header
-    const authHeader = request.headers['authorization'];
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    const authHeader = request.headers["authorization"];
+    if (authHeader && authHeader.startsWith("Bearer ")) {
       return authHeader.substring(7);
     }
 
@@ -194,7 +191,7 @@ export class ApiScopeGuard implements CanActivate {
    * Uses the same hashing algorithm as key generation
    */
   private hashKey(key: string): string {
-    return crypto.createHash('sha256').update(key).digest('hex');
+    return crypto.createHash("sha256").update(key).digest("hex");
   }
 
   /**
@@ -203,20 +200,20 @@ export class ApiScopeGuard implements CanActivate {
    */
   private extractClientIp(request: any): string {
     // Check X-Forwarded-For header (standard proxy header)
-    const forwardedFor = request.headers['x-forwarded-for'];
+    const forwardedFor = request.headers["x-forwarded-for"];
     if (forwardedFor) {
       // Take the first IP if multiple are present
-      return forwardedFor.split(',')[0].trim();
+      return forwardedFor.split(",")[0].trim();
     }
 
     // Check X-Real-IP header (common in nginx)
-    const realIp = request.headers['x-real-ip'];
+    const realIp = request.headers["x-real-ip"];
     if (realIp) {
       return realIp;
     }
 
     // Fallback to direct connection IP
-    return request.ip || request.connection?.remoteAddress || 'unknown';
+    return request.ip || request.connection?.remoteAddress || "unknown";
   }
 
   /**
@@ -231,7 +228,7 @@ export class ApiScopeGuard implements CanActivate {
       }
 
       // Check for CIDR match (basic implementation)
-      if (allowedIp.includes('/')) {
+      if (allowedIp.includes("/")) {
         if (this.isIpInCidr(clientIp, allowedIp)) {
           return true;
         }
@@ -247,7 +244,7 @@ export class ApiScopeGuard implements CanActivate {
    */
   private isIpInCidr(ip: string, cidr: string): boolean {
     try {
-      const [range, bits] = cidr.split('/');
+      const [range, bits] = cidr.split("/");
       const mask = ~(2 ** (32 - parseInt(bits, 10)) - 1);
 
       const ipNum = this.ipToNumber(ip);
@@ -255,7 +252,7 @@ export class ApiScopeGuard implements CanActivate {
 
       return (ipNum & mask) === (rangeNum & mask);
     } catch (error) {
-      console.error('Error checking CIDR:', error);
+      console.error("Error checking CIDR:", error);
       return false;
     }
   }
@@ -264,9 +261,11 @@ export class ApiScopeGuard implements CanActivate {
    * Convert IP address to number for CIDR comparison
    */
   private ipToNumber(ip: string): number {
-    return ip.split('.').reduce((acc, octet) => {
-      return (acc << 8) + parseInt(octet, 10);
-    }, 0) >>> 0;
+    return (
+      ip.split(".").reduce((acc, octet) => {
+        return (acc << 8) + parseInt(octet, 10);
+      }, 0) >>> 0
+    );
   }
 
   /**
@@ -281,7 +280,7 @@ export class ApiScopeGuard implements CanActivate {
     availableScopes: string[],
   ): boolean {
     // Admin scope grants full access
-    if (availableScopes.includes('admin')) {
+    if (availableScopes.includes("admin")) {
       return true;
     }
 
@@ -312,12 +311,12 @@ export class ApiScopeGuard implements CanActivate {
   private logApiAccess(
     apiKey: any,
     requiredScope: string | string[],
-    result: 'granted' | 'denied',
+    result: "granted" | "denied",
   ): void {
     // Optional: Log to console for development
     // In production, replace with proper audit logging
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[ApiScopeGuard]', {
+    if (process.env.NODE_ENV === "development") {
+      console.log("[ApiScopeGuard]", {
         keyId: apiKey.id,
         keyName: apiKey.name,
         organizationId: apiKey.organizationId,

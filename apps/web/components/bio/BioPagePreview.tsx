@@ -210,9 +210,7 @@ export function BioPagePreview({
                 {/* Bio Links Section */}
                 <div
                   className={
-                    layout === "grid"
-                      ? "grid grid-cols-2 gap-3"
-                      : "space-y-4"
+                    layout === "grid" ? "grid grid-cols-2 gap-3" : "space-y-4"
                   }
                 >
                   {bioLinks.length > 0 ? (

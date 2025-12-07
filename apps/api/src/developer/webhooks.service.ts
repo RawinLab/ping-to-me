@@ -1,13 +1,13 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '@pingtome/database';
-import * as crypto from 'crypto';
+import { Injectable } from "@nestjs/common";
+import { PrismaClient } from "@pingtome/database";
+import * as crypto from "crypto";
 
 @Injectable()
 export class WebhookService {
   private prisma = new PrismaClient();
 
   async createWebhook(orgId: string, url: string, events: string[]) {
-    const secret = `whsec_${crypto.randomBytes(24).toString('hex')}`;
+    const secret = `whsec_${crypto.randomBytes(24).toString("hex")}`;
 
     return this.prisma.webhook.create({
       data: {
@@ -45,24 +45,24 @@ export class WebhookService {
 
     for (const webhook of webhooks) {
       // Fire and forget for MVP
-      this.sendWebhook(webhook, event, payload).catch(err =>
-        console.error(`Failed to send webhook ${webhook.id}:`, err)
+      this.sendWebhook(webhook, event, payload).catch((err) =>
+        console.error(`Failed to send webhook ${webhook.id}:`, err),
       );
     }
   }
 
   private async sendWebhook(webhook: any, event: string, payload: any) {
     const signature = crypto
-      .createHmac('sha256', webhook.secret)
+      .createHmac("sha256", webhook.secret)
       .update(JSON.stringify(payload))
-      .digest('hex');
+      .digest("hex");
 
     await fetch(webhook.url, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'X-PingToMe-Event': event,
-        'X-PingToMe-Signature': signature,
+        "Content-Type": "application/json",
+        "X-PingToMe-Event": event,
+        "X-PingToMe-Signature": signature,
       },
       body: JSON.stringify(payload),
     });

@@ -51,7 +51,9 @@ export default function QrCodesPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [filterStatus, setFilterStatus] = useState<"all" | "with" | "without">("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "with" | "without">(
+    "all",
+  );
   const [selectedLink, setSelectedLink] = useState<LinkWithQr | null>(null);
   const [customizeOpen, setCustomizeOpen] = useState(false);
 
@@ -72,7 +74,7 @@ export default function QrCodesPage() {
             } catch {
               return { ...link, qrCode: null };
             }
-          })
+          }),
         );
         setLinks(linksWithQr);
       }
@@ -122,7 +124,10 @@ export default function QrCodesPage() {
     return `${apiUrl}/qr/generate?${params.toString()}`;
   };
 
-  const handleDownload = async (link: LinkWithQr, format: "png" | "svg" = "png") => {
+  const handleDownload = async (
+    link: LinkWithQr,
+    format: "png" | "svg" = "png",
+  ) => {
     const params = new URLSearchParams({
       url: link.shortUrl,
       size: "500",
@@ -148,7 +153,9 @@ export default function QrCodesPage() {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">QR Codes</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+              QR Codes
+            </h1>
             <p className="text-sm text-slate-500 mt-1">
               Create and manage QR codes for your links
             </p>
@@ -172,7 +179,10 @@ export default function QrCodesPage() {
             />
           </div>
 
-          <Select value={filterStatus} onValueChange={(v: any) => setFilterStatus(v)}>
+          <Select
+            value={filterStatus}
+            onValueChange={(v: any) => setFilterStatus(v)}
+          >
             <SelectTrigger className="h-11 w-[180px] bg-white border-slate-200 rounded-xl text-sm">
               <SelectValue placeholder="Filter by QR" />
             </SelectTrigger>
@@ -220,7 +230,9 @@ export default function QrCodesPage() {
                 <QrCode className="h-6 w-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-900">{links.length}</p>
+                <p className="text-2xl font-bold text-slate-900">
+                  {links.length}
+                </p>
                 <p className="text-sm text-slate-500">Total Links</p>
               </div>
             </CardContent>
@@ -262,7 +274,9 @@ export default function QrCodesPage() {
           <Card className="bg-white/70 border-slate-200/60">
             <CardContent className="p-12 text-center">
               <QrCode className="h-16 w-16 mx-auto text-slate-300 mb-4" />
-              <h3 className="text-lg font-semibold text-slate-700 mb-2">No QR codes found</h3>
+              <h3 className="text-lg font-semibold text-slate-700 mb-2">
+                No QR codes found
+              </h3>
               <p className="text-slate-500 mb-6">
                 {searchQuery || filterStatus !== "all"
                   ? "Try adjusting your search or filters"
@@ -288,7 +302,8 @@ export default function QrCodesPage() {
                     <div
                       className="w-full h-full rounded-xl flex items-center justify-center"
                       style={{
-                        backgroundColor: link.qrCode?.backgroundColor || "#FFFFFF",
+                        backgroundColor:
+                          link.qrCode?.backgroundColor || "#FFFFFF",
                       }}
                     >
                       <img
@@ -334,7 +349,9 @@ export default function QrCodesPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-slate-500 truncate mb-3">{link.originalUrl}</p>
+                    <p className="text-sm text-slate-500 truncate mb-3">
+                      {link.originalUrl}
+                    </p>
                     <div className="flex items-center justify-between text-xs text-slate-400">
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
@@ -361,7 +378,10 @@ export default function QrCodesPage() {
                   {/* QR Preview */}
                   <div
                     className="h-20 w-20 rounded-xl flex-shrink-0 flex items-center justify-center"
-                    style={{ backgroundColor: link.qrCode?.backgroundColor || "#F8FAFC" }}
+                    style={{
+                      backgroundColor:
+                        link.qrCode?.backgroundColor || "#F8FAFC",
+                    }}
                   >
                     <img
                       src={generateQrPreviewUrl(link)}
@@ -372,14 +392,18 @@ export default function QrCodesPage() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-slate-900">/{link.slug}</span>
+                      <span className="font-semibold text-slate-900">
+                        /{link.slug}
+                      </span>
                       {link.qrCode && (
                         <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">
                           Customized
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-slate-500 truncate">{link.originalUrl}</p>
+                    <p className="text-sm text-slate-500 truncate">
+                      {link.originalUrl}
+                    </p>
                     <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
@@ -411,7 +435,11 @@ export default function QrCodesPage() {
                       <Download className="h-4 w-4" />
                     </Button>
                     <Link href={`/dashboard/links/${link.id}/analytics`}>
-                      <Button variant="outline" size="sm" className="rounded-lg">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-lg"
+                      >
                         <BarChart3 className="h-4 w-4" />
                       </Button>
                     </Link>

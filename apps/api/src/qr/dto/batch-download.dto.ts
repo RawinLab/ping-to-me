@@ -1,4 +1,12 @@
-import { IsArray, IsString, IsOptional, IsIn, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsArray,
+  IsString,
+  IsOptional,
+  IsIn,
+  IsNumber,
+  Min,
+  Max,
+} from "class-validator";
 
 export class BatchDownloadDto {
   @IsArray()
@@ -6,8 +14,8 @@ export class BatchDownloadDto {
   linkIds: string[];
 
   @IsOptional()
-  @IsIn(['png', 'svg', 'pdf'])
-  format?: 'png' | 'svg' | 'pdf';
+  @IsIn(["png", "svg", "pdf"])
+  format?: "png" | "svg" | "pdf";
 
   @IsOptional()
   @IsNumber()

@@ -115,7 +115,7 @@ function SortableLinkItem({
       style={style}
       className={cn(
         "mb-3 transition-all duration-200",
-        isDragging && "opacity-40 scale-105 z-50"
+        isDragging && "opacity-40 scale-105 z-50",
       )}
     >
       <Card
@@ -125,7 +125,7 @@ function SortableLinkItem({
           "hover:border-l-primary hover:shadow-lg",
           "transition-all duration-200 ease-in-out",
           "bg-gradient-to-br from-card to-card/50",
-          isDragging && "shadow-2xl ring-2 ring-primary/20"
+          isDragging && "shadow-2xl ring-2 ring-primary/20",
         )}
       >
         <CardContent className="p-4">
@@ -140,7 +140,7 @@ function SortableLinkItem({
                       "cursor-grab active:cursor-grabbing touch-none",
                       "rounded-md p-1.5 -ml-1.5 transition-all duration-200",
                       "hover:bg-muted/80 active:bg-primary/10",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                     )}
                     {...attributes}
                     {...listeners}
@@ -148,7 +148,7 @@ function SortableLinkItem({
                     <GripVertical
                       className={cn(
                         "h-5 w-5 text-muted-foreground/60",
-                        "group-hover:text-muted-foreground transition-colors duration-200"
+                        "group-hover:text-muted-foreground transition-colors duration-200",
                       )}
                     />
                   </button>
@@ -167,7 +167,7 @@ function SortableLinkItem({
                 "bg-gradient-to-br from-primary/10 to-primary/5",
                 "border border-primary/20",
                 "transition-all duration-200",
-                "group-hover:scale-110 group-hover:border-primary/40"
+                "group-hover:scale-110 group-hover:border-primary/40",
               )}
             >
               {link.icon ? (
@@ -213,7 +213,7 @@ function SortableLinkItem({
                         "hover:scale-110 hover:bg-muted/80",
                         link.isVisible
                           ? "hover:text-green-600"
-                          : "hover:text-yellow-600"
+                          : "hover:text-yellow-600",
                       )}
                     >
                       {link.isVisible ? (
@@ -239,7 +239,7 @@ function SortableLinkItem({
                       className={cn(
                         "h-8 w-8 p-0 transition-all duration-200",
                         "hover:scale-110 hover:bg-blue-50 hover:text-blue-600",
-                        "dark:hover:bg-blue-950/50"
+                        "dark:hover:bg-blue-950/50",
                       )}
                     >
                       <Pencil className="h-4 w-4" />
@@ -261,7 +261,7 @@ function SortableLinkItem({
                       className={cn(
                         "h-8 w-8 p-0 transition-all duration-200",
                         "hover:scale-110 hover:bg-red-50 hover:text-red-600",
-                        "dark:hover:bg-red-950/50"
+                        "dark:hover:bg-red-950/50",
                       )}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -313,7 +313,7 @@ export function SortableLinkList({
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   /**
@@ -368,20 +368,20 @@ export function SortableLinkList({
             "w-20 h-20 rounded-2xl mb-6",
             "bg-gradient-to-br from-primary/10 via-primary/5 to-transparent",
             "border-2 border-dashed border-primary/20",
-            "animate-in fade-in-0 zoom-in-95 duration-500"
+            "animate-in fade-in-0 zoom-in-95 duration-500",
           )}
         >
           <Link2
             className={cn(
               "h-10 w-10 text-primary/60",
-              "animate-in fade-in-0 zoom-in-50 duration-700 delay-150"
+              "animate-in fade-in-0 zoom-in-50 duration-700 delay-150",
             )}
           />
         </div>
         <h3
           className={cn(
             "text-lg font-semibold mb-2 text-foreground/90",
-            "animate-in fade-in-0 slide-in-from-bottom-4 duration-500 delay-200"
+            "animate-in fade-in-0 slide-in-from-bottom-4 duration-500 delay-200",
           )}
         >
           No links yet
@@ -389,7 +389,7 @@ export function SortableLinkList({
         <p
           className={cn(
             "text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed",
-            "animate-in fade-in-0 slide-in-from-bottom-4 duration-500 delay-300"
+            "animate-in fade-in-0 slide-in-from-bottom-4 duration-500 delay-300",
           )}
         >
           Add your first link to get started. Links will appear here and can be
@@ -431,7 +431,7 @@ export function SortableLinkList({
               "shadow-2xl rotate-3 scale-105",
               "border-l-4 border-l-primary",
               "bg-gradient-to-br from-card to-card/50",
-              "opacity-90"
+              "opacity-90",
             )}
           >
             <CardContent className="p-4">
@@ -441,7 +441,7 @@ export function SortableLinkList({
                     "flex items-center justify-center",
                     "h-10 w-10 rounded-lg shrink-0",
                     "bg-gradient-to-br from-primary/10 to-primary/5",
-                    "border border-primary/20"
+                    "border border-primary/20",
                   )}
                 >
                   {activeLink.icon ? (

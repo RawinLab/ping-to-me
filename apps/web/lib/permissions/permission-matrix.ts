@@ -12,45 +12,50 @@
  * - 'limited': Limited access (e.g., can update some org settings but not all)
  * - 'exclude-owner': Access to all organization members except the owner
  */
-export type PermissionScope = '*' | 'own' | 'organization' | 'limited' | 'exclude-owner';
+export type PermissionScope =
+  | "*"
+  | "own"
+  | "organization"
+  | "limited"
+  | "exclude-owner";
 
 /**
  * Resources that can be controlled by RBAC
  */
 export type Resource =
-  | 'link'
-  | 'analytics'
-  | 'organization'
-  | 'team'
-  | 'domain'
-  | 'billing'
-  | 'api-key'
-  | 'audit'
-  | 'biopage'
-  | 'campaign'
-  | 'tag';
+  | "link"
+  | "analytics"
+  | "organization"
+  | "team"
+  | "domain"
+  | "billing"
+  | "api-key"
+  | "audit"
+  | "biopage"
+  | "campaign"
+  | "tag";
 
 /**
  * Actions that can be performed on resources
  */
 export type Action =
-  | 'create'
-  | 'read'
-  | 'update'
-  | 'delete'
-  | 'bulk'
-  | 'export'
-  | 'invite'
-  | 'verify'
-  | 'manage'
-  | 'update-role'
-  | 'remove'
-  | 'revoke';
+  | "create"
+  | "read"
+  | "update"
+  | "delete"
+  | "bulk"
+  | "export"
+  | "invite"
+  | "verify"
+  | "manage"
+  | "update-role"
+  | "remove"
+  | "revoke";
 
 /**
  * Member role type (matches backend MemberRole enum)
  */
-export type MemberRole = 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER';
+export type MemberRole = "OWNER" | "ADMIN" | "EDITOR" | "VIEWER";
 
 /**
  * Permission entry defining what actions are allowed for a resource
@@ -78,65 +83,65 @@ export const PERMISSION_MATRIX: Record<MemberRole, RolePermissions> = {
    */
   OWNER: {
     link: {
-      create: '*',
-      read: '*',
-      update: '*',
-      delete: '*',
-      bulk: '*',
-      export: '*',
+      create: "*",
+      read: "*",
+      update: "*",
+      delete: "*",
+      bulk: "*",
+      export: "*",
     },
     analytics: {
-      read: '*',
-      export: '*',
+      read: "*",
+      export: "*",
     },
     organization: {
-      read: '*',
-      update: '*',
-      delete: '*',
+      read: "*",
+      update: "*",
+      delete: "*",
     },
     team: {
-      read: '*',
-      invite: '*',
-      'update-role': '*',
-      remove: '*',
+      read: "*",
+      invite: "*",
+      "update-role": "*",
+      remove: "*",
     },
     domain: {
-      create: '*',
-      read: '*',
-      update: '*',
-      delete: '*',
-      verify: '*',
+      create: "*",
+      read: "*",
+      update: "*",
+      delete: "*",
+      verify: "*",
     },
     billing: {
-      read: '*',
-      manage: '*',
+      read: "*",
+      manage: "*",
     },
-    'api-key': {
-      create: '*',
-      read: '*',
-      revoke: '*',
+    "api-key": {
+      create: "*",
+      read: "*",
+      revoke: "*",
     },
     audit: {
-      read: '*',
-      export: '*',
+      read: "*",
+      export: "*",
     },
     biopage: {
-      create: '*',
-      read: '*',
-      update: '*',
-      delete: '*',
+      create: "*",
+      read: "*",
+      update: "*",
+      delete: "*",
     },
     campaign: {
-      create: '*',
-      read: '*',
-      update: '*',
-      delete: '*',
+      create: "*",
+      read: "*",
+      update: "*",
+      delete: "*",
     },
     tag: {
-      create: '*',
-      read: '*',
-      update: '*',
-      delete: '*',
+      create: "*",
+      read: "*",
+      update: "*",
+      delete: "*",
     },
   },
 
@@ -146,62 +151,62 @@ export const PERMISSION_MATRIX: Record<MemberRole, RolePermissions> = {
    */
   ADMIN: {
     link: {
-      create: '*',
-      read: '*',
-      update: '*',
-      delete: '*',
-      bulk: 'organization',
-      export: '*',
+      create: "*",
+      read: "*",
+      update: "*",
+      delete: "*",
+      bulk: "organization",
+      export: "*",
     },
     analytics: {
-      read: '*',
-      export: '*',
+      read: "*",
+      export: "*",
     },
     organization: {
-      read: '*',
-      update: 'limited',
+      read: "*",
+      update: "limited",
     },
     team: {
-      read: '*',
-      invite: 'exclude-owner',
-      'update-role': 'exclude-owner',
-      remove: 'exclude-owner',
+      read: "*",
+      invite: "exclude-owner",
+      "update-role": "exclude-owner",
+      remove: "exclude-owner",
     },
     domain: {
-      create: '*',
-      read: '*',
-      update: '*',
-      delete: '*',
-      verify: '*',
+      create: "*",
+      read: "*",
+      update: "*",
+      delete: "*",
+      verify: "*",
     },
     billing: {
-      read: '*',
+      read: "*",
     },
-    'api-key': {
-      create: '*',
-      read: ['own', 'organization'],
-      revoke: 'own',
+    "api-key": {
+      create: "*",
+      read: ["own", "organization"],
+      revoke: "own",
     },
     audit: {
-      read: '*',
+      read: "*",
     },
     biopage: {
-      create: '*',
-      read: '*',
-      update: ['own', 'organization'],
-      delete: ['own', 'organization'],
+      create: "*",
+      read: "*",
+      update: ["own", "organization"],
+      delete: ["own", "organization"],
     },
     campaign: {
-      create: '*',
-      read: '*',
-      update: '*',
-      delete: '*',
+      create: "*",
+      read: "*",
+      update: "*",
+      delete: "*",
     },
     tag: {
-      create: '*',
-      read: '*',
-      update: '*',
-      delete: '*',
+      create: "*",
+      read: "*",
+      update: "*",
+      delete: "*",
     },
   },
 
@@ -211,37 +216,37 @@ export const PERMISSION_MATRIX: Record<MemberRole, RolePermissions> = {
    */
   EDITOR: {
     link: {
-      create: '*',
-      read: ['own', 'organization'],
-      update: 'own',
-      delete: 'own',
-      export: 'own',
+      create: "*",
+      read: ["own", "organization"],
+      update: "own",
+      delete: "own",
+      export: "own",
     },
     analytics: {
-      read: ['own', 'organization'],
+      read: ["own", "organization"],
     },
     organization: {
-      read: '*',
+      read: "*",
     },
     team: {
-      read: '*',
+      read: "*",
     },
     domain: {
-      read: '*',
+      read: "*",
     },
     biopage: {
-      create: '*',
-      read: ['own', 'organization'],
-      update: 'own',
-      delete: 'own',
+      create: "*",
+      read: ["own", "organization"],
+      update: "own",
+      delete: "own",
     },
     campaign: {
-      read: '*',
+      read: "*",
     },
     tag: {
-      create: '*',
-      read: '*',
-      update: 'own',
+      create: "*",
+      read: "*",
+      update: "own",
     },
   },
 
@@ -251,28 +256,28 @@ export const PERMISSION_MATRIX: Record<MemberRole, RolePermissions> = {
    */
   VIEWER: {
     link: {
-      read: 'organization',
+      read: "organization",
     },
     analytics: {
-      read: 'organization',
+      read: "organization",
     },
     organization: {
-      read: '*',
+      read: "*",
     },
     team: {
-      read: '*',
+      read: "*",
     },
     domain: {
-      read: '*',
+      read: "*",
     },
     biopage: {
-      read: 'organization',
+      read: "organization",
     },
     campaign: {
-      read: '*',
+      read: "*",
     },
     tag: {
-      read: '*',
+      read: "*",
     },
   },
 };
@@ -315,7 +320,9 @@ export function getPermissions(
   }
 
   // Normalize to array
-  return Array.isArray(actionPermission) ? actionPermission : [actionPermission];
+  return Array.isArray(actionPermission)
+    ? actionPermission
+    : [actionPermission];
 }
 
 /**
@@ -461,28 +468,32 @@ export function hasPermissionWithScope(
   // Check if any scope grants permission
   for (const scope of scopes) {
     switch (scope) {
-      case '*':
+      case "*":
         // Full access granted
         return true;
 
-      case 'own':
+      case "own":
         // Check if user owns the resource
-        if (context?.userId && context?.ownerId && context.userId === context.ownerId) {
+        if (
+          context?.userId &&
+          context?.ownerId &&
+          context.userId === context.ownerId
+        ) {
           return true;
         }
         break;
 
-      case 'organization':
+      case "organization":
         // Access to any resource in the organization
         return true;
 
-      case 'limited':
+      case "limited":
         // Allow with limited functionality
         return true;
 
-      case 'exclude-owner':
+      case "exclude-owner":
         // Allow unless target is an owner
-        if (!context?.targetRole || context.targetRole !== 'OWNER') {
+        if (!context?.targetRole || context.targetRole !== "OWNER") {
           return true;
         }
         break;
