@@ -3,6 +3,7 @@ import { LinksService } from "./links.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { QrCodeService } from "../qr/qr.service";
 import { AuditService } from "../audit/audit.service";
+import { QuotaService } from "../quota/quota.service";
 
 describe("LinksService", () => {
   let service: LinksService;
@@ -40,6 +41,14 @@ describe("LinksService", () => {
           useValue: {
             logLinkEvent: jest.fn().mockResolvedValue(undefined),
             captureChanges: jest.fn(),
+          },
+        },
+        {
+          provide: QuotaService,
+          useValue: {
+            checkQuota: jest.fn().mockResolvedValue({ allowed: true, currentUsage: 0, limit: 50, remaining: 50, percentUsed: 0 }),
+            incrementUsage: jest.fn().mockResolvedValue(undefined),
+            decrementUsage: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],
