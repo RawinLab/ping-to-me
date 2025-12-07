@@ -76,6 +76,22 @@ app.get("/:slug", async (c) => {
       // Legacy string value, treat as destination
     }
 
+    // Check link status BEFORE other checks
+    if (metadata.status && metadata.status !== "ACTIVE") {
+      if (metadata.status === "DISABLED") {
+        return c.text("Link is disabled", 403);
+      }
+      if (metadata.status === "BANNED") {
+        return c.text("Link has been removed", 410);
+      }
+      if (metadata.status === "EXPIRED") {
+        return c.text("Link has expired", 410);
+      }
+      if (metadata.status === "ARCHIVED") {
+        return c.text("Link is archived", 410);
+      }
+    }
+
     // Check expiration
     if (
       metadata.expirationDate &&

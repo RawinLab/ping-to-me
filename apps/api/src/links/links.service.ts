@@ -206,6 +206,7 @@ export class LinksService {
       passwordHash: link.passwordHash,
       expirationDate: link.expirationDate,
       deepLinkFallback: link.deepLinkFallback,
+      status: link.status,
     });
 
     try {
