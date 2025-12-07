@@ -447,7 +447,7 @@ export default function DomainDetailsPage() {
 
               <div className="text-xs text-slate-500 bg-blue-50 rounded-lg px-4 py-3 border border-blue-200">
                 <strong>Note:</strong> DNS changes can take up to 48 hours to
-                propagate. After adding the record, click "Verify Domain" to check
+                propagate. After adding the record, click &quot;Verify Domain&quot; to check
                 the status.
               </div>
             </CardContent>

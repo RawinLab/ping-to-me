@@ -330,7 +330,7 @@ export function AddDomainModal({
                   After adding the record, return to the Domains page to verify
                 </li>
                 <li>
-                  You can verify anytime by clicking "Verify Now" on your domain
+                  You can verify anytime by clicking &quot;Verify Now&quot; on your domain
                 </li>
               </ul>
             </div>
