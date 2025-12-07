@@ -25,12 +25,15 @@ import {
   TabsTrigger,
   Switch,
 } from "@pingtome/ui";
-import { Plus, Trash, GripVertical, Save, Loader2 } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { ThemeSelector } from "@/components/bio/ThemeSelector";
 import { ColorPicker } from "@/components/bio/ColorPicker";
 import { BackgroundPicker } from "@/components/bio/BackgroundPicker";
 import { ButtonStyleSelector } from "@/components/bio/ButtonStyleSelector";
+import { SortableLinkList } from "@/components/bio/SortableLinkList";
+import { LinkStyleEditor, type BioPageLink } from "@/components/bio/LinkStyleEditor";
+import { useLinkReorder } from "@/hooks/useLinkReorder";
 import {
   THEME_PRESETS,
   DEFAULT_THEME,
@@ -47,12 +50,6 @@ const formSchema = z.object({
   description: z.string().optional(),
 });
 
-interface LinkItem {
-  id: string;
-  title: string;
-  url: string;
-}
-
 export function BioPageBuilder({
   existingPage,
   onSuccess,
@@ -61,27 +58,44 @@ export function BioPageBuilder({
   onSuccess?: () => void;
 }) {
   const { user } = useAuth();
-  const [links, setLinks] = useState<LinkItem[]>([]);
-  const [selectedLinks, setSelectedLinks] = useState<string[]>(
-    existingPage?.content?.links || []
-  );
   const [loading, setLoading] = useState(false);
   const [availableLinks, setAvailableLinks] = useState<any[]>([]);
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
 
+  // Bio links state (using new BioPageLink model)
+  const [bioLinks, setBioLinks] = useState<BioPageLink[]>(
+    existingPage?.bioLinks || []
+  );
+
+  // Link editor state
+  const [editingLink, setEditingLink] = useState<BioPageLink | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+
   // Theme state
   const [selectedTheme, setSelectedTheme] = useState<string>(
-    existingPage?.content?.theme?.name || "minimal"
+    existingPage?.theme?.name || "minimal"
   );
   const [customTheme, setCustomTheme] = useState<BioPageTheme>(
-    existingPage?.content?.theme || DEFAULT_THEME
+    existingPage?.theme || DEFAULT_THEME
   );
   const [layout, setLayout] = useState<"stacked" | "grid">(
-    existingPage?.content?.layout || "stacked"
+    existingPage?.layout || "stacked"
   );
   const [showBranding, setShowBranding] = useState<boolean>(
-    existingPage?.content?.showBranding ?? true
+    existingPage?.showBranding ?? true
   );
+
+  // Reorder hook
+  const { reorderLinks, isReordering } = useLinkReorder({
+    bioPageId: existingPage?.id || "",
+    onSuccess: () => {
+      // Silently succeed
+    },
+    onError: (error) => {
+      // Revert to previous order on error
+      console.error("Reorder failed:", error);
+    },
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -147,12 +161,9 @@ export function BioPageBuilder({
     try {
       const payload = {
         ...values,
-        content: {
-          links: selectedLinks,
-          theme: customTheme,
-          layout,
-          showBranding,
-        },
+        theme: customTheme,
+        layout,
+        showBranding,
         orgId: currentOrgId,
       };
 
@@ -177,14 +188,122 @@ export function BioPageBuilder({
     }
   };
 
-  const addLink = (linkId: string) => {
-    if (!selectedLinks.includes(linkId)) {
-      setSelectedLinks([...selectedLinks, linkId]);
+  // Add a new link to the bio page
+  const addLink = async (linkId: string) => {
+    if (!existingPage?.id) {
+      alert("Please save the bio page first before adding links.");
+      return;
+    }
+
+    // Check if link already exists
+    if (bioLinks.some((bl) => bl.link?.slug === linkId || bl.id === linkId)) {
+      return;
+    }
+
+    const link = availableLinks.find((l) => l.id === linkId);
+    if (!link) return;
+
+    try {
+      const newBioLink = await apiRequest(`/biopages/${existingPage.id}/links`, {
+        method: "POST",
+        body: JSON.stringify({
+          linkId: link.id,
+          title: link.title || link.slug,
+          description: null,
+          order: bioLinks.length,
+        }),
+      });
+      setBioLinks([...bioLinks, newBioLink]);
+    } catch (error) {
+      console.error("Failed to add link:", error);
+      alert("Failed to add link");
     }
   };
 
-  const removeLink = (linkId: string) => {
-    setSelectedLinks(selectedLinks.filter((id) => id !== linkId));
+  // Remove a link from the bio page
+  const handleDeleteLink = async (linkId: string) => {
+    if (!existingPage?.id) return;
+
+    try {
+      await apiRequest(`/biopages/${existingPage.id}/links/${linkId}`, {
+        method: "DELETE",
+      });
+      setBioLinks(bioLinks.filter((l) => l.id !== linkId));
+    } catch (error) {
+      console.error("Failed to delete link:", error);
+      alert("Failed to delete link");
+    }
+  };
+
+  // Handle reorder with optimistic update
+  const handleReorder = async (orderings: { id: string; order: number }[]) => {
+    // Optimistic update
+    const reorderedLinks = bioLinks.map((link) => {
+      const newOrder = orderings.find((o) => o.id === link.id)?.order ?? link.order;
+      return { ...link, order: newOrder };
+    });
+    setBioLinks(reorderedLinks);
+
+    // Call API in background
+    if (existingPage?.id) {
+      try {
+        await reorderLinks(orderings);
+      } catch {
+        // Error already logged in hook, revert on failure
+        setBioLinks(bioLinks);
+      }
+    }
+  };
+
+  // Open link editor
+  const handleEditLink = (link: BioPageLink) => {
+    setEditingLink(link);
+    setIsEditorOpen(true);
+  };
+
+  // Save link edits
+  const handleSaveLink = async (updates: Partial<BioPageLink>) => {
+    if (!existingPage?.id || !editingLink) return;
+
+    try {
+      const updated = await apiRequest(
+        `/biopages/${existingPage.id}/links/${editingLink.id}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(updates),
+        }
+      );
+      setBioLinks(bioLinks.map((l) => (l.id === editingLink.id ? updated : l)));
+    } catch (error) {
+      console.error("Failed to update link:", error);
+      alert("Failed to update link");
+    }
+  };
+
+  // Toggle link visibility
+  const handleToggleVisibility = async (linkId: string) => {
+    const link = bioLinks.find((l) => l.id === linkId);
+    if (!link || !existingPage?.id) return;
+
+    const newVisibility = !link.isVisible;
+
+    // Optimistic update
+    setBioLinks(bioLinks.map((l) =>
+      l.id === linkId ? { ...l, isVisible: newVisibility } : l
+    ));
+
+    try {
+      await apiRequest(`/biopages/${existingPage.id}/links/${linkId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ isVisible: newVisibility }),
+      });
+    } catch (error) {
+      console.error("Failed to toggle visibility:", error);
+      // Revert on error
+      setBioLinks(bioLinks.map((l) =>
+        l.id === linkId ? { ...l, isVisible: !newVisibility } : l
+      ));
+    }
   };
 
   return (
@@ -259,58 +378,45 @@ export function BioPageBuilder({
 
             {/* Links Tab */}
             <TabsContent value="links" className="space-y-4 mt-6">
-              <div className="flex gap-2">
-                <Select onValueChange={addLink}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Add a link..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableLinks.map((link) => (
-                      <SelectItem key={link.id} value={link.id}>
-                        {link.title || link.slug} ({link.originalUrl})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                {selectedLinks.map((linkId, index) => {
-                  const link = availableLinks.find((l) => l.id === linkId);
-                  if (!link) return null;
-                  return (
-                    <div
-                      key={linkId}
-                      className="flex items-center justify-between p-3 border rounded-md bg-card"
-                    >
-                      <div className="flex items-center gap-3">
-                        <GripVertical className="h-4 w-4 text-muted-foreground cursor-move" />
-                        <div>
-                          <div className="font-medium">
-                            {link.title || link.slug}
-                          </div>
-                          <div className="text-xs text-muted-foreground truncate max-w-[200px]">
-                            {link.originalUrl}
-                          </div>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeLink(linkId)}
-                      >
-                        <Trash className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  );
-                })}
-                {selectedLinks.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-md">
-                    No links added yet. Select links above to add them to your
-                    page.
+              {existingPage?.id ? (
+                <>
+                  <div className="flex gap-2">
+                    <Select onValueChange={addLink}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Add a link..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableLinks
+                          .filter((link) => !bioLinks.some((bl) => bl.link?.slug === link.slug))
+                          .map((link) => (
+                            <SelectItem key={link.id} value={link.id}>
+                              {link.title || link.slug} ({link.originalUrl})
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                )}
-              </div>
+
+                  {isReordering && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving order...
+                    </div>
+                  )}
+
+                  <SortableLinkList
+                    links={bioLinks}
+                    onReorder={handleReorder}
+                    onEdit={handleEditLink}
+                    onDelete={handleDeleteLink}
+                    onToggleVisibility={handleToggleVisibility}
+                  />
+                </>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-md">
+                  Save the bio page first to add and manage links.
+                </div>
+              )}
             </TabsContent>
 
             {/* Theme Tab */}
@@ -430,6 +536,17 @@ export function BioPageBuilder({
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Link Style Editor Modal */}
+      <LinkStyleEditor
+        link={editingLink}
+        open={isEditorOpen}
+        onClose={() => {
+          setIsEditorOpen(false);
+          setEditingLink(null);
+        }}
+        onSave={handleSaveLink}
+      />
     </div>
   );
 }
