@@ -18,11 +18,11 @@ A Bitly-clone URL shortening platform with analytics, QR codes, and team managem
 | Layer | Technology |
 |-------|------------|
 | **Monorepo** | Turborepo + pnpm |
-| **Frontend** | Next.js 14, React 18, TailwindCSS, shadcn/ui |
+| **Frontend** | Next.js 14, React 18, TailwindCSS |
+| **UI Framework** | [shadcn/ui](https://ui.shadcn.com/docs/components) + Radix UI + Lucide Icons |
 | **Backend API** | NestJS 10, TypeScript 5.x |
 | **Redirector** | Cloudflare Workers + Hono |
 | **Database** | PostgreSQL + Prisma |
-| **UI Components** | Radix UI, Lucide Icons |
 | **Testing** | Jest (unit), Playwright (E2E) |
 | **Payments** | Stripe |
 
@@ -173,6 +173,59 @@ THROTTLE_DISABLED=false
 - **API**: RESTful conventions, DTOs with class-validator
 - **Naming**: camelCase (variables), PascalCase (components/types)
 - **Testing**: Unit tests for services, E2E for user flows
+
+## UI Components (shadcn/ui)
+
+This project uses **shadcn/ui** as the primary UI framework. Always use shadcn/ui components instead of creating custom components.
+
+**Documentation**: https://ui.shadcn.com/docs/components
+
+**Component Location**: `apps/web/components/ui/`
+
+**Adding New Components**:
+```bash
+cd apps/web
+npx shadcn@latest add [component-name]
+```
+
+**Common Components**:
+| Component | Usage |
+|-----------|-------|
+| `Button` | Actions, form submissions |
+| `Input`, `Textarea` | Form inputs |
+| `Select`, `Combobox` | Dropdowns |
+| `Dialog`, `Sheet` | Modals, side panels |
+| `Card` | Content containers |
+| `Table` | Data display |
+| `Tabs` | Tab navigation |
+| `Toast` | Notifications |
+| `Form` | Form validation (with react-hook-form) |
+| `DropdownMenu` | Context menus |
+| `Badge` | Status indicators |
+| `Skeleton` | Loading states |
+
+**Example Usage**:
+```tsx
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+
+export function MyComponent() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Title</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Input placeholder="Enter value" />
+        <Button>Submit</Button>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+> **Note**: Check the [shadcn/ui docs](https://ui.shadcn.com/docs/components) for component props, variants, and examples.
 
 ## Key Features (per spec)
 
