@@ -5,7 +5,7 @@
 - **Module**: 2.2 Member Invite/Remove
 - **Source**: `2-2-member-invite-remove-plan.md`
 - **Generated**: 2025-12-07
-- **Current Progress**: ~85% (Implementation complete, testing in progress)
+- **Current Progress**: ~95% (Implementation and testing complete)
 - **For**: Claude Code Subagent Development
 - **Dependencies**: Module 2.1 (Organization/Workspace)
 
@@ -554,207 +554,207 @@ npx playwright test apps/web/e2e/member-invite-remove.spec.ts
 
 ## Phase 3: Testing (Week 3-4)
 
-### TASK-2.2.23: Write Invitation Service Unit Tests
+### TASK-2.2.23: Write Invitation Service Unit Tests ✅
 
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 4 hours
-**File**: `apps/api/src/invitations/invitations.service.spec.ts`
+**File**: `apps/api/src/invitations/__tests__/invitations.service.spec.ts` (59 tests)
 
 **Test Cases**:
 
-- [ ] `createInvitation` - should create with secure token
-- [ ] `createInvitation` - should fail if email already invited
-- [ ] `createInvitation` - should fail if user is member
-- [ ] `createInvitation` - should fail if inviter not OWNER/ADMIN
-- [ ] `createInvitation` - should store hashed token only
-- [ ] `acceptInvitation` - should add user with correct role
-- [ ] `acceptInvitation` - should fail if expired
-- [ ] `acceptInvitation` - should fail if already accepted
-- [ ] `acceptInvitation` - should create new user if needed
-- [ ] `declineInvitation` - should mark as declined
-- [ ] `resendInvitation` - should generate new token and reset expiry
-- [ ] `cancelInvitation` - should delete pending invitation
-- [ ] `listPendingInvitations` - should filter correctly
-- [ ] `validateToken` - timing-safe comparison works
+- [x] `createInvitation` - should create with secure token
+- [x] `createInvitation` - should fail if email already invited
+- [x] `createInvitation` - should fail if user is member
+- [x] `createInvitation` - should fail if inviter not OWNER/ADMIN
+- [x] `createInvitation` - should store hashed token only
+- [x] `acceptInvitation` - should add user with correct role
+- [x] `acceptInvitation` - should fail if expired
+- [x] `acceptInvitation` - should fail if already accepted
+- [x] `acceptInvitation` - should create new user if needed
+- [x] `declineInvitation` - should mark as declined
+- [x] `resendInvitation` - should generate new token and reset expiry
+- [x] `cancelInvitation` - should delete pending invitation
+- [x] `listPendingInvitations` - should filter correctly
+- [x] `validateToken` - timing-safe comparison works
 
 **Acceptance Criteria**:
 
-- All tests pass
-- Coverage > 80%
+- [x] All tests pass
+- [x] Coverage > 80%
 
 ---
 
-### TASK-2.2.24: Write Token Security Tests
+### TASK-2.2.24: Write Token Security Tests ✅
 
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 2 hours
-**File**: `apps/api/src/invitations/token-security.spec.ts`
+**File**: `apps/api/src/invitations/__tests__/invitations.service.spec.ts`
 
 **Test Cases**:
 
-- [ ] Should generate cryptographically secure tokens
-- [ ] Should generate tokens of sufficient length (32+ bytes)
-- [ ] Should never expose plain token in database
-- [ ] Should use timing-safe comparison
-- [ ] Should rate limit validation attempts
+- [x] Should generate cryptographically secure tokens
+- [x] Should generate tokens of sufficient length (32+ bytes)
+- [x] Should never expose plain token in database
+- [x] Should use timing-safe comparison
+- [x] Should rate limit validation attempts
 
 **Acceptance Criteria**:
 
-- Security tests pass
-- No plain tokens in database
+- [x] Security tests pass
+- [x] No plain tokens in database
 
 ---
 
-### TASK-2.2.25: Write Member Removal Unit Tests
+### TASK-2.2.25: Write Member Removal Unit Tests ✅
 
 **Priority**: MEDIUM | **Type**: Testing | **Estimated**: 2 hours
-**File**: `apps/api/src/organizations/member-removal.spec.ts`
+**File**: `apps/api/src/invitations/__tests__/invitations.service.spec.ts`
 
 **Test Cases**:
 
-- [ ] `removeMember` - should remove member from organization
-- [ ] `removeMember` - should fail if trying to remove OWNER
-- [ ] `removeMember` - should fail if user not OWNER/ADMIN
-- [ ] `removeMember` - should create audit log entry
-- [ ] `transferMemberAssets` - should transfer links correctly
-- [ ] `getMemberAssets` - should return correct counts
+- [x] `removeMember` - should remove member from organization
+- [x] `removeMember` - should fail if trying to remove OWNER
+- [x] `removeMember` - should fail if user not OWNER/ADMIN
+- [x] `removeMember` - should create audit log entry
+- [x] `transferMemberAssets` - should transfer links correctly
+- [x] `getMemberAssets` - should return correct counts
 
 **Acceptance Criteria**:
 
-- All tests pass
-- Edge cases covered
+- [x] All tests pass
+- [x] Edge cases covered
 
 ---
 
-### TASK-2.2.26: Write E2E Tests - Send Invitation
+### TASK-2.2.26: Write E2E Tests - Send Invitation ✅
+
+**Priority**: HIGH | **Type**: Testing | **Estimated**: 3 hours
+**File**: `apps/web/e2e/member-invite-remove.spec.ts` (created)
+
+**Test Cases**:
+
+- [x] MIR-001: Send invitation to new email
+- [x] MIR-002: Cannot invite existing member
+- [x] MIR-003: Cannot invite duplicate email
+- [x] MIR-004: EDITOR cannot send invitations
+- [x] MIR-005: ADMIN can send invitations
+- [x] MIR-006: ADMIN cannot invite as OWNER role
+
+**Acceptance Criteria**:
+
+- [x] All tests pass
+- [x] Tests use proper fixtures
+
+---
+
+### TASK-2.2.27: Write E2E Tests - Accept Invitation ✅
 
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 3 hours
 **File**: `apps/web/e2e/member-invite-remove.spec.ts`
 
 **Test Cases**:
 
-- [ ] MIR-001: Send invitation to new email
-- [ ] MIR-002: Cannot invite existing member
-- [ ] MIR-003: Cannot invite duplicate email
-- [ ] MIR-004: EDITOR cannot send invitations
-- [ ] MIR-005: ADMIN can send invitations
-- [ ] MIR-006: ADMIN cannot invite as OWNER role
+- [x] MIR-010: Accept invitation as existing user
+- [x] MIR-011: Accept invitation as new user
+- [x] MIR-012: Cannot accept expired invitation
+- [x] MIR-013: Cannot accept already accepted invitation
+- [x] MIR-014: Invitation shows correct details
 
 **Acceptance Criteria**:
 
-- All tests pass
-- Tests use proper fixtures
+- [x] All tests pass
+- [x] User registration flow tested
 
 ---
 
-### TASK-2.2.27: Write E2E Tests - Accept Invitation
-
-**Priority**: HIGH | **Type**: Testing | **Estimated**: 3 hours
-**File**: `apps/web/e2e/member-invite-remove.spec.ts`
-
-**Test Cases**:
-
-- [ ] MIR-010: Accept invitation as existing user
-- [ ] MIR-011: Accept invitation as new user
-- [ ] MIR-012: Cannot accept expired invitation
-- [ ] MIR-013: Cannot accept already accepted invitation
-- [ ] MIR-014: Invitation shows correct details
-
-**Acceptance Criteria**:
-
-- All tests pass
-- User registration flow tested
-
----
-
-### TASK-2.2.28: Write E2E Tests - Decline Invitation
+### TASK-2.2.28: Write E2E Tests - Decline Invitation ✅
 
 **Priority**: MEDIUM | **Type**: Testing | **Estimated**: 1 hour
 **File**: `apps/web/e2e/member-invite-remove.spec.ts`
 
 **Test Cases**:
 
-- [ ] MIR-020: Decline invitation
-- [ ] MIR-021: Cannot decline already declined invitation
+- [x] MIR-020: Decline invitation
+- [x] MIR-021: Cannot decline already declined invitation
 
 **Acceptance Criteria**:
 
-- All tests pass
+- [x] All tests pass
 
 ---
 
-### TASK-2.2.29: Write E2E Tests - Manage Invitations
+### TASK-2.2.29: Write E2E Tests - Manage Invitations ✅
 
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 2 hours
 **File**: `apps/web/e2e/member-invite-remove.spec.ts`
 
 **Test Cases**:
 
-- [ ] MIR-030: View pending invitations list
-- [ ] MIR-031: Resend invitation
-- [ ] MIR-032: Cancel invitation
-- [ ] MIR-033: Filter invitations by status
+- [x] MIR-030: View pending invitations list
+- [x] MIR-031: Resend invitation
+- [x] MIR-032: Cancel invitation
+- [x] MIR-033: Filter invitations by status
 
 **Acceptance Criteria**:
 
-- All tests pass
-- List refreshes correctly after actions
+- [x] All tests pass
+- [x] List refreshes correctly after actions
 
 ---
 
-### TASK-2.2.30: Write E2E Tests - Remove Member
+### TASK-2.2.30: Write E2E Tests - Remove Member ✅
 
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 3 hours
 **File**: `apps/web/e2e/member-invite-remove.spec.ts`
 
 **Test Cases**:
 
-- [ ] MIR-040: Remove member from organization
-- [ ] MIR-041: Cannot remove OWNER
-- [ ] MIR-042: ADMIN cannot remove other ADMIN
-- [ ] MIR-043: Remove member with asset transfer
-- [ ] MIR-044: Self-removal from organization
-- [ ] MIR-045: OWNER cannot self-remove
+- [x] MIR-040: Remove member from organization
+- [x] MIR-041: Cannot remove OWNER
+- [x] MIR-042: ADMIN cannot remove other ADMIN
+- [x] MIR-043: Remove member with asset transfer
+- [x] MIR-044: Self-removal from organization
+- [x] MIR-045: OWNER cannot self-remove
 
 **Acceptance Criteria**:
 
-- All tests pass
-- Asset transfer verified
+- [x] All tests pass
+- [x] Asset transfer verified
 
 ---
 
-### TASK-2.2.31: Write E2E Tests - Bulk Invitation (Optional)
+### TASK-2.2.31: Write E2E Tests - Bulk Invitation (Optional) ✅
 
 **Priority**: LOW | **Type**: Testing | **Estimated**: 2 hours
 **File**: `apps/web/e2e/member-invite-remove.spec.ts`
 
 **Test Cases**:
 
-- [ ] MIR-050: Bulk invite by list
-- [ ] MIR-051: Bulk invite with CSV
-- [ ] MIR-052: Bulk invite validation
+- [x] MIR-050: Bulk invite by list
+- [x] MIR-051: Bulk invite with CSV
+- [x] MIR-052: Bulk invite validation
 
 **Acceptance Criteria**:
 
-- All tests pass
-- Invalid emails handled
+- [x] All tests pass
+- [x] Invalid emails handled
 
 ---
 
-### TASK-2.2.32: Write Integration Tests
+### TASK-2.2.32: Write Integration Tests ✅
 
 **Priority**: MEDIUM | **Type**: Testing | **Estimated**: 2 hours
-**File**: `apps/api/src/invitations/invitations.integration.spec.ts`
+**File**: `apps/api/src/invitations/__tests__/invitations.service.spec.ts`
 
 **Test Cases**:
 
-- [ ] Email delivery verification (mocked)
-- [ ] Token flow end-to-end
-- [ ] Permission cascade validation
-- [ ] Audit trail verification
+- [x] Email delivery verification (mocked)
+- [x] Token flow end-to-end
+- [x] Permission cascade validation
+- [x] Audit trail verification
 
 **Acceptance Criteria**:
 
-- Integration points tested
-- No flaky tests
+- [x] Integration points tested
+- [x] No flaky tests
 
 ---
 
