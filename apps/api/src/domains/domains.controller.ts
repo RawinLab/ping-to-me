@@ -43,6 +43,50 @@ export class DomainsController {
     return this.domainService.listDomains(req.user.id, orgId);
   }
 
+  /**
+   * Get domain details with full information (TASK-2.4.13)
+   *
+   * GET /domains/:id
+   */
+  @Get(":id")
+  @Permission({ resource: "domain", action: "read" })
+  async getDetails(@Param("id", ParseUUIDPipe) id: string) {
+    return this.domainService.getDomainDetails(id);
+  }
+
+  /**
+   * Set a domain as default for the organization (TASK-2.4.12)
+   *
+   * POST /domains/:id/default
+   */
+  @Post(":id/default")
+  @Permission({ resource: "domain", action: "update" })
+  async setDefault(
+    @Request() req,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() body: { orgId: string },
+  ) {
+    return this.domainService.setDefault(req.user.id, body.orgId, id);
+  }
+
+  /**
+   * Get links associated with a domain (TASK-2.4.14)
+   *
+   * GET /domains/:id/links
+   */
+  @Get(":id/links")
+  @Permission({ resource: "domain", action: "read" })
+  async getLinks(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Query("page") page: string = "1",
+    @Query("limit") limit: string = "20",
+  ) {
+    return this.domainService.getLinksByDomain(id, {
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
+    });
+  }
+
   @Delete(":id")
   @Permission({ resource: "domain", action: "delete" })
   async remove(@Request() req, @Param("id", ParseUUIDPipe) id: string) {

@@ -9,6 +9,7 @@ export interface CreateLinkDto {
   redirectType?: 301 | 302;
   deepLinkFallback?: string;
   organizationId?: string; // Organization this link belongs to
+  domainId?: string; // Custom domain for this link (TASK-2.4.15)
   // QR Code customization
   qrColor?: string; // Hex color for QR code foreground
   qrLogo?: string; // Base64 encoded image for logo overlay

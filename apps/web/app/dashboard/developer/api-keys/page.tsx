@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { apiRequest } from "@/lib/api";
+import { securityApi } from "@/lib/api/security";
 import {
   Card,
   CardContent,
@@ -58,6 +59,9 @@ import {
   Info,
   Calendar as CalendarIcon,
   Shield,
+  RefreshCw,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 
@@ -118,6 +122,20 @@ export default function ApiKeysPage() {
   // New key display
   const [newKey, setNewKey] = useState("");
   const [showNewKey, setShowNewKey] = useState(false);
+
+  // Rotation dialog
+  const [rotateDialogOpen, setRotateDialogOpen] = useState(false);
+  const [rotateKeyId, setRotateKeyId] = useState<string | null>(null);
+  const [rotatePassword, setRotatePassword] = useState("");
+  const [showRotatePassword, setShowRotatePassword] = useState(false);
+  const [rotating, setRotating] = useState(false);
+  const [rotatedKey, setRotatedKey] = useState("");
+
+  // Expiration dialog
+  const [expirationDialogOpen, setExpirationDialogOpen] = useState(false);
+  const [expirationKeyId, setExpirationKeyId] = useState<string | null>(null);
+  const [newExpiration, setNewExpiration] = useState<Date | undefined>();
+  const [updatingExpiration, setUpdatingExpiration] = useState(false);
 
   useEffect(() => {
     fetchApiKeys();
@@ -226,6 +244,61 @@ export default function ApiKeysPage() {
     setSelectedScopes((prev) =>
       prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope],
     );
+  };
+
+  const handleRotateKey = async () => {
+    if (!rotateKeyId || !rotatePassword) return;
+
+    setRotating(true);
+    try {
+      const response = await securityApi.rotateApiKey(
+        rotateKeyId,
+        rotatePassword,
+      );
+      setRotatedKey(response.key);
+      setRotateDialogOpen(false);
+      setRotatePassword("");
+      setShowRotatePassword(false);
+      setShowNewKey(true);
+      setNewKey(response.key);
+      setRotateKeyId(null);
+      fetchApiKeys();
+    } catch (error: any) {
+      alert(error.message || "Failed to rotate API key");
+    } finally {
+      setRotating(false);
+    }
+  };
+
+  const handleUpdateExpiration = async () => {
+    if (!expirationKeyId) return;
+
+    setUpdatingExpiration(true);
+    try {
+      await securityApi.setApiKeyExpiration(
+        expirationKeyId,
+        newExpiration ? newExpiration.toISOString() : null,
+      );
+      setExpirationDialogOpen(false);
+      setExpirationKeyId(null);
+      setNewExpiration(undefined);
+      fetchApiKeys();
+    } catch (error: any) {
+      alert(error.message || "Failed to update expiration");
+    } finally {
+      setUpdatingExpiration(false);
+    }
+  };
+
+  const openRotateDialog = (keyId: string) => {
+    setRotateKeyId(keyId);
+    setRotateDialogOpen(true);
+  };
+
+  const openExpirationDialog = (keyId: string, currentExpiration?: string) => {
+    setExpirationKeyId(keyId);
+    setNewExpiration(currentExpiration ? new Date(currentExpiration) : undefined);
+    setExpirationDialogOpen(true);
   };
 
   const isExpiringSoon = (expiryDate: string) => {
@@ -784,9 +857,17 @@ export default function ApiKeysPage() {
                             </div>
                           </TableCell>
                           <TableCell className="py-4">
-                            <div className="flex items-center gap-1.5 text-slate-600">
-                              <Clock className="h-3.5 w-3.5 text-slate-400" />
-                              {format(new Date(key.createdAt), "MMM d, yyyy")}
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1.5 text-slate-600">
+                                <Clock className="h-3.5 w-3.5 text-slate-400" />
+                                {format(new Date(key.createdAt), "MMM d, yyyy")}
+                              </div>
+                              {key.lastUsedAt && (
+                                <p className="text-xs text-slate-500">
+                                  Last used:{" "}
+                                  {format(new Date(key.lastUsedAt), "MMM d, yyyy")}
+                                </p>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell className="py-4">
@@ -846,14 +927,61 @@ export default function ApiKeysPage() {
                             )}
                           </TableCell>
                           <TableCell className="text-right py-4">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                              onClick={() => handleRevoke(key.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center justify-end gap-1">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                                      onClick={() => openRotateDialog(key.id)}
+                                    >
+                                      <RefreshCw className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">Rotate API Key</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-slate-500 hover:text-slate-600 hover:bg-slate-50 rounded-lg"
+                                      onClick={() =>
+                                        openExpirationDialog(key.id, key.expiresAt)
+                                      }
+                                    >
+                                      <CalendarIcon className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">Set Expiration</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                                      onClick={() => handleRevoke(key.id)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">Revoke API Key</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -974,6 +1102,162 @@ export default function ApiKeysPage() {
           </div>
         </div>
       </div>
+
+      {/* Rotate API Key Dialog */}
+      <Dialog open={rotateDialogOpen} onOpenChange={setRotateDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="h-5 w-5 text-blue-600" />
+              Rotate API Key
+            </DialogTitle>
+            <DialogDescription>
+              Generate a new API key. The old key will be immediately revoked.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-xl">
+              <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+              <div>
+                <p className="font-medium text-amber-800 text-sm">Warning</p>
+                <p className="text-sm text-amber-600">
+                  This will invalidate your current API key. Update all
+                  applications using this key immediately.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="rotatePassword" className="text-slate-700 font-medium">
+                Confirm Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="rotatePassword"
+                  type={showRotatePassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={rotatePassword}
+                  onChange={(e) => setRotatePassword(e.target.value)}
+                  className="h-11 rounded-lg border-slate-200 focus:border-blue-300 focus:ring-blue-100 pr-10"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  onClick={() => setShowRotatePassword(!showRotatePassword)}
+                >
+                  {showRotatePassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setRotateDialogOpen(false);
+                setRotatePassword("");
+                setShowRotatePassword(false);
+              }}
+              className="rounded-lg"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRotateKey}
+              disabled={rotating || !rotatePassword}
+              className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+            >
+              {rotating ? "Rotating..." : "Rotate Key"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Set Expiration Dialog */}
+      <Dialog open={expirationDialogOpen} onOpenChange={setExpirationDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5 text-blue-600" />
+              Set API Key Expiration
+            </DialogTitle>
+            <DialogDescription>
+              Set when this API key should automatically expire and become invalid.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-xl">
+              <Info className="h-5 w-5 text-blue-500 mt-0.5" />
+              <div>
+                <p className="font-medium text-blue-800 text-sm">Info</p>
+                <p className="text-sm text-blue-600">
+                  You can remove the expiration date to make the key valid
+                  indefinitely.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-slate-700 font-medium">
+                Expiration Date
+              </Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-left font-normal h-11 rounded-lg"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {newExpiration
+                      ? format(newExpiration, "PPP")
+                      : "No expiration"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={newExpiration}
+                    onSelect={setNewExpiration}
+                    disabled={(date) => date < new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              {newExpiration && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setNewExpiration(undefined)}
+                  className="text-xs text-slate-500 hover:text-slate-700 rounded-lg"
+                >
+                  Remove expiration
+                </Button>
+              )}
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setExpirationDialogOpen(false);
+                setNewExpiration(undefined);
+              }}
+              className="rounded-lg"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUpdateExpiration}
+              disabled={updatingExpiration}
+              className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+            >
+              {updatingExpiration ? "Updating..." : "Update Expiration"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

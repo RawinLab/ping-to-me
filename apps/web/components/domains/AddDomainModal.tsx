@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { apiRequest } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -17,13 +16,14 @@ import {
   Input,
   Label,
 } from "@pingtome/ui";
-import { Copy } from "lucide-react";
+import { Copy, Check, AlertCircle, Loader2 } from "lucide-react";
+import { domainsApi, VerificationType } from "@/lib/api/domains";
 
 const formSchema = z.object({
   hostname: z
     .string()
     .min(3, "Hostname is too short")
-    .regex(/^[a-z0-9.-]+$/, "Invalid hostname format"),
+    .regex(/^[a-z0-9.-]+$/, "Invalid hostname format. Use lowercase letters, numbers, dots, and hyphens only"),
 });
 
 interface AddDomainModalProps {
@@ -40,86 +40,305 @@ export function AddDomainModal({
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"input" | "instruction">("input");
   const [domainData, setDomainData] = useState<any>(null);
+  const [verificationType, setVerificationType] = useState<VerificationType>("txt");
+  const [copied, setCopied] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
+    setError(null);
     try {
-      const res = await apiRequest("/domains", {
-        method: "POST",
-        body: JSON.stringify({ ...values, orgId }),
+      const res = await domainsApi.create({
+        hostname: values.hostname.toLowerCase(),
+        orgId,
+        verificationType,
       });
       setDomainData(res);
       setStep("instruction");
       onSuccess();
-    } catch (error) {
-      alert("Failed to add domain");
+    } catch (err: any) {
+      setError(err?.message || "Failed to add domain. Please try again.");
+      console.error("Failed to add domain:", err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const copyToken = () => {
-    if (domainData?.verificationToken) {
-      navigator.clipboard.writeText(domainData.verificationToken);
-      alert("Copied to clipboard!");
-    }
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    // Reset form after animation completes
+    setTimeout(() => {
+      setStep("input");
+      setDomainData(null);
+      setVerificationType("txt");
+      setError(null);
+      form.reset();
+    }, 200);
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
-          <DialogTitle>Add Custom Domain</DialogTitle>
+          <DialogTitle>
+            {step === "input" ? "Add Custom Domain" : "Verify Domain Ownership"}
+          </DialogTitle>
           <DialogDescription>
             {step === "input"
-              ? "Enter the domain you want to connect."
-              : "Verify ownership of your domain."}
+              ? "Enter your domain name and choose a verification method."
+              : "Add the DNS record below to verify ownership of your domain."}
           </DialogDescription>
         </DialogHeader>
 
         {step === "input" ? (
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            {/* Hostname Input */}
             <div className="space-y-2">
               <Label htmlFor="hostname">Domain Name</Label>
               <Input
                 id="hostname"
                 placeholder="links.example.com"
+                className="h-11"
                 {...form.register("hostname")}
               />
               {form.formState.errors.hostname && (
-                <p className="text-sm text-red-500">
+                <p className="text-sm text-red-500 flex items-center gap-1.5">
+                  <AlertCircle className="h-3.5 w-3.5" />
                   {form.formState.errors.hostname.message}
                 </p>
               )}
+              <p className="text-xs text-slate-500">
+                Enter your custom domain or subdomain (e.g., go.yourdomain.com)
+              </p>
             </div>
+
+            {/* Verification Method Selector */}
+            <div className="space-y-3">
+              <Label>Verification Method</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setVerificationType("txt")}
+                  className={`p-4 rounded-lg border-2 transition-all text-left ${
+                    verificationType === "txt"
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                        verificationType === "txt"
+                          ? "border-blue-500 bg-blue-500"
+                          : "border-slate-300"
+                      }`}
+                    >
+                      {verificationType === "txt" && (
+                        <div className="w-2 h-2 rounded-full bg-white" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm text-slate-900">
+                        TXT Record
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Recommended. Add a verification token to your DNS.
+                      </p>
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setVerificationType("cname")}
+                  className={`p-4 rounded-lg border-2 transition-all text-left ${
+                    verificationType === "cname"
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                        verificationType === "cname"
+                          ? "border-blue-500 bg-blue-500"
+                          : "border-slate-300"
+                      }`}
+                    >
+                      {verificationType === "cname" && (
+                        <div className="w-2 h-2 rounded-full bg-white" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm text-slate-900">
+                        CNAME Record
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Point your domain to our redirect server.
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="text-sm text-red-700 bg-red-50 rounded-lg px-4 py-3 border border-red-200 flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
+
             <DialogFooter>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                Add Domain
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Adding Domain...
+                  </>
+                ) : (
+                  "Add Domain"
+                )}
               </Button>
             </DialogFooter>
           </form>
         ) : (
-          <div className="space-y-4">
-            <div className="p-4 bg-muted rounded-md space-y-2">
-              <p className="text-sm font-medium">
-                Add this TXT record to your DNS:
-              </p>
-              <div className="flex items-center justify-between bg-background p-2 rounded border">
-                <code className="text-xs break-all">
-                  {domainData?.verificationToken}
-                </code>
-                <Button variant="ghost" size="sm" onClick={copyToken}>
-                  <Copy className="h-4 w-4" />
-                </Button>
+          <div className="space-y-5">
+            {/* Success Message */}
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                  <Check className="h-4 w-4 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-emerald-900">Domain Added!</p>
+                  <p className="text-sm text-emerald-700 mt-1">
+                    Now add the DNS record below to verify ownership.
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Host: @ or {domainData?.hostname}
-              </p>
             </div>
+
+            {/* DNS Instructions */}
+            <div className="space-y-3">
+              {verificationType === "txt" && domainData?.verificationToken ? (
+                <>
+                  <div>
+                    <p className="text-sm font-medium text-slate-900 mb-2">
+                      Add this TXT record to your DNS:
+                    </p>
+                    <div className="bg-slate-50 rounded-lg border p-4 space-y-3">
+                      <div className="grid grid-cols-3 gap-2 text-xs text-slate-500 font-medium">
+                        <span>Type</span>
+                        <span>Name</span>
+                        <span>Value</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-sm font-mono">
+                        <span className="text-slate-700">TXT</span>
+                        <span className="text-slate-900">_pingto-verify</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <code className="text-blue-600 text-xs break-all flex-1">
+                            {domainData.verificationToken}
+                          </code>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              copyToClipboard(domainData.verificationToken)
+                            }
+                            className="flex-shrink-0 h-7 px-2"
+                          >
+                            {copied ? (
+                              <Check className="h-3.5 w-3.5 text-emerald-500" />
+                            ) : (
+                              <Copy className="h-3.5 w-3.5" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-sm font-medium text-slate-900 mb-2">
+                      Add this CNAME record to your DNS:
+                    </p>
+                    <div className="bg-slate-50 rounded-lg border p-4 space-y-3">
+                      <div className="grid grid-cols-3 gap-2 text-xs text-slate-500 font-medium">
+                        <span>Type</span>
+                        <span>Name</span>
+                        <span>Value</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-sm font-mono">
+                        <span className="text-slate-700">CNAME</span>
+                        <span className="text-slate-900 break-all">
+                          {domainData?.hostname}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <code className="text-blue-600">redirect.pingto.me</code>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyToClipboard("redirect.pingto.me")}
+                            className="flex-shrink-0 h-7 px-2"
+                          >
+                            {copied ? (
+                              <Check className="h-3.5 w-3.5 text-emerald-500" />
+                            ) : (
+                              <Copy className="h-3.5 w-3.5" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Important Notes */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm font-medium text-blue-900 mb-2">
+                Important Notes:
+              </p>
+              <ul className="text-xs text-blue-700 space-y-1 list-disc list-inside">
+                <li>DNS changes can take up to 48 hours to propagate</li>
+                <li>
+                  After adding the record, return to the Domains page to verify
+                </li>
+                <li>
+                  You can verify anytime by clicking "Verify Now" on your domain
+                </li>
+              </ul>
+            </div>
+
             <DialogFooter>
-              <Button onClick={() => setOpen(false)}>Done</Button>
+              <Button onClick={handleClose} className="w-full">
+                Done
+              </Button>
             </DialogFooter>
           </div>
         )}

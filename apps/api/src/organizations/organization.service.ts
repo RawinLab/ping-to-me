@@ -10,6 +10,7 @@ import { AuditService } from "../audit/audit.service";
 import { QuotaService } from "../quota/quota.service";
 import { UpdateOrganizationSettingsDto } from "./dto/organization-settings.dto";
 import { UpdateOrganizationDto } from "./dto/update-organization.dto";
+import { Update2FAEnforcementDto } from "./dto/security-settings.dto";
 
 @Injectable()
 export class OrganizationService {
@@ -204,6 +205,7 @@ export class OrganizationService {
         organizationId: orgId,
         ssoEnabled: false,
         enforced2FA: false,
+        enforce2FAForRoles: [], // Empty array - no specific roles by default
         sessionTimeout: 7200, // 2 hours default
       },
     });
@@ -259,6 +261,7 @@ export class OrganizationService {
         ssoEnabled: before.ssoEnabled,
         ssoProviderId: before.ssoProviderId,
         enforced2FA: before.enforced2FA,
+        enforce2FAForRoles: before.enforce2FAForRoles,
         sessionTimeout: before.sessionTimeout,
       },
       {
@@ -266,6 +269,7 @@ export class OrganizationService {
         ssoEnabled: updated.ssoEnabled,
         ssoProviderId: updated.ssoProviderId,
         enforced2FA: updated.enforced2FA,
+        enforce2FAForRoles: updated.enforce2FAForRoles,
         sessionTimeout: updated.sessionTimeout,
       },
     );
@@ -643,5 +647,146 @@ export class OrganizationService {
     }
 
     return deleted;
+  }
+
+  // Security Settings - 2FA Enforcement (Module 2.5)
+  async getSecuritySettings(orgId: string, userId: string) {
+    // Check if user is a member (any role can view security settings)
+    await this.checkPermission(orgId, userId, [
+      "OWNER",
+      "ADMIN",
+      "EDITOR",
+      "VIEWER",
+    ]);
+
+    const settings = await this.prisma.organizationSettings.findUnique({
+      where: { organizationId: orgId },
+      select: {
+        enforced2FA: true,
+        enforce2FAForRoles: true,
+        sessionTimeout: true,
+        maxLoginAttempts: true,
+        lockoutDuration: true,
+      },
+    });
+
+    if (!settings) {
+      throw new NotFoundException("Organization settings not found");
+    }
+
+    return settings;
+  }
+
+  async updateSecuritySettings(
+    orgId: string,
+    userId: string,
+    data: Update2FAEnforcementDto,
+  ) {
+    // Only OWNER can modify 2FA enforcement settings
+    await this.checkPermission(orgId, userId, ["OWNER"]);
+
+    // Validate roles if provided
+    if (data.enforce2FAForRoles) {
+      const validRoles = ["OWNER", "ADMIN", "EDITOR", "VIEWER"];
+      const invalidRoles = data.enforce2FAForRoles.filter(
+        (role) => !validRoles.includes(role),
+      );
+
+      if (invalidRoles.length > 0) {
+        throw new BadRequestException(
+          `Invalid roles: ${invalidRoles.join(", ")}. Valid roles are: ${validRoles.join(", ")}`,
+        );
+      }
+    }
+
+    // Get current settings for change tracking
+    const before = await this.prisma.organizationSettings.findUnique({
+      where: { organizationId: orgId },
+    });
+
+    if (!before) {
+      throw new NotFoundException("Organization settings not found");
+    }
+
+    const updated = await this.prisma.organizationSettings.update({
+      where: { organizationId: orgId },
+      data: {
+        enforced2FA: data.enforce2FA,
+        enforce2FAForRoles: data.enforce2FAForRoles,
+      },
+    });
+
+    // Audit log: security settings updated
+    const changes = this.auditService.captureChanges(
+      {
+        enforced2FA: before.enforced2FA,
+        enforce2FAForRoles: before.enforce2FAForRoles,
+      },
+      {
+        enforced2FA: updated.enforced2FA,
+        enforce2FAForRoles: updated.enforce2FAForRoles,
+      },
+    );
+
+    if (changes) {
+      await this.auditService.logOrgEvent(
+        userId,
+        orgId,
+        "org.security_updated",
+        {
+          changes,
+          details: {
+            settingsChanged: ["2FA enforcement"],
+          },
+        },
+      );
+    }
+
+    return {
+      enforced2FA: updated.enforced2FA,
+      enforce2FAForRoles: updated.enforce2FAForRoles,
+      sessionTimeout: updated.sessionTimeout,
+      maxLoginAttempts: updated.maxLoginAttempts,
+      lockoutDuration: updated.lockoutDuration,
+    };
+  }
+
+  async is2FARequired(orgId: string, userId: string): Promise<boolean> {
+    // Get organization settings
+    const settings = await this.prisma.organizationSettings.findUnique({
+      where: { organizationId: orgId },
+    });
+
+    // If 2FA is not enforced, return false
+    if (!settings || !settings.enforced2FA) {
+      return false;
+    }
+
+    // Get user's role in the organization
+    const member = await this.prisma.organizationMember.findUnique({
+      where: {
+        userId_organizationId: {
+          userId,
+          organizationId: orgId,
+        },
+      },
+    });
+
+    if (!member) {
+      // User is not a member, so 2FA is not required
+      return false;
+    }
+
+    // Check if user's role is in the enforce2FAForRoles array
+    if (
+      settings.enforce2FAForRoles &&
+      settings.enforce2FAForRoles.length > 0
+    ) {
+      return settings.enforce2FAForRoles.includes(member.role);
+    }
+
+    // If enforce2FAForRoles is empty but enforced2FA is true,
+    // require 2FA for all members
+    return true;
   }
 }

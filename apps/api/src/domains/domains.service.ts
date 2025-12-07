@@ -493,6 +493,164 @@ export class DomainService {
     });
   }
 
+  /**
+   * Get domain details with full information (TASK-2.4.13)
+   */
+  async getDomainDetails(domainId: string) {
+    const domain = await this.prisma.domain.findUnique({
+      where: { id: domainId },
+      include: {
+        _count: {
+          select: { links: true },
+        },
+      },
+    });
+
+    if (!domain) throw new Error("Domain not found");
+
+    // Calculate verification instructions based on type
+    const verificationInstructions = {
+      txt: {
+        type: "TXT",
+        host: domain.hostname,
+        value: domain.verificationToken || "",
+        description: `Add a TXT record to your domain's DNS with the following value: ${domain.verificationToken}`,
+      },
+      cname: {
+        type: "CNAME",
+        host: domain.hostname,
+        value: CNAME_VERIFY_TARGET,
+        description: `Add a CNAME record to your domain's DNS pointing to: ${CNAME_VERIFY_TARGET}`,
+      },
+    };
+
+    return {
+      ...domain,
+      linksCount: domain._count.links,
+      verificationInstructions,
+      sslInfo: {
+        status: domain.sslStatus,
+        provider: domain.sslProvider,
+        certificateId: domain.sslCertificateId,
+        issuedAt: domain.sslIssuedAt,
+        expiresAt: domain.sslExpiresAt,
+        autoRenew: domain.sslAutoRenew,
+      },
+    };
+  }
+
+  /**
+   * Set a domain as default for the organization (TASK-2.4.12)
+   */
+  async setDefault(userId: string, orgId: string, domainId: string) {
+    // Verify domain belongs to organization
+    const domain = await this.prisma.domain.findUnique({
+      where: { id: domainId },
+    });
+
+    if (!domain) throw new Error("Domain not found");
+    if (domain.organizationId !== orgId) {
+      throw new ForbiddenException("Domain does not belong to this organization");
+    }
+
+    // Verify domain is verified
+    if (domain.status !== DomainStatus.VERIFIED) {
+      throw new ForbiddenException("Domain must be verified before setting as default");
+    }
+
+    // Unset previous default domain for organization (if any)
+    await this.prisma.domain.updateMany({
+      where: {
+        organizationId: orgId,
+        isDefault: true,
+      },
+      data: {
+        isDefault: false,
+      },
+    });
+
+    // Set new domain as default
+    const updatedDomain = await this.prisma.domain.update({
+      where: { id: domainId },
+      data: {
+        isDefault: true,
+      },
+    });
+
+    // Audit log - domain set as default
+    this.auditService
+      .logDomainEvent(userId, orgId, "domain.default_set", {
+        id: updatedDomain.id,
+        hostname: updatedDomain.hostname,
+      })
+      .catch((err) =>
+        console.error("Failed to log domain.default_set event:", err),
+      );
+
+    return updatedDomain;
+  }
+
+  /**
+   * Get links associated with a domain (TASK-2.4.14)
+   */
+  async getLinksByDomain(
+    domainId: string,
+    pagination: { page: number; limit: number },
+  ) {
+    const { page, limit } = pagination;
+    const skip = (page - 1) * limit;
+
+    // Verify domain exists
+    const domain = await this.prisma.domain.findUnique({
+      where: { id: domainId },
+    });
+
+    if (!domain) throw new Error("Domain not found");
+
+    // Query links associated with this domain
+    const [links, total] = await Promise.all([
+      this.prisma.link.findMany({
+        where: { domainId },
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          slug: true,
+          originalUrl: true,
+          title: true,
+          status: true,
+          createdAt: true,
+          _count: {
+            select: { clicks: true },
+          },
+        },
+      }),
+      this.prisma.link.count({ where: { domainId } }),
+    ]);
+
+    // Map to summary format with clicks count
+    const linkSummaries = links.map((link) => ({
+      id: link.id,
+      slug: link.slug,
+      targetUrl: link.originalUrl,
+      title: link.title,
+      status: link.status,
+      clicks: link._count.clicks,
+      createdAt: link.createdAt,
+    }));
+
+    return {
+      data: linkSummaries,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   async removeDomain(userId: string, id: string) {
     const domain = await this.prisma.domain.findUnique({ where: { id } });
     if (!domain) throw new Error("Domain not found");

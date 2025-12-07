@@ -23,6 +23,7 @@ import { MemberRole } from "@pingtome/database";
 import { UpdateOrganizationDto } from "./dto/update-organization.dto";
 import { UpdateOrganizationSettingsDto } from "./dto/organization-settings.dto";
 import { TransferOwnershipDto } from "./dto/transfer-ownership.dto";
+import { Update2FAEnforcementDto } from "./dto/security-settings.dto";
 
 @Controller("organizations")
 @UseGuards(JwtAuthGuard, PermissionGuard)
@@ -166,6 +167,27 @@ export class OrganizationController {
     @Param("userId") userId: string,
   ) {
     return this.organizationService.removeMember(id, userId, req.user.id);
+  }
+
+  // Security Settings - 2FA Enforcement (Module 2.5)
+  @Get(":id/security")
+  @Permission({ resource: "organization", action: "read" })
+  async getSecuritySettings(@Request() req, @Param("id") id: string) {
+    return this.organizationService.getSecuritySettings(id, req.user.id);
+  }
+
+  @Patch(":id/security/2fa")
+  @Permission({ resource: "organization", action: "delete" }) // Only OWNER has delete permission
+  async update2FAEnforcement(
+    @Request() req,
+    @Param("id") id: string,
+    @Body() body: Update2FAEnforcementDto,
+  ) {
+    return this.organizationService.updateSecuritySettings(
+      id,
+      req.user.id,
+      body,
+    );
   }
 
   // Audit logs - Organization scoped

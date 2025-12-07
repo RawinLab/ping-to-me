@@ -42,7 +42,45 @@ export class LinksService {
       }
     }
 
-    // 3. Check for blocked domains
+    // 3. Handle custom domain selection (TASK-2.4.15)
+    let domainId = dto.domainId;
+
+    // If no domainId specified but organizationId is provided, use organization's default domain
+    if (!domainId && dto.organizationId) {
+      const defaultDomain = await this.prisma.domain.findFirst({
+        where: {
+          organizationId: dto.organizationId,
+          isDefault: true,
+        },
+      });
+
+      if (defaultDomain) {
+        domainId = defaultDomain.id;
+      }
+    }
+
+    // If domainId is specified, validate it
+    if (domainId) {
+      const customDomain = await this.prisma.domain.findUnique({
+        where: { id: domainId },
+      });
+
+      if (!customDomain) {
+        throw new BadRequestException("Custom domain not found");
+      }
+
+      // Validate domain belongs to organization
+      if (dto.organizationId && customDomain.organizationId !== dto.organizationId) {
+        throw new ForbiddenException("Domain does not belong to this organization");
+      }
+
+      // Validate domain is verified
+      if (!customDomain.isVerified) {
+        throw new ForbiddenException("Domain must be verified before use");
+      }
+    }
+
+    // 4. Check for blocked domains
     const url = new URL(dto.originalUrl);
     const domain = url.hostname;
     const blocked = await this.prisma.blockedDomain.findUnique({
@@ -110,6 +148,7 @@ export class LinksService {
         deepLinkFallback: dto.deepLinkFallback,
         userId,
         organizationId: dto.organizationId || null,
+        domainId: domainId || null, // Store domain association (TASK-2.4.15)
         status: LinkStatus.ACTIVE,
       },
     });

@@ -200,7 +200,8 @@ export class AuditService {
       | "domain.failed"
       | "domain.removed"
       | "domain.reset"
-      | "domain.ssl_updated",
+      | "domain.ssl_updated"
+      | "domain.default_set",
     domain: { id: string; hostname: string },
     options?: {
       status?: "success" | "failure";
@@ -270,6 +271,7 @@ export class AuditService {
       | "org.updated"
       | "org.settings_changed"
       | "org.settings_updated"
+      | "org.security_updated"
       | "org.deleted"
       | "org.logo_uploaded"
       | "org.logo_deleted"

@@ -294,7 +294,14 @@ export default function CreateLinkPage() {
     if (!currentOrgId) return;
     try {
       const res = await apiRequest(`/domains?orgId=${currentOrgId}`);
-      setDomains(res || []);
+      const verifiedDomains = (res || []).filter((d: any) => d.isVerified);
+      setDomains(verifiedDomains);
+
+      // Set default domain if available
+      const defaultDomain = verifiedDomains.find((d: any) => d.isDefault);
+      if (defaultDomain) {
+        setSelectedDomain(defaultDomain.hostname);
+      }
     } catch (err) {
       console.error("Failed to fetch domains");
     }
@@ -600,19 +607,27 @@ export default function CreateLinkPage() {
                         value={selectedDomain}
                         onValueChange={setSelectedDomain}
                       >
-                        <SelectTrigger className="w-[180px] h-12">
+                        <SelectTrigger className="w-[200px] h-12">
                           <SelectValue placeholder="Select domain" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="pingto.me">pingto.me</SelectItem>
-                          {hasCustomDomains &&
-                            domains
-                              .filter((d) => d.isVerified)
-                              .map((d) => (
-                                <SelectItem key={d.id} value={d.hostname}>
-                                  {d.hostname}
-                                </SelectItem>
-                              ))}
+                          <SelectItem value="pingto.me">
+                            <div className="flex items-center gap-2">
+                              <span>pingto.me</span>
+                            </div>
+                          </SelectItem>
+                          {domains.map((d) => (
+                            <SelectItem key={d.id} value={d.hostname}>
+                              <div className="flex items-center gap-2">
+                                <span>{d.hostname}</span>
+                                {d.isDefault && (
+                                  <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                                    Default
+                                  </span>
+                                )}
+                              </div>
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <span className="text-muted-foreground text-lg">/</span>
@@ -622,15 +637,25 @@ export default function CreateLinkPage() {
                         {...register("slug")}
                       />
                     </div>
-                    {!hasCustomDomains && domains.length === 0 && (
+                    {domains.length === 0 ? (
                       <p className="text-xs text-muted-foreground">
                         <Link
-                          href="/pricing"
+                          href="/dashboard/domains"
                           className="text-primary hover:underline"
                         >
-                          Upgrade to Pro
+                          Add a custom domain
                         </Link>{" "}
-                        to use custom domains
+                        to brand your short links
+                      </p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Manage domains in{" "}
+                        <Link
+                          href="/dashboard/domains"
+                          className="text-primary hover:underline"
+                        >
+                          Domain Settings
+                        </Link>
                       </p>
                     )}
                   </div>

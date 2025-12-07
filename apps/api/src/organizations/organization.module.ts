@@ -5,12 +5,14 @@ import { OrganizationService } from "./organization.service";
 import { PrismaModule } from "../prisma/prisma.module";
 import { AuthModule } from "../auth/auth.module";
 import { AuditModule } from "../audit/audit.module";
+import { QuotaModule } from "../quota/quota.module";
 
 @Module({
   imports: [
     PrismaModule,
     AuthModule,
     AuditModule,
+    QuotaModule,
     MulterModule.register({
       limits: {
         fileSize: 2 * 1024 * 1024, // 2MB

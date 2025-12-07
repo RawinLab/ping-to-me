@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { apiRequest } from "@/lib/api";
+import { securityApi } from "@/lib/api/security";
 import {
   Card,
   CardContent,
@@ -35,6 +36,10 @@ import {
   Check,
   AlertTriangle,
   Lock,
+  Download,
+  RefreshCw,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 const settingsNavItems = [
@@ -53,6 +58,9 @@ export default function TwoFactorPage() {
   const [status, setStatus] = useState<{ enabled: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [remainingBackupCodes, setRemainingBackupCodes] = useState<
+    number | null
+  >(null);
 
   // Setup dialog
   const [setupOpen, setSetupOpen] = useState(false);
@@ -66,6 +74,15 @@ export default function TwoFactorPage() {
   const [disableCode, setDisableCode] = useState("");
   const [disabling, setDisabling] = useState(false);
 
+  // Backup codes dialogs
+  const [backupCodesPasswordOpen, setBackupCodesPasswordOpen] = useState(false);
+  const [backupCodesPassword, setBackupCodesPassword] = useState("");
+  const [showBackupCodesPassword, setShowBackupCodesPassword] = useState(false);
+  const [generatingBackupCodes, setGeneratingBackupCodes] = useState(false);
+  const [backupCodesOpen, setBackupCodesOpen] = useState(false);
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
+  const [copiedCodes, setCopiedCodes] = useState(false);
+
   useEffect(() => {
     fetchStatus();
   }, []);
@@ -74,6 +91,16 @@ export default function TwoFactorPage() {
     try {
       const res = await apiRequest("/auth/2fa/status");
       setStatus(res);
+
+      // Fetch backup codes count if 2FA is enabled
+      if (res.enabled) {
+        try {
+          const backupCodesStatus = await securityApi.getRemainingBackupCodes();
+          setRemainingBackupCodes(backupCodesStatus.remainingCount);
+        } catch (error) {
+          console.error("Failed to fetch backup codes status");
+        }
+      }
     } catch (error) {
       console.error("Failed to fetch 2FA status");
     } finally {
@@ -136,6 +163,45 @@ export default function TwoFactorPage() {
     navigator.clipboard.writeText(secret);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleGenerateBackupCodes = async () => {
+    if (!backupCodesPassword) return;
+
+    setGeneratingBackupCodes(true);
+    try {
+      const response = await securityApi.generateBackupCodes(
+        backupCodesPassword,
+      );
+      setBackupCodes(response.codes);
+      setRemainingBackupCodes(response.remainingCount);
+      setBackupCodesPasswordOpen(false);
+      setBackupCodesPassword("");
+      setBackupCodesOpen(true);
+    } catch (error: any) {
+      alert(error.message || "Failed to generate backup codes");
+    } finally {
+      setGeneratingBackupCodes(false);
+    }
+  };
+
+  const copyAllCodes = () => {
+    navigator.clipboard.writeText(backupCodes.join("\n"));
+    setCopiedCodes(true);
+    setTimeout(() => setCopiedCodes(false), 2000);
+  };
+
+  const downloadCodes = () => {
+    const text = `PingTO.Me Backup Codes\nGenerated: ${new Date().toLocaleString()}\n\n${backupCodes.join("\n")}\n\nStore these codes securely. Each code can only be used once.`;
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pingtome-backup-codes-${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   if (loading) {
@@ -282,6 +348,88 @@ export default function TwoFactorPage() {
                 )}
               </CardFooter>
             </Card>
+
+            {/* Backup Codes Card - Only show if 2FA is enabled */}
+            {status?.enabled && (
+              <Card className="border-slate-200 shadow-sm overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <Key className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">Backup Codes</CardTitle>
+                        <CardDescription>
+                          Use these codes to access your account if you lose your
+                          authenticator device.
+                        </CardDescription>
+                      </div>
+                    </div>
+                    {remainingBackupCodes !== null && (
+                      <Badge
+                        className={`${
+                          remainingBackupCodes === 0
+                            ? "bg-red-100 text-red-700 hover:bg-red-100"
+                            : remainingBackupCodes <= 2
+                              ? "bg-amber-100 text-amber-700 hover:bg-amber-100"
+                              : "bg-blue-100 text-blue-700 hover:bg-blue-100"
+                        } border-0`}
+                      >
+                        {remainingBackupCodes} remaining
+                      </Badge>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl">
+                    <div className="h-12 w-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                      <Shield className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-blue-800 mb-1">
+                        Keep backup codes secure
+                      </p>
+                      <p className="text-sm text-blue-600">
+                        Each code can only be used once. Store them in a secure
+                        location like a password manager. You&apos;ll need them
+                        if you lose access to your authenticator app.
+                      </p>
+                    </div>
+                  </div>
+                  {remainingBackupCodes === 0 && (
+                    <div className="flex items-start gap-3 p-4 bg-red-50 rounded-xl mt-4">
+                      <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-red-800 text-sm">
+                          No backup codes remaining
+                        </p>
+                        <p className="text-sm text-red-600">
+                          You&apos;ve used all your backup codes. Generate new
+                          ones to ensure you can access your account.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter className="bg-slate-50 border-t border-slate-100 px-6 py-4 flex gap-2">
+                  <Button
+                    onClick={() => setBackupCodesPasswordOpen(true)}
+                    className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25"
+                  >
+                    <Key className="mr-2 h-4 w-4" />
+                    {remainingBackupCodes === 0
+                      ? "Generate Backup Codes"
+                      : "Regenerate Backup Codes"}
+                  </Button>
+                  {remainingBackupCodes !== null && remainingBackupCodes > 0 && (
+                    <p className="text-xs text-slate-500 flex items-center">
+                      Regenerating will invalidate existing codes
+                    </p>
+                  )}
+                </CardFooter>
+              </Card>
+            )}
 
             {/* How it works */}
             <Card className="border-slate-200 shadow-sm">
@@ -526,6 +674,163 @@ export default function TwoFactorPage() {
               className="rounded-lg"
             >
               {disabling ? "Disabling..." : "Disable 2FA"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Backup Codes Password Confirmation Dialog */}
+      <Dialog
+        open={backupCodesPasswordOpen}
+        onOpenChange={setBackupCodesPasswordOpen}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-blue-600" />
+              Confirm Your Password
+            </DialogTitle>
+            <DialogDescription>
+              Enter your password to generate backup codes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-xl">
+              <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+              <div>
+                <p className="font-medium text-amber-800 text-sm">Important</p>
+                <p className="text-sm text-amber-600">
+                  {remainingBackupCodes && remainingBackupCodes > 0
+                    ? "Generating new codes will invalidate all existing backup codes."
+                    : "Store these codes securely. They will only be shown once."}
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="backupPassword" className="text-slate-700 font-medium">
+                Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="backupPassword"
+                  type={showBackupCodesPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={backupCodesPassword}
+                  onChange={(e) => setBackupCodesPassword(e.target.value)}
+                  className="h-11 rounded-lg border-slate-200 focus:border-blue-300 focus:ring-blue-100 pr-10"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  onClick={() =>
+                    setShowBackupCodesPassword(!showBackupCodesPassword)
+                  }
+                >
+                  {showBackupCodesPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setBackupCodesPasswordOpen(false);
+                setBackupCodesPassword("");
+              }}
+              className="rounded-lg"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleGenerateBackupCodes}
+              disabled={generatingBackupCodes || !backupCodesPassword}
+              className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+            >
+              {generatingBackupCodes ? "Generating..." : "Generate Codes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Backup Codes Display Dialog */}
+      <Dialog open={backupCodesOpen} onOpenChange={setBackupCodesOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5 text-blue-600" />
+              Your Backup Codes
+            </DialogTitle>
+            <DialogDescription>
+              Save these codes in a secure location. Each code can only be used
+              once.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 p-4 bg-red-50 rounded-xl">
+              <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
+              <div>
+                <p className="font-medium text-red-800 text-sm">
+                  Store securely - Shown only once
+                </p>
+                <p className="text-sm text-red-600">
+                  These codes will not be shown again. Download or copy them now.
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200">
+              {backupCodes.map((code, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-center p-3 bg-white rounded-lg border border-slate-200"
+                >
+                  <code className="text-sm font-mono text-slate-700 font-semibold">
+                    {code}
+                  </code>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={copyAllCodes}
+                className="flex-1 rounded-lg"
+              >
+                {copiedCodes ? (
+                  <>
+                    <Check className="mr-2 h-4 w-4 text-emerald-500" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="mr-2 h-4 w-4" />
+                    Copy All
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={downloadCodes}
+                className="flex-1 rounded-lg"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                setBackupCodesOpen(false);
+                setBackupCodes([]);
+              }}
+              className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+            >
+              I&apos;ve saved my codes
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,13 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiRequest } from "@/lib/api";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   Button,
   Badge,
 } from "@pingtome/ui";
@@ -23,14 +20,23 @@ import {
   Check,
   AlertTriangle,
   Sparkles,
+  Clock,
+  XCircle,
+  Star,
+  Eye,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { AddDomainModal } from "@/components/domains/AddDomainModal";
+import { SslStatusBadge } from "@/components/domains/SslStatusBadge";
+import { domainsApi, Domain, DomainStatus, SslStatus } from "@/lib/api/domains";
 
 export default function DomainsPage() {
-  const [domains, setDomains] = useState<any[]>([]);
+  const router = useRouter();
+  const [domains, setDomains] = useState<Domain[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   // Mock orgId for now, in real app get from context/auth
   const orgId = "123e4567-e89b-12d3-a456-426614174000";
 
@@ -40,7 +46,7 @@ export default function DomainsPage() {
 
   const fetchDomains = async () => {
     try {
-      const res = await apiRequest(`/domains?orgId=${orgId}`);
+      const res = await domainsApi.list(orgId);
       setDomains(res);
     } catch (err) {
       console.error("Failed to load domains", err);
@@ -49,23 +55,65 @@ export default function DomainsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this domain?")) return;
+  const handleDelete = async (id: string, hostname: string) => {
+    if (!confirm(`Are you sure you want to delete ${hostname}?`)) return;
+    setActionLoading(id);
     try {
-      await apiRequest(`/domains/${id}`, { method: "DELETE" });
+      await domainsApi.delete(orgId, id);
       fetchDomains();
     } catch (err) {
       alert("Failed to delete domain");
+    } finally {
+      setActionLoading(null);
     }
   };
 
-  const handleVerify = async (id: string) => {
+  const handleVerify = async (id: string, verificationType?: "txt" | "cname") => {
+    setActionLoading(id);
     try {
-      await apiRequest(`/domains/${id}/verify`, { method: "POST" });
-      alert("Verification triggered");
+      await domainsApi.verify(orgId, id, verificationType);
+      fetchDomains();
+    } catch (err: any) {
+      alert(err?.message || "Verification failed. Please check your DNS records.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleSetDefault = async (id: string, hostname: string) => {
+    if (!confirm(`Set ${hostname} as your default domain?`)) return;
+    setActionLoading(id);
+    try {
+      await domainsApi.setDefault(orgId, id);
       fetchDomains();
     } catch (err) {
-      alert("Verification failed");
+      alert("Failed to set default domain");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleProvisionSsl = async (id: string) => {
+    setActionLoading(id);
+    try {
+      await domainsApi.provisionSsl(orgId, id);
+      fetchDomains();
+    } catch (err) {
+      alert("Failed to provision SSL certificate");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleToggleAutoRenew = async (id: string, autoRenew: boolean) => {
+    setActionLoading(id);
+    try {
+      await domainsApi.updateSsl(orgId, id, autoRenew);
+      fetchDomains();
+    } catch (err) {
+      alert("Failed to update SSL settings");
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -73,6 +121,39 @@ export default function DomainsPage() {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const getStatusBadge = (status: DomainStatus, verificationAttempts: number) => {
+    switch (status) {
+      case "VERIFIED":
+        return (
+          <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0">
+            <CheckCircle className="mr-1 h-3 w-3" /> Verified
+          </Badge>
+        );
+      case "VERIFYING":
+        return (
+          <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-0">
+            <Loader2 className="mr-1 h-3 w-3 animate-spin" /> Verifying
+          </Badge>
+        );
+      case "FAILED":
+        return (
+          <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-0">
+            <XCircle className="mr-1 h-3 w-3" /> Failed
+          </Badge>
+        );
+      case "PENDING":
+      default:
+        return (
+          <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-0">
+            <Clock className="mr-1 h-3 w-3" /> Pending
+            {verificationAttempts > 0 && (
+              <span className="ml-1">({verificationAttempts} attempts)</span>
+            )}
+          </Badge>
+        );
+    }
   };
 
   if (loading) {
@@ -193,127 +274,205 @@ export default function DomainsPage() {
                 className="border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
               >
                 <CardContent className="p-0">
-                  <div className="flex flex-col lg:flex-row lg:items-center gap-4 p-5">
+                  <div className="flex flex-col gap-4 p-5">
                     {/* Domain Info */}
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <div
-                        className={`h-12 w-12 rounded-xl flex items-center justify-center ${
-                          domain.isVerified
-                            ? "bg-gradient-to-br from-emerald-100 to-teal-100"
-                            : "bg-gradient-to-br from-amber-100 to-orange-100"
-                        }`}
-                      >
-                        {domain.isVerified ? (
-                          <Shield className="h-6 w-6 text-emerald-600" />
-                        ) : (
-                          <AlertTriangle className="h-6 w-6 text-amber-600" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-slate-900 truncate">
-                            {domain.hostname}
-                          </h3>
-                          <button
-                            onClick={() =>
-                              copyToClipboard(domain.hostname, domain.id)
-                            }
-                            className="text-slate-400 hover:text-slate-600 transition-colors"
-                          >
-                            {copiedId === domain.id ? (
-                              <Check className="h-4 w-4 text-emerald-500" />
-                            ) : (
-                              <Copy className="h-4 w-4" />
-                            )}
-                          </button>
-                          <a
-                            href={`https://${domain.hostname}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-slate-400 hover:text-blue-600 transition-colors"
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </a>
-                        </div>
-                        <div className="flex items-center gap-3 text-sm text-slate-500">
-                          <span>
-                            Added{" "}
-                            {format(new Date(domain.createdAt), "MMM d, yyyy")}
-                          </span>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div
+                          className={`h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                            domain.isVerified
+                              ? "bg-gradient-to-br from-emerald-100 to-teal-100"
+                              : "bg-gradient-to-br from-amber-100 to-orange-100"
+                          }`}
+                        >
                           {domain.isVerified ? (
-                            <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0">
-                              <CheckCircle className="mr-1 h-3 w-3" /> Verified
-                            </Badge>
+                            <Shield className="h-6 w-6 text-emerald-600" />
                           ) : (
-                            <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-0">
-                              <RefreshCw className="mr-1 h-3 w-3" /> Pending
-                              Verification
-                            </Badge>
+                            <AlertTriangle className="h-6 w-6 text-amber-600" />
                           )}
                         </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <h3 className="font-semibold text-slate-900 truncate">
+                              {domain.hostname}
+                            </h3>
+                            {domain.isDefault && (
+                              <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-0">
+                                <Star className="mr-1 h-3 w-3 fill-blue-700" />{" "}
+                                Default
+                              </Badge>
+                            )}
+                            <button
+                              onClick={() =>
+                                copyToClipboard(domain.hostname, domain.id)
+                              }
+                              className="text-slate-400 hover:text-slate-600 transition-colors"
+                            >
+                              {copiedId === domain.id ? (
+                                <Check className="h-4 w-4 text-emerald-500" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </button>
+                            <a
+                              href={`https://${domain.hostname}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-slate-400 hover:text-blue-600 transition-colors"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-slate-500 flex-wrap">
+                            <span>
+                              Added{" "}
+                              {format(new Date(domain.createdAt), "MMM d, yyyy")}
+                            </span>
+                            {getStatusBadge(domain.status, domain.verificationAttempts)}
+                            <SslStatusBadge
+                              status={domain.sslStatus}
+                              expiresAt={domain.sslExpiresAt}
+                              issuedAt={domain.sslIssuedAt}
+                              compact
+                            />
+                          </div>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 lg:ml-auto">
-                      {!domain.isVerified && (
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {domain.isVerified && !domain.isDefault && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              handleSetDefault(domain.id, domain.hostname)
+                            }
+                            disabled={actionLoading === domain.id}
+                            className="rounded-lg border-blue-200 text-blue-600 hover:bg-blue-50"
+                          >
+                            {actionLoading === domain.id ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Star className="mr-2 h-4 w-4" />
+                            )}
+                            Set Default
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleVerify(domain.id)}
-                          className="rounded-lg border-blue-200 text-blue-600 hover:bg-blue-50"
+                          onClick={() => router.push(`/dashboard/domains/${domain.id}`)}
+                          className="rounded-lg"
                         >
-                          <RefreshCw className="mr-2 h-4 w-4" />
-                          Verify Now
+                          <Eye className="h-4 w-4" />
                         </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(domain.id)}
-                        className="rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* DNS Instructions for Pending Domains */}
-                  {!domain.isVerified && (
-                    <div className="border-t border-slate-100 bg-slate-50 p-4">
-                      <p className="text-sm font-medium text-slate-700 mb-2">
-                        DNS Configuration Required
-                      </p>
-                      <p className="text-sm text-slate-500 mb-3">
-                        Add the following CNAME record to your DNS settings:
-                      </p>
-                      <div className="flex items-center gap-2 bg-white rounded-lg border border-slate-200 p-3 font-mono text-sm">
-                        <span className="text-slate-400">CNAME</span>
-                        <span className="text-slate-900">
-                          {domain.hostname}
-                        </span>
-                        <span className="text-slate-400">→</span>
-                        <span className="text-blue-600">
-                          redirect.pingto.me
-                        </span>
-                        <button
-                          onClick={() =>
-                            copyToClipboard(
-                              "redirect.pingto.me",
-                              `cname-${domain.id}`,
-                            )
-                          }
-                          className="ml-auto text-slate-400 hover:text-slate-600"
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(domain.id, domain.hostname)}
+                          disabled={actionLoading === domain.id}
+                          className="rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50"
                         >
-                          {copiedId === `cname-${domain.id}` ? (
-                            <Check className="h-4 w-4 text-emerald-500" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </button>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                  )}
+
+                    {/* DNS Instructions for Non-Verified Domains */}
+                    {!domain.isVerified && (
+                      <div className="border-t border-slate-100 bg-slate-50 rounded-lg p-4 -mb-5 -mx-5 mt-2">
+                        <div className="flex items-start justify-between gap-4 mb-3">
+                          <div>
+                            <p className="text-sm font-medium text-slate-700 mb-1">
+                              DNS Configuration Required
+                            </p>
+                            <p className="text-sm text-slate-500">
+                              Add the following DNS record to verify ownership:
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleVerify(domain.id, domain.verificationType as any)}
+                            disabled={actionLoading === domain.id}
+                            className="rounded-lg border-blue-200 text-blue-600 hover:bg-blue-50 flex-shrink-0"
+                          >
+                            {actionLoading === domain.id ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : domain.status === "FAILED" ? (
+                              <RefreshCw className="mr-2 h-4 w-4" />
+                            ) : (
+                              <RefreshCw className="mr-2 h-4 w-4" />
+                            )}
+                            {domain.status === "FAILED" ? "Retry" : "Verify Now"}
+                          </Button>
+                        </div>
+
+                        {domain.verificationType === "txt" && domain.verificationToken && (
+                          <div className="flex items-center gap-2 bg-white rounded-lg border border-slate-200 p-3 font-mono text-sm">
+                            <span className="text-slate-400 flex-shrink-0">TXT</span>
+                            <span className="text-slate-900 flex-shrink-0">
+                              _pingto-verify
+                            </span>
+                            <span className="text-slate-400">→</span>
+                            <span className="text-blue-600 truncate flex-1 min-w-0">
+                              {domain.verificationToken}
+                            </span>
+                            <button
+                              onClick={() =>
+                                copyToClipboard(
+                                  domain.verificationToken!,
+                                  `token-${domain.id}`
+                                )
+                              }
+                              className="ml-auto text-slate-400 hover:text-slate-600 flex-shrink-0"
+                            >
+                              {copiedId === `token-${domain.id}` ? (
+                                <Check className="h-4 w-4 text-emerald-500" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </button>
+                          </div>
+                        )}
+
+                        {(!domain.verificationType || domain.verificationType === "cname") && (
+                          <div className="flex items-center gap-2 bg-white rounded-lg border border-slate-200 p-3 font-mono text-sm">
+                            <span className="text-slate-400 flex-shrink-0">CNAME</span>
+                            <span className="text-slate-900 truncate flex-1">
+                              {domain.hostname}
+                            </span>
+                            <span className="text-slate-400">→</span>
+                            <span className="text-blue-600 flex-shrink-0">
+                              redirect.pingto.me
+                            </span>
+                            <button
+                              onClick={() =>
+                                copyToClipboard(
+                                  "redirect.pingto.me",
+                                  `cname-${domain.id}`
+                                )
+                              }
+                              className="ml-auto text-slate-400 hover:text-slate-600 flex-shrink-0"
+                            >
+                              {copiedId === `cname-${domain.id}` ? (
+                                <Check className="h-4 w-4 text-emerald-500" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </button>
+                          </div>
+                        )}
+
+                        {domain.status === "FAILED" && domain.verificationError && (
+                          <div className="mt-3 text-xs text-red-700 bg-red-50 rounded px-3 py-2 border border-red-200">
+                            {domain.verificationError}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             ))}

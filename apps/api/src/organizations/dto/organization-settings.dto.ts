@@ -6,10 +6,8 @@ import {
   Min,
   Max,
   IsArray,
-  ValidateNested,
 } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { Type } from "class-transformer";
 
 /**
  * DTO for getting organization settings response
@@ -51,6 +49,13 @@ export class GetOrganizationSettingsDto {
     example: false,
   })
   enforced2FA: boolean;
+
+  @ApiPropertyOptional({
+    description: "Roles that require 2FA (e.g., ['OWNER', 'ADMIN'])",
+    example: ["OWNER", "ADMIN"],
+    type: [String],
+  })
+  enforce2FAForRoles?: string[];
 
   @ApiProperty({
     description: "Session timeout in seconds",
@@ -108,6 +113,16 @@ export class UpdateOrganizationSettingsDto {
   @IsBoolean()
   @IsOptional()
   enforced2FA?: boolean;
+
+  @ApiPropertyOptional({
+    description: "Roles that require 2FA (e.g., ['OWNER', 'ADMIN'])",
+    example: ["OWNER", "ADMIN"],
+    type: [String],
+  })
+  @IsArray()
+  @IsOptional()
+  @IsString({ each: true })
+  enforce2FAForRoles?: string[];
 
   @ApiPropertyOptional({
     description: "Session timeout in seconds (min: 300, max: 86400)",
