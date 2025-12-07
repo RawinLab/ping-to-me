@@ -47,11 +47,23 @@ import {
   Moon,
   Sun,
   Command,
+  Users,
 } from "lucide-react";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { apiRequest } from "@/lib/api";
+import { usePermission } from "@/hooks/usePermission";
 
-const mainNavItems = [
+interface NavItem {
+  title: string;
+  href: string;
+  icon: any;
+  description: string;
+  requirePermission?: (permissions: ReturnType<typeof usePermission>) => boolean;
+  badge?: string;
+  badgeVariant?: "default" | "secondary" | "outline";
+}
+
+const mainNavItems: NavItem[] = [
   {
     title: "Home",
     href: "/dashboard",
@@ -84,39 +96,58 @@ const mainNavItems = [
   },
 ];
 
-const manageItems = [
+const manageItems: NavItem[] = [
   {
     title: "Domains",
     href: "/dashboard/domains",
     icon: Globe,
     description: "Custom branded domains",
+    requirePermission: (p) => p.canManageDomains() || p.can('domain', 'read'),
   },
   {
     title: "Folders",
     href: "/dashboard/folders",
     icon: FolderOpen,
     description: "Organize your links",
+    requirePermission: (p) => p.isEditorOrAbove,
   },
   {
-    title: "Organization",
+    title: "Team",
     href: "/dashboard/organization",
-    icon: Tags,
+    icon: Users,
     description: "Team & workspace settings",
+    requirePermission: (p) => p.isAdminOrAbove,
+  },
+  {
+    title: "Billing",
+    href: "/dashboard/billing",
+    icon: CreditCard,
+    description: "Subscription & invoices",
+    requirePermission: (p) => p.canAccessBilling(),
+  },
+  {
+    title: "Audit Logs",
+    href: "/dashboard/audit",
+    icon: History,
+    description: "Security & activity logs",
+    requirePermission: (p) => p.canAccessAudit(),
   },
 ];
 
-const developerItems = [
+const developerItems: NavItem[] = [
   {
     title: "API Keys",
     href: "/dashboard/developer/api-keys",
     icon: Key,
     description: "Manage API access",
+    requirePermission: (p) => p.canCreateApiKey() || p.can('api-key', 'read'),
   },
   {
     title: "Webhooks",
     href: "/dashboard/developer/webhooks",
     icon: Webhook,
     description: "Event notifications",
+    requirePermission: (p) => p.isAdminOrAbove || p.can('webhook', 'read'),
   },
 ];
 
@@ -129,11 +160,38 @@ export default function DashboardLayout({
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
+  const permissions = usePermission();
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
     setSidebarOpen(false);
   }, [pathname]);
+
+  // Filter nav items based on permissions
+  const filterNavItems = (items: NavItem[]) => {
+    return items.filter((item) => {
+      if (!item.requirePermission) return true;
+      return item.requirePermission(permissions);
+    });
+  };
+
+  const filteredMainNavItems = filterNavItems(mainNavItems);
+  const filteredManageItems = filterNavItems(manageItems);
+  const filteredDeveloperItems = filterNavItems(developerItems);
+
+  // Determine if an item should show a "View only" badge
+  const getItemBadge = (item: NavItem): string | undefined => {
+    if (item.href === "/dashboard/domains" && !permissions.canManageDomains()) {
+      return "View only";
+    }
+    if (item.href === "/dashboard/billing" && !permissions.isOwner) {
+      return "View only";
+    }
+    if (item.href === "/dashboard/developer/webhooks" && !permissions.isAdminOrAbove) {
+      return "View only";
+    }
+    return undefined;
+  };
 
   const handleLogout = async () => {
     try {
@@ -150,50 +208,72 @@ export default function DashboardLayout({
     items,
     title,
   }: {
-    items: typeof mainNavItems;
+    items: NavItem[];
     title?: string;
-  }) => (
-    <div className="space-y-1">
-      {title && (
-        <p className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-          {title}
-        </p>
-      )}
-      {items.map((item) => {
-        const Icon = item.icon;
-        const isActive =
-          pathname === item.href ||
-          (item.href !== "/dashboard" && pathname.startsWith(item.href));
-        return (
-          <TooltipProvider key={item.href} delayDuration={0}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200",
-                    isActive
-                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+  }) => {
+    if (items.length === 0) return null;
+
+    return (
+      <div className="space-y-1">
+        {title && (
+          <p className="px-3 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            {title}
+          </p>
+        )}
+        {items.map((item) => {
+          const Icon = item.icon;
+          const isActive =
+            pathname === item.href ||
+            (item.href !== "/dashboard" && pathname.startsWith(item.href));
+          const badge = getItemBadge(item);
+
+          return (
+            <TooltipProvider key={item.href} delayDuration={0}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "group flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200",
+                      isActive
+                        ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25"
+                        : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    )}
+                  >
+                    <Icon className={cn(
+                      "h-[18px] w-[18px] transition-transform group-hover:scale-110",
+                      isActive ? "text-white" : "text-slate-400 group-hover:text-slate-600"
+                    )} />
+                    <span className="truncate flex-1">{item.title}</span>
+                    {badge && (
+                      <Badge
+                        variant="secondary"
+                        className={cn(
+                          "text-[9px] px-1.5 py-0 h-4 border-0",
+                          isActive
+                            ? "bg-white/20 text-white"
+                            : "bg-amber-50 text-amber-600"
+                        )}
+                      >
+                        {badge}
+                      </Badge>
+                    )}
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="hidden lg:block">
+                  <p className="font-medium">{item.title}</p>
+                  <p className="text-xs text-muted-foreground">{item.description}</p>
+                  {badge && (
+                    <p className="text-xs text-amber-600 mt-1">{badge}</p>
                   )}
-                >
-                  <Icon className={cn(
-                    "h-[18px] w-[18px] transition-transform group-hover:scale-110",
-                    isActive ? "text-white" : "text-slate-400 group-hover:text-slate-600"
-                  )} />
-                  <span className="truncate">{item.title}</span>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="hidden lg:block">
-                <p className="font-medium">{item.title}</p>
-                <p className="text-xs text-muted-foreground">{item.description}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        );
-      })}
-    </div>
-  );
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
@@ -228,20 +308,22 @@ export default function DashboardLayout({
         </div>
 
         {/* Create Button */}
-        <div className="p-4">
-          <Link href="/dashboard/links/new">
-            <Button className="w-full h-11 gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25 text-white font-medium rounded-xl transition-all hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5">
-              <Plus className="h-4 w-4" />
-              Create new link
-            </Button>
-          </Link>
-        </div>
+        {permissions.canCreateLink() && (
+          <div className="p-4">
+            <Link href="/dashboard/links/new">
+              <Button className="w-full h-11 gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25 text-white font-medium rounded-xl transition-all hover:shadow-xl hover:shadow-blue-500/30 hover:-translate-y-0.5">
+                <Plus className="h-4 w-4" />
+                Create new link
+              </Button>
+            </Link>
+          </div>
+        )}
 
         {/* Navigation */}
         <nav className="flex-1 px-3 py-2 space-y-6 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
-          <NavSection items={mainNavItems} />
-          <NavSection items={manageItems} title="Manage" />
-          <NavSection items={developerItems} title="Developer" />
+          <NavSection items={filteredMainNavItems} />
+          <NavSection items={filteredManageItems} title="Manage" />
+          <NavSection items={filteredDeveloperItems} title="Developer" />
         </nav>
 
         {/* Upgrade Banner */}
@@ -359,12 +441,19 @@ export default function DashboardLayout({
                     Security
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-                  <Link href="/dashboard/billing" className="flex items-center">
-                    <CreditCard className="mr-2 h-4 w-4 text-slate-500" />
-                    Billing
-                  </Link>
-                </DropdownMenuItem>
+                {permissions.canAccessBilling() && (
+                  <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                    <Link href="/dashboard/billing" className="flex items-center">
+                      <CreditCard className="mr-2 h-4 w-4 text-slate-500" />
+                      Billing
+                      {!permissions.isOwner && (
+                        <Badge variant="secondary" className="ml-auto text-[9px] px-1.5 py-0 h-4 bg-amber-50 text-amber-600 border-0">
+                          View only
+                        </Badge>
+                      )}
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator className="my-2" />
                 <DropdownMenuItem
                   onClick={handleLogout}

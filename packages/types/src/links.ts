@@ -24,6 +24,7 @@ export interface LinkResponse {
   tags: string[];
   status: 'ACTIVE' | 'EXPIRED' | 'DISABLED' | 'BANNED';
   createdAt: string;
+  createdById?: string; // User ID who created the link
   clicks?: number; // Engagement count
 }
 

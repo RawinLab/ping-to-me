@@ -46,10 +46,13 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
+import { toast } from "sonner";
 
 import { QrCodeModal } from "./QrCodeModal";
 import { EditLinkModal } from "./EditLinkModal";
 import { FilterValues } from "./FiltersModal";
+import { usePermission } from "@/hooks/usePermission";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface LinksTableProps {
   limit?: number;
@@ -116,6 +119,22 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
   const [inlineTagLinkId, setInlineTagLinkId] = useState<string | null>(null);
   const [inlineTagValue, setInlineTagValue] = useState<string>("");
 
+  // Permission and auth context
+  const { user } = useAuth();
+  const { canEditLink, canDeleteLink, canBulkLinks, isEditor, isAdminOrAbove } = usePermission();
+
+  // Helper to check if user can modify a specific link
+  const canModifyLink = (link: LinkResponse): boolean => {
+    // Admins and owners can modify all links
+    if (isAdminOrAbove) return true;
+
+    // Editors can only modify links they created
+    if (isEditor && link.createdById === user?.id) return true;
+
+    // Viewers cannot modify links
+    return false;
+  };
+
   useEffect(() => {
     fetchFilters();
     fetchLinks();
@@ -181,8 +200,13 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
       const linksData = response.data || response;
       setLinks(limit ? linksData.slice(0, limit) : linksData);
       setSelectedIds(new Set());
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch links:", error);
+      if (error?.response?.status === 403) {
+        toast.error("Permission denied", {
+          description: "You don't have permission to view links",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -198,14 +222,27 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
     if (!confirm("Are you sure you want to delete this link?")) return;
     try {
       await apiRequest(`/links/${id}`, { method: "DELETE" });
+      toast.success("Link deleted successfully");
       fetchLinks();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to delete link:", error);
-      alert("Failed to delete link");
+      if (error?.response?.status === 403) {
+        toast.error("Permission denied", {
+          description: "You don't have permission to delete this link",
+        });
+      } else {
+        toast.error("Failed to delete link");
+      }
     }
   };
 
   const handleBulkDelete = async () => {
+    if (!canBulkLinks()) {
+      toast.error("Permission denied", {
+        description: "You don't have permission to perform bulk operations",
+      });
+      return;
+    }
     if (!confirm(`Are you sure you want to delete ${selectedIds.size} links?`))
       return;
     try {
@@ -213,14 +250,27 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
         method: "POST",
         body: JSON.stringify({ ids: Array.from(selectedIds) }),
       });
+      toast.success(`${selectedIds.size} links deleted successfully`);
       fetchLinks();
-    } catch (error) {
-      alert("Failed to delete links");
+    } catch (error: any) {
+      if (error?.response?.status === 403) {
+        toast.error("Permission denied", {
+          description: "You don't have permission to delete these links",
+        });
+      } else {
+        toast.error("Failed to delete links");
+      }
     }
   };
 
   const handleBulkTag = async () => {
     if (!bulkTagValue) return;
+    if (!canBulkLinks()) {
+      toast.error("Permission denied", {
+        description: "You don't have permission to perform bulk operations",
+      });
+      return;
+    }
     try {
       await apiRequest("/links/bulk-tag", {
         method: "POST",
@@ -229,11 +279,18 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
           tagName: bulkTagValue,
         }),
       });
+      toast.success("Tags added successfully");
       setBulkTagDialogOpen(false);
       setBulkTagValue("");
       fetchLinks();
-    } catch (error) {
-      alert("Failed to add tags");
+    } catch (error: any) {
+      if (error?.response?.status === 403) {
+        toast.error("Permission denied", {
+          description: "You don't have permission to add tags to these links",
+        });
+      } else {
+        toast.error("Failed to add tags");
+      }
     }
   };
 
@@ -251,9 +308,16 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
       a.download = "links.csv";
       a.click();
       window.URL.revokeObjectURL(url);
-    } catch (error) {
+      toast.success("Links exported successfully");
+    } catch (error: any) {
       console.error("Export failed:", error);
-      alert("Failed to export links");
+      if (error?.response?.status === 403) {
+        toast.error("Permission denied", {
+          description: "You don't have permission to export links",
+        });
+      } else {
+        toast.error("Failed to export links");
+      }
     }
   };
 
@@ -292,10 +356,17 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
         method: "POST",
         body: JSON.stringify({ status }),
       });
+      toast.success("Link status updated");
       fetchLinks();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update status", error);
-      alert("Failed to update status");
+      if (error?.response?.status === 403) {
+        toast.error("Permission denied", {
+          description: "You don't have permission to update this link",
+        });
+      } else {
+        toast.error("Failed to update status");
+      }
     }
   };
 
@@ -325,13 +396,15 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
       >
         <div className="flex items-start gap-4">
           {/* Checkbox */}
-          <div className="pt-1">
-            <Checkbox
-              checked={selectedIds.has(link.id)}
-              onCheckedChange={() => toggleSelectOne(link.id)}
-              className="border-slate-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-            />
-          </div>
+          {canBulkLinks() && (
+            <div className="pt-1">
+              <Checkbox
+                checked={selectedIds.has(link.id)}
+                onCheckedChange={() => toggleSelectOne(link.id)}
+                className="border-slate-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+              />
+            </div>
+          )}
 
           {/* Favicon */}
           <div className="flex-shrink-0 relative">
@@ -475,25 +548,27 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
 
           {/* Actions */}
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <EditLinkModal
-              link={{
-                id: link.id,
-                originalUrl: link.originalUrl,
-                title: link.title,
-                tags: link.tags,
-                campaignId: (link as any).campaignId,
-                expirationDate: (link as any).expirationDate,
-              }}
-              onSuccess={fetchLinks}
-            >
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+            {canEditLink() && canModifyLink(link) && (
+              <EditLinkModal
+                link={{
+                  id: link.id,
+                  originalUrl: link.originalUrl,
+                  title: link.title,
+                  tags: link.tags,
+                  campaignId: (link as any).campaignId,
+                  expirationDate: (link as any).expirationDate,
+                }}
+                onSuccess={fetchLinks}
               >
-                <Pencil className="h-4 w-4" />
-              </Button>
-            </EditLinkModal>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </EditLinkModal>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -524,22 +599,24 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <EditLinkModal
-                  link={{
-                    id: link.id,
-                    originalUrl: link.originalUrl,
-                    title: link.title,
-                    tags: link.tags,
-                    campaignId: (link as any).campaignId,
-                    expirationDate: (link as any).expirationDate,
-                  }}
-                  onSuccess={fetchLinks}
-                >
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit link
-                  </DropdownMenuItem>
-                </EditLinkModal>
+                {canEditLink() && canModifyLink(link) && (
+                  <EditLinkModal
+                    link={{
+                      id: link.id,
+                      originalUrl: link.originalUrl,
+                      title: link.title,
+                      tags: link.tags,
+                      campaignId: (link as any).campaignId,
+                      expirationDate: (link as any).expirationDate,
+                    }}
+                    onSuccess={fetchLinks}
+                  >
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit link
+                    </DropdownMenuItem>
+                  </EditLinkModal>
+                )}
                 <DropdownMenuItem onClick={() => setQrModalLink(link)}>
                   <QrCode className="mr-2 h-4 w-4" />
                   QR Code
@@ -550,38 +627,46 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
                     View analytics
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() =>
-                    handleStatusChange(
-                      link.id,
-                      link.status === "ACTIVE" ? "DISABLED" : "ACTIVE"
-                    )
-                  }
-                >
-                  {link.status === "ACTIVE" ? (
-                    <>
-                      <PauseCircle className="mr-2 h-4 w-4" /> Disable link
-                    </>
-                  ) : (
-                    <>
-                      <PlayCircle className="mr-2 h-4 w-4" /> Enable link
-                    </>
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => handleStatusChange(link.id, "ARCHIVED")}
-                >
-                  <Archive className="mr-2 h-4 w-4" /> Archive
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-red-600 focus:text-red-600"
-                  onClick={() => handleDelete(link.id)}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
+                {canEditLink() && canModifyLink(link) && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() =>
+                        handleStatusChange(
+                          link.id,
+                          link.status === "ACTIVE" ? "DISABLED" : "ACTIVE"
+                        )
+                      }
+                    >
+                      {link.status === "ACTIVE" ? (
+                        <>
+                          <PauseCircle className="mr-2 h-4 w-4" /> Disable link
+                        </>
+                      ) : (
+                        <>
+                          <PlayCircle className="mr-2 h-4 w-4" /> Enable link
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleStatusChange(link.id, "ARCHIVED")}
+                    >
+                      <Archive className="mr-2 h-4 w-4" /> Archive
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {canDeleteLink() && canModifyLink(link) && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-red-600 focus:text-red-600"
+                      onClick={() => handleDelete(link.id)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -607,11 +692,13 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
         {/* Header with favicon, checkbox and actions */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <Checkbox
-              checked={selectedIds.has(link.id)}
-              onCheckedChange={() => toggleSelectOne(link.id)}
-              className="border-slate-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-            />
+            {canBulkLinks() && (
+              <Checkbox
+                checked={selectedIds.has(link.id)}
+                onCheckedChange={() => toggleSelectOne(link.id)}
+                className="border-slate-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+              />
+            )}
             {favicon ? (
               <img
                 src={favicon}
@@ -647,22 +734,24 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <EditLinkModal
-                  link={{
-                    id: link.id,
-                    originalUrl: link.originalUrl,
-                    title: link.title,
-                    tags: link.tags,
-                    campaignId: (link as any).campaignId,
-                    expirationDate: (link as any).expirationDate,
-                  }}
-                  onSuccess={fetchLinks}
-                >
-                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <Pencil className="mr-2 h-4 w-4" />
-                    Edit link
-                  </DropdownMenuItem>
-                </EditLinkModal>
+                {canEditLink() && canModifyLink(link) && (
+                  <EditLinkModal
+                    link={{
+                      id: link.id,
+                      originalUrl: link.originalUrl,
+                      title: link.title,
+                      tags: link.tags,
+                      campaignId: (link as any).campaignId,
+                      expirationDate: (link as any).expirationDate,
+                    }}
+                    onSuccess={fetchLinks}
+                  >
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edit link
+                    </DropdownMenuItem>
+                  </EditLinkModal>
+                )}
                 <DropdownMenuItem asChild>
                   <Link href={`/dashboard/links/${link.id}/analytics`}>
                     <BarChart2 className="mr-2 h-4 w-4" />
@@ -673,33 +762,41 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
                   <QrCode className="mr-2 h-4 w-4" />
                   QR Code
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() =>
-                    handleStatusChange(
-                      link.id,
-                      link.status === "ACTIVE" ? "DISABLED" : "ACTIVE"
-                    )
-                  }
-                >
-                  {link.status === "ACTIVE" ? (
-                    <>
-                      <PauseCircle className="mr-2 h-4 w-4" /> Disable link
-                    </>
-                  ) : (
-                    <>
-                      <PlayCircle className="mr-2 h-4 w-4" /> Enable link
-                    </>
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-red-600 focus:text-red-600"
-                  onClick={() => handleDelete(link.id)}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
+                {canEditLink() && canModifyLink(link) && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() =>
+                        handleStatusChange(
+                          link.id,
+                          link.status === "ACTIVE" ? "DISABLED" : "ACTIVE"
+                        )
+                      }
+                    >
+                      {link.status === "ACTIVE" ? (
+                        <>
+                          <PauseCircle className="mr-2 h-4 w-4" /> Disable link
+                        </>
+                      ) : (
+                        <>
+                          <PlayCircle className="mr-2 h-4 w-4" /> Enable link
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {canDeleteLink() && canModifyLink(link) && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-red-600 focus:text-red-600"
+                      onClick={() => handleDelete(link.id)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -903,11 +1000,15 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(function Li
           </div>
           <h3 className="text-xl font-semibold text-slate-900 mb-2">No links yet</h3>
           <p className="text-slate-500 mb-8 max-w-sm mx-auto">
-            Create your first short link to start tracking clicks and engagement
+            {canEditLink()
+              ? "Create your first short link to start tracking clicks and engagement"
+              : "You have view-only access. Links created by your team will appear here."}
           </p>
-          <Button asChild className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full px-8 shadow-lg shadow-blue-500/25">
-            <Link href="/dashboard/links/new">Create your first link</Link>
-          </Button>
+          {canEditLink() && (
+            <Button asChild className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full px-8 shadow-lg shadow-blue-500/25">
+              <Link href="/dashboard/links/new">Create your first link</Link>
+            </Button>
+          )}
         </div>
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -19,6 +19,7 @@ export interface LinkResponse {
     tags: string[];
     status: 'ACTIVE' | 'EXPIRED' | 'DISABLED' | 'BANNED';
     createdAt: string;
+    createdById?: string;
 }
 export declare enum LinkStatus {
     ACTIVE = "ACTIVE",

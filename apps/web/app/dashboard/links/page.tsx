@@ -8,6 +8,8 @@ import Link from "next/link";
 import { Plus, Search, Calendar, SlidersHorizontal, List, Table2, LayoutGrid, Download, X } from "lucide-react";
 import { useState, useRef } from "react";
 import { format } from "date-fns";
+import { usePermission } from "@/hooks/usePermission";
+import { PermissionGate } from "@/components/PermissionGate";
 
 export default function LinksPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -15,6 +17,9 @@ export default function LinksPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedCount, setSelectedCount] = useState(0);
   const linksTableRef = useRef<LinksTableRef>(null);
+
+  // Permission checks
+  const { canCreateLink, canExportLinks, canBulkLinks, role } = usePermission();
 
   // Filter modals state
   const [dateFilterModalOpen, setDateFilterModalOpen] = useState(false);
@@ -60,11 +65,13 @@ export default function LinksPage() {
             <h1 className="text-3xl font-bold tracking-tight text-slate-900">Links</h1>
             <p className="text-sm text-slate-500 mt-1">Manage and track your shortened URLs</p>
           </div>
-          <Link href="/dashboard/links/new">
-            <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full px-6 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all">
-              <Plus className="mr-2 h-4 w-4" /> Create link
-            </Button>
-          </Link>
+          <PermissionGate resource="link" action="create">
+            <Link href="/dashboard/links/new">
+              <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full px-6 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all">
+                <Plus className="mr-2 h-4 w-4" /> Create link
+              </Button>
+            </Link>
+          </PermissionGate>
         </div>
 
         {/* Search and Filters Bar */}
@@ -129,20 +136,22 @@ export default function LinksPage() {
         {/* Toolbar */}
         <div className="flex justify-between items-center py-3">
           <div className="flex items-center gap-3 text-sm">
-            {selectedCount > 0 && (
+            {selectedCount > 0 && canBulkLinks() && (
               <span className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg font-medium">
                 {selectedCount} selected
               </span>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg"
-              onClick={() => linksTableRef.current?.handleExport()}
-            >
-              <Download className="mr-1.5 h-4 w-4" />
-              Export
-            </Button>
+            <PermissionGate resource="link" action="export">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg"
+                onClick={() => linksTableRef.current?.handleExport()}
+              >
+                <Download className="mr-1.5 h-4 w-4" />
+                Export
+              </Button>
+            </PermissionGate>
           </div>
 
           <div className="flex items-center gap-3">

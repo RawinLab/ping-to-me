@@ -17,7 +17,12 @@ import {
 } from "@pingtome/ui";
 import { apiRequest } from "../../../../lib/api";
 import { InviteMemberModal } from "../../../../components/InviteMemberModal";
-import { Users, UserPlus, Shield, Crown, Eye, Edit, Trash2, Mail } from "lucide-react";
+import { usePermission } from "@/hooks/usePermission";
+import { PermissionGate } from "@/components/PermissionGate";
+import { RoleBadge } from "@/components/RoleBadge";
+import { useAuth } from "@/contexts/AuthContext";
+import { Users, UserPlus, Shield, Crown, Eye, Edit, Trash2, Mail, Lock } from "lucide-react";
+import type { MemberRole } from "@/lib/permissions";
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
   OWNER: { label: "Owner", color: "bg-amber-100 text-amber-700", icon: Crown },
@@ -31,6 +36,17 @@ export default function TeamSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const orgId = "mock-org-id"; // In real app, get from context/params
+
+  // Permission hooks
+  const {
+    canInviteMembers,
+    canRemoveMembers,
+    canUpdateRoles,
+    canManageRole,
+    getAssignableRoles,
+    role: currentUserRole,
+  } = usePermission();
+  const { user } = useAuth();
 
   useEffect(() => {
     loadMembers();
@@ -59,7 +75,13 @@ export default function TeamSettingsPage() {
     }
   };
 
-  const handleRoleChange = async (userId: string, newRole: string) => {
+  const handleRoleChange = async (userId: string, newRole: string, currentRole: string) => {
+    // Check if user can manage the target role
+    if (!canManageRole(newRole as MemberRole)) {
+      alert("You don't have permission to assign this role");
+      return;
+    }
+
     try {
       await apiRequest(`/organizations/${orgId}/members/${userId}`, {
         method: "PATCH",
@@ -69,6 +91,18 @@ export default function TeamSettingsPage() {
     } catch (err) {
       alert("Failed to update role");
     }
+  };
+
+  // Get list of roles the current user can assign
+  const assignableRoles = getAssignableRoles();
+
+  // Check if a member can be managed by current user
+  const canManageMember = (memberRole: string, memberUserId: string) => {
+    // Cannot manage yourself
+    if (memberUserId === user?.id) return false;
+
+    // Cannot manage members with equal or higher role
+    return canManageRole(memberRole as MemberRole);
   };
 
   if (loading) {
@@ -102,13 +136,34 @@ export default function TeamSettingsPage() {
               Manage your team and their access levels.
             </p>
           </div>
-          <Button
-            onClick={() => setInviteModalOpen(true)}
-            className="h-10 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25"
-          >
-            <UserPlus className="mr-2 h-4 w-4" /> Invite Member
-          </Button>
+          <PermissionGate resource="team" action="invite">
+            <Button
+              onClick={() => setInviteModalOpen(true)}
+              className="h-10 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25"
+            >
+              <UserPlus className="mr-2 h-4 w-4" /> Invite Member
+            </Button>
+          </PermissionGate>
         </div>
+
+        {/* Permission Notice for Limited Users */}
+        {!canInviteMembers() && (
+          <Card className="border-amber-200 bg-amber-50">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <Lock className="h-4 w-4 text-amber-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-amber-900 mb-1">Limited Access</p>
+                  <p className="text-sm text-amber-700">
+                    You have {currentUserRole?.toLowerCase()} access. Contact an admin or owner to invite new members or manage team roles.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -152,6 +207,11 @@ export default function TeamSettingsPage() {
                 {members.map((member) => {
                   const roleConfig = ROLE_CONFIG[member.role] || ROLE_CONFIG.VIEWER;
                   const RoleIcon = roleConfig.icon;
+                  const isCurrentUser = member.userId === user?.id;
+                  const canManageThisMember = canManageMember(member.role, member.userId);
+                  const canChangeRole = canUpdateRoles() && canManageThisMember && !isCurrentUser;
+                  const canRemoveThisMember = canRemoveMembers() && canManageThisMember && !isCurrentUser;
+
                   return (
                     <div
                       key={member.userId}
@@ -164,9 +224,14 @@ export default function TeamSettingsPage() {
                             member.user.email[0].toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-slate-900 truncate">
-                            {member.user.name || "Unknown"}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-slate-900 truncate">
+                              {member.user.name || "Unknown"}
+                            </p>
+                            {isCurrentUser && (
+                              <Badge variant="outline" className="text-xs">You</Badge>
+                            )}
+                          </div>
                           <div className="flex items-center gap-1.5 text-sm text-slate-500">
                             <Mail className="h-3.5 w-3.5" />
                             <span className="truncate">{member.user.email}</span>
@@ -174,44 +239,54 @@ export default function TeamSettingsPage() {
                         </div>
                       </div>
 
-                      {/* Role */}
+                      {/* Role Badge & Actions */}
                       <div className="flex items-center gap-3 sm:ml-auto">
-                        <Select
-                          value={member.role}
-                          onValueChange={(value) => handleRoleChange(member.userId, value)}
-                        >
-                          <SelectTrigger className="w-36 rounded-lg">
-                            <SelectValue>
-                              <div className="flex items-center gap-2">
-                                <RoleIcon className="h-4 w-4" />
-                                {roleConfig.label}
-                              </div>
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.entries(ROLE_CONFIG).map(([role, config]) => {
-                              const Icon = config.icon;
-                              return (
-                                <SelectItem key={role} value={role}>
-                                  <div className="flex items-center gap-2">
-                                    <Icon className="h-4 w-4" />
-                                    {config.label}
-                                  </div>
-                                </SelectItem>
-                              );
-                            })}
-                          </SelectContent>
-                        </Select>
+                        {canChangeRole && assignableRoles.length > 0 ? (
+                          <Select
+                            value={member.role}
+                            onValueChange={(value) => handleRoleChange(member.userId, value, member.role)}
+                          >
+                            <SelectTrigger className="w-36 rounded-lg">
+                              <SelectValue>
+                                <div className="flex items-center gap-2">
+                                  <RoleIcon className="h-4 w-4" />
+                                  {roleConfig.label}
+                                </div>
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {assignableRoles.map((role) => {
+                                const config = ROLE_CONFIG[role];
+                                const Icon = config.icon;
+                                return (
+                                  <SelectItem key={role} value={role}>
+                                    <div className="flex items-center gap-2">
+                                      <Icon className="h-4 w-4" />
+                                      {config.label}
+                                    </div>
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <div className="w-36">
+                            <RoleBadge role={member.role as MemberRole} size="md" />
+                          </div>
+                        )}
 
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemove(member.userId)}
-                          className="rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50"
-                          disabled={member.role === "OWNER"}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {canRemoveThisMember ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemove(member.userId)}
+                            className="rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <div className="w-9" /> // Spacer to maintain layout
+                        )}
                       </div>
                     </div>
                   );
@@ -228,12 +303,14 @@ export default function TeamSettingsPage() {
                 <p className="text-slate-500 mb-6 max-w-sm mx-auto">
                   Invite team members to collaborate on your links and analytics.
                 </p>
-                <Button
-                  onClick={() => setInviteModalOpen(true)}
-                  className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25"
-                >
-                  <UserPlus className="mr-2 h-4 w-4" /> Invite Your First Member
-                </Button>
+                <PermissionGate resource="team" action="invite">
+                  <Button
+                    onClick={() => setInviteModalOpen(true)}
+                    className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25"
+                  >
+                    <UserPlus className="mr-2 h-4 w-4" /> Invite Your First Member
+                  </Button>
+                </PermissionGate>
               </div>
             )}
           </CardContent>
