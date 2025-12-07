@@ -721,4 +721,70 @@ export class LinksService {
 
     return { success: true, count: links.length, tagName };
   }
+
+  async updateStatusMany(userId: string, ids: string[], status: string) {
+    // Verify ownership
+    const links = await this.prisma.link.findMany({
+      where: { userId, id: { in: ids } },
+    });
+
+    if (links.length === 0) {
+      return { success: false, count: 0 };
+    }
+
+    // Update status for all links
+    const updatePromises = links.map(async (link) => {
+      const updated = await this.prisma.link.update({
+        where: { id: link.id },
+        data: { status: status as any },
+      });
+
+      // Sync to KV
+      await this.syncToKv(updated);
+
+      // Audit log - status change
+      this.auditService
+        .logLinkEvent(
+          userId,
+          null,
+          "link.status_changed",
+          {
+            id: link.id,
+            slug: link.slug,
+            targetUrl: link.originalUrl,
+          },
+          {
+            changes: {
+              before: { status: link.status },
+              after: { status },
+            },
+          },
+        )
+        .catch((err) => console.error("Audit log failed:", err));
+
+      return updated;
+    });
+
+    await Promise.all(updatePromises);
+
+    // Audit log - bulk status change
+    this.auditService
+      .logLinkEvent(
+        userId,
+        null,
+        "link.bulk_status_changed",
+        {
+          id: "bulk-status",
+        },
+        {
+          details: {
+            count: links.length,
+            newStatus: status,
+          },
+        },
+      )
+      .catch((err) => console.error("Audit log failed:", err));
+
+    return { success: true, count: links.length, status };
+  }
 }

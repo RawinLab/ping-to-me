@@ -56,6 +56,16 @@ export class LinksController {
     return this.linksService.addTagToMany(req.user.id, body.ids, body.tagName);
   }
 
+  @Post("bulk-status")
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: "link", action: "bulk" })
+  async bulkStatus(
+    @Request() req,
+    @Body() body: { ids: string[]; status: string },
+  ) {
+    return this.linksService.updateStatusMany(req.user.id, body.ids, body.status);
+  }
+
   @Get("export")
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission({ resource: "link", action: "export" })
