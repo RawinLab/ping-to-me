@@ -1,38 +1,89 @@
-import { Body, Controller, Delete, Get, Param, Post, Request, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Request,
+  UseGuards,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ApiKeyService } from './api-keys.service';
 import { WebhookService } from './webhooks.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { PermissionGuard, Permission } from '../auth/rbac';
+import { CreateApiKeyDto } from './dto';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
+@ApiTags('developer')
 @Controller('developer')
 @UseGuards(AuthGuard, PermissionGuard)
 export class DeveloperController {
   constructor(
     private readonly apiKeyService: ApiKeyService,
     private readonly webhookService: WebhookService,
-  ) { }
+  ) {}
 
   // API Keys
   @Post('api-keys')
   @Permission({ resource: 'api-key', action: 'create' })
-  async createApiKey(@Request() req, @Body() body: { name: string; orgId: string }) {
+  @ApiOperation({ summary: 'Create a new API key with scopes' })
+  @ApiResponse({
+    status: 201,
+    description: 'API key created successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid scopes or parameters',
+  })
+  async createApiKey(
+    @Request() req,
+    @Body(ValidationPipe) dto: CreateApiKeyDto,
+  ) {
     // TODO: Verify user has access to orgId
-    return this.apiKeyService.createApiKey(body.orgId, body.name);
+    return this.apiKeyService.createApiKey({
+      orgId: dto.orgId,
+      name: dto.name,
+      scopes: dto.scopes,
+      ipWhitelist: dto.ipWhitelist,
+      rateLimit: dto.rateLimit,
+      expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : undefined,
+    });
   }
 
   @Get('api-keys')
   @Permission({ resource: 'api-key', action: 'read' })
-  async listApiKeys(@Request() req, @Body() body: { orgId: string }) {
-    // Note: In a real app, orgId might come from query param or header context
-    // For now, we'll accept it in body for list (GET with body is weird, let's assume query param in real impl or just fix it now)
-    // Actually, let's use Query param for GET
-    return this.apiKeyService.listApiKeys(req.query.orgId as string);
+  @ApiOperation({ summary: 'List all API keys for an organization' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of API keys',
+  })
+  async listApiKeys(@Request() req) {
+    const orgId = req.query.orgId as string;
+    return this.apiKeyService.listApiKeys(orgId);
+  }
+
+  @Get('api-keys/scopes')
+  @Permission({ resource: 'api-key', action: 'read' })
+  @ApiOperation({ summary: 'Get all available API scopes' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of available scopes with descriptions',
+  })
+  getAvailableScopes() {
+    return this.apiKeyService.getAvailableScopes();
   }
 
   @Delete('api-keys/:id')
   @Permission({ resource: 'api-key', action: 'revoke', context: 'own' })
+  @ApiOperation({ summary: 'Revoke (delete) an API key' })
+  @ApiResponse({
+    status: 200,
+    description: 'API key revoked successfully',
+  })
   async revokeApiKey(@Request() req, @Param('id') id: string) {
-    const orgId = req.query.orgId as string; // Simplified
+    const orgId = req.query.orgId as string;
     return this.apiKeyService.revokeApiKey(id, orgId);
   }
 

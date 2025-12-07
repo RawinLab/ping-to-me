@@ -107,6 +107,10 @@ model ApiKey {
   keyHash        String    @unique
   name           String
   organizationId String    @db.Uuid
+  scopes         String[]  // List of allowed scopes (e.g., ['link:read', 'link:create'])
+  ipWhitelist    String[]  @default([]) // IP restrictions (e.g., ['192.168.1.1', '10.0.0.0/8']), empty = no restriction
+  rateLimit      Int?      // Optional requests per minute override
+  expiresAt      DateTime? // Optional expiration date
   lastUsedAt     DateTime?
   createdAt      DateTime  @default(now())
 

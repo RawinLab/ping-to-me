@@ -34,3 +34,21 @@ export { PermissionService } from './permission.service';
 
 // Permission Guard - NestJS guard for route protection
 export { PermissionGuard } from './permission.guard';
+
+// API Scopes - token-based granular access control
+export {
+  type ApiScope,
+  API_SCOPES,
+  SCOPE_DESCRIPTIONS,
+  SCOPE_GROUPS,
+  isValidScope,
+  scopeCoversAction,
+  getResourceScopes,
+  parseScopes,
+} from './api-scopes';
+
+// API Scope Decorator - route-level scope requirement decorator
+export {
+  RequireScope,
+  SCOPE_KEY,
+} from './require-scope.decorator';
