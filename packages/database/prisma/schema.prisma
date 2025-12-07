@@ -150,6 +150,7 @@ model Organization {
   settings    OrganizationSettings?
   invitations OrganizationInvitation[]
   usageTracking UsageTracking[]
+  folders     Folder[]
 }
 
 model OrganizationSettings {
@@ -498,17 +499,23 @@ model Campaign {
 }
 
 model Folder {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name           String
   color          String?
-  userId         String   @db.Uuid
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  userId         String        @db.Uuid
+  organizationId String?       @db.Uuid
+  parentId       String?       @db.Uuid
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  parent         Folder?       @relation("FolderToFolder", fields: [parentId], references: [id], onDelete: Cascade)
+  children       Folder[]      @relation("FolderToFolder")
   links          Link[]
 
-  @@unique([userId, name])
+  @@unique([organizationId, name, parentId])
+  @@index([organizationId])
 }
 
 model AuditLog {

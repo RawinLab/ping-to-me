@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
 
@@ -49,35 +49,69 @@ export class TagsService {
   ) {
     // Get current state for audit logging
     const before = await this.prisma.tag.findUnique({ where: { id } });
+    if (!before) {
+      throw new NotFoundException("Tag not found");
+    }
 
-    // Verify ownership/permission via organizationId if needed,
-    // but for now assuming orgId check in controller or just trusting ID + AuthGuard
-    const tag = await this.prisma.tag.update({
-      where: { id },
-      data,
+    // Use transaction for tag rename cascade
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Update tag
+      const tag = await tx.tag.update({
+        where: { id },
+        data,
+      });
+
+      let affectedLinksCount = 0;
+
+      // If name changed, cascade update to all links
+      if (data.name && before.name !== data.name) {
+        // Find all links in the same organization with old tag name
+        const linksWithTag = await tx.link.findMany({
+          where: {
+            organizationId: before.organizationId,
+            tags: { has: before.name },
+          },
+          select: { id: true, tags: true },
+        });
+
+        // Update each link's tags array
+        for (const link of linksWithTag) {
+          const newTags = link.tags.map((t) =>
+            t === before.name ? data.name : t,
+          );
+          await tx.link.update({
+            where: { id: link.id },
+            data: { tags: newTags },
+          });
+        }
+        affectedLinksCount = linksWithTag.length;
+      }
+
+      return { tag, affectedLinksCount };
     });
 
-    // Log tag update with changes
+    // Audit log with affected links count
     if (before) {
-      const changes = this.auditService.captureChanges(before, tag);
+      const changes = this.auditService.captureChanges(before, result.tag);
       this.auditService
         .logResourceEvent(
           userId,
           before.organizationId,
           "tag.updated",
           "Tag",
-          tag.id,
+          result.tag.id,
           {
             changes,
             details: {
-              name: tag.name,
+              name: result.tag.name,
+              affectedLinksCount: result.affectedLinksCount,
             },
           },
         )
         .catch(() => {}); // Fire and forget, don't block on errors
     }
 
-    return tag;
+    return result.tag;
   }
 
   async remove(userId: string, id: string) {

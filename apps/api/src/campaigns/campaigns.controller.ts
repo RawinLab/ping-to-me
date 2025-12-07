@@ -15,6 +15,8 @@ import { CampaignsService } from "./campaigns.service";
 import { AuthGuard } from "../auth/auth.guard";
 import { PrismaService } from "../prisma/prisma.service";
 import { PermissionGuard, Permission } from "../auth/rbac";
+import { CreateCampaignDto } from "./dto/create-campaign.dto";
+import { UpdateCampaignDto } from "./dto/update-campaign.dto";
 
 @Controller("campaigns")
 @UseGuards(AuthGuard, PermissionGuard)
@@ -28,9 +30,9 @@ export class CampaignsController {
   @Permission({ resource: "campaign", action: "create" })
   async create(
     @Request() req,
-    @Body() body: { name: string; description?: string; orgId: string },
+    @Body() createCampaignDto: CreateCampaignDto,
   ) {
-    let orgId = body.orgId;
+    let orgId = createCampaignDto.orgId;
     if (!orgId || orgId === "default") {
       const member = await this.prisma.organizationMember.findFirst({
         where: { userId: req.user.id },
@@ -41,8 +43,8 @@ export class CampaignsController {
     return this.campaignsService.create(
       req.user.id,
       orgId,
-      body.name,
-      body.description,
+      createCampaignDto.name,
+      createCampaignDto.description,
     );
   }
 
@@ -64,9 +66,9 @@ export class CampaignsController {
   update(
     @Request() req,
     @Param("id") id: string,
-    @Body() body: { name?: string; description?: string },
+    @Body() updateCampaignDto: UpdateCampaignDto,
   ) {
-    return this.campaignsService.update(req.user.id, id, body);
+    return this.campaignsService.update(req.user.id, id, updateCampaignDto);
   }
 
   @Delete(":id")

@@ -15,6 +15,8 @@ import { TagsService } from "./tags.service";
 import { AuthGuard } from "../auth/auth.guard";
 import { PrismaService } from "../prisma/prisma.service";
 import { PermissionGuard, Permission } from "../auth/rbac";
+import { CreateTagDto } from "./dto/create-tag.dto";
+import { UpdateTagDto } from "./dto/update-tag.dto";
 
 @Controller("tags")
 @UseGuards(AuthGuard, PermissionGuard)
@@ -28,9 +30,9 @@ export class TagsController {
   @Permission({ resource: "tag", action: "create" })
   async create(
     @Request() req,
-    @Body() body: { name: string; color?: string; orgId: string },
+    @Body() createTagDto: CreateTagDto,
   ) {
-    let orgId = body.orgId;
+    let orgId = createTagDto.orgId;
     if (!orgId || orgId === "default") {
       const member = await this.prisma.organizationMember.findFirst({
         where: { userId: req.user.id },
@@ -38,7 +40,7 @@ export class TagsController {
       if (!member) throw new BadRequestException("User has no organization");
       orgId = member.organizationId;
     }
-    return this.tagsService.create(req.user.id, orgId, body.name, body.color);
+    return this.tagsService.create(req.user.id, orgId, createTagDto.name, createTagDto.color);
   }
 
   @Get()
@@ -59,9 +61,9 @@ export class TagsController {
   update(
     @Request() req,
     @Param("id") id: string,
-    @Body() body: { name?: string; color?: string },
+    @Body() updateTagDto: UpdateTagDto,
   ) {
-    return this.tagsService.update(req.user.id, id, body);
+    return this.tagsService.update(req.user.id, id, updateTagDto);
   }
 
   @Delete(":id")

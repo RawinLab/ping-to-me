@@ -29,7 +29,8 @@ export type Resource =
   | "audit"
   | "biopage"
   | "campaign"
-  | "tag";
+  | "tag"
+  | "folder";
 
 /**
  * Actions that can be performed on resources
@@ -133,6 +134,12 @@ export const PERMISSION_MATRIX: Record<MemberRole, RolePermissions> = {
       update: "*",
       delete: "*",
     },
+    folder: {
+      create: "*",
+      read: "*",
+      update: "*",
+      delete: "*",
+    },
   },
 
   /**
@@ -198,6 +205,12 @@ export const PERMISSION_MATRIX: Record<MemberRole, RolePermissions> = {
       update: "*",
       delete: "*",
     },
+    folder: {
+      create: "*",
+      read: "*",
+      update: "*",
+      delete: "*",
+    },
   },
 
   /**
@@ -238,6 +251,12 @@ export const PERMISSION_MATRIX: Record<MemberRole, RolePermissions> = {
       read: "*",
       update: "own",
     },
+    folder: {
+      create: "*",
+      read: "*",
+      update: "own",
+      delete: "own",
+    },
   },
 
   /**
@@ -267,6 +286,9 @@ export const PERMISSION_MATRIX: Record<MemberRole, RolePermissions> = {
       read: "*",
     },
     tag: {
+      read: "*",
+    },
+    folder: {
       read: "*",
     },
   },
