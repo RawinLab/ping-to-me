@@ -24,7 +24,16 @@ import {
   TabsList,
   TabsTrigger,
   Switch,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@pingtome/ui";
+import { toast } from "sonner";
 import {
   Plus,
   Loader2,
@@ -83,6 +92,10 @@ export function BioPageBuilder({
   // Link editor state
   const [editingLink, setEditingLink] = useState<BioPageLink | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+
+  // Delete confirmation state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [linkToDelete, setLinkToDelete] = useState<string | null>(null);
 
   // Theme state
   const [selectedTheme, setSelectedTheme] = useState<string>(
@@ -169,7 +182,7 @@ export function BioPageBuilder({
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!currentOrgId) {
-      alert("No organization found. Please try again.");
+      toast.error("No organization found. Please try again.");
       return;
     }
 
@@ -196,10 +209,10 @@ export function BioPageBuilder({
         });
       }
       if (onSuccess) onSuccess();
-      alert("Bio Page saved successfully!");
+      toast.success("Bio Page saved successfully!");
     } catch (error) {
       console.error("Failed to save bio page", error);
-      alert("Failed to save bio page");
+      toast.error("Failed to save bio page");
     } finally {
       setLoading(false);
     }
@@ -208,7 +221,7 @@ export function BioPageBuilder({
   // Add a new link to the bio page
   const addLink = async (linkId: string) => {
     if (!existingPage?.id) {
-      alert("Please save the bio page first before adding links.");
+      toast.warning("Please save the bio page first before adding links.");
       return;
     }
 
@@ -233,22 +246,32 @@ export function BioPageBuilder({
       setBioLinks([...bioLinks, newBioLink]);
     } catch (error) {
       console.error("Failed to add link:", error);
-      alert("Failed to add link");
+      toast.error("Failed to add link");
     }
   };
 
-  // Remove a link from the bio page
-  const handleDeleteLink = async (linkId: string) => {
-    if (!existingPage?.id) return;
+  // Show delete confirmation dialog
+  const handleDeleteLink = (linkId: string) => {
+    setLinkToDelete(linkId);
+    setDeleteDialogOpen(true);
+  };
+
+  // Actually delete the link after confirmation
+  const confirmDeleteLink = async () => {
+    if (!existingPage?.id || !linkToDelete) return;
 
     try {
-      await apiRequest(`/biopages/${existingPage.id}/links/${linkId}`, {
+      await apiRequest(`/biopages/${existingPage.id}/links/${linkToDelete}`, {
         method: "DELETE",
       });
-      setBioLinks(bioLinks.filter((l) => l.id !== linkId));
+      setBioLinks(bioLinks.filter((l) => l.id !== linkToDelete));
+      toast.success("Link deleted successfully");
     } catch (error) {
       console.error("Failed to delete link:", error);
-      alert("Failed to delete link");
+      toast.error("Failed to delete link");
+    } finally {
+      setDeleteDialogOpen(false);
+      setLinkToDelete(null);
     }
   };
 
@@ -293,7 +316,7 @@ export function BioPageBuilder({
       setBioLinks(bioLinks.map((l) => (l.id === editingLink.id ? updated : l)));
     } catch (error) {
       console.error("Failed to update link:", error);
-      alert("Failed to update link");
+      toast.error("Failed to update link");
     }
   };
 
@@ -634,6 +657,29 @@ export function BioPageBuilder({
         }}
         onSave={handleSaveLink}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Link</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this link? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setLinkToDelete(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteLink}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

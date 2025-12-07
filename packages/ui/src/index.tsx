@@ -1,4 +1,5 @@
 export * from "./alert";
+export * from "./alert-dialog";
 export * from "./badge";
 export * from "./button";
 export * from "./calendar";
@@ -21,4 +22,5 @@ export * from "./tooltip";
 export * from "./progress";
 export * from "./separator";
 export * from "./skeleton";
+export * from "./sonner";
 export * from "./utils";
