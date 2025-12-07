@@ -18,6 +18,7 @@ import { AuditModule } from "./audit/audit.module";
 import { InvitationsModule } from "./invitations/invitations.module";
 import { QuotaModule } from "./quota/quota.module";
 import { PlansModule } from "./plans/plans.module";
+import { TasksModule } from "./tasks/tasks.module";
 
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
 import { APP_GUARD } from "@nestjs/core";
@@ -69,6 +70,7 @@ import { APP_GUARD } from "@nestjs/core";
     InvitationsModule,
     QuotaModule,
     PlansModule,
+    TasksModule,
   ],
   controllers: [],
   providers: [
