@@ -3,9 +3,10 @@ import { LinksService } from './links.service';
 import { LinksController } from './links.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { QrCodeModule } from '../qr/qr.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [PrismaModule, QrCodeModule],
+  imports: [PrismaModule, QrCodeModule, AuthModule],
   controllers: [LinksController],
   providers: [LinksService],
   exports: [LinksService],
