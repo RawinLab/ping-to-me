@@ -1,9 +1,11 @@
 # Module 2.2: Member Invite/Remove - Development Todolist
 
 ## Document Information
+
 - **Module**: 2.2 Member Invite/Remove
 - **Source**: `2-2-member-invite-remove-plan.md`
 - **Generated**: 2025-12-07
+- **Current Progress**: ~85% (Implementation complete, testing in progress)
 - **For**: Claude Code Subagent Development
 - **Dependencies**: Module 2.1 (Organization/Workspace)
 
@@ -12,6 +14,7 @@
 ## Quick Reference
 
 ### Commands
+
 ```bash
 # Database migration
 pnpm --filter @pingtome/database db:push
@@ -31,6 +34,7 @@ npx playwright test apps/web/e2e/member-invite-remove.spec.ts
 ```
 
 ### Key Files
+
 - `packages/database/prisma/schema.prisma`
 - `apps/api/src/invitations/` (new module)
 - `apps/api/src/organizations/organization.service.ts`
@@ -42,12 +46,14 @@ npx playwright test apps/web/e2e/member-invite-remove.spec.ts
 
 ## Phase 1: Database & Schema (Week 1)
 
-### TASK-2.2.1: Create OrganizationInvitation Model
+### TASK-2.2.1: Create OrganizationInvitation Model ✅
+
 **Priority**: HIGH | **Type**: Database | **Estimated**: 2-3 hours
 **File**: `packages/database/prisma/schema.prisma`
 
 **Subtasks**:
-- [ ] Add `OrganizationInvitation` model with fields:
+
+- [x] Add `OrganizationInvitation` model with fields:
   - `id` (UUID, primary key)
   - `organizationId` (UUID, foreign key)
   - `email` (String)
@@ -60,196 +66,226 @@ npx playwright test apps/web/e2e/member-invite-remove.spec.ts
   - `acceptedAt` (DateTime, optional)
   - `declinedAt` (DateTime, optional)
   - `createdAt` (DateTime, default now)
-- [ ] Add relations to Organization and User
-- [ ] Add unique constraint on `[organizationId, email]`
-- [ ] Add indexes on `token`, `tokenHash`, `expiresAt`, `email`
+- [x] Add relations to Organization and User
+- [x] Add unique constraint on `[organizationId, email]`
+- [x] Add indexes on `token`, `tokenHash`, `expiresAt`, `email`
 
 **Acceptance Criteria**:
-- Schema validates without errors
-- Migration runs successfully
-- Prisma client generates correctly
+
+- [x] Schema validates without errors
+- [x] Migration runs successfully
+- [x] Prisma client generates correctly
 
 ---
 
-### TASK-2.2.2: Update OrganizationMember Model
+### TASK-2.2.2: Update OrganizationMember Model ✅
+
 **Priority**: MEDIUM | **Type**: Database | **Estimated**: 1 hour
 **File**: `packages/database/prisma/schema.prisma`
 
 **Subtasks**:
-- [ ] Add `joinedAt` field (DateTime, default now)
-- [ ] Add `lastActiveAt` field (DateTime, optional)
-- [ ] Add `invitedById` field (UUID, optional, foreign key to User)
-- [ ] Add relation to User model for invitedBy
+
+- [x] Add `joinedAt` field (DateTime, default now)
+- [x] Add `lastActiveAt` field (DateTime, optional)
+- [x] Add `invitedById` field (UUID, optional, foreign key to User)
+- [x] Add relation to User model for invitedBy
 
 **Acceptance Criteria**:
-- Existing members not affected
-- New fields are optional/have defaults
-- Migration runs without data loss
+
+- [x] Existing members not affected
+- [x] New fields are optional/have defaults
+- [x] Migration runs without data loss
 
 ---
 
-### TASK-2.2.3: Update User Model for Invitation Relation
+### TASK-2.2.3: Update User Model for Invitation Relation ✅
+
 **Priority**: MEDIUM | **Type**: Database | **Estimated**: 30 minutes
 **File**: `packages/database/prisma/schema.prisma`
 
 **Subtasks**:
-- [ ] Add `sentInvitations` relation (OrganizationInvitation[])
-- [ ] Add `invitedMembers` relation (OrganizationMember[])
+
+- [x] Add `sentInvitations` relation (OrganizationInvitation[])
+- [x] Add `invitedMembers` relation (OrganizationMember[])
 
 **Acceptance Criteria**:
-- Relations work bidirectionally
-- No breaking changes to existing queries
+
+- [x] Relations work bidirectionally
+- [x] No breaking changes to existing queries
 
 ---
 
 ## Phase 1: Backend API Development (Week 1-2)
 
-### TASK-2.2.4: Create Invitation Module Structure
+### TASK-2.2.4: Create Invitation Module Structure ✅
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 1 hour
 **Directory**: `apps/api/src/invitations/`
 
 **Subtasks**:
-- [ ] Create `invitations.module.ts`
-- [ ] Create `invitations.service.ts`
-- [ ] Create `invitations.controller.ts`
-- [ ] Create `dto/create-invitation.dto.ts`
-- [ ] Create `dto/accept-invitation.dto.ts`
-- [ ] Create `dto/bulk-invitation.dto.ts`
-- [ ] Register module in `app.module.ts`
+
+- [x] Create `invitations.module.ts`
+- [x] Create `invitations.service.ts`
+- [x] Create `invitations.controller.ts`
+- [x] Create `dto/create-invitation.dto.ts`
+- [x] Create `dto/accept-invitation.dto.ts`
+- [x] Create `dto/bulk-invitation.dto.ts`
+- [x] Register module in `app.module.ts`
 
 **Acceptance Criteria**:
-- Module structure follows NestJS conventions
-- Module registers without errors
+
+- [x] Module structure follows NestJS conventions
+- [x] Module registers without errors
 
 ---
 
-### TASK-2.2.5: Implement Token Generation Utilities
+### TASK-2.2.5: Implement Token Generation Utilities ✅
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2 hours
 **File**: `apps/api/src/invitations/invitations.service.ts`
 
 **Subtasks**:
-- [ ] Implement `generateSecureToken()` using `crypto.randomBytes(32)`
-- [ ] Implement `hashToken()` for database storage
-- [ ] Implement `validateToken()` with timing-safe comparison
-- [ ] Implement `generateExpirationDate()` (7 days from now)
-- [ ] Add rate limiting for token validation (5 attempts/minute/IP)
+
+- [x] Implement `generateSecureToken()` using `crypto.randomBytes(32)`
+- [x] Implement `hashToken()` for database storage
+- [x] Implement `validateToken()` with timing-safe comparison
+- [x] Implement `generateExpirationDate()` (7 days from now)
+- [x] Add rate limiting for token validation (5 attempts/minute/IP)
 
 **Acceptance Criteria**:
-- Tokens are cryptographically secure (32+ bytes)
-- Plain tokens never stored in database
-- Validation resistant to timing attacks
+
+- [x] Tokens are cryptographically secure (32+ bytes)
+- [x] Plain tokens never stored in database
+- [x] Validation resistant to timing attacks
 
 ---
 
-### TASK-2.2.6: Implement Create Invitation Logic
+### TASK-2.2.6: Implement Create Invitation Logic ✅
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 3-4 hours
 **File**: `apps/api/src/invitations/invitations.service.ts`
 
 **Subtasks**:
-- [ ] Implement `createInvitation(orgId, dto, userId)` method
-- [ ] Check if email already has pending invitation
-- [ ] Check if user is already a member
-- [ ] Validate inviter has permission (OWNER or ADMIN)
-- [ ] Validate role assignment (can't assign higher than own role)
-- [ ] Generate secure token and hash
-- [ ] Create database record
-- [ ] Trigger email sending
+
+- [x] Implement `createInvitation(orgId, dto, userId)` method
+- [x] Check if email already has pending invitation
+- [x] Check if user is already a member
+- [x] Validate inviter has permission (OWNER or ADMIN)
+- [x] Validate role assignment (can't assign higher than own role)
+- [x] Generate secure token and hash
+- [x] Create database record
+- [x] Trigger email sending
 
 **Acceptance Criteria**:
-- Proper validation messages
-- Token generated and stored securely
-- Email sent on success
-- Audit log created
+
+- [x] Proper validation messages
+- [x] Token generated and stored securely
+- [x] Email sent on success
+- [x] Audit log created
 
 ---
 
-### TASK-2.2.7: Implement Accept Invitation Logic
+### TASK-2.2.7: Implement Accept Invitation Logic ✅
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 4 hours
 **File**: `apps/api/src/invitations/invitations.service.ts`
 
 **Subtasks**:
-- [ ] Implement `acceptInvitation(token, userData?)` method
-- [ ] Validate token exists and is not expired
-- [ ] Validate invitation not already accepted/declined
-- [ ] If user exists: add to organization
-- [ ] If new user: create account first, then add to organization
-- [ ] Mark invitation as accepted
-- [ ] Return organization details and auth tokens for new users
+
+- [x] Implement `acceptInvitation(token, userData?)` method
+- [x] Validate token exists and is not expired
+- [x] Validate invitation not already accepted/declined
+- [x] If user exists: add to organization
+- [x] If new user: create account first, then add to organization
+- [x] Mark invitation as accepted
+- [x] Return organization details and auth tokens for new users
 
 **Acceptance Criteria**:
-- Existing users can accept with just token
-- New users can register during acceptance
-- Proper error messages for invalid/expired tokens
-- Member added with correct role
+
+- [x] Existing users can accept with just token
+- [x] New users can register during acceptance
+- [x] Proper error messages for invalid/expired tokens
+- [x] Member added with correct role
 
 ---
 
-### TASK-2.2.8: Implement Decline Invitation Logic
+### TASK-2.2.8: Implement Decline Invitation Logic ✅
+
 **Priority**: MEDIUM | **Type**: Backend | **Estimated**: 1 hour
 **File**: `apps/api/src/invitations/invitations.service.ts`
 
 **Subtasks**:
-- [ ] Implement `declineInvitation(token)` method
-- [ ] Validate token exists and is not expired
-- [ ] Mark invitation as declined
-- [ ] Don't require authentication
+
+- [x] Implement `declineInvitation(token)` method
+- [x] Validate token exists and is not expired
+- [x] Mark invitation as declined
+- [x] Don't require authentication
 
 **Acceptance Criteria**:
-- Invitation marked as declined
-- Cannot decline already accepted invitation
+
+- [x] Invitation marked as declined
+- [x] Cannot decline already accepted invitation
 
 ---
 
-### TASK-2.2.9: Implement Invitation Management Methods
+### TASK-2.2.9: Implement Invitation Management Methods ✅
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 3 hours
 **File**: `apps/api/src/invitations/invitations.service.ts`
 
 **Subtasks**:
-- [ ] Implement `listInvitations(orgId, filters)` with pagination
-- [ ] Implement `getInvitationByToken(token)` for public view
-- [ ] Implement `resendInvitation(orgId, invitationId, userId)`
+
+- [x] Implement `listInvitations(orgId, filters)` with pagination
+- [x] Implement `getInvitationByToken(token)` for public view
+- [x] Implement `resendInvitation(orgId, invitationId, userId)`
   - Generate new token
   - Reset expiration
   - Send new email
-- [ ] Implement `cancelInvitation(orgId, invitationId, userId)`
-- [ ] Implement `getInvitationHistory(orgId)` for accepted/declined
+- [x] Implement `cancelInvitation(orgId, invitationId, userId)`
+- [x] Implement `getInvitationHistory(orgId)` for accepted/declined
 
 **Acceptance Criteria**:
-- List shows pending invitations with proper filtering
-- Resend generates new token with fresh expiry
-- Cancel removes pending invitation
+
+- [x] List shows pending invitations with proper filtering
+- [x] Resend generates new token with fresh expiry
+- [x] Cancel removes pending invitation
 
 ---
 
-### TASK-2.2.10: Create Invitation Controller Endpoints
+### TASK-2.2.10: Create Invitation Controller Endpoints ✅
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 3 hours
 **File**: `apps/api/src/invitations/invitations.controller.ts`
 
 **Subtasks**:
-- [ ] `POST /organizations/:id/invitations` - Create invitation (auth required)
-- [ ] `GET /organizations/:id/invitations` - List invitations (auth required)
-- [ ] `POST /organizations/:id/invitations/:invitationId/resend` - Resend (auth required)
-- [ ] `DELETE /organizations/:id/invitations/:invitationId` - Cancel (auth required)
-- [ ] `GET /invitations/:token` - Get details (public)
-- [ ] `POST /invitations/:token/accept` - Accept (public)
-- [ ] `POST /invitations/:token/decline` - Decline (public)
+
+- [x] `POST /organizations/:id/invitations` - Create invitation (auth required)
+- [x] `GET /organizations/:id/invitations` - List invitations (auth required)
+- [x] `POST /organizations/:id/invitations/:invitationId/resend` - Resend (auth required)
+- [x] `DELETE /organizations/:id/invitations/:invitationId` - Cancel (auth required)
+- [x] `GET /invitations/:token` - Get details (public)
+- [x] `POST /invitations/:token/accept` - Accept (public)
+- [x] `POST /invitations/:token/decline` - Decline (public)
 
 **Acceptance Criteria**:
-- Protected endpoints require auth guard
-- Public endpoints work without authentication
-- Proper DTO validation on all endpoints
-- Swagger documentation
+
+- [x] Protected endpoints require auth guard
+- [x] Public endpoints work without authentication
+- [x] Proper DTO validation on all endpoints
+- [x] Swagger documentation
 
 ---
 
-### TASK-2.2.11: Enhance Member Removal Service
+### TASK-2.2.11: Enhance Member Removal Service ✅
+
 **Priority**: MEDIUM | **Type**: Backend | **Estimated**: 2-3 hours
 **File**: `apps/api/src/organizations/organization.service.ts`
 
 **Subtasks**:
-- [ ] Implement `getMemberAssets(orgId, userId)` - count links, campaigns, tags
-- [ ] Implement `transferMemberAssets(orgId, fromUserId, toUserId)`
-- [ ] Enhance `removeMember()` to:
+
+- [x] Implement `getMemberAssets(orgId, userId)` - count links, campaigns, tags
+- [x] Implement `transferMemberAssets(orgId, fromUserId, toUserId)`
+- [x] Enhance `removeMember()` to:
   - Accept optional `transferAssetsTo` parameter
   - Prevent removing OWNER
   - Prevent ADMIN from removing other ADMINs
@@ -257,239 +293,274 @@ npx playwright test apps/web/e2e/member-invite-remove.spec.ts
   - Send notification email to removed member
 
 **Acceptance Criteria**:
-- Asset counts returned correctly
-- Assets can be transferred before removal
-- OWNER protected from removal
-- Audit log created
+
+- [x] Asset counts returned correctly
+- [x] Assets can be transferred before removal
+- [x] OWNER protected from removal
+- [x] Audit log created
 
 ---
 
-### TASK-2.2.12: Implement Bulk Invitation
+### TASK-2.2.12: Implement Bulk Invitation ✅
+
 **Priority**: LOW | **Type**: Backend | **Estimated**: 3 hours
 **File**: `apps/api/src/invitations/invitations.service.ts`
 
 **Subtasks**:
-- [ ] Implement `bulkInvite(orgId, emails[], role, personalMessage, userId)`
-- [ ] Validate all emails first, report issues
-- [ ] Skip duplicates and existing members
-- [ ] Process valid invitations
-- [ ] Return summary (successful/failed with reasons)
-- [ ] Add `POST /organizations/:id/invitations/bulk` endpoint
+
+- [x] Implement `bulkInvite(orgId, emails[], role, personalMessage, userId)`
+- [x] Validate all emails first, report issues
+- [x] Skip duplicates and existing members
+- [x] Process valid invitations
+- [x] Return summary (successful/failed with reasons)
+- [x] Add `POST /organizations/:id/invitations/bulk` endpoint
 
 **Acceptance Criteria**:
-- Batch processing completes
-- Invalid emails reported
-- Duplicates handled gracefully
-- Rate limiting applied (10/hour/org)
+
+- [x] Batch processing completes
+- [x] Invalid emails reported
+- [x] Duplicates handled gracefully
+- [x] Rate limiting applied (10/hour/org)
 
 ---
 
-### TASK-2.2.13: Create Invitation Email Template
+### TASK-2.2.13: Create Invitation Email Template ✅
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2-3 hours
 **File**: `apps/api/src/mail/mail.service.ts`
 
 **Subtasks**:
-- [ ] Create `sendInvitationEmail(params)` method
-- [ ] Include accept/decline links
-- [ ] Include organization name and logo
-- [ ] Include inviter name
-- [ ] Include role with permissions preview
-- [ ] Include personal message if provided
-- [ ] Include expiration date
-- [ ] Create HTML template file
+
+- [x] Create `sendInvitationEmail(params)` method
+- [x] Include accept/decline links
+- [x] Include organization name and logo
+- [x] Include inviter name
+- [x] Include role with permissions preview
+- [x] Include personal message if provided
+- [x] Include expiration date
+- [x] Create HTML template file
 
 **Acceptance Criteria**:
-- Email renders correctly in major clients
-- Accept/decline links work
-- All dynamic content displays
-- Mobile-friendly design
+
+- [x] Email renders correctly in major clients
+- [x] Accept/decline links work
+- [x] All dynamic content displays
+- [x] Mobile-friendly design
 
 ---
 
-### TASK-2.2.14: Create Member Removed Email Template
+### TASK-2.2.14: Create Member Removed Email Template ✅
+
 **Priority**: LOW | **Type**: Backend | **Estimated**: 1 hour
 **File**: `apps/api/src/mail/mail.service.ts`
 
 **Subtasks**:
-- [ ] Create `sendMemberRemovedEmail(params)` method
-- [ ] Include organization name
-- [ ] Include who removed them
-- [ ] Include asset transfer info if applicable
+
+- [x] Create `sendMemberRemovedEmail(params)` method
+- [x] Include organization name
+- [x] Include who removed them
+- [x] Include asset transfer info if applicable
 
 **Acceptance Criteria**:
-- Email is informative but not alarming
-- Renders correctly
+
+- [x] Email is informative but not alarming
+- [x] Renders correctly
 
 ---
 
 ## Phase 2: Frontend Development (Week 2-3)
 
-### TASK-2.2.15: Create Invitation Components Directory
+### TASK-2.2.15: Create Invitation Components Directory ✅
+
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 30 minutes
 **Directory**: `apps/web/components/invitation/`
 
 **Subtasks**:
-- [ ] Create directory structure
-- [ ] Create `index.ts` for exports
-- [ ] Plan component hierarchy
+
+- [x] Create directory structure
+- [x] Create `index.ts` for exports
+- [x] Plan component hierarchy
 
 ---
 
-### TASK-2.2.16: Build Enhanced Invite Member Dialog
+### TASK-2.2.16: Build Enhanced Invite Member Dialog ✅
+
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 3-4 hours
 **File**: `apps/web/components/invitation/InviteMemberDialog.tsx`
 
 **Subtasks**:
-- [ ] Create dialog using AlertDialog from shadcn/ui
-- [ ] Add email input with validation
-- [ ] Add role selector (filtered by current user role)
-- [ ] Add personal message textarea (optional, max 500 chars)
-- [ ] Add loading state for submit
-- [ ] Show success toast on completion
-- [ ] Show error messages for failures
-- [ ] Display pending invitations count in trigger
+
+- [x] Create dialog using AlertDialog from shadcn/ui
+- [x] Add email input with validation
+- [x] Add role selector (filtered by current user role)
+- [x] Add personal message textarea (optional, max 500 chars)
+- [x] Add loading state for submit
+- [x] Show success toast on completion
+- [x] Show error messages for failures
+- [x] Display pending invitations count in trigger
 
 **Acceptance Criteria**:
-- Form validates email format
-- Role options limited based on user's role
-- Submits successfully and shows feedback
+
+- [x] Form validates email format
+- [x] Role options limited based on user's role
+- [x] Submits successfully and shows feedback
 
 ---
 
-### TASK-2.2.17: Build Invitation Acceptance Page
+### TASK-2.2.17: Build Invitation Acceptance Page ✅
+
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 4-5 hours
 **File**: `apps/web/app/invitations/[token]/page.tsx`
 
 **Subtasks**:
-- [ ] Create page route with dynamic token
-- [ ] Fetch invitation details using public API
-- [ ] Display organization name and logo
-- [ ] Display inviter name
-- [ ] Display assigned role with permissions preview
-- [ ] Display personal message if provided
-- [ ] Show Accept and Decline buttons
-- [ ] Handle authenticated vs unauthenticated users
-- [ ] For new users: show registration form inline
-- [ ] Handle expired invitation state
-- [ ] Handle already accepted state
-- [ ] Handle invalid token state
-- [ ] Redirect to dashboard on successful accept
+
+- [x] Create page route with dynamic token
+- [x] Fetch invitation details using public API
+- [x] Display organization name and logo
+- [x] Display inviter name
+- [x] Display assigned role with permissions preview
+- [x] Display personal message if provided
+- [x] Show Accept and Decline buttons
+- [x] Handle authenticated vs unauthenticated users
+- [x] For new users: show registration form inline
+- [x] Handle expired invitation state
+- [x] Handle already accepted state
+- [x] Handle invalid token state
+- [x] Redirect to dashboard on successful accept
 
 **Acceptance Criteria**:
-- Page loads invitation details
-- States handled (pending/expired/accepted/declined/invalid)
-- Unauthenticated users can register and accept
-- Authenticated users can accept directly
+
+- [x] Page loads invitation details
+- [x] States handled (pending/expired/accepted/declined/invalid)
+- [x] Unauthenticated users can register and accept
+- [x] Authenticated users can accept directly
 
 ---
 
-### TASK-2.2.18: Build Pending Invitations List Component
+### TASK-2.2.18: Build Pending Invitations List Component ✅
+
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 3 hours
 **File**: `apps/web/components/invitation/PendingInvitationsList.tsx`
 
 **Subtasks**:
-- [ ] Create list component with table layout
-- [ ] Display email, role, expiry countdown for each
-- [ ] Add Resend button with confirmation
-- [ ] Add Cancel button with confirmation (AlertDialog)
-- [ ] Show loading skeleton during fetch
-- [ ] Show empty state when no invitations
-- [ ] Add status badge (pending/expired)
-- [ ] Add inviter name column
+
+- [x] Create list component with table layout
+- [x] Display email, role, expiry countdown for each
+- [x] Add Resend button with confirmation
+- [x] Add Cancel button with confirmation (AlertDialog)
+- [x] Show loading skeleton during fetch
+- [x] Show empty state when no invitations
+- [x] Add status badge (pending/expired)
+- [x] Add inviter name column
 
 **Acceptance Criteria**:
-- List displays all pending invitations
-- Actions work correctly
-- Expiry countdown updates
+
+- [x] List displays all pending invitations
+- [x] Actions work correctly
+- [x] Expiry countdown updates
 
 ---
 
-### TASK-2.2.19: Build Remove Member Dialog
+### TASK-2.2.19: Build Remove Member Dialog ✅
+
 **Priority**: MEDIUM | **Type**: Frontend | **Estimated**: 2-3 hours
 **File**: `apps/web/components/organization/RemoveMemberDialog.tsx`
 
 **Subtasks**:
-- [ ] Create AlertDialog for removal confirmation
-- [ ] Display member information
-- [ ] If member has assets, show count
-- [ ] Add transfer target dropdown (other members)
-- [ ] Add confirm/cancel buttons
-- [ ] Show loading state during removal
-- [ ] Show success toast after removal
+
+- [x] Create AlertDialog for removal confirmation
+- [x] Display member information
+- [x] If member has assets, show count
+- [x] Add transfer target dropdown (other members)
+- [x] Add confirm/cancel buttons
+- [x] Show loading state during removal
+- [x] Show success toast after removal
 
 **Acceptance Criteria**:
-- Confirmation required before removal
-- Assets can be transferred
-- Proper feedback shown
+
+- [x] Confirmation required before removal
+- [x] Assets can be transferred
+- [x] Proper feedback shown
 
 ---
 
-### TASK-2.2.20: Integrate Invitations Tab in Team Page
+### TASK-2.2.20: Integrate Invitations Tab in Team Page ✅
+
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 2 hours
 **File**: `apps/web/app/dashboard/settings/team/page.tsx`
 
 **Subtasks**:
-- [ ] Add tabs for "Members" and "Pending Invitations"
-- [ ] Integrate PendingInvitationsList in Invitations tab
-- [ ] Add invite button in header
-- [ ] Show invitation count badge on tab
-- [ ] Add status filter (pending/accepted/declined)
+
+- [x] Add tabs for "Members" and "Pending Invitations"
+- [x] Integrate PendingInvitationsList in Invitations tab
+- [x] Add invite button in header
+- [x] Show invitation count badge on tab
+- [x] Add status filter (pending/accepted/declined)
 
 **Acceptance Criteria**:
-- Both tabs work correctly
-- Invitations list shows and updates
-- Filters work
+
+- [x] Both tabs work correctly
+- [x] Invitations list shows and updates
+- [x] Filters work
 
 ---
 
-### TASK-2.2.21: Build Bulk Invite Dialog
+### TASK-2.2.21: Build Bulk Invite Dialog ✅
+
 **Priority**: LOW | **Type**: Frontend | **Estimated**: 3 hours
 **File**: `apps/web/components/invitation/BulkInviteDialog.tsx`
 
 **Subtasks**:
-- [ ] Create dialog for bulk invitation
-- [ ] Add textarea for comma/newline separated emails
-- [ ] Add role selector (applies to all)
-- [ ] Add optional personal message
-- [ ] Show validation preview before submit
-- [ ] Show progress during processing
-- [ ] Show results summary (success/failed counts)
+
+- [x] Create dialog for bulk invitation
+- [x] Add textarea for comma/newline separated emails
+- [x] Add role selector (applies to all)
+- [x] Add optional personal message
+- [x] Show validation preview before submit
+- [x] Show progress during processing
+- [x] Show results summary (success/failed counts)
 
 **Acceptance Criteria**:
-- Multiple emails can be entered
-- Validation shows before submit
-- Results displayed clearly
+
+- [x] Multiple emails can be entered
+- [x] Validation shows before submit
+- [x] Results displayed clearly
 
 ---
 
-### TASK-2.2.22: Add API Client Methods for Invitations
+### TASK-2.2.22: Add API Client Methods for Invitations ✅
+
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 2 hours
-**File**: `apps/web/lib/api/invitations.ts` (new)
+**File**: `apps/web/lib/api/invitations.ts` (created)
 
 **Subtasks**:
-- [ ] `createInvitation(orgId, data)` - POST /organizations/:id/invitations
-- [ ] `listInvitations(orgId, filters)` - GET /organizations/:id/invitations
-- [ ] `resendInvitation(orgId, invitationId)` - POST .../resend
-- [ ] `cancelInvitation(orgId, invitationId)` - DELETE
-- [ ] `getInvitationByToken(token)` - GET /invitations/:token (public)
-- [ ] `acceptInvitation(token, data?)` - POST /invitations/:token/accept
-- [ ] `declineInvitation(token)` - POST /invitations/:token/decline
-- [ ] `bulkInvite(orgId, data)` - POST .../bulk
+
+- [x] `createInvitation(orgId, data)` - POST /organizations/:id/invitations
+- [x] `listInvitations(orgId, filters)` - GET /organizations/:id/invitations
+- [x] `resendInvitation(orgId, invitationId)` - POST .../resend
+- [x] `cancelInvitation(orgId, invitationId)` - DELETE
+- [x] `getInvitationByToken(token)` - GET /invitations/:token (public)
+- [x] `acceptInvitation(token, data?)` - POST /invitations/:token/accept
+- [x] `declineInvitation(token)` - POST /invitations/:token/decline
+- [x] `bulkInvite(orgId, data)` - POST .../bulk
 
 **Acceptance Criteria**:
-- All API methods implemented
-- Proper error handling
-- Type safety with TypeScript
+
+- [x] All API methods implemented
+- [x] Proper error handling
+- [x] Type safety with TypeScript
 
 ---
 
 ## Phase 3: Testing (Week 3-4)
 
 ### TASK-2.2.23: Write Invitation Service Unit Tests
+
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 4 hours
 **File**: `apps/api/src/invitations/invitations.service.spec.ts`
 
 **Test Cases**:
+
 - [ ] `createInvitation` - should create with secure token
 - [ ] `createInvitation` - should fail if email already invited
 - [ ] `createInvitation` - should fail if user is member
@@ -506,16 +577,19 @@ npx playwright test apps/web/e2e/member-invite-remove.spec.ts
 - [ ] `validateToken` - timing-safe comparison works
 
 **Acceptance Criteria**:
+
 - All tests pass
 - Coverage > 80%
 
 ---
 
 ### TASK-2.2.24: Write Token Security Tests
+
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 2 hours
 **File**: `apps/api/src/invitations/token-security.spec.ts`
 
 **Test Cases**:
+
 - [ ] Should generate cryptographically secure tokens
 - [ ] Should generate tokens of sufficient length (32+ bytes)
 - [ ] Should never expose plain token in database
@@ -523,16 +597,19 @@ npx playwright test apps/web/e2e/member-invite-remove.spec.ts
 - [ ] Should rate limit validation attempts
 
 **Acceptance Criteria**:
+
 - Security tests pass
 - No plain tokens in database
 
 ---
 
 ### TASK-2.2.25: Write Member Removal Unit Tests
+
 **Priority**: MEDIUM | **Type**: Testing | **Estimated**: 2 hours
 **File**: `apps/api/src/organizations/member-removal.spec.ts`
 
 **Test Cases**:
+
 - [ ] `removeMember` - should remove member from organization
 - [ ] `removeMember` - should fail if trying to remove OWNER
 - [ ] `removeMember` - should fail if user not OWNER/ADMIN
@@ -541,16 +618,19 @@ npx playwright test apps/web/e2e/member-invite-remove.spec.ts
 - [ ] `getMemberAssets` - should return correct counts
 
 **Acceptance Criteria**:
+
 - All tests pass
 - Edge cases covered
 
 ---
 
 ### TASK-2.2.26: Write E2E Tests - Send Invitation
+
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 3 hours
 **File**: `apps/web/e2e/member-invite-remove.spec.ts`
 
 **Test Cases**:
+
 - [ ] MIR-001: Send invitation to new email
 - [ ] MIR-002: Cannot invite existing member
 - [ ] MIR-003: Cannot invite duplicate email
@@ -559,16 +639,19 @@ npx playwright test apps/web/e2e/member-invite-remove.spec.ts
 - [ ] MIR-006: ADMIN cannot invite as OWNER role
 
 **Acceptance Criteria**:
+
 - All tests pass
 - Tests use proper fixtures
 
 ---
 
 ### TASK-2.2.27: Write E2E Tests - Accept Invitation
+
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 3 hours
 **File**: `apps/web/e2e/member-invite-remove.spec.ts`
 
 **Test Cases**:
+
 - [ ] MIR-010: Accept invitation as existing user
 - [ ] MIR-011: Accept invitation as new user
 - [ ] MIR-012: Cannot accept expired invitation
@@ -576,45 +659,54 @@ npx playwright test apps/web/e2e/member-invite-remove.spec.ts
 - [ ] MIR-014: Invitation shows correct details
 
 **Acceptance Criteria**:
+
 - All tests pass
 - User registration flow tested
 
 ---
 
 ### TASK-2.2.28: Write E2E Tests - Decline Invitation
+
 **Priority**: MEDIUM | **Type**: Testing | **Estimated**: 1 hour
 **File**: `apps/web/e2e/member-invite-remove.spec.ts`
 
 **Test Cases**:
+
 - [ ] MIR-020: Decline invitation
 - [ ] MIR-021: Cannot decline already declined invitation
 
 **Acceptance Criteria**:
+
 - All tests pass
 
 ---
 
 ### TASK-2.2.29: Write E2E Tests - Manage Invitations
+
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 2 hours
 **File**: `apps/web/e2e/member-invite-remove.spec.ts`
 
 **Test Cases**:
+
 - [ ] MIR-030: View pending invitations list
 - [ ] MIR-031: Resend invitation
 - [ ] MIR-032: Cancel invitation
 - [ ] MIR-033: Filter invitations by status
 
 **Acceptance Criteria**:
+
 - All tests pass
 - List refreshes correctly after actions
 
 ---
 
 ### TASK-2.2.30: Write E2E Tests - Remove Member
+
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 3 hours
 **File**: `apps/web/e2e/member-invite-remove.spec.ts`
 
 **Test Cases**:
+
 - [ ] MIR-040: Remove member from organization
 - [ ] MIR-041: Cannot remove OWNER
 - [ ] MIR-042: ADMIN cannot remove other ADMIN
@@ -623,37 +715,44 @@ npx playwright test apps/web/e2e/member-invite-remove.spec.ts
 - [ ] MIR-045: OWNER cannot self-remove
 
 **Acceptance Criteria**:
+
 - All tests pass
 - Asset transfer verified
 
 ---
 
 ### TASK-2.2.31: Write E2E Tests - Bulk Invitation (Optional)
+
 **Priority**: LOW | **Type**: Testing | **Estimated**: 2 hours
 **File**: `apps/web/e2e/member-invite-remove.spec.ts`
 
 **Test Cases**:
+
 - [ ] MIR-050: Bulk invite by list
 - [ ] MIR-051: Bulk invite with CSV
 - [ ] MIR-052: Bulk invite validation
 
 **Acceptance Criteria**:
+
 - All tests pass
 - Invalid emails handled
 
 ---
 
 ### TASK-2.2.32: Write Integration Tests
+
 **Priority**: MEDIUM | **Type**: Testing | **Estimated**: 2 hours
 **File**: `apps/api/src/invitations/invitations.integration.spec.ts`
 
 **Test Cases**:
+
 - [ ] Email delivery verification (mocked)
 - [ ] Token flow end-to-end
 - [ ] Permission cascade validation
 - [ ] Audit trail verification
 
 **Acceptance Criteria**:
+
 - Integration points tested
 - No flaky tests
 
@@ -661,17 +760,18 @@ npx playwright test apps/web/e2e/member-invite-remove.spec.ts
 
 ## Summary
 
-| Phase | Task Count | Priority Breakdown |
-|-------|------------|-------------------|
-| Database & Schema | 3 tasks | 1 HIGH, 2 MEDIUM |
-| Backend API | 11 tasks | 8 HIGH, 2 MEDIUM, 1 LOW |
-| Frontend | 8 tasks | 5 HIGH, 1 MEDIUM, 2 LOW |
-| Testing | 10 tasks | 6 HIGH, 3 MEDIUM, 1 LOW |
-| **Total** | **32 tasks** | **20 HIGH, 8 MEDIUM, 4 LOW** |
+| Phase             | Task Count   | Priority Breakdown           |
+| ----------------- | ------------ | ---------------------------- |
+| Database & Schema | 3 tasks      | 1 HIGH, 2 MEDIUM             |
+| Backend API       | 11 tasks     | 8 HIGH, 2 MEDIUM, 1 LOW      |
+| Frontend          | 8 tasks      | 5 HIGH, 1 MEDIUM, 2 LOW      |
+| Testing           | 10 tasks     | 6 HIGH, 3 MEDIUM, 1 LOW      |
+| **Total**         | **32 tasks** | **20 HIGH, 8 MEDIUM, 4 LOW** |
 
 ### Estimated Total Time: 55-65 hours
 
 ### Critical Path (Must complete first):
+
 1. TASK-2.2.1: Database schema (OrganizationInvitation)
 2. TASK-2.2.4: Module structure
 3. TASK-2.2.5: Token utilities
@@ -681,6 +781,7 @@ npx playwright test apps/web/e2e/member-invite-remove.spec.ts
 7. TASK-2.2.17: Acceptance page
 
 ### Dependencies Graph:
+
 ```
 TASK-2.2.1 (Schema)
     └── TASK-2.2.4 (Module)

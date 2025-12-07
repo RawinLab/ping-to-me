@@ -1,8 +1,9 @@
 # Module 2.1: Organization/Workspace - Development Todolist
 
 ## Overview
+
 - **Module**: 2.1 Organization/Workspace
-- **Current Progress**: ~40-50%
+- **Current Progress**: ~85% (Implementation complete, testing in progress)
 - **Total Estimated Time**: 5 weeks
 - **Priority**: HIGH
 
@@ -10,28 +11,33 @@
 
 ## Phase 1: Database & Schema (Week 1)
 
-### TASK-2.1.1: Update Organization Model in Prisma Schema
+### TASK-2.1.1: Update Organization Model in Prisma Schema ✅
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2 hours
 **File**: `packages/database/prisma/schema.prisma`
 
 **Subtasks**:
-- [ ] Add `logo` field (String, optional) to Organization model
-- [ ] Add `description` field (String, optional) to Organization model
-- [ ] Add `timezone` field (String, default "UTC") to Organization model
-- [ ] Add `dataRetentionDays` field (Int, default 90) to Organization model
-- [ ] Add `defaultDomainId` field (String, optional) to Organization model
+
+- [x] Add `logo` field (String, optional) to Organization model
+- [x] Add `description` field (String, optional) to Organization model
+- [x] Add `timezone` field (String, default "UTC") to Organization model
+- [x] Add `dataRetentionDays` field (Int, default 90) to Organization model
+- [x] Add `defaultDomainId` field (String, optional) to Organization model
 
 **Acceptance Criteria**:
-- Schema compiles without errors
-- Migration runs successfully
+
+- [x] Schema compiles without errors
+- [x] Migration runs successfully
 
 ---
 
-### TASK-2.1.2: Create OrganizationSettings Model
+### TASK-2.1.2: Create OrganizationSettings Model ✅
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2 hours
 **File**: `packages/database/prisma/schema.prisma`
 
 **Schema to add**:
+
 ```prisma
 model OrganizationSettings {
   id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -49,17 +55,20 @@ model OrganizationSettings {
 ```
 
 **Subtasks**:
-- [ ] Add OrganizationSettings model to schema
-- [ ] Add relation to Organization model
-- [ ] Run `pnpm --filter @pingtome/database db:generate`
+
+- [x] Add OrganizationSettings model to schema
+- [x] Add relation to Organization model
+- [x] Run `pnpm --filter @pingtome/database db:generate`
 
 ---
 
-### TASK-2.1.3: Create OrganizationInvitation Model
+### TASK-2.1.3: Create OrganizationInvitation Model ✅
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2 hours
 **File**: `packages/database/prisma/schema.prisma`
 
 **Schema to add**:
+
 ```prisma
 model OrganizationInvitation {
   id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -85,262 +94,303 @@ model OrganizationInvitation {
 ```
 
 **Subtasks**:
-- [ ] Add OrganizationInvitation model to schema
-- [ ] Add relations to Organization and User models
-- [ ] Create indexes for performance
+
+- [x] Add OrganizationInvitation model to schema
+- [x] Add relations to Organization and User models
+- [x] Create indexes for performance
 
 ---
 
-### TASK-2.1.4: Update OrganizationMember Model
+### TASK-2.1.4: Update OrganizationMember Model ✅
+
 **Priority**: MEDIUM | **Type**: Backend | **Estimated**: 1 hour
 **File**: `packages/database/prisma/schema.prisma`
 
 **Fields to add**:
-- [ ] Add `joinedAt` field (DateTime, default now())
-- [ ] Add `lastActiveAt` field (DateTime, optional)
-- [ ] Add `invitedById` field (String, optional)
-- [ ] Add relation to invitedBy User
+
+- [x] Add `joinedAt` field (DateTime, default now())
+- [x] Add `lastActiveAt` field (DateTime, optional)
+- [x] Add `invitedById` field (String, optional)
+- [x] Add relation to invitedBy User
 
 ---
 
-### TASK-2.1.5: Run Database Migration
+### TASK-2.1.5: Run Database Migration ✅
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 30 minutes
 
 **Commands**:
+
 ```bash
 pnpm --filter @pingtome/database db:generate
 pnpm --filter @pingtome/database db:push
 ```
 
 **Subtasks**:
-- [ ] Generate Prisma client
-- [ ] Push schema to database
-- [ ] Verify migration success
-- [ ] Test database connections
+
+- [x] Generate Prisma client
+- [x] Push schema to database
+- [x] Verify migration success
+- [x] Test database connections
 
 ---
 
 ## Phase 1: Backend API Development (Week 1-2)
 
-### TASK-2.1.6: Create Organization Settings DTOs
+### TASK-2.1.6: Create Organization Settings DTOs ✅
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2 hours
 **Files**: `apps/api/src/organizations/dto/`
 
 **Subtasks**:
-- [ ] Create `get-organization-settings.dto.ts`
-- [ ] Create `update-organization-settings.dto.ts`
-- [ ] Add validation decorators (class-validator)
-- [ ] Add Swagger documentation
+
+- [x] Create `get-organization-settings.dto.ts`
+- [x] Create `update-organization-settings.dto.ts`
+- [x] Add validation decorators (class-validator)
+- [x] Add Swagger documentation
 
 ---
 
-### TASK-2.1.7: Implement Organization Settings Service Methods
+### TASK-2.1.7: Implement Organization Settings Service Methods ✅
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 4 hours
 **File**: `apps/api/src/organizations/organization.service.ts`
 
 **Methods to implement**:
-- [ ] `getSettings(orgId: string, userId: string): Promise<OrganizationSettings>`
-- [ ] `updateSettings(orgId: string, userId: string, dto: UpdateSettingsDto): Promise<OrganizationSettings>`
-- [ ] `createDefaultSettings(orgId: string): Promise<OrganizationSettings>`
+
+- [x] `getSettings(orgId: string, userId: string): Promise<OrganizationSettings>`
+- [x] `updateSettings(orgId: string, userId: string, dto: UpdateSettingsDto): Promise<OrganizationSettings>`
+- [x] `createDefaultSettings(orgId: string): Promise<OrganizationSettings>`
 
 **Acceptance Criteria**:
-- OWNER/ADMIN can update settings
-- Default settings created when org is created
-- Proper error handling
+
+- [x] OWNER/ADMIN can update settings
+- [x] Default settings created when org is created
+- [x] Proper error handling
 
 ---
 
-### TASK-2.1.8: Implement Logo Upload Service
+### TASK-2.1.8: Implement Logo Upload Service ✅
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 4 hours
 **File**: `apps/api/src/organizations/organization.service.ts`
 
 **Methods to implement**:
-- [ ] `uploadLogo(orgId: string, userId: string, file: Express.Multer.File): Promise<string>`
-- [ ] `deleteLogo(orgId: string, userId: string): Promise<void>`
+
+- [x] `uploadLogo(orgId: string, userId: string, file: Express.Multer.File): Promise<string>`
+- [x] `deleteLogo(orgId: string, userId: string): Promise<void>`
 
 **Subtasks**:
-- [ ] Configure Multer for file upload
-- [ ] Validate file type (png, jpg, webp)
-- [ ] Validate file size (max 2MB)
-- [ ] Store file (local or cloud storage)
-- [ ] Delete old logo when uploading new
-- [ ] Return logo URL
+
+- [x] Configure Multer for file upload
+- [x] Validate file type (png, jpg, webp)
+- [x] Validate file size (max 2MB)
+- [x] Store file (local or cloud storage)
+- [x] Delete old logo when uploading new
+- [x] Return logo URL
 
 ---
 
-### TASK-2.1.9: Create Organization Settings Controller Endpoints
+### TASK-2.1.9: Create Organization Settings Controller Endpoints ✅
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 3 hours
 **File**: `apps/api/src/organizations/organization.controller.ts`
 
 **Endpoints to add**:
-- [ ] `GET /organizations/:id/settings` - Get org settings
-- [ ] `PATCH /organizations/:id/settings` - Update org settings
-- [ ] `POST /organizations/:id/logo` - Upload logo
-- [ ] `DELETE /organizations/:id/logo` - Remove logo
+
+- [x] `GET /organizations/:id/settings` - Get org settings
+- [x] `PATCH /organizations/:id/settings` - Update org settings
+- [x] `POST /organizations/:id/logo` - Upload logo
+- [x] `DELETE /organizations/:id/logo` - Remove logo
 
 **Subtasks**:
-- [ ] Add JwtAuthGuard
-- [ ] Add permission checks (OWNER/ADMIN)
-- [ ] Add Swagger documentation
-- [ ] Add validation pipes
+
+- [x] Add JwtAuthGuard
+- [x] Add permission checks (OWNER/ADMIN)
+- [x] Add Swagger documentation
+- [x] Add validation pipes
 
 ---
 
-### TASK-2.1.10: Create Invitation Service
+### TASK-2.1.10: Create Invitation Service ✅
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 6 hours
-**File**: `apps/api/src/organizations/invitation.service.ts` (new file)
+**File**: `apps/api/src/invitations/invitations.service.ts` (created)
 
 **Methods to implement**:
-- [ ] `createInvitation(orgId: string, inviterId: string, dto: CreateInvitationDto): Promise<Invitation>`
-- [ ] `listPendingInvitations(orgId: string): Promise<Invitation[]>`
-- [ ] `getInvitationByToken(token: string): Promise<Invitation>`
-- [ ] `acceptInvitation(token: string, userId?: string): Promise<void>`
-- [ ] `declineInvitation(token: string): Promise<void>`
-- [ ] `resendInvitation(invitationId: string): Promise<void>`
-- [ ] `cancelInvitation(invitationId: string): Promise<void>`
-- [ ] `generateSecureToken(): string` - Using crypto.randomBytes
+
+- [x] `createInvitation(orgId: string, inviterId: string, dto: CreateInvitationDto): Promise<Invitation>`
+- [x] `listPendingInvitations(orgId: string): Promise<Invitation[]>`
+- [x] `getInvitationByToken(token: string): Promise<Invitation>`
+- [x] `acceptInvitation(token: string, userId?: string): Promise<void>`
+- [x] `declineInvitation(token: string): Promise<void>`
+- [x] `resendInvitation(invitationId: string): Promise<void>`
+- [x] `cancelInvitation(invitationId: string): Promise<void>`
+- [x] `generateSecureToken(): string` - Using crypto.randomBytes
 
 **Business Logic**:
-- [ ] Token expiration: 7 days
-- [ ] Send email on invitation
-- [ ] Check if email already invited
-- [ ] Check if user already a member
-- [ ] Create user account if not exists on accept
+
+- [x] Token expiration: 7 days
+- [x] Send email on invitation
+- [x] Check if email already invited
+- [x] Check if user already a member
+- [x] Create user account if not exists on accept
 
 ---
 
-### TASK-2.1.11: Integrate Email Service for Invitations
+### TASK-2.1.11: Integrate Email Service for Invitations ✅
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 3 hours
 **File**: `apps/api/src/mail/mail.service.ts`
 
 **Methods to add**:
-- [ ] `sendInvitationEmail(email: string, orgName: string, inviterName: string, token: string, personalMessage?: string): Promise<void>`
+
+- [x] `sendInvitationEmail(email: string, orgName: string, inviterName: string, token: string, personalMessage?: string): Promise<void>`
 
 **Subtasks**:
-- [ ] Create invitation email template
-- [ ] Include accept/decline links
-- [ ] Include organization name and inviter name
-- [ ] Handle personal message
+
+- [x] Create invitation email template
+- [x] Include accept/decline links
+- [x] Include organization name and inviter name
+- [x] Handle personal message
 
 ---
 
-### TASK-2.1.12: Create Invitation Controller Endpoints
+### TASK-2.1.12: Create Invitation Controller Endpoints ✅
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 4 hours
-**File**: `apps/api/src/organizations/invitation.controller.ts` (new file)
+**File**: `apps/api/src/invitations/invitations.controller.ts` (created)
 
 **Endpoints to add**:
-- [ ] `POST /organizations/:id/invitations` - Send invitation
-- [ ] `GET /organizations/:id/invitations` - List pending invitations
-- [ ] `POST /organizations/:id/invitations/:invId/resend` - Resend invitation
-- [ ] `DELETE /organizations/:id/invitations/:invId` - Cancel invitation
-- [ ] `POST /invitations/:token/accept` - Accept invitation (public)
-- [ ] `POST /invitations/:token/decline` - Decline invitation (public)
-- [ ] `GET /invitations/:token` - Get invitation details (public)
+
+- [x] `POST /organizations/:id/invitations` - Send invitation
+- [x] `GET /organizations/:id/invitations` - List pending invitations
+- [x] `POST /organizations/:id/invitations/:invId/resend` - Resend invitation
+- [x] `DELETE /organizations/:id/invitations/:invId` - Cancel invitation
+- [x] `POST /invitations/:token/accept` - Accept invitation (public)
+- [x] `POST /invitations/:token/decline` - Decline invitation (public)
+- [x] `GET /invitations/:token` - Get invitation details (public)
 
 ---
 
-### TASK-2.1.13: Enhance Member Management Service
+### TASK-2.1.13: Enhance Member Management Service ✅
+
 **Priority**: MEDIUM | **Type**: Backend | **Estimated**: 4 hours
 **File**: `apps/api/src/organizations/organization.service.ts`
 
 **Methods to update/add**:
-- [ ] `getMembers()` - Include joinedAt, lastActiveAt, linksCount
-- [ ] `transferOwnership(orgId: string, currentOwnerId: string, newOwnerId: string): Promise<void>`
-- [ ] `updateMemberLastActive(orgId: string, userId: string): Promise<void>`
-- [ ] `getMemberLinksCount(orgId: string, userId: string): Promise<number>`
+
+- [x] `getMembers()` - Include joinedAt, lastActiveAt, linksCount
+- [x] `transferOwnership(orgId: string, currentOwnerId: string, newOwnerId: string): Promise<void>`
+- [x] `updateMemberLastActive(orgId: string, userId: string): Promise<void>`
+- [x] `getMemberLinksCount(orgId: string, userId: string): Promise<number>`
 
 ---
 
-### TASK-2.1.14: Add Transfer Ownership Endpoint
+### TASK-2.1.14: Add Transfer Ownership Endpoint ✅
+
 **Priority**: HIGH | **Type**: Backend | **Estimated**: 2 hours
 **File**: `apps/api/src/organizations/organization.controller.ts`
 
 **Endpoint**:
-- [ ] `POST /organizations/:id/transfer-ownership`
+
+- [x] `POST /organizations/:id/transfer-ownership`
 
 **Business Logic**:
-- [ ] Only OWNER can transfer
-- [ ] New owner must be existing member
-- [ ] Previous owner becomes ADMIN
+
+- [x] Only OWNER can transfer
+- [x] New owner must be existing member
+- [x] Previous owner becomes ADMIN
 
 ---
 
 ## Phase 2: Frontend Development (Week 2-3)
 
-### TASK-2.1.15: Create Organization Settings Page
+### TASK-2.1.15: Create Organization Settings Page ✅
+
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 6 hours
 **File**: `apps/web/app/dashboard/organization/[id]/settings/page.tsx` (new)
 
 **Components to build**:
-- [ ] GeneralSettingsCard (name, slug, description)
-- [ ] BrandingCard (logo upload)
-- [ ] PreferencesCard (timezone, data retention, default domain)
-- [ ] SecurityCard (2FA enforcement, session timeout) - OWNER only
-- [ ] DangerZoneCard (transfer ownership, delete org) - OWNER only
+
+- [x] GeneralSettingsCard (name, slug, description)
+- [x] BrandingCard (logo upload)
+- [x] PreferencesCard (timezone, data retention, default domain)
+- [x] SecurityCard (2FA enforcement, session timeout) - OWNER only
+- [x] DangerZoneCard (transfer ownership, delete org) - OWNER only
 
 **Subtasks**:
-- [ ] Create form with react-hook-form
-- [ ] Add validation with zod
-- [ ] Implement logo upload with preview
-- [ ] Add timezone picker component
-- [ ] Add success/error toasts
-- [ ] Handle loading states
+
+- [x] Create form with react-hook-form
+- [x] Add validation with zod
+- [x] Implement logo upload with preview
+- [x] Add timezone picker component
+- [x] Add success/error toasts
+- [x] Handle loading states
 
 ---
 
-### TASK-2.1.16: Create Logo Upload Component
+### TASK-2.1.16: Create Logo Upload Component ✅
+
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 3 hours
-**File**: `apps/web/components/organization/LogoUploader.tsx` (new)
+**File**: `apps/web/components/organization/LogoUploader.tsx` (created)
 
 **Features**:
-- [ ] Drag and drop support
-- [ ] File type validation (png, jpg, webp)
-- [ ] File size validation (max 2MB)
-- [ ] Preview before upload
-- [ ] Remove logo option
-- [ ] Loading state during upload
+
+- [x] Drag and drop support
+- [x] File type validation (png, jpg, webp)
+- [x] File size validation (max 2MB)
+- [x] Preview before upload
+- [x] Remove logo option
+- [x] Loading state during upload
 
 ---
 
-### TASK-2.1.17: Create Invitation Management UI
+### TASK-2.1.17: Create Invitation Management UI ✅
+
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 6 hours
-**File**: `apps/web/components/organization/InvitationManager.tsx` (new)
+**File**: `apps/web/components/invitation/` (created)
 
 **Components to build**:
-- [ ] InviteMemberDialog (enhanced from existing)
-  - [ ] Email input
-  - [ ] Role selector
-  - [ ] Personal message textarea
-  - [ ] Validation
-- [ ] PendingInvitationsList
-  - [ ] Invitation cards with email, role, expiry
-  - [ ] Resend button
-  - [ ] Cancel button with confirmation
+
+- [x] InviteMemberDialog (enhanced from existing)
+  - [x] Email input
+  - [x] Role selector
+  - [x] Personal message textarea
+  - [x] Validation
+- [x] PendingInvitationsList
+  - [x] Invitation cards with email, role, expiry
+  - [x] Resend button
+  - [x] Cancel button with confirmation
 
 ---
 
-### TASK-2.1.18: Create Invitation Acceptance Page
+### TASK-2.1.18: Create Invitation Acceptance Page ✅
+
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 4 hours
-**File**: `apps/web/app/invitations/[token]/page.tsx` (new)
+**File**: `apps/web/app/invitations/[token]/page.tsx` (created)
 
 **Features**:
-- [ ] Display organization info (name, logo)
-- [ ] Display inviter info (name)
-- [ ] Display assigned role
-- [ ] Display personal message if exists
-- [ ] Accept button
-- [ ] Decline button
-- [ ] Registration form for new users
-- [ ] Handle expired/invalid tokens
-- [ ] Redirect after acceptance
+
+- [x] Display organization info (name, logo)
+- [x] Display inviter info (name)
+- [x] Display assigned role
+- [x] Display personal message if exists
+- [x] Accept button
+- [x] Decline button
+- [x] Registration form for new users
+- [x] Handle expired/invalid tokens
+- [x] Redirect after acceptance
 
 ---
 
-### TASK-2.1.19: Create OrganizationContext
+### TASK-2.1.19: Create OrganizationContext ✅
+
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 4 hours
-**File**: `apps/web/contexts/OrganizationContext.tsx` (new)
+**File**: `apps/web/contexts/OrganizationContext.tsx` (created)
 
 **Context to provide**:
+
 ```typescript
 interface OrganizationContextType {
   currentOrg: Organization | null;
@@ -352,63 +402,73 @@ interface OrganizationContextType {
 ```
 
 **Subtasks**:
-- [ ] Create context and provider
-- [ ] Persist selected org in localStorage
-- [ ] Auto-select first org on login
-- [ ] Add to app layout
+
+- [x] Create context and provider
+- [x] Persist selected org in localStorage
+- [x] Auto-select first org on login
+- [x] Add to app layout
 
 ---
 
-### TASK-2.1.20: Create Organization Switcher Component
+### TASK-2.1.20: Create Organization Switcher Component ✅
+
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 4 hours
-**File**: `apps/web/components/organization/OrganizationSwitcher.tsx` (new)
+**File**: `apps/web/components/organization/OrganizationSwitcher.tsx` (created)
 
 **Features**:
-- [ ] Current org badge with logo/name
-- [ ] Dropdown with all user's organizations
-- [ ] Show role in each organization
-- [ ] "Create Organization" button
-- [ ] Keyboard shortcut support (optional)
+
+- [x] Current org badge with logo/name
+- [x] Dropdown with all user's organizations
+- [x] Show role in each organization
+- [x] "Create Organization" button
+- [x] Keyboard shortcut support (optional)
 
 **Subtasks**:
-- [ ] Add to dashboard header
-- [ ] Handle org switching
-- [ ] Show loading state
+
+- [x] Add to dashboard header
+- [x] Handle org switching
+- [x] Show loading state
 
 ---
 
-### TASK-2.1.21: Update Dashboard to Use Organization Context
+### TASK-2.1.21: Update Dashboard to Use Organization Context ✅
+
 **Priority**: HIGH | **Type**: Frontend | **Estimated**: 3 hours
 **Files**: `apps/web/app/dashboard/*`
 
 **Subtasks**:
-- [ ] Update dashboard to show current org name
-- [ ] Filter data by current organization
-- [ ] Update links page to use org context
-- [ ] Update analytics to use org context
+
+- [x] Update dashboard to show current org name
+- [x] Filter data by current organization
+- [x] Update links page to use org context
+- [x] Update analytics to use org context
 
 ---
 
-### TASK-2.1.22: Enhance Member List UI
+### TASK-2.1.22: Enhance Member List UI ✅
+
 **Priority**: MEDIUM | **Type**: Frontend | **Estimated**: 3 hours
 **File**: `apps/web/app/dashboard/organization/page.tsx`
 
 **Enhancements**:
-- [ ] Show join date for each member
-- [ ] Show last active date
-- [ ] Show links count per member
-- [ ] Add transfer ownership button (OWNER only)
-- [ ] Add role-based UI hiding
+
+- [x] Show join date for each member
+- [x] Show last active date
+- [x] Show links count per member
+- [x] Add transfer ownership button (OWNER only)
+- [x] Add role-based UI hiding
 
 ---
 
 ## Phase 3: Testing (Week 4-5)
 
 ### TASK-2.1.23: Write Unit Tests for Organization Service
+
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 4 hours
 **File**: `apps/api/src/organizations/__tests__/organization.service.spec.ts`
 
 **Test cases**:
+
 - [ ] Organization CRUD operations
 - [ ] Settings CRUD operations
 - [ ] Permission checks
@@ -418,10 +478,12 @@ interface OrganizationContextType {
 ---
 
 ### TASK-2.1.24: Write Unit Tests for Invitation Service
+
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 4 hours
 **File**: `apps/api/src/organizations/__tests__/invitation.service.spec.ts`
 
 **Test cases**:
+
 - [ ] Create invitation with token
 - [ ] Accept invitation (existing user)
 - [ ] Accept invitation (new user)
@@ -434,10 +496,12 @@ interface OrganizationContextType {
 ---
 
 ### TASK-2.1.25: Write E2E Tests for Organization CRUD
+
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 4 hours
 **File**: `apps/web/e2e/organization-workspace.spec.ts` (new)
 
 **Test cases**:
+
 - [ ] ORG-WS-001: Create new organization
 - [ ] ORG-WS-002: Update organization name
 - [ ] ORG-WS-003: Update organization slug
@@ -447,10 +511,12 @@ interface OrganizationContextType {
 ---
 
 ### TASK-2.1.26: Write E2E Tests for Organization Settings
+
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 3 hours
 **File**: `apps/web/e2e/organization-workspace.spec.ts`
 
 **Test cases**:
+
 - [ ] ORG-WS-010: Upload organization logo
 - [ ] ORG-WS-011: Update organization timezone
 - [ ] ORG-WS-012: Update organization description
@@ -459,10 +525,12 @@ interface OrganizationContextType {
 ---
 
 ### TASK-2.1.27: Write E2E Tests for Member Invitation
+
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 4 hours
 **File**: `apps/web/e2e/organization-workspace.spec.ts`
 
 **Test cases**:
+
 - [ ] ORG-WS-020: Send invitation to new member
 - [ ] ORG-WS-021: Accept invitation
 - [ ] ORG-WS-022: Decline invitation
@@ -474,10 +542,12 @@ interface OrganizationContextType {
 ---
 
 ### TASK-2.1.28: Write E2E Tests for Member Management
+
 **Priority**: MEDIUM | **Type**: Testing | **Estimated**: 3 hours
 **File**: `apps/web/e2e/organization-workspace.spec.ts`
 
 **Test cases**:
+
 - [ ] ORG-WS-030: View member list
 - [ ] ORG-WS-031: Update member role
 - [ ] ORG-WS-032: Remove member
@@ -488,10 +558,12 @@ interface OrganizationContextType {
 ---
 
 ### TASK-2.1.29: Write E2E Tests for Organization Switcher
+
 **Priority**: MEDIUM | **Type**: Testing | **Estimated**: 2 hours
 **File**: `apps/web/e2e/organization-workspace.spec.ts`
 
 **Test cases**:
+
 - [ ] ORG-WS-040: Switch between organizations
 - [ ] ORG-WS-041: Persist selected organization
 - [ ] ORG-WS-042: Organization context in dashboard
@@ -499,10 +571,12 @@ interface OrganizationContextType {
 ---
 
 ### TASK-2.1.30: Write E2E Tests for Role-Based Access
+
 **Priority**: HIGH | **Type**: Testing | **Estimated**: 3 hours
 **File**: `apps/web/e2e/organization-workspace.spec.ts`
 
 **Test cases**:
+
 - [ ] ORG-WS-050: OWNER can access all settings
 - [ ] ORG-WS-051: ADMIN can manage members
 - [ ] ORG-WS-052: EDITOR cannot manage members
@@ -513,21 +587,26 @@ interface OrganizationContextType {
 ## Summary
 
 ### Total Tasks: 30
+
 ### By Priority:
+
 - HIGH: 22 tasks
 - MEDIUM: 8 tasks
 
 ### By Type:
+
 - Backend: 14 tasks
 - Frontend: 8 tasks
 - Testing: 8 tasks
 
 ### Dependencies:
+
 1. TASK-2.1.1 to 2.1.5 must complete before backend API tasks
 2. Backend API tasks must complete before frontend integration
 3. Frontend components must complete before E2E tests
 
 ### Commands Reference:
+
 ```bash
 # Database
 pnpm --filter @pingtome/database db:generate
