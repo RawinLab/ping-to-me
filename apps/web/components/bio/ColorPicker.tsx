@@ -8,8 +8,13 @@ import {
   Input,
   Label,
   Button,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from "@pingtome/ui";
 import { cn } from "@pingtome/ui";
+import { Check, Pipette, Palette } from "lucide-react";
 
 interface ColorPickerProps {
   value: string;
@@ -18,24 +23,24 @@ interface ColorPickerProps {
 }
 
 const PREDEFINED_COLORS = [
-  "#EF4444", // Red
-  "#F97316", // Orange
-  "#F59E0B", // Amber
-  "#EAB308", // Yellow
-  "#84CC16", // Lime
-  "#22C55E", // Green
-  "#14B8A6", // Teal
-  "#06B6D4", // Cyan
-  "#3B82F6", // Blue
-  "#8B5CF6", // Violet
-  "#A855F7", // Purple
-  "#EC4899", // Pink
-  "#000000", // Black
-  "#374151", // Gray-700
-  "#6B7280", // Gray-500
-  "#9CA3AF", // Gray-400
-  "#D1D5DB", // Gray-300
-  "#F3F4F6", // Gray-100
+  { color: "#EF4444", name: "Red" },
+  { color: "#F97316", name: "Orange" },
+  { color: "#F59E0B", name: "Amber" },
+  { color: "#EAB308", name: "Yellow" },
+  { color: "#84CC16", name: "Lime" },
+  { color: "#22C55E", name: "Green" },
+  { color: "#14B8A6", name: "Teal" },
+  { color: "#06B6D4", name: "Cyan" },
+  { color: "#3B82F6", name: "Blue" },
+  { color: "#8B5CF6", name: "Violet" },
+  { color: "#A855F7", name: "Purple" },
+  { color: "#EC4899", name: "Pink" },
+  { color: "#000000", name: "Black" },
+  { color: "#374151", name: "Dark Gray" },
+  { color: "#6B7280", name: "Gray" },
+  { color: "#9CA3AF", name: "Light Gray" },
+  { color: "#D1D5DB", name: "Silver" },
+  { color: "#F3F4F6", name: "White" },
 ];
 
 function isValidHexColor(color: string): boolean {
@@ -64,6 +69,7 @@ function normalizeHexColor(color: string): string {
 export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
   const [hexInput, setHexInput] = React.useState(value);
   const [open, setOpen] = React.useState(false);
+  const [recentColors, setRecentColors] = React.useState<string[]>([]);
 
   // Sync hexInput with value when popover opens
   React.useEffect(() => {
@@ -75,6 +81,12 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
   const handleColorSelect = (color: string) => {
     onChange(color);
     setHexInput(color);
+
+    // Add to recent colors (max 6, no duplicates)
+    setRecentColors((prev) => {
+      const updated = [color, ...prev.filter((c) => c.toUpperCase() !== color.toUpperCase())];
+      return updated.slice(0, 6);
+    });
   };
 
   const handleHexInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,6 +112,8 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
     }
   };
 
+  const isInputValid = isValidHexColor(hexInput);
+
   return (
     <div className="space-y-2">
       {label && <Label>{label}</Label>}
@@ -108,64 +122,169 @@ export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
           <Button
             type="button"
             variant="outline"
-            className="w-full justify-start gap-2"
+            className="w-full justify-start gap-2 hover:bg-gray-50 transition-colors"
           >
             <div
-              className="h-6 w-6 rounded border border-gray-300"
-              style={{ backgroundColor: value }}
-            />
+              className="h-6 w-6 rounded border border-gray-300 shadow-sm relative overflow-hidden"
+              style={{
+                backgroundImage:
+                  'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)',
+                backgroundSize: '8px 8px',
+                backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px'
+              }}
+            >
+              <div
+                className="absolute inset-0"
+                style={{ backgroundColor: value }}
+              />
+            </div>
             <span className="flex-1 text-left font-mono text-sm">{value}</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-64" align="start">
+        <PopoverContent className="w-64 p-4 shadow-lg" align="start">
           <div className="space-y-4">
-            <div>
-              <h4 className="font-medium text-sm mb-3">Preset Colors</h4>
-              <div className="grid grid-cols-6 gap-2">
-                {PREDEFINED_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    className={cn(
-                      "h-8 w-8 rounded border-2 transition-all hover:scale-110",
-                      value.toUpperCase() === color.toUpperCase()
-                        ? "border-primary ring-2 ring-primary ring-offset-2"
-                        : "border-gray-300 hover:border-gray-400"
-                    )}
-                    style={{ backgroundColor: color }}
-                    onClick={() => handleColorSelect(color)}
-                    title={color}
-                  />
-                ))}
+            {/* Recently Used Colors */}
+            {recentColors.length > 0 && (
+              <div className="pb-3 border-b border-gray-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <Palette className="h-4 w-4 text-gray-600" />
+                  <h4 className="font-semibold text-sm text-gray-700">Recent</h4>
+                </div>
+                <div className="flex gap-2">
+                  {recentColors.map((color) => (
+                    <TooltipProvider key={color}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            className={cn(
+                              "h-8 w-8 rounded-md border-2 transition-all hover:scale-110 relative overflow-hidden shadow-sm",
+                              value.toUpperCase() === color.toUpperCase()
+                                ? "border-primary ring-2 ring-primary ring-offset-1"
+                                : "border-gray-300 hover:border-gray-400"
+                            )}
+                            style={{
+                              backgroundImage:
+                                'linear-gradient(45deg, #e5e5e5 25%, transparent 25%), linear-gradient(-45deg, #e5e5e5 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e5e5 75%), linear-gradient(-45deg, transparent 75%, #e5e5e5 75%)',
+                              backgroundSize: '6px 6px',
+                              backgroundPosition: '0 0, 0 3px, 3px -3px, -3px 0px'
+                            }}
+                            onClick={() => handleColorSelect(color)}
+                          >
+                            <div
+                              className="absolute inset-0"
+                              style={{ backgroundColor: color }}
+                            />
+                            {value.toUpperCase() === color.toUpperCase() && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <Check className="h-4 w-4 text-white drop-shadow-md" strokeWidth={3} />
+                              </div>
+                            )}
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs font-mono">{color}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
+                </div>
               </div>
+            )}
+
+            {/* Preset Colors */}
+            <div>
+              <h4 className="font-semibold text-sm mb-3 text-gray-700">Preset Colors</h4>
+              <TooltipProvider>
+                <div className="grid grid-cols-6 gap-2">
+                  {PREDEFINED_COLORS.map(({ color, name }) => (
+                    <Tooltip key={color}>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className={cn(
+                            "h-8 w-8 rounded-md border-2 transition-all hover:scale-110 relative shadow-sm",
+                            value.toUpperCase() === color.toUpperCase()
+                              ? "border-primary ring-2 ring-primary ring-offset-1"
+                              : "border-gray-300 hover:border-gray-400"
+                          )}
+                          style={{ backgroundColor: color }}
+                          onClick={() => handleColorSelect(color)}
+                        >
+                          {value.toUpperCase() === color.toUpperCase() && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Check className="h-4 w-4 text-white drop-shadow-md" strokeWidth={3} />
+                            </div>
+                          )}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">{name}</p>
+                        <p className="text-xs font-mono text-gray-400">{color}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ))}
+                </div>
+              </TooltipProvider>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="hex-input" className="text-sm">
-                Custom Hex Color
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  id="hex-input"
-                  type="text"
-                  placeholder="#FF5500"
-                  value={hexInput}
-                  onChange={handleHexInputChange}
-                  onBlur={handleHexInputBlur}
-                  className="flex-1 font-mono text-sm"
-                />
-                <div
-                  className="h-10 w-10 rounded border border-gray-300 flex-shrink-0"
-                  style={{
-                    backgroundColor: isValidHexColor(hexInput)
-                      ? normalizeHexColor(hexInput)
-                      : "#fff",
-                  }}
-                />
+            {/* Custom Hex Color */}
+            <div className="space-y-2 pt-3 border-t border-gray-200">
+              <div className="flex items-center gap-2">
+                <Pipette className="h-4 w-4 text-gray-600" />
+                <Label htmlFor="hex-input" className="text-sm font-semibold text-gray-700">
+                  Custom Hex
+                </Label>
               </div>
-              {hexInput && !isValidHexColor(hexInput) && (
-                <p className="text-xs text-red-500">
-                  Invalid hex color format
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    id="hex-input"
+                    type="text"
+                    placeholder="#FF5500"
+                    value={hexInput}
+                    onChange={handleHexInputChange}
+                    onBlur={handleHexInputBlur}
+                    className={cn(
+                      "font-mono text-sm pr-8",
+                      hexInput && !isInputValid && "border-red-500 focus-visible:ring-red-500"
+                    )}
+                  />
+                  {hexInput && (
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                      {isInputValid ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <div className="h-4 w-4 rounded-full bg-red-500 flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">!</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div
+                  className="h-10 w-10 rounded-md border-2 border-gray-300 flex-shrink-0 shadow-sm relative overflow-hidden"
+                  style={{
+                    backgroundImage:
+                      'linear-gradient(45deg, #e5e5e5 25%, transparent 25%), linear-gradient(-45deg, #e5e5e5 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e5e5 75%), linear-gradient(-45deg, transparent 75%, #e5e5e5 75%)',
+                    backgroundSize: '6px 6px',
+                    backgroundPosition: '0 0, 0 3px, 3px -3px, -3px 0px'
+                  }}
+                >
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundColor: isInputValid
+                        ? normalizeHexColor(hexInput)
+                        : "#fff",
+                    }}
+                  />
+                </div>
+              </div>
+              {hexInput && !isInputValid && (
+                <p className="text-xs text-red-500 font-medium flex items-center gap-1">
+                  <span className="inline-block w-1 h-1 rounded-full bg-red-500"></span>
+                  Invalid hex color format (e.g., #FF5500)
                 </p>
               )}
             </div>

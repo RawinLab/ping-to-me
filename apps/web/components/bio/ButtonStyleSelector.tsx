@@ -1,7 +1,8 @@
 "use client";
 
-import { Label, Switch } from "@pingtome/ui";
+import { Label, Switch, Card, CardContent } from "@pingtome/ui";
 import { cn } from "@pingtome/ui";
+import { Check, Layers, MousePointer2 } from "lucide-react";
 
 type ButtonStyle = "rounded" | "square" | "pill";
 
@@ -16,78 +17,130 @@ export function ButtonStyleSelector({
   buttonShadow,
   onChange,
 }: ButtonStyleSelectorProps) {
-  const styles: { value: ButtonStyle; label: string; roundedClass: string }[] = [
-    { value: "rounded", label: "Rounded", roundedClass: "rounded-md" },
-    { value: "square", label: "Square", roundedClass: "rounded-none" },
-    { value: "pill", label: "Pill", roundedClass: "rounded-full" },
+  const styles: {
+    value: ButtonStyle;
+    label: string;
+    roundedClass: string;
+    gradientClass: string;
+  }[] = [
+    {
+      value: "rounded",
+      label: "Rounded",
+      roundedClass: "rounded-md",
+      gradientClass: "bg-gradient-to-r from-blue-500 to-purple-600"
+    },
+    {
+      value: "square",
+      label: "Square",
+      roundedClass: "rounded-none",
+      gradientClass: "bg-gradient-to-r from-emerald-500 to-teal-600"
+    },
+    {
+      value: "pill",
+      label: "Pill",
+      roundedClass: "rounded-full",
+      gradientClass: "bg-gradient-to-r from-pink-500 to-rose-600"
+    },
   ];
 
   return (
-    <div className="space-y-4">
-      <div>
-        <Label className="text-sm font-medium mb-3 block">Button Style</Label>
-        <div className="grid grid-cols-3 gap-3">
-          {styles.map((style) => (
-            <button
-              key={style.value}
-              type="button"
-              onClick={() => onChange({ buttonStyle: style.value })}
+    <div className="space-y-6">
+      {/* Section Header */}
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-2">
+          <MousePointer2 className="h-4 w-4 text-primary" />
+          <h3 className="text-base font-semibold text-gray-900">Button Style</h3>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Choose how your buttons should look on your bio page
+        </p>
+      </div>
+
+      {/* Style Options */}
+      <div className="grid grid-cols-3 gap-4">
+        {styles.map((style) => (
+          <button
+            key={style.value}
+            type="button"
+            onClick={() => onChange({ buttonStyle: style.value })}
+            className={cn(
+              "group relative flex flex-col items-center gap-3 p-4 border-2 transition-all duration-200",
+              "hover:scale-[1.02] active:scale-[0.98]",
+              style.roundedClass,
+              buttonStyle === style.value
+                ? "border-primary bg-primary/5 shadow-lg shadow-primary/20"
+                : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-md"
+            )}
+          >
+            {/* Visual Preview Button */}
+            <div
               className={cn(
-                "relative flex flex-col items-center gap-3 p-4 border-2 transition-all hover:border-gray-400",
+                "w-full py-2.5 px-4 text-white text-sm font-medium transition-all duration-200",
+                "group-hover:shadow-lg group-hover:scale-105",
                 style.roundedClass,
-                buttonStyle === style.value
-                  ? "border-primary bg-primary/5"
-                  : "border-gray-200 bg-white"
+                style.gradientClass,
+                buttonShadow && "shadow-md"
               )}
             >
-              {/* Visual Preview Button */}
-              <div
-                className={cn(
-                  "w-full py-2.5 px-4 bg-gray-900 text-white text-sm font-medium transition-shadow",
-                  style.roundedClass,
-                  buttonShadow && "shadow-md"
-                )}
-              >
-                Preview
-              </div>
+              Preview
+            </div>
 
-              {/* Label */}
-              <span
-                className={cn(
-                  "text-xs font-medium",
-                  buttonStyle === style.value
-                    ? "text-primary"
-                    : "text-gray-600"
-                )}
-              >
-                {style.label}
-              </span>
-
-              {/* Selected Indicator */}
-              {buttonStyle === style.value && (
-                <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />
+            {/* Label */}
+            <span
+              className={cn(
+                "text-sm font-semibold transition-colors",
+                buttonStyle === style.value
+                  ? "text-primary"
+                  : "text-gray-700 group-hover:text-gray-900"
               )}
-            </button>
-          ))}
-        </div>
+            >
+              {style.label}
+            </span>
+
+            {/* Selected Indicator - Animated Checkmark */}
+            {buttonStyle === style.value && (
+              <div className="absolute top-2 right-2 flex items-center justify-center h-5 w-5 rounded-full bg-primary shadow-sm animate-in zoom-in-50 duration-200">
+                <Check className="h-3 w-3 text-white" strokeWidth={3} />
+              </div>
+            )}
+          </button>
+        ))}
       </div>
 
       {/* Shadow Toggle */}
-      <div className="flex items-center justify-between p-4 border rounded-md bg-gray-50">
-        <div className="space-y-0.5">
-          <Label htmlFor="button-shadow" className="text-sm font-medium cursor-pointer">
-            Button Shadow
-          </Label>
-          <p className="text-xs text-muted-foreground">
-            Add a subtle shadow effect to buttons
-          </p>
-        </div>
-        <Switch
-          id="button-shadow"
-          checked={buttonShadow}
-          onCheckedChange={(checked) => onChange({ buttonShadow: checked })}
-        />
-      </div>
+      <Card className={cn(
+        "transition-all duration-200 hover:shadow-md",
+        buttonShadow && "border-primary/20 bg-primary/5"
+      )}>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-start gap-3 flex-1">
+              <div className={cn(
+                "p-2 rounded-lg transition-colors",
+                buttonShadow ? "bg-primary/10 text-primary" : "bg-gray-100 text-gray-600"
+              )}>
+                <Layers className="h-4 w-4" />
+              </div>
+              <div className="space-y-1 flex-1">
+                <Label
+                  htmlFor="button-shadow"
+                  className="text-sm font-semibold cursor-pointer text-gray-900"
+                >
+                  Button Shadow
+                </Label>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Add depth with a subtle shadow effect
+                </p>
+              </div>
+            </div>
+            <Switch
+              id="button-shadow"
+              checked={buttonShadow}
+              onCheckedChange={(checked) => onChange({ buttonShadow: checked })}
+            />
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
