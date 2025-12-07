@@ -10,7 +10,7 @@
 | Phase | Status | Commit |
 |-------|--------|--------|
 | Phase 1: Core Bio Page | ✅ Completed | `7e86fa4` |
-| Phase 2: Theme System | 🔄 In Progress | - |
+| Phase 2: Theme System | ✅ Completed | `fdc0901` |
 | Phase 3: Drag-and-Drop | ⏳ Pending | - |
 | Phase 4: Social Links | ⏳ Pending | - |
 | Phase 5: Analytics | ⏳ Pending | - |
