@@ -9,6 +9,7 @@ import { nanoid } from "nanoid";
 import { toDataURL } from "qrcode";
 import { QrCodeService } from "../qr/qr.service";
 import { AuditService } from "../audit/audit.service";
+import { QuotaService } from "../quota/quota.service";
 
 @Injectable()
 export class LinksService {
@@ -16,6 +17,7 @@ export class LinksService {
     private prisma: PrismaService,
     private qrCodeService: QrCodeService,
     private auditService: AuditService,
+    private quotaService: QuotaService,
   ) {}
 
   async create(userId: string, dto: CreateLinkDto): Promise<LinkResponse> {
@@ -26,7 +28,21 @@ export class LinksService {
       throw new BadRequestException("Invalid URL format");
     }
 
-    // 2. Check for blocked domains
+    // 2. Check quota before creating link
+    if (dto.organizationId) {
+      const quotaCheck = await this.quotaService.checkQuota(dto.organizationId, 'links');
+      if (!quotaCheck.allowed) {
+        throw new ForbiddenException({
+          code: 'QUOTA_EXCEEDED',
+          message: 'Monthly link limit reached. Please upgrade your plan.',
+          currentUsage: quotaCheck.currentUsage,
+          limit: quotaCheck.limit,
+          upgradeUrl: '/pricing',
+        });
+      }
+    }
+
+    // 3. Check for blocked domains
     const url = new URL(dto.originalUrl);
     const domain = url.hostname;
     const blocked = await this.prisma.blockedDomain.findUnique({
@@ -37,7 +53,7 @@ export class LinksService {
       throw new ForbiddenException("This domain is blocked");
     }
 
-    // 3. Generate or use custom slug
+    // 4. Generate or use custom slug
     let slug = dto.slug;
     if (slug) {
       // Check for reserved slugs
@@ -78,7 +94,7 @@ export class LinksService {
       }
     }
 
-    // 4. Create Link
+    // 5. Create Link
     const link = await this.prisma.link.create({
       data: {
         originalUrl: dto.originalUrl,
@@ -93,14 +109,20 @@ export class LinksService {
         redirectType: dto.redirectType || 301,
         deepLinkFallback: dto.deepLinkFallback,
         userId,
+        organizationId: dto.organizationId || null,
         status: LinkStatus.ACTIVE,
       },
     });
 
-    // 5. Sync to Cloudflare KV
+    // 6. Increment usage tracking
+    if (dto.organizationId) {
+      await this.quotaService.incrementUsage(dto.organizationId, 'links');
+    }
+
+    // 7. Sync to Cloudflare KV
     await this.syncToKv(link);
 
-    // 6. Audit log - link created (async, non-blocking)
+    // 8. Audit log - link created (async, non-blocking)
     this.auditService
       .logLinkEvent(
         userId,
@@ -121,7 +143,7 @@ export class LinksService {
       )
       .catch((err) => console.error("Audit log failed:", err));
 
-    // 7. Return response with QR options
+    // 9. Return response with QR options
     return this.mapToResponse(link, {
       qrColor: dto.qrColor,
       qrLogo: dto.qrLogo,
@@ -276,6 +298,11 @@ export class LinksService {
     await this.deleteFromKv(link.slug);
 
     const deleted = await this.prisma.link.delete({ where: { id } });
+
+    // Decrement usage tracking if link belonged to an organization
+    if (link.organizationId) {
+      await this.quotaService.decrementUsage(link.organizationId, 'links');
+    }
 
     // Audit log - link deleted (async, non-blocking)
     this.auditService

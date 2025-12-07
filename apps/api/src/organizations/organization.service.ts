@@ -7,6 +7,7 @@ import {
 import { PrismaService } from "../prisma/prisma.service";
 import { MemberRole } from "@pingtome/database";
 import { AuditService } from "../audit/audit.service";
+import { QuotaService } from "../quota/quota.service";
 import { UpdateOrganizationSettingsDto } from "./dto/organization-settings.dto";
 import { UpdateOrganizationDto } from "./dto/update-organization.dto";
 
@@ -15,6 +16,7 @@ export class OrganizationService {
   constructor(
     private prisma: PrismaService,
     private auditService: AuditService,
+    private quotaService: QuotaService,
   ) {}
 
   // Organization CRUD
@@ -476,7 +478,19 @@ export class OrganizationService {
       );
     }
 
-    // 3. Add member
+    // 3. Check quota before adding member
+    const quotaCheck = await this.quotaService.checkQuota(orgId, "members");
+    if (!quotaCheck.allowed) {
+      throw new ForbiddenException({
+        code: "QUOTA_EXCEEDED",
+        message: "Team member limit reached. Please upgrade your plan.",
+        currentUsage: quotaCheck.currentUsage,
+        limit: quotaCheck.limit,
+        upgradeUrl: "/pricing",
+      });
+    }
+
+    // 4. Add member
     const newMember = await this.prisma.organizationMember.create({
       data: {
         userId: user.id,

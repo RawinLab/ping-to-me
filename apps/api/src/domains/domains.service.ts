@@ -1,15 +1,31 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, ForbiddenException } from "@nestjs/common";
 import { PrismaClient } from "@pingtome/database";
 import * as dns from "dns/promises";
 import { AuditService } from "../audit/audit.service";
+import { QuotaService } from "../quota/quota.service";
 
 @Injectable()
 export class DomainService {
   private prisma = new PrismaClient();
 
-  constructor(private readonly auditService: AuditService) {}
+  constructor(
+    private readonly auditService: AuditService,
+    private quotaService: QuotaService,
+  ) {}
 
   async addDomain(userId: string, orgId: string, hostname: string) {
+    // Check quota before adding domain
+    const quotaCheck = await this.quotaService.checkQuota(orgId, 'domains');
+    if (!quotaCheck.allowed) {
+      throw new ForbiddenException({
+        code: 'QUOTA_EXCEEDED',
+        message: 'Custom domain limit reached. Please upgrade your plan.',
+        currentUsage: quotaCheck.currentUsage,
+        limit: quotaCheck.limit,
+        upgradeUrl: '/pricing',
+      });
+    }
+
     // Verify org membership (simplified for now, ideally check OrganizationMember)
     // const member = await this.prisma.organizationMember.findUnique(...)
 
