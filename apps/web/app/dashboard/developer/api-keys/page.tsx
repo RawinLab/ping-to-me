@@ -26,6 +26,19 @@ import {
   TableHeader,
   TableRow,
   Badge,
+  Checkbox,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Calendar,
+  Textarea,
 } from "@pingtome/ui";
 import {
   Plus,
@@ -41,14 +54,34 @@ import {
   ExternalLink,
   ShieldCheck,
   Terminal,
+  ChevronDown,
+  Info,
+  Calendar as CalendarIcon,
+  Shield,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 
 interface ApiKeyData {
   id: string;
   name: string;
   createdAt: string;
   lastUsedAt?: string;
+  scopes: string[];
+  ipWhitelist?: string[];
+  rateLimit?: number;
+  expiresAt?: string;
+}
+
+interface ScopeOption {
+  value: string;
+  label: string;
+  description: string;
+}
+
+interface ScopesData {
+  [resource: string]: {
+    scopes: ScopeOption[];
+  };
 }
 
 const developerNavItems = [
@@ -61,10 +94,21 @@ export default function ApiKeysPage() {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
+  // Scopes
+  const [availableScopes, setAvailableScopes] = useState<ScopesData>({});
+  const [loadingScopes, setLoadingScopes] = useState(true);
+
   // Create dialog
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
+  const [selectedScopes, setSelectedScopes] = useState<string[]>([]);
   const [creating, setCreating] = useState(false);
+
+  // Advanced settings
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [ipWhitelist, setIpWhitelist] = useState("");
+  const [rateLimit, setRateLimit] = useState("");
+  const [expiresAt, setExpiresAt] = useState<Date | undefined>();
 
   // New key display
   const [newKey, setNewKey] = useState("");
@@ -72,6 +116,7 @@ export default function ApiKeysPage() {
 
   useEffect(() => {
     fetchApiKeys();
+    fetchScopes();
   }, []);
 
   const fetchApiKeys = async () => {
@@ -85,19 +130,58 @@ export default function ApiKeysPage() {
     }
   };
 
+  const fetchScopes = async () => {
+    try {
+      const res = await apiRequest("/developer/api-keys/scopes");
+      setAvailableScopes(res || {});
+    } catch (error) {
+      console.error("Failed to fetch scopes");
+    } finally {
+      setLoadingScopes(false);
+    }
+  };
+
   const handleCreate = async () => {
     if (!newKeyName.trim()) return;
+    if (selectedScopes.length === 0) {
+      alert("Please select at least one scope");
+      return;
+    }
 
     setCreating(true);
     try {
+      const body: any = {
+        name: newKeyName,
+        scopes: selectedScopes,
+      };
+
+      // Add optional fields if provided
+      if (ipWhitelist.trim()) {
+        body.ipWhitelist = ipWhitelist.split("\n").map((ip) => ip.trim()).filter(Boolean);
+      }
+      if (rateLimit) {
+        body.rateLimit = parseInt(rateLimit, 10);
+      }
+      if (expiresAt) {
+        body.expiresAt = expiresAt.toISOString();
+      }
+
       const res = await apiRequest("/developer/api-keys", {
         method: "POST",
-        body: JSON.stringify({ name: newKeyName }),
+        body: JSON.stringify(body),
       });
 
       setNewKey(res.key);
       setShowNewKey(true);
+
+      // Reset form
       setNewKeyName("");
+      setSelectedScopes([]);
+      setIpWhitelist("");
+      setRateLimit("");
+      setExpiresAt(undefined);
+      setShowAdvanced(false);
+
       setCreateDialogOpen(false);
       fetchApiKeys();
     } catch (error) {
@@ -128,6 +212,33 @@ export default function ApiKeysPage() {
     await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const toggleScope = (scope: string) => {
+    setSelectedScopes((prev) =>
+      prev.includes(scope) ? prev.filter((s) => s !== scope) : [...prev, scope]
+    );
+  };
+
+  const isExpiringSoon = (expiryDate: string) => {
+    const days = differenceInDays(new Date(expiryDate), new Date());
+    return days >= 0 && days <= 7;
+  };
+
+  const isExpired = (expiryDate: string) => {
+    return new Date(expiryDate) < new Date();
+  };
+
+  const getScopeColor = (scope: string) => {
+    if (scope === "admin") return "bg-red-100 text-red-700 border-red-200";
+    if (scope.includes("delete")) return "bg-orange-100 text-orange-700 border-orange-200";
+    if (scope.includes("create") || scope.includes("update")) return "bg-blue-100 text-blue-700 border-blue-200";
+    if (scope.includes("read")) return "bg-slate-100 text-slate-700 border-slate-200";
+    return "bg-purple-100 text-purple-700 border-purple-200";
+  };
+
+  const getScopeLabel = (scope: string) => {
+    return scope.replace(":", " ");
   };
 
   if (loading) {
@@ -194,7 +305,7 @@ export default function ApiKeysPage() {
                     Create API Key
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center">
@@ -203,14 +314,16 @@ export default function ApiKeysPage() {
                       <div>
                         <DialogTitle>Create API Key</DialogTitle>
                         <DialogDescription>
-                          Give your key a name to identify it later.
+                          Configure your API key with specific permissions and settings.
                         </DialogDescription>
                       </div>
                     </div>
                   </DialogHeader>
-                  <div className="space-y-4 py-4">
+
+                  <div className="space-y-6 py-4">
+                    {/* Key Name */}
                     <div className="space-y-2">
-                      <Label htmlFor="name" className="text-slate-700">Key Name</Label>
+                      <Label htmlFor="name" className="text-slate-700 font-medium">Key Name</Label>
                       <Input
                         id="name"
                         placeholder="e.g., Production Server, Mobile App"
@@ -219,18 +332,190 @@ export default function ApiKeysPage() {
                         className="h-11 rounded-lg"
                       />
                     </div>
+
+                    {/* Scopes Section */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-blue-600" />
+                        <Label className="text-slate-700 font-medium">Permissions (Scopes)</Label>
+                      </div>
+                      <p className="text-sm text-slate-500">
+                        Select the permissions this API key should have. Choose only what&apos;s needed.
+                      </p>
+
+                      {loadingScopes ? (
+                        <div className="p-4 bg-slate-50 rounded-lg">
+                          <p className="text-sm text-slate-500">Loading scopes...</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 border border-slate-200 rounded-lg p-4 max-h-80 overflow-y-auto">
+                          {Object.entries(availableScopes).map(([resource, { scopes }]) => (
+                            <div key={resource} className="space-y-2">
+                              <h4 className="font-semibold text-sm text-slate-700 capitalize border-b pb-1">
+                                {resource}
+                              </h4>
+                              <div className="grid grid-cols-2 gap-2">
+                                {scopes.map((scope) => (
+                                  <TooltipProvider key={scope.value}>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <div className="flex items-start gap-2 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                                          <Checkbox
+                                            id={scope.value}
+                                            checked={selectedScopes.includes(scope.value)}
+                                            onCheckedChange={() => toggleScope(scope.value)}
+                                            className={scope.value === "admin" ? "border-red-500" : ""}
+                                          />
+                                          <div className="flex-1">
+                                            <label
+                                              htmlFor={scope.value}
+                                              className="text-sm font-medium leading-none cursor-pointer flex items-center gap-1"
+                                            >
+                                              {scope.label}
+                                              {scope.value === "admin" && (
+                                                <Badge className="ml-1 bg-red-100 text-red-700 border-0 text-xs">
+                                                  Full Access
+                                                </Badge>
+                                              )}
+                                            </label>
+                                          </div>
+                                        </div>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="right" className="max-w-xs">
+                                        <p className="text-xs">{scope.description}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {selectedScopes.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                          <span className="text-xs font-medium text-blue-700">Selected:</span>
+                          {selectedScopes.map((scope) => (
+                            <Badge
+                              key={scope}
+                              className={`text-xs border ${getScopeColor(scope)}`}
+                            >
+                              {getScopeLabel(scope)}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Advanced Settings */}
+                    <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-between rounded-lg hover:bg-slate-100"
+                        >
+                          <span className="text-sm font-medium">Advanced Settings (Optional)</span>
+                          <ChevronDown
+                            className={`h-4 w-4 transition-transform ${showAdvanced ? "rotate-180" : ""}`}
+                          />
+                        </Button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="space-y-4 pt-4">
+                        {/* IP Whitelist */}
+                        <div className="space-y-2">
+                          <Label htmlFor="ipWhitelist" className="text-slate-700">
+                            IP Whitelist
+                          </Label>
+                          <p className="text-xs text-slate-500">
+                            Restrict API key usage to specific IP addresses (one per line)
+                          </p>
+                          <Textarea
+                            id="ipWhitelist"
+                            placeholder="192.168.1.1&#10;10.0.0.1"
+                            value={ipWhitelist}
+                            onChange={(e) => setIpWhitelist(e.target.value)}
+                            className="rounded-lg font-mono text-sm"
+                            rows={3}
+                          />
+                        </div>
+
+                        {/* Rate Limit */}
+                        <div className="space-y-2">
+                          <Label htmlFor="rateLimit" className="text-slate-700">
+                            Rate Limit (requests per minute)
+                          </Label>
+                          <Input
+                            id="rateLimit"
+                            type="number"
+                            placeholder="e.g., 100"
+                            value={rateLimit}
+                            onChange={(e) => setRateLimit(e.target.value)}
+                            className="h-11 rounded-lg"
+                            min="1"
+                          />
+                        </div>
+
+                        {/* Expiration Date */}
+                        <div className="space-y-2">
+                          <Label className="text-slate-700">Expiration Date</Label>
+                          <p className="text-xs text-slate-500">
+                            Set when this API key should automatically expire
+                          </p>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full justify-start text-left font-normal h-11 rounded-lg"
+                              >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {expiresAt ? format(expiresAt, "PPP") : "No expiration"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={expiresAt}
+                                onSelect={setExpiresAt}
+                                disabled={(date) => date < new Date()}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          {expiresAt && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setExpiresAt(undefined)}
+                              className="text-xs text-slate-500 hover:text-slate-700"
+                            >
+                              Clear expiration
+                            </Button>
+                          )}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </div>
+
                   <DialogFooter>
                     <Button
                       variant="outline"
-                      onClick={() => setCreateDialogOpen(false)}
+                      onClick={() => {
+                        setCreateDialogOpen(false);
+                        setNewKeyName("");
+                        setSelectedScopes([]);
+                        setIpWhitelist("");
+                        setRateLimit("");
+                        setExpiresAt(undefined);
+                        setShowAdvanced(false);
+                      }}
                       className="rounded-lg"
                     >
                       Cancel
                     </Button>
                     <Button
                       onClick={handleCreate}
-                      disabled={creating || !newKeyName.trim()}
+                      disabled={creating || !newKeyName.trim() || selectedScopes.length === 0}
                       className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600"
                     >
                       {creating ? "Creating..." : "Create Key"}
@@ -301,8 +586,9 @@ export default function ApiKeysPage() {
                     <TableHeader>
                       <TableRow className="bg-slate-50/50">
                         <TableHead className="font-semibold">Name</TableHead>
+                        <TableHead className="font-semibold">Scopes</TableHead>
                         <TableHead className="font-semibold">Created</TableHead>
-                        <TableHead className="font-semibold">Last Used</TableHead>
+                        <TableHead className="font-semibold">Status</TableHead>
                         <TableHead className="text-right font-semibold">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -317,7 +603,84 @@ export default function ApiKeysPage() {
                               <div>
                                 <p className="font-medium text-slate-900">{key.name}</p>
                                 <p className="text-xs text-slate-500">pk_live_••••••••</p>
+                                {key.expiresAt && (
+                                  <div className="flex items-center gap-1 mt-1">
+                                    {isExpired(key.expiresAt) ? (
+                                      <Badge className="bg-red-100 text-red-700 border-0 text-xs">
+                                        Expired
+                                      </Badge>
+                                    ) : isExpiringSoon(key.expiresAt) ? (
+                                      <TooltipProvider>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <div className="flex items-center gap-1">
+                                              <AlertTriangle className="h-3 w-3 text-orange-600" />
+                                              <span className="text-xs text-orange-600">
+                                                Expires {format(new Date(key.expiresAt), "MMM d")}
+                                              </span>
+                                            </div>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p className="text-xs">This key expires in {differenceInDays(new Date(key.expiresAt), new Date())} days</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    ) : (
+                                      <span className="text-xs text-slate-500">
+                                        Expires {format(new Date(key.expiresAt), "MMM d, yyyy")}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
                               </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-4 max-w-xs">
+                            <div className="flex flex-wrap gap-1">
+                              {key.scopes && key.scopes.length > 0 ? (
+                                <>
+                                  {key.scopes.slice(0, 3).map((scope) => (
+                                    <Badge
+                                      key={scope}
+                                      className={`text-xs border ${getScopeColor(scope)}`}
+                                    >
+                                      {scope === "admin" ? (
+                                        <span className="flex items-center gap-1">
+                                          <Shield className="h-3 w-3" />
+                                          Full Access
+                                        </span>
+                                      ) : (
+                                        getScopeLabel(scope)
+                                      )}
+                                    </Badge>
+                                  ))}
+                                  {key.scopes.length > 3 && (
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Badge className="text-xs bg-slate-100 text-slate-600 border-slate-200 cursor-help">
+                                            +{key.scopes.length - 3} more
+                                          </Badge>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="max-w-xs">
+                                          <div className="flex flex-wrap gap-1">
+                                            {key.scopes.slice(3).map((scope) => (
+                                              <Badge
+                                                key={scope}
+                                                className={`text-xs border ${getScopeColor(scope)}`}
+                                              >
+                                                {getScopeLabel(scope)}
+                                              </Badge>
+                                            ))}
+                                          </div>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  )}
+                                </>
+                              ) : (
+                                <Badge variant="secondary" className="text-xs">No scopes</Badge>
+                              )}
                             </div>
                           </TableCell>
                           <TableCell className="py-4">
@@ -329,12 +692,45 @@ export default function ApiKeysPage() {
                           <TableCell className="py-4">
                             {key.lastUsedAt ? (
                               <Badge className="bg-emerald-50 text-emerald-700 border-0">
-                                {format(new Date(key.lastUsedAt), "MMM d, yyyy")}
+                                Active
                               </Badge>
                             ) : (
                               <Badge variant="secondary" className="bg-slate-100 text-slate-500 border-0">
                                 Never used
                               </Badge>
+                            )}
+                            {key.ipWhitelist && key.ipWhitelist.length > 0 && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge className="ml-1 bg-blue-50 text-blue-700 border-0 text-xs cursor-help">
+                                      IP Restricted
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs font-semibold mb-1">Allowed IPs:</p>
+                                    <div className="space-y-0.5">
+                                      {key.ipWhitelist.map((ip) => (
+                                        <p key={ip} className="text-xs font-mono">{ip}</p>
+                                      ))}
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                            {key.rateLimit && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge className="ml-1 bg-purple-50 text-purple-700 border-0 text-xs cursor-help">
+                                      Rate Limited
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">{key.rateLimit} requests/minute</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             )}
                           </TableCell>
                           <TableCell className="text-right py-4">
