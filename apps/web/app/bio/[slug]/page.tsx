@@ -1,11 +1,5 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { BioPageRenderer } from "@/components/bio/BioPageRenderer";
-import { Loader2 } from "lucide-react";
-import axios from "axios";
-import { trackBioPageView, trackBioLinkClick } from "@/lib/bio-analytics";
+import { Metadata } from "next";
+import { BioPageClient } from "./BioPageClient";
 
 interface BioPageData {
   id: string;
@@ -17,87 +11,67 @@ interface BioPageData {
   layout: any;
   socialLinks: any;
   showBranding: boolean;
-  bioLinks: Array<{
-    id: string;
-    title: string;
-    description: string | null;
-    icon: string | null;
-    thumbnailUrl: string | null;
-    buttonColor: string | null;
-    textColor: string | null;
-    order: number;
-    externalUrl: string | null;
-    link: {
-      slug: string;
-      originalUrl: string;
-    } | null;
-  }>;
 }
 
-export default function PublicBioPage() {
-  const params = useParams();
-  const slug = params.slug as string;
-  const [pageData, setPageData] = useState<BioPageData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+async function getBioPageData(slug: string): Promise<BioPageData | null> {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+    const res = await fetch(`${apiUrl}/biopages/public/${slug}`, {
+      cache: "no-store", // Disable caching for dynamic bio pages
+    });
 
-  useEffect(() => {
-    if (slug) {
-      fetchData();
+    if (!res.ok) {
+      return null;
     }
-  }, [slug]);
 
-  // Track page view when data is loaded
-  useEffect(() => {
-    if (pageData) {
-      trackBioPageView(pageData.id);
-    }
-  }, [pageData]);
+    return await res.json();
+  } catch (error) {
+    console.error("Failed to fetch bio page data for metadata:", error);
+    return null;
+  }
+}
 
-  const fetchData = async () => {
-    try {
-      // Fetch public bio page data from the public endpoint
-      // This endpoint does not require authentication
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-      const response = await axios.get<BioPageData>(
-        `${apiUrl}/biopages/public/${slug}`
-      );
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  const data = await getBioPageData(params.slug);
 
-      setPageData(response.data);
-    } catch (err: any) {
-      console.error("Failed to load bio page", err);
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
+  if (!data) {
+    return {
+      title: "Bio Page Not Found",
+      description: "The bio page you're looking for doesn't exist.",
+    };
   }
 
-  if (error || !pageData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Page not found
-          </h1>
-          <p className="text-muted-foreground">
-            The bio page you&apos;re looking for doesn&apos;t exist.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const title = data.title;
+  const description =
+    data.description || `Check out ${data.title}'s links on PingTO.Me`;
+  const images = data.avatarUrl ? [data.avatarUrl] : [];
 
-  const handleLinkClick = (linkId: string) => {
-    trackBioLinkClick(pageData.id, linkId);
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images,
+      type: "website",
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+      images,
+    },
   };
+}
 
-  return <BioPageRenderer pageData={pageData} onLinkClick={handleLinkClick} />;
+export default function PublicBioPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  return <BioPageClient slug={params.slug} />;
 }

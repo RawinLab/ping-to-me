@@ -174,4 +174,29 @@ export class BioPageController {
   ) {
     return this.bioPageService.getClicksByLink(bioPageId, req.user.id);
   }
+
+  // QR Code endpoint
+  @Get(':id/qr')
+  async getBioPageQrCode(
+    @Param('id') bioPageId: string,
+    @Query('size') size?: string,
+    @Query('format') format?: string,
+    @Res() res?: Response,
+  ): Promise<void> {
+    const sizeNum = size ? parseInt(size, 10) : 300;
+    const formatType = (format === 'svg' ? 'svg' : 'png') as 'png' | 'svg';
+
+    const result = await this.bioPageService.getBioPageQrCode(bioPageId, sizeNum, formatType);
+
+    if (formatType === 'svg') {
+      res.setHeader('Content-Type', 'image/svg+xml');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.send(result.data);
+    } else {
+      // PNG format
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.send(result.data);
+    }
+  }
 }

@@ -6,10 +6,14 @@ import { UpdateBioLinkDto } from './dto/update-bio-link.dto';
 import { ReorderLinksDto } from './dto/reorder-links.dto';
 import { BioEventType } from './dto/track-event.dto';
 import { UAParser } from 'ua-parser-js';
+import { QrCodeService } from '../qr/qr.service';
 
 @Injectable()
 export class BioPageService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly qrService: QrCodeService,
+  ) { }
 
   async createBioPage(userId: string, orgId: string, data: { slug: string; title: string }): Promise<BioPage> {
     // Check slug availability
@@ -526,5 +530,51 @@ export class BioPageService {
     links.sort((a, b) => b.clicks - a.clicks);
 
     return { links };
+  }
+
+  // QR Code generation
+  async getBioPageQrCode(
+    bioPageId: string,
+    size: number = 300,
+    format: 'png' | 'svg' = 'png',
+  ): Promise<{ data: Buffer | string }> {
+    // Get bio page to get the slug
+    const bioPage = await this.prisma.bioPage.findUnique({
+      where: { id: bioPageId },
+      select: { slug: true },
+    });
+
+    if (!bioPage) {
+      throw new NotFoundException('Bio page not found');
+    }
+
+    // Construct public bio page URL
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3010';
+    const bioPageUrl = `${appUrl}/bio/${bioPage.slug}`;
+
+    if (format === 'svg') {
+      // Generate SVG QR code
+      const svg = await this.qrService.generateSvgQr(bioPageUrl, {
+        color: '#000000',
+        bgcolor: '#FFFFFF',
+        size,
+      });
+      return { data: svg };
+    } else {
+      // Generate PNG QR code
+      const { dataUrl } = await this.qrService.generateAdvancedQr({
+        url: bioPageUrl,
+        foregroundColor: '#000000',
+        backgroundColor: '#FFFFFF',
+        size,
+        margin: 2,
+        errorCorrection: 'M',
+      });
+
+      // Convert base64 to buffer
+      const base64Data = dataUrl.split(',')[1];
+      const buffer = Buffer.from(base64Data, 'base64');
+      return { data: buffer };
+    }
   }
 }
