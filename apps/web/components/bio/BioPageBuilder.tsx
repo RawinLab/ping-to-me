@@ -44,7 +44,7 @@ import {
   Smartphone,
   Save
 } from "lucide-react";
-import { useAuth } from "@/context/auth-context";
+import { useAuth } from "@/contexts/AuthContext";
 import { ThemeSelector } from "@/components/bio/ThemeSelector";
 import { ColorPicker } from "@/components/bio/ColorPicker";
 import { BackgroundPicker } from "@/components/bio/BackgroundPicker";
@@ -79,7 +79,7 @@ export function BioPageBuilder({
   existingPage?: any;
   onSuccess?: () => void;
 }) {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [availableLinks, setAvailableLinks] = useState<any[]>([]);
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);

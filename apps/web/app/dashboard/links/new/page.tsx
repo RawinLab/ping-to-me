@@ -39,7 +39,7 @@ import {
   Lock,
 } from "lucide-react";
 import { apiRequest } from "@/lib/api";
-import { useAuth } from "@/context/auth-context";
+import { useAuth } from "@/contexts/AuthContext";
 import { LinkResponse, CreateLinkDto } from "@pingtome/types";
 import { QrCodeCustomizer } from "@/components/qrcode/QrCodeCustomizer";
 
@@ -85,7 +85,7 @@ interface BioPage {
 
 export default function CreateLinkPage() {
   const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [domains, setDomains] = useState<Domain[]>([]);
   const [bioPages, setBioPages] = useState<BioPage[]>([]);
   const [selectedDomain, setSelectedDomain] = useState<string>("pingto.me");

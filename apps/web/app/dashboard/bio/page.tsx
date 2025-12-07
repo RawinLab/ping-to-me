@@ -30,10 +30,10 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
-import { useAuth } from "@/context/auth-context";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function BioPagesDashboard() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [pages, setPages] = useState<any[]>([]);
   const [view, setView] = useState<"list" | "create" | "edit">("list");
   const [selectedPage, setSelectedPage] = useState<any>(null);

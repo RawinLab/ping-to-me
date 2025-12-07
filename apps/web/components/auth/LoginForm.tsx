@@ -7,7 +7,7 @@ import * as z from "zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button, Input, Label, Alert, AlertDescription } from "@pingtome/ui";
 import Link from "next/link";
-import { useAuth } from "@/context/auth-context";
+import { useAuth } from "@/contexts/AuthContext";
 import { Icons } from "@/components/icons"; // Assuming Icons component is available for social buttons
 
 const loginSchema = z.object({

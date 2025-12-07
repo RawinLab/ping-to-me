@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@pingtome/ui";
 import { Menu, X } from "lucide-react";
-import { useAuth } from "@/context/auth-context";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navigation = [
   { name: "Features", href: "#features" },
@@ -128,9 +128,9 @@ export function LandingHeader() {
 }
 
 function UserMenu() {
-  const { user, isLoading, logout } = useAuth();
+  const { user, loading } = useAuth();
 
-  if (isLoading) return null;
+  if (loading) return null;
 
   if (user) {
     return (
@@ -140,14 +140,15 @@ function UserMenu() {
             Dashboard
           </Button>
         </Link>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => logout()}
-          className="font-medium"
-        >
-          Sign out
-        </Button>
+        <Link href="/login">
+          <Button
+            size="sm"
+            variant="outline"
+            className="font-medium"
+          >
+            Sign out
+          </Button>
+        </Link>
       </div>
     );
   }
