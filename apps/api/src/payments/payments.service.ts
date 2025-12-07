@@ -2,6 +2,7 @@ import { Injectable, BadRequestException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
+import { QuotaService } from "../quota/quota.service";
 import Stripe from "stripe";
 
 @Injectable()
@@ -12,6 +13,7 @@ export class PaymentsService {
     private configService: ConfigService,
     private prisma: PrismaService,
     private auditService: AuditService,
+    private quotaService: QuotaService,
   ) {
     const stripeKey = this.configService.get<string>("STRIPE_SECRET_KEY");
     if (stripeKey) {
@@ -335,5 +337,64 @@ export class PaymentsService {
       status: invoice.status,
       pdfUrl: invoice.invoice_pdf,
     }));
+  }
+
+  /**
+   * Check if downgrade would exceed new plan limits
+   */
+  async checkDowngradeImpact(
+    orgId: string,
+    newPlanName: string,
+  ): Promise<{
+    canDowngrade: boolean;
+    overLimit: Array<{
+      resource: string;
+      current: number;
+      newLimit: number;
+      excess: number;
+    }>;
+  }> {
+    // Get current usage
+    const usage = await this.quotaService.getCurrentUsage(orgId);
+
+    // Get new plan limits
+    const newLimits = await this.quotaService.getPlanLimits(newPlanName);
+
+    const overLimit: Array<{
+      resource: string;
+      current: number;
+      newLimit: number;
+      excess: number;
+    }> = [];
+
+    // Check each resource
+    const checks = [
+      {
+        resource: "domains",
+        current: usage.domains,
+        limit: newLimits.customDomains,
+      },
+      {
+        resource: "members",
+        current: usage.members,
+        limit: newLimits.teamMembers,
+      },
+    ];
+
+    for (const check of checks) {
+      if (check.limit !== -1 && check.current > check.limit) {
+        overLimit.push({
+          resource: check.resource,
+          current: check.current,
+          newLimit: check.limit,
+          excess: check.current - check.limit,
+        });
+      }
+    }
+
+    return {
+      canDowngrade: overLimit.length === 0,
+      overLimit,
+    };
   }
 }

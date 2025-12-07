@@ -8,6 +8,8 @@ import {
   Headers,
   RawBodyRequest,
   Req,
+  Param,
+  BadRequestException,
 } from "@nestjs/common";
 import { PaymentsService } from "./payments.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -68,5 +70,18 @@ export class PaymentsController {
     @Headers("stripe-signature") signature: string,
   ) {
     return this.paymentsService.handleWebhook(req.rawBody, signature);
+  }
+
+  @Get("organizations/:orgId/downgrade-check/:planName")
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: "billing", action: "read" })
+  async checkDowngrade(
+    @Param("orgId") orgId: string,
+    @Param("planName") planName: string,
+  ) {
+    if (!orgId) {
+      throw new BadRequestException("Organization ID is required");
+    }
+    return this.paymentsService.checkDowngradeImpact(orgId, planName);
   }
 }
