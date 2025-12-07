@@ -17,6 +17,7 @@ import { PaymentsModule } from "./payments/payments.module";
 import { AuditModule } from "./audit/audit.module";
 import { InvitationsModule } from "./invitations/invitations.module";
 import { QuotaModule } from "./quota/quota.module";
+import { PlansModule } from "./plans/plans.module";
 
 import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
 import { APP_GUARD } from "@nestjs/core";
@@ -67,6 +68,7 @@ import { APP_GUARD } from "@nestjs/core";
     AuditModule,
     InvitationsModule,
     QuotaModule,
+    PlansModule,
   ],
   controllers: [],
   providers: [
