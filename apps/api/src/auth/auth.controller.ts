@@ -9,11 +9,15 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
+import { AuditService } from '../audit/audit.service';
 import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) { }
+  constructor(
+    private readonly authService: AuthService,
+    private readonly auditService: AuditService,
+  ) { }
 
   @Post('register')
   async register(@Body() body: { email: string; password?: string; name?: string }) {
@@ -23,7 +27,14 @@ export class AuthController {
   @UseGuards(AuthGuard('local'))
   @Post('login')
   async login(@Req() req, @Res({ passthrough: true }) res: Response) {
-    const { accessToken, refreshToken } = await this.authService.login(req.user);
+    const ipAddress = req.ip || req.connection.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+
+    const { accessToken, refreshToken } = await this.authService.login(
+      req.user,
+      ipAddress,
+      userAgent,
+    );
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -48,8 +59,16 @@ export class AuthController {
     return req.user;
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Post('logout')
-  async logout(@Res({ passthrough: true }) res: Response) {
+  async logout(@Req() req, @Res({ passthrough: true }) res: Response) {
+    // Audit log: Logout
+    if (req.user?.id) {
+      await this.auditService.logSecurityEvent(req.user.id, 'auth.logout', {
+        status: 'success',
+      });
+    }
+
     res.clearCookie('refresh_token');
     return { message: 'Logged out successfully' };
   }
@@ -61,7 +80,14 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   async googleAuthRedirect(@Req() req, @Res() res: Response) {
-    const { accessToken, refreshToken } = await this.authService.login(req.user);
+    const ipAddress = req.ip || req.connection.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+
+    const { accessToken, refreshToken } = await this.authService.login(
+      req.user,
+      ipAddress,
+      userAgent,
+    );
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -85,7 +111,14 @@ export class AuthController {
   @Get('github/callback')
   @UseGuards(AuthGuard('github'))
   async githubAuthRedirect(@Req() req, @Res() res: Response) {
-    const { accessToken, refreshToken } = await this.authService.login(req.user);
+    const ipAddress = req.ip || req.connection.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+
+    const { accessToken, refreshToken } = await this.authService.login(
+      req.user,
+      ipAddress,
+      userAgent,
+    );
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

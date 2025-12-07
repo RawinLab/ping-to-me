@@ -370,17 +370,23 @@ model AuditLog {
   id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId         String?  @db.Uuid
   organizationId String?  @db.Uuid
-  action         String   // CREATE, UPDATE, DELETE, LOGIN, etc.
-  resource       String   // User, Link, Domain, etc.
+  action         String   // e.g., 'link.created', 'member.invited', 'auth.login'
+  resource       String   // e.g., 'Link', 'Domain', 'OrganizationMember', 'User'
   resourceId     String?
+  status         String   @default("success") // 'success' | 'failure'
   details        Json?    // Additional context
+  changes        Json?    // { before: {...}, after: {...} } for tracking changes
   ipAddress      String?
   userAgent      String?
+  geoLocation    String?  // e.g., 'US, California' - resolved from IP
+  requestId      String?  // For request correlation/tracing
   createdAt      DateTime @default(now())
 
   @@index([userId])
   @@index([organizationId])
   @@index([action])
+  @@index([resource])
+  @@index([status])
   @@index([createdAt])
 }
 

@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { MailService } from '../mail/mail.service';
+import { AuditService } from '../audit/audit.service';
 import { randomUUID } from 'crypto';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private mailService: MailService,
+    private auditService: AuditService,
   ) { }
 
   async register(email: string, password?: string, name?: string) {
@@ -77,12 +79,18 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired token');
     }
 
-    await this.prisma.user.update({
+    const updatedUser = await this.prisma.user.update({
       where: { email: verificationToken.identifier },
       data: { emailVerified: new Date() },
     });
 
     await this.prisma.verificationToken.delete({ where: { token } });
+
+    // Audit log: Email verified
+    await this.auditService.logSecurityEvent(updatedUser.id, 'auth.email_verified', {
+      status: 'success',
+      details: { email: updatedUser.email },
+    });
 
     return { message: 'Email verified successfully' };
   }
@@ -103,6 +111,12 @@ export class AuthService {
     });
 
     await this.mailService.sendPasswordResetEmail(email, token);
+
+    // Audit log: Password reset requested (no userId for non-authenticated user)
+    await this.auditService.logSecurityEvent(null, 'auth.password_reset_requested', {
+      status: 'success',
+      details: { email },
+    });
   }
 
   async resetPassword(token: string, newPassword: string) {
@@ -116,12 +130,18 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await this.prisma.user.update({
+    const updatedUser = await this.prisma.user.update({
       where: { email: verificationToken.identifier },
       data: { password: hashedPassword },
     });
 
     await this.prisma.verificationToken.delete({ where: { token } });
+
+    // Audit log: Password changed via reset
+    await this.auditService.logSecurityEvent(updatedUser.id, 'auth.password_changed', {
+      status: 'success',
+      details: { method: 'reset', email: updatedUser.email },
+    });
 
     return { message: 'Password reset successfully' };
   }
@@ -132,11 +152,29 @@ export class AuthService {
       const { password, ...result } = user;
       return result;
     }
+
+    // Audit log: Failed login attempt (don't log password)
+    await this.auditService.logSecurityEvent(null, 'auth.failed_login', {
+      status: 'failure',
+      details: {
+        email,
+        reason: !user ? 'user_not_found' : 'invalid_password'
+      },
+    });
+
     return null;
   }
 
-  async login(user: any) {
+  async login(user: any, ipAddress?: string, userAgent?: string) {
     const payload = { sub: user.id, email: user.email, role: user.role };
+
+    // Audit log: Successful login
+    await this.auditService.logSecurityEvent(user.id, 'auth.login', {
+      status: 'success',
+      context: { ipAddress, userAgent },
+      details: { email: user.email },
+    });
+
     return {
       accessToken: this.jwtService.sign(payload),
       refreshToken: this.jwtService.sign(payload, { expiresIn: '7d' }),

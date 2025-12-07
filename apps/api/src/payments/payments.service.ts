@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuditService } from '../audit/audit.service';
 import Stripe from 'stripe';
 
 @Injectable()
@@ -10,6 +11,7 @@ export class PaymentsService {
   constructor(
     private configService: ConfigService,
     private prisma: PrismaService,
+    private auditService: AuditService,
   ) {
     const stripeKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     if (stripeKey) {
@@ -207,17 +209,42 @@ export class PaymentsService {
     const userId = (customer as Stripe.Customer).metadata?.userId;
     if (!userId) return;
 
+    // Get current user data for before state
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const oldPlan = user?.plan || 'free';
+
     const priceId = subscription.items.data[0]?.price.id;
     const plan = this.plans.find(p => p.priceId === priceId);
+    const newPlan = plan?.id || 'free';
 
     await this.prisma.user.update({
       where: { id: userId },
       data: {
         subscriptionStatus: subscription.status,
-        plan: plan?.id || 'free',
+        plan: newPlan,
         planExpiresAt: new Date((subscription as any).current_period_end * 1000),
       },
     });
+
+    // Log plan change if plan actually changed
+    if (oldPlan !== newPlan) {
+      // Billing is user-specific, use userId as organizationId for audit logging
+      this.auditService.logBillingEvent(
+        userId,
+        userId, // Billing is tied to user, not organization
+        'billing.plan_changed',
+        {
+          changes: {
+            before: { plan: oldPlan },
+            after: { plan: newPlan },
+          },
+          details: {
+            subscriptionId: subscription.id,
+            status: subscription.status,
+          },
+        },
+      ).catch(() => {}); // Fire and forget, don't block on errors
+    }
   }
 
   private async handleSubscriptionDeleted(subscription: Stripe.Subscription) {
@@ -240,6 +267,19 @@ export class PaymentsService {
         plan: 'free',
       },
     });
+
+    // Log subscription cancellation - billing is user-specific
+    this.auditService.logBillingEvent(
+      userId,
+      userId, // Billing is tied to user, not organization
+      'billing.subscription_cancelled',
+      {
+        details: {
+          subscriptionId: subscription.id,
+          canceledAt: new Date(subscription.canceled_at || Date.now()),
+        },
+      },
+    ).catch(() => {}); // Fire and forget, don't block on errors
   }
 
   private async handleInvoicePaid(invoice: Stripe.Invoice) {

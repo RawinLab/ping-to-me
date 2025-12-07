@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
@@ -11,6 +11,7 @@ import { GithubStrategy } from './strategies/github.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailModule } from '../mail/mail.module';
+import { AuditModule } from '../audit/audit.module';
 // Legacy RolesGuard - kept for backward compatibility
 import { RolesGuard } from './guards/roles.guard';
 // New RBAC system
@@ -30,6 +31,7 @@ import { PermissionService, PermissionGuard, AccessLogService } from './rbac';
     }),
     MailModule,
     ConfigModule,
+    forwardRef(() => AuditModule),
   ],
   controllers: [AuthController],
   providers: [

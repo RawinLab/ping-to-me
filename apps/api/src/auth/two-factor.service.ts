@@ -1,11 +1,15 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuditService } from '../audit/audit.service';
 import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
 
 @Injectable()
 export class TwoFactorService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private auditService: AuditService,
+  ) { }
 
   async generateSecret(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
@@ -54,6 +58,12 @@ export class TwoFactorService {
       data: { twoFactorEnabled: true },
     });
 
+    // Audit log: 2FA enabled
+    await this.auditService.logSecurityEvent(userId, 'auth.2fa_enabled', {
+      status: 'success',
+      details: { email: user.email },
+    });
+
     return { enabled: true };
   }
 
@@ -95,6 +105,12 @@ export class TwoFactorService {
         twoFactorEnabled: false,
         twoFactorSecret: null,
       },
+    });
+
+    // Audit log: 2FA disabled
+    await this.auditService.logSecurityEvent(userId, 'auth.2fa_disabled', {
+      status: 'success',
+      details: { email: user.email },
     });
 
     return { disabled: true };

@@ -4,12 +4,14 @@ import { CreateLinkDto, LinkResponse, LinkStatus } from '@pingtome/types';
 import { nanoid } from 'nanoid';
 import { toDataURL } from 'qrcode';
 import { QrCodeService } from '../qr/qr.service';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class LinksService {
   constructor(
     private prisma: PrismaService,
     private qrCodeService: QrCodeService,
+    private auditService: AuditService,
   ) { }
 
   async create(userId: string, dto: CreateLinkDto): Promise<LinkResponse> {
@@ -83,7 +85,20 @@ export class LinksService {
     // 5. Sync to Cloudflare KV
     await this.syncToKv(link);
 
-    // 6. Return response with QR options
+    // 6. Audit log - link created (async, non-blocking)
+    this.auditService.logLinkEvent(userId, null, 'link.created', {
+      id: link.id,
+      slug: link.slug,
+      targetUrl: link.originalUrl,
+    }, {
+      details: {
+        title: link.title,
+        tags: link.tags,
+        redirectType: link.redirectType,
+      },
+    }).catch(err => console.error('Audit log failed:', err));
+
+    // 7. Return response with QR options
     return this.mapToResponse(link, {
       qrColor: dto.qrColor,
       qrLogo: dto.qrLogo,
@@ -227,7 +242,20 @@ export class LinksService {
     // Delete from KV
     await this.deleteFromKv(link.slug);
 
-    return this.prisma.link.delete({ where: { id } });
+    const deleted = await this.prisma.link.delete({ where: { id } });
+
+    // Audit log - link deleted (async, non-blocking)
+    this.auditService.logLinkEvent(userId, null, 'link.deleted', {
+      id: link.id,
+      slug: link.slug,
+      targetUrl: link.originalUrl,
+    }, {
+      details: {
+        title: link.title,
+      },
+    }).catch(err => console.error('Audit log failed:', err));
+
+    return deleted;
   }
 
   private async deleteFromKv(slug: string) {
@@ -269,6 +297,18 @@ export class LinksService {
       }
     }
 
+    // Capture state before update for audit logging
+    const before = {
+      originalUrl: link.originalUrl,
+      title: link.title,
+      description: link.description,
+      tags: link.tags,
+      expirationDate: link.expirationDate,
+      status: link.status,
+      deepLinkFallback: link.deepLinkFallback,
+      campaignId: link.campaignId,
+    };
+
     const updated = await this.prisma.link.update({
       where: { id },
       data: {
@@ -284,7 +324,32 @@ export class LinksService {
       },
     });
 
+    // Capture state after update
+    const after = {
+      originalUrl: updated.originalUrl,
+      title: updated.title,
+      description: updated.description,
+      tags: updated.tags,
+      expirationDate: updated.expirationDate,
+      status: updated.status,
+      deepLinkFallback: updated.deepLinkFallback,
+      campaignId: updated.campaignId,
+    };
+
     await this.syncToKv(updated);
+
+    // Audit log - link updated with changes (async, non-blocking)
+    const changes = this.auditService.captureChanges(before, after);
+    if (changes) {
+      this.auditService.logLinkEvent(userId, null, 'link.updated', {
+        id: link.id,
+        slug: link.slug,
+        targetUrl: updated.originalUrl,
+      }, {
+        changes,
+      }).catch(err => console.error('Audit log failed:', err));
+    }
+
     return this.mapToResponse(updated);
   }
 
@@ -387,6 +452,19 @@ export class LinksService {
       }
     }
 
+    // Audit log - bulk import (async, non-blocking)
+    if (results.success > 0) {
+      this.auditService.logLinkEvent(userId, null, 'link.bulk_created', {
+        id: 'bulk-import',
+      }, {
+        details: {
+          totalImported: results.success,
+          totalFailed: results.failed,
+          totalRecords: results.total,
+        },
+      }).catch(err => console.error('Audit log failed:', err));
+    }
+
     return results;
   }
 
@@ -435,14 +513,31 @@ export class LinksService {
       select: { slug: true },
     });
 
-    // TODO: Delete from KV (implement deleteFromKv)
+    // Delete from KV for each link
+    for (const link of links) {
+      await this.deleteFromKv(link.slug);
+    }
 
-    return this.prisma.link.deleteMany({
+    const result = await this.prisma.link.deleteMany({
       where: {
         userId,
         id: { in: ids },
       },
     });
+
+    // Audit log - bulk delete (async, non-blocking)
+    if (result.count > 0) {
+      this.auditService.logLinkEvent(userId, null, 'link.bulk_deleted', {
+        id: 'bulk-delete',
+      }, {
+        details: {
+          deletedCount: result.count,
+          requestedCount: ids.length,
+        },
+      }).catch(err => console.error('Audit log failed:', err));
+    }
+
+    return result;
   }
 
   async addTagToMany(userId: string, ids: string[], tagName: string) {

@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LinksService } from './links.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { QrCodeService } from '../qr/qr.service';
+import { AuditService } from '../audit/audit.service';
 
 describe('LinksService', () => {
   let service: LinksService;
@@ -22,6 +24,22 @@ describe('LinksService', () => {
             blockedDomain: {
               findUnique: jest.fn(),
             },
+            clickEvent: {
+              count: jest.fn().mockResolvedValue(0),
+            },
+          },
+        },
+        {
+          provide: QrCodeService,
+          useValue: {
+            generateAdvancedQr: jest.fn(),
+          },
+        },
+        {
+          provide: AuditService,
+          useValue: {
+            logLinkEvent: jest.fn().mockResolvedValue(undefined),
+            captureChanges: jest.fn(),
           },
         },
       ],

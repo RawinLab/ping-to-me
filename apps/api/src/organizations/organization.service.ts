@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MemberRole } from '@pingtome/database';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class OrganizationService {
-  constructor(private prisma: PrismaService) { }
+  constructor(
+    private prisma: PrismaService,
+    private auditService: AuditService,
+  ) { }
 
   // Organization CRUD
   async create(userId: string, data: { name: string; slug: string }) {
@@ -19,6 +23,14 @@ export class OrganizationService {
             role: 'OWNER',
           },
         },
+      },
+    });
+
+    // Audit log: org created
+    await this.auditService.logOrgEvent(userId, org.id, 'org.created', {
+      details: {
+        name: org.name,
+        slug: org.slug,
       },
     });
 
@@ -75,19 +87,54 @@ export class OrganizationService {
     // Check if user is owner/admin
     await this.checkPermission(orgId, userId, ['OWNER', 'ADMIN']);
 
-    return this.prisma.organization.update({
+    // Get current org state for change tracking
+    const before = await this.prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { name: true, slug: true },
+    });
+
+    const updated = await this.prisma.organization.update({
       where: { id: orgId },
       data,
     });
+
+    // Audit log: org updated with change tracking
+    const changes = this.auditService.captureChanges(before, { name: updated.name, slug: updated.slug });
+    if (changes) {
+      await this.auditService.logOrgEvent(userId, orgId, 'org.updated', {
+        changes,
+        details: {
+          updatedFields: Object.keys(data),
+        },
+      });
+    }
+
+    return updated;
   }
 
   async delete(orgId: string, userId: string) {
     // Only owner can delete
     await this.checkPermission(orgId, userId, ['OWNER']);
 
-    return this.prisma.organization.delete({
+    // Get org details before deletion
+    const org = await this.prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { name: true, slug: true },
+    });
+
+    const deleted = await this.prisma.organization.delete({
       where: { id: orgId },
     });
+
+    // Audit log: org deleted
+    await this.auditService.logOrgEvent(userId, orgId, 'org.deleted', {
+      details: {
+        name: org?.name,
+        slug: org?.slug,
+      },
+    });
+
+    return deleted;
   }
 
   private async checkPermission(orgId: string, userId: string, allowedRoles: string[]) {
@@ -121,7 +168,7 @@ export class OrganizationService {
     });
   }
 
-  async inviteMember(orgId: string, email: string, role: MemberRole) {
+  async inviteMember(orgId: string, invitedByUserId: string, email: string, role: MemberRole) {
     // 1. Find user by email
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
@@ -143,7 +190,7 @@ export class OrganizationService {
     }
 
     // 3. Add member
-    return this.prisma.organizationMember.create({
+    const newMember = await this.prisma.organizationMember.create({
       data: {
         userId: user.id,
         organizationId: orgId,
@@ -160,15 +207,39 @@ export class OrganizationService {
         },
       },
     });
+
+    // Audit log: member invited/joined (in MVP, this is immediate)
+    await this.auditService.logTeamEvent(
+      invitedByUserId,
+      orgId,
+      'member.joined',
+      {
+        userId: user.id,
+        email: user.email,
+        role: role,
+      },
+      {
+        details: {
+          invitedBy: invitedByUserId,
+        },
+      },
+    );
+
+    return newMember;
   }
 
-  async updateMemberRole(orgId: string, userId: string, role: MemberRole) {
+  async updateMemberRole(orgId: string, targetUserId: string, updatedByUserId: string, role: MemberRole) {
     // Check if member exists
     const member = await this.prisma.organizationMember.findUnique({
       where: {
         userId_organizationId: {
-          userId,
+          userId: targetUserId,
           organizationId: orgId,
+        },
+      },
+      include: {
+        user: {
+          select: { email: true },
         },
       },
     });
@@ -177,28 +248,91 @@ export class OrganizationService {
       throw new NotFoundException('Member not found');
     }
 
-    return this.prisma.organizationMember.update({
+    const oldRole = member.role;
+
+    const updated = await this.prisma.organizationMember.update({
       where: {
         userId_organizationId: {
-          userId,
+          userId: targetUserId,
           organizationId: orgId,
         },
       },
       data: { role },
     });
+
+    // Audit log: member role changed
+    await this.auditService.logTeamEvent(
+      updatedByUserId,
+      orgId,
+      'member.role_changed',
+      {
+        userId: targetUserId,
+        email: member.user.email,
+        role: role,
+      },
+      {
+        changes: {
+          before: { role: oldRole },
+          after: { role: role },
+        },
+        details: {
+          targetUserId: targetUserId,
+        },
+      },
+    );
+
+    return updated;
   }
 
-  async removeMember(orgId: string, userId: string) {
+  async removeMember(orgId: string, targetUserId: string, removedByUserId: string) {
     // Prevent removing the last owner? (Optional for MVP but good practice)
     // For now, just remove.
-    return this.prisma.organizationMember.delete({
+
+    // Get member details before removal
+    const member = await this.prisma.organizationMember.findUnique({
       where: {
         userId_organizationId: {
-          userId,
+          userId: targetUserId,
+          organizationId: orgId,
+        },
+      },
+      include: {
+        user: {
+          select: { email: true },
+        },
+      },
+    });
+
+    const deleted = await this.prisma.organizationMember.delete({
+      where: {
+        userId_organizationId: {
+          userId: targetUserId,
           organizationId: orgId,
         },
       },
     });
+
+    // Audit log: member removed
+    if (member) {
+      await this.auditService.logTeamEvent(
+        removedByUserId,
+        orgId,
+        'member.removed',
+        {
+          userId: targetUserId,
+          email: member.user.email,
+          role: member.role,
+        },
+        {
+          details: {
+            targetUserId: targetUserId,
+            removedRole: member.role,
+          },
+        },
+      );
+    }
+
+    return deleted;
   }
 }
 

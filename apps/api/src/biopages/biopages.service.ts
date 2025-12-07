@@ -7,12 +7,14 @@ import { ReorderLinksDto } from './dto/reorder-links.dto';
 import { BioEventType } from './dto/track-event.dto';
 import { UAParser } from 'ua-parser-js';
 import { QrCodeService } from '../qr/qr.service';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class BioPageService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly qrService: QrCodeService,
+    private readonly auditService: AuditService,
   ) { }
 
   async createBioPage(userId: string, orgId: string, data: { slug: string; title: string }): Promise<BioPage> {
@@ -20,7 +22,7 @@ export class BioPageService {
     const existing = await this.prisma.bioPage.findUnique({ where: { slug: data.slug } });
     if (existing) throw new Error('Slug already taken');
 
-    return this.prisma.bioPage.create({
+    const bioPage = await this.prisma.bioPage.create({
       data: {
         slug: data.slug,
         title: data.title,
@@ -29,6 +31,23 @@ export class BioPageService {
         theme: { color: 'default' }, // Initial default theme
       },
     });
+
+    // Log bio page creation
+    this.auditService.logResourceEvent(
+      userId,
+      orgId,
+      'biopage.created',
+      'BioPage',
+      bioPage.id,
+      {
+        details: {
+          slug: bioPage.slug,
+          title: bioPage.title,
+        },
+      },
+    ).catch(() => {}); // Fire and forget, don't block on errors
+
+    return bioPage;
   }
 
   async getBioPage(slug: string): Promise<any | null> {
@@ -108,18 +127,59 @@ export class BioPageService {
   }
 
   async updateBioPage(id: string, userId: string, data: any): Promise<BioPage> {
-    // Verify ownership (simplified)
-    const page = await this.prisma.bioPage.findUnique({ where: { id } });
-    if (!page) throw new Error('Page not found');
+    // Verify ownership (simplified) and get current state for audit logging
+    const before = await this.prisma.bioPage.findUnique({ where: { id } });
+    if (!before) throw new Error('Page not found');
 
-    return this.prisma.bioPage.update({
+    const bioPage = await this.prisma.bioPage.update({
       where: { id },
       data,
     });
+
+    // Log bio page update with changes
+    const changes = this.auditService.captureChanges(before, bioPage);
+    this.auditService.logResourceEvent(
+      userId,
+      bioPage.organizationId,
+      'biopage.updated',
+      'BioPage',
+      bioPage.id,
+      {
+        changes,
+        details: {
+          slug: bioPage.slug,
+          title: bioPage.title,
+        },
+      },
+    ).catch(() => {}); // Fire and forget, don't block on errors
+
+    return bioPage;
   }
 
   async deleteBioPage(id: string, userId: string): Promise<BioPage> {
-    return this.prisma.bioPage.delete({ where: { id } });
+    // Get bio page data before deletion for audit logging
+    const bioPage = await this.prisma.bioPage.findUnique({ where: { id } });
+
+    const deleted = await this.prisma.bioPage.delete({ where: { id } });
+
+    // Log bio page deletion
+    if (bioPage) {
+      this.auditService.logResourceEvent(
+        userId,
+        bioPage.organizationId,
+        'biopage.deleted',
+        'BioPage',
+        bioPage.id,
+        {
+          details: {
+            slug: bioPage.slug,
+            title: bioPage.title,
+          },
+        },
+      ).catch(() => {}); // Fire and forget, don't block on errors
+    }
+
+    return deleted;
   }
 
   async listBioPages(userId: string, orgId: string): Promise<any[]> {
