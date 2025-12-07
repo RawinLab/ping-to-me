@@ -79,7 +79,7 @@ export function BioPageBuilder({
   existingPage?: any;
   onSuccess?: () => void;
 }) {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [availableLinks, setAvailableLinks] = useState<any[]>([]);
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
@@ -135,8 +135,11 @@ export function BioPageBuilder({
     },
   });
 
-  // Fetch user's organization on mount
+  // Fetch user's organization after auth is ready
   useEffect(() => {
+    // Wait for auth to finish loading before fetching data
+    if (authLoading) return;
+
     const fetchOrg = async () => {
       try {
         const orgs = await apiRequest("/organizations");
@@ -148,7 +151,7 @@ export function BioPageBuilder({
       }
     };
     fetchOrg();
-  }, []);
+  }, [authLoading]);
 
   useEffect(() => {
     if (currentOrgId) {

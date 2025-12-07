@@ -33,20 +33,25 @@ import Link from "next/link";
 import { useAuth } from "@/context/auth-context";
 
 export default function BioPagesDashboard() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [pages, setPages] = useState<any[]>([]);
   const [view, setView] = useState<"list" | "create" | "edit">("list");
   const [selectedPage, setSelectedPage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
 
-  // Fetch user's organization on mount
+  // Fetch user's organization after auth is ready
   useEffect(() => {
+    // Wait for auth to finish loading before fetching data
+    if (authLoading) return;
+
     const fetchOrg = async () => {
       try {
         const orgs = await apiRequest("/organizations");
         if (orgs && orgs.length > 0) {
           setCurrentOrgId(orgs[0].id);
+        } else {
+          setLoading(false);
         }
       } catch (err) {
         console.error("Failed to fetch organizations");
@@ -54,7 +59,7 @@ export default function BioPagesDashboard() {
       }
     };
     fetchOrg();
-  }, []);
+  }, [authLoading]);
 
   useEffect(() => {
     if (currentOrgId) {
@@ -165,7 +170,7 @@ export default function BioPagesDashboard() {
           </Button>
         </div>
 
-        {loading ? (
+        {loading || authLoading ? (
           <LoadingSkeleton />
         ) : pages.length === 0 ? (
           <EmptyState />

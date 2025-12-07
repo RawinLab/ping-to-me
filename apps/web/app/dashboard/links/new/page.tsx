@@ -85,7 +85,7 @@ interface BioPage {
 
 export default function CreateLinkPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [domains, setDomains] = useState<Domain[]>([]);
   const [bioPages, setBioPages] = useState<BioPage[]>([]);
   const [selectedDomain, setSelectedDomain] = useState<string>("pingto.me");
@@ -258,8 +258,11 @@ export default function CreateLinkPage() {
     }
   };
 
-  // Fetch user's organization on mount
+  // Fetch user's organization after auth is ready
   useEffect(() => {
+    // Wait for auth to finish loading before fetching data
+    if (authLoading) return;
+
     const fetchOrg = async () => {
       try {
         const orgs = await apiRequest("/organizations");
@@ -271,7 +274,7 @@ export default function CreateLinkPage() {
       }
     };
     fetchOrg();
-  }, []);
+  }, [authLoading]);
 
   useEffect(() => {
     if (currentOrgId) {

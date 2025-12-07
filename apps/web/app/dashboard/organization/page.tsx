@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/api";
+import { useAuth } from "@/context/auth-context";
 import {
   Card,
   CardContent,
@@ -54,6 +55,7 @@ interface Member {
 }
 
 export default function OrganizationSettingsPage() {
+  const { isLoading: authLoading } = useAuth();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
@@ -70,8 +72,10 @@ export default function OrganizationSettingsPage() {
   const [inviteRole, setInviteRole] = useState("MEMBER");
 
   useEffect(() => {
+    // Wait for auth to finish loading before fetching data
+    if (authLoading) return;
     fetchOrganizations();
-  }, []);
+  }, [authLoading]);
 
   const fetchOrganizations = async () => {
     try {
