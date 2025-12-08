@@ -3,7 +3,7 @@ import { DomainService } from './domains.service';
 import { PrismaClient } from '@pingtome/database';
 import { AuditService } from '../audit/audit.service';
 import { QuotaService } from '../quota/quota.service';
-import { ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 
 // Domain status enum (must match database enum)
 enum DomainStatus {
@@ -262,6 +262,83 @@ describe('DomainService - Module 2.4', () => {
       await expect(
         service.getLinksByDomain(mockDomainId, { page: 1, limit: 20 }),
       ).rejects.toThrow('Domain not found');
+    });
+  });
+
+  describe('update', () => {
+    it('should update domain verification type', async () => {
+      prisma.domain.findUnique.mockResolvedValue(mockDomain);
+      prisma.domain.update.mockResolvedValue({
+        ...mockDomain,
+        verificationType: 'cname',
+      });
+
+      const result = await service.update(
+        mockDomainId,
+        mockOrgId,
+        { verificationType: 'cname' },
+        mockUserId,
+      );
+
+      expect(result.verificationType).toBe('cname');
+      expect(prisma.domain.update).toHaveBeenCalledWith({
+        where: { id: mockDomainId },
+        data: expect.objectContaining({ verificationType: 'cname' }),
+      });
+    });
+
+    it('should set domain as default and unset previous default', async () => {
+      prisma.domain.findUnique.mockResolvedValue(mockDomain);
+      prisma.domain.updateMany.mockResolvedValue({ count: 1 });
+      prisma.domain.update.mockResolvedValue({ ...mockDomain, isDefault: true });
+
+      const result = await service.update(
+        mockDomainId,
+        mockOrgId,
+        { isDefault: true },
+        mockUserId,
+      );
+
+      expect(result.isDefault).toBe(true);
+      expect(prisma.domain.updateMany).toHaveBeenCalledWith({
+        where: { organizationId: mockOrgId, isDefault: true },
+        data: { isDefault: false },
+      });
+      expect(auditService.logDomainEvent).toHaveBeenCalledWith(
+        mockUserId,
+        mockOrgId,
+        'domain.updated',
+        expect.any(Object),
+      );
+    });
+
+    it('should throw NotFoundException if domain not found', async () => {
+      prisma.domain.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.update(mockDomainId, mockOrgId, { isDefault: true }, mockUserId),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException if setting unverified domain as default', async () => {
+      const unverifiedDomain = {
+        ...mockDomain,
+        isVerified: false,
+        status: DomainStatus.PENDING,
+      };
+      prisma.domain.findUnique.mockResolvedValue(unverifiedDomain);
+
+      await expect(
+        service.update(mockDomainId, mockOrgId, { isDefault: true }, mockUserId),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should validate domain belongs to organization', async () => {
+      prisma.domain.findUnique.mockResolvedValue(null); // Query with orgId returns null
+
+      await expect(
+        service.update(mockDomainId, 'wrong-org', { isDefault: true }, mockUserId),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

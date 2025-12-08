@@ -7,6 +7,12 @@ import {
   CardContent,
   Button,
   Badge,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@pingtome/ui";
 import {
   Plus,
@@ -25,6 +31,7 @@ import {
   Star,
   Eye,
   Loader2,
+  Search,
 } from "lucide-react";
 import { format } from "date-fns";
 import { AddDomainModal } from "@/components/domains/AddDomainModal";
@@ -37,12 +44,29 @@ export default function DomainsPage() {
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<DomainStatus | 'all'>('all');
   // Mock orgId for now, in real app get from context/auth
   const orgId = "123e4567-e89b-12d3-a456-426614174000";
 
   useEffect(() => {
     fetchDomains();
   }, []);
+
+  // Auto-refresh for pending domains every 30 seconds
+  useEffect(() => {
+    const hasPendingDomains = domains.some(
+      (d) => d.status === 'PENDING' || d.status === 'VERIFYING'
+    );
+
+    if (!hasPendingDomains || loading) return;
+
+    const interval = setInterval(() => {
+      fetchDomains();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [domains, loading]);
 
   const fetchDomains = async () => {
     try {
@@ -122,6 +146,13 @@ export default function DomainsPage() {
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
+
+  // Filter domains based on search and status
+  const filteredDomains = domains.filter((d) => {
+    const matchesSearch = d.hostname.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   const getStatusBadge = (status: DomainStatus, verificationAttempts: number) => {
     switch (status) {
@@ -243,6 +274,41 @@ export default function DomainsPage() {
           </Card>
         </div>
 
+        {/* Search & Filter */}
+        {domains.length > 0 && (
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search domains..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 rounded-xl"
+                data-testid="domain-search"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as DomainStatus | 'all')}>
+              <SelectTrigger className="w-[180px] rounded-xl" data-testid="status-filter">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="VERIFIED" data-testid="status-verified">Verified</SelectItem>
+                <SelectItem value="PENDING">Pending</SelectItem>
+                <SelectItem value="VERIFYING">Verifying</SelectItem>
+                <SelectItem value="FAILED">Failed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Filter Results Count */}
+        {(search || statusFilter !== 'all') && (
+          <p className="text-sm text-slate-500">
+            Showing {filteredDomains.length} of {domains.length} domains
+          </p>
+        )}
+
         {/* Domains List */}
         {domains.length === 0 ? (
           <Card className="border-slate-200 border-dashed">
@@ -268,7 +334,7 @@ export default function DomainsPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {domains.map((domain) => (
+            {filteredDomains.map((domain) => (
               <Card
                 key={domain.id}
                 className="border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"

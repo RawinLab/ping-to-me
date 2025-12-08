@@ -203,7 +203,8 @@ export class AuditService {
       | "domain.removed"
       | "domain.reset"
       | "domain.ssl_updated"
-      | "domain.default_set",
+      | "domain.default_set"
+      | "domain.updated",
     domain: { id: string; hostname: string },
     options?: {
       status?: "success" | "failure";

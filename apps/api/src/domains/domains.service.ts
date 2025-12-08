@@ -1,9 +1,10 @@
-import { Injectable, ForbiddenException, Logger } from "@nestjs/common";
-import { PrismaClient, DomainStatus } from "@pingtome/database";
+import { Injectable, ForbiddenException, Logger, NotFoundException, BadRequestException } from "@nestjs/common";
+import { PrismaClient, DomainStatus, Domain } from "@pingtome/database";
 import * as dns from "dns/promises";
 import { AuditService } from "../audit/audit.service";
 import { QuotaService } from "../quota/quota.service";
 import { Cron, CronExpression } from "@nestjs/schedule";
+import { UpdateDomainDto } from "./dto";
 
 // Maximum verification attempts before marking domain as FAILED
 const MAX_VERIFICATION_ATTEMPTS = 10;
@@ -66,6 +67,47 @@ export class DomainService {
       .catch((err) => console.error("Failed to log domain.added event:", err));
 
     return domain;
+  }
+
+  async update(id: string, orgId: string, dto: UpdateDomainDto, userId: string): Promise<Domain> {
+    const domain = await this.prisma.domain.findUnique({
+      where: { id, organizationId: orgId },
+    });
+
+    if (!domain) {
+      throw new NotFoundException('Domain not found');
+    }
+
+    // If setting as default, ensure verified
+    if (dto.isDefault && !domain.isVerified) {
+      throw new BadRequestException('Only verified domains can be set as default');
+    }
+
+    // If setting as default, unset previous default
+    if (dto.isDefault) {
+      await this.prisma.domain.updateMany({
+        where: { organizationId: orgId, isDefault: true },
+        data: { isDefault: false },
+      });
+    }
+
+    const updated = await this.prisma.domain.update({
+      where: { id },
+      data: {
+        ...(dto.isDefault !== undefined && { isDefault: dto.isDefault }),
+        ...(dto.verificationType && { verificationType: dto.verificationType }),
+      },
+    });
+
+    // Audit log
+    this.auditService
+      .logDomainEvent(userId, orgId, 'domain.updated', {
+        id: updated.id,
+        hostname: updated.hostname,
+      })
+      .catch((err) => console.error('Failed to log domain.updated event:', err));
+
+    return updated;
   }
 
   /**

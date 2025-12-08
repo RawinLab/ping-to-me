@@ -16,6 +16,7 @@ import { SslService } from "./ssl.service";
 import { AuthGuard } from "../auth/auth.guard";
 import { PermissionGuard, Permission } from "../auth/rbac";
 import { UpdateSslDto } from "./dto/ssl.dto";
+import { CreateDomainDto, UpdateDomainDto } from "./dto";
 
 @Controller("domains")
 @UseGuards(AuthGuard, PermissionGuard)
@@ -27,8 +28,8 @@ export class DomainsController {
 
   @Post()
   @Permission({ resource: "domain", action: "create" })
-  async add(@Request() req, @Body() body: { hostname: string; orgId: string }) {
-    return this.domainService.addDomain(req.user.id, body.orgId, body.hostname);
+  async add(@Request() req, @Body() dto: CreateDomainDto) {
+    return this.domainService.addDomain(req.user.id, dto.orgId, dto.hostname);
   }
 
   @Post(":id/verify")
@@ -85,6 +86,17 @@ export class DomainsController {
       page: parseInt(page, 10),
       limit: parseInt(limit, 10),
     });
+  }
+
+  @Patch(":id")
+  @Permission({ resource: "domain", action: "update" })
+  async update(
+    @Request() req,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Query("orgId") orgId: string,
+    @Body() dto: UpdateDomainDto,
+  ) {
+    return this.domainService.update(id, orgId, dto, req.user.id);
   }
 
   @Delete(":id")

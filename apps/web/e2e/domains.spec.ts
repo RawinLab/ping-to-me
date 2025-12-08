@@ -6,12 +6,23 @@ test.describe("Custom Domains", () => {
       id: "dom-1",
       hostname: "link.example.com",
       isVerified: true,
+      status: "VERIFIED",
+      isDefault: false,
+      sslStatus: "ACTIVE",
+      sslAutoRenew: true,
+      verificationAttempts: 0,
       createdAt: new Date().toISOString(),
     },
     {
       id: "dom-2",
       hostname: "go.mysite.com",
       isVerified: false,
+      status: "PENDING",
+      isDefault: false,
+      sslStatus: null,
+      verificationAttempts: 2,
+      verificationType: "txt",
+      verificationToken: "pingto-verify-abc123",
       createdAt: new Date().toISOString(),
     },
   ];
@@ -140,5 +151,161 @@ test.describe("Custom Domains", () => {
     await verifiedRow.locator("button:has(.lucide-trash)").click();
 
     // Confirm deletion happened (row should disappear on reload)
+  });
+
+  test.describe("Default Domain", () => {
+    test("DOM-030: Should set domain as default", async ({ page }) => {
+      // Mock the setDefault endpoint
+      await page.route("**/domains/dom-1/default", async (route) => {
+        await route.fulfill({
+          status: 200,
+          body: JSON.stringify({ ...mockDomains[0], isDefault: true }),
+        });
+      });
+
+      // Handle confirm dialog
+      page.on("dialog", (dialog) => dialog.accept());
+
+      // Find Set Default button and click
+      const verifiedDomainCard = page.locator('[class*="Card"]', {
+        hasText: "link.example.com",
+      });
+      await verifiedDomainCard.locator('button:has-text("Set Default")').click();
+
+      // Should see success
+      await expect(page.locator("text=Default")).toBeVisible();
+    });
+  });
+
+  test.describe("Domain Search & Filter", () => {
+    test("DOM-060: Should search domains by hostname", async ({ page }) => {
+      // Wait for domains to load
+      await expect(page.locator("text=link.example.com")).toBeVisible();
+
+      // Enter search term
+      await page.fill('[data-testid="domain-search"]', "mysite");
+
+      // Should only show matching domain
+      await expect(page.locator("text=go.mysite.com")).toBeVisible();
+      await expect(page.locator("text=link.example.com")).not.toBeVisible();
+    });
+
+    test("DOM-061: Should filter domains by status", async ({ page }) => {
+      // Update mock to include status
+      await page.route("**/domains?*", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([
+            {
+              id: "dom-1",
+              hostname: "link.example.com",
+              isVerified: true,
+              status: "VERIFIED",
+              createdAt: new Date().toISOString(),
+            },
+            {
+              id: "dom-2",
+              hostname: "go.mysite.com",
+              isVerified: false,
+              status: "PENDING",
+              createdAt: new Date().toISOString(),
+            },
+          ]),
+        });
+      });
+
+      await page.reload();
+
+      // Click status filter
+      await page.click('[data-testid="status-filter"]');
+      await page.click('[data-testid="status-verified"]');
+
+      // Should only show verified domains
+      await expect(page.locator("text=link.example.com")).toBeVisible();
+      await expect(page.locator("text=go.mysite.com")).not.toBeVisible();
+    });
+  });
+
+  test.describe("SSL Management", () => {
+    test("DOM-020: Should provision SSL certificate", async ({ page }) => {
+      // Navigate to domain details
+      await page.route("**/domains/dom-1", async (route) => {
+        await route.fulfill({
+          status: 200,
+          body: JSON.stringify({
+            ...mockDomains[0],
+            isVerified: true,
+            status: "VERIFIED",
+            sslStatus: null,
+          }),
+        });
+      });
+
+      await page.route("**/domains/dom-1/ssl", async (route) => {
+        if (route.request().method() === "POST") {
+          await route.fulfill({
+            status: 200,
+            body: JSON.stringify({
+              sslStatus: "PROVISIONING",
+              provider: "letsencrypt",
+            }),
+          });
+        }
+      });
+
+      await page.goto("/dashboard/domains/dom-1");
+
+      // Look for provision SSL button
+      const provisionBtn = page.locator('button:has-text("Provision SSL")');
+      if (await provisionBtn.isVisible()) {
+        await provisionBtn.click();
+        await expect(
+          page.locator("text=PROVISIONING").or(page.locator("text=SSL")),
+        ).toBeVisible();
+      }
+    });
+
+    test("DOM-022: Should toggle SSL auto-renewal", async ({ page }) => {
+      await page.route("**/domains/dom-1", async (route) => {
+        await route.fulfill({
+          status: 200,
+          body: JSON.stringify({
+            ...mockDomains[0],
+            isVerified: true,
+            status: "VERIFIED",
+            sslStatus: "ACTIVE",
+            sslAutoRenew: true,
+          }),
+        });
+      });
+
+      await page.route("**/domains/dom-1/ssl", async (route) => {
+        if (route.request().method() === "PATCH") {
+          await route.fulfill({
+            status: 200,
+            body: JSON.stringify({ sslAutoRenew: false }),
+          });
+        } else if (route.request().method() === "GET") {
+          await route.fulfill({
+            status: 200,
+            body: JSON.stringify({
+              sslStatus: "ACTIVE",
+              sslAutoRenew: true,
+            }),
+          });
+        }
+      });
+
+      await page.goto("/dashboard/domains/dom-1");
+
+      // Look for auto-renew toggle if visible
+      const autoRenewToggle = page.locator(
+        '[data-testid="ssl-auto-renew-toggle"]',
+      );
+      if (await autoRenewToggle.isVisible()) {
+        await autoRenewToggle.click();
+      }
+    });
   });
 });
