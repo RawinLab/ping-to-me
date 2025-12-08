@@ -260,6 +260,8 @@ export class AnalyticsService {
     const countries: Record<string, number> = {};
     const referrers: Record<string, number> = {};
     const devices: Record<string, number> = {};
+    const browsers: Record<string, number> = {};
+    const os: Record<string, number> = {};
 
     clicksInRange.forEach((click) => {
       // By date
@@ -283,8 +285,18 @@ export class AnalyticsService {
             result.device.type.slice(1)
           : "Desktop";
         devices[deviceType] = (devices[deviceType] || 0) + 1;
+
+        // By browser
+        const browserName = result.browser.name || "Unknown";
+        browsers[browserName] = (browsers[browserName] || 0) + 1;
+
+        // By OS
+        const osName = result.os.name || "Unknown";
+        os[osName] = (os[osName] || 0) + 1;
       } else {
         devices["Unknown"] = (devices["Unknown"] || 0) + 1;
+        browsers["Unknown"] = (browsers["Unknown"] || 0) + 1;
+        os["Unknown"] = (os["Unknown"] || 0) + 1;
       }
     });
 
@@ -323,6 +335,8 @@ export class AnalyticsService {
       countries,
       referrers,
       devices,
+      browsers,
+      os,
       days,
     };
   }
