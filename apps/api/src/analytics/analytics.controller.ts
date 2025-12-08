@@ -19,11 +19,13 @@ import { AuthGuard } from "../auth/auth.guard";
 import { TrackClickDto } from "./dto/track-click.dto";
 import { PermissionGuard, Permission } from "../auth/rbac";
 import { ExportFiltersDto } from "./dto/export-filters.dto";
+import { AnalyticsPdfService } from "./pdf/analytics-pdf.service";
 
 @Controller("analytics")
 export class AnalyticsController {
   constructor(
     private readonly analyticsService: AnalyticsService,
+    private readonly analyticsPdfService: AnalyticsPdfService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -71,11 +73,36 @@ export class AnalyticsController {
     );
     res.send(result.content);
   }
+
+  @UseGuards(AuthGuard, PermissionGuard)
+  @Get("export/pdf")
+  @Permission({ resource: "analytics", action: "export" })
+  async exportDashboardPdf(
+    @Request() req,
+    @Query("days") days?: string,
+    @Res() res?: Response,
+  ) {
+    const daysNum = days ? parseInt(days, 10) : 30;
+    const pdfBuffer = await this.analyticsPdfService.generateDashboardReport(
+      req.user.id,
+      daysNum,
+    );
+
+    const filename = `dashboard-analytics-${new Date().toISOString().split('T')[0]}.pdf`;
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Length", pdfBuffer.length);
+    res.send(pdfBuffer);
+  }
 }
 
 @Controller("links")
 export class LinkAnalyticsController {
-  constructor(private readonly analyticsService: AnalyticsService) {}
+  constructor(
+    private readonly analyticsService: AnalyticsService,
+    private readonly analyticsPdfService: AnalyticsPdfService,
+  ) {}
 
   @UseGuards(AuthGuard, PermissionGuard)
   @Get(":id/analytics")
@@ -153,5 +180,29 @@ export class LinkAnalyticsController {
   ) {
     const daysNum = days ? parseInt(days, 10) : 30;
     return this.analyticsService.getDayOfWeekStats(id, req.user.id, daysNum);
+  }
+
+  @UseGuards(AuthGuard, PermissionGuard)
+  @Get(":id/analytics/export/pdf")
+  @Permission({ resource: "analytics", action: "export" })
+  async exportLinkAnalyticsPdf(
+    @Request() req,
+    @Param("id") id: string,
+    @Query("days") days?: string,
+    @Res() res?: Response,
+  ) {
+    const daysNum = days ? parseInt(days, 10) : 30;
+    const pdfBuffer = await this.analyticsPdfService.generateLinkReport(
+      id,
+      req.user.id,
+      daysNum,
+    );
+
+    const filename = `link-analytics-${new Date().toISOString().split('T')[0]}.pdf`;
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Length", pdfBuffer.length);
+    res.send(pdfBuffer);
   }
 }

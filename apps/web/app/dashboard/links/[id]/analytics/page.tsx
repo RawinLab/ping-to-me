@@ -16,6 +16,11 @@ import {
   TableRow,
   Button,
   Progress,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@pingtome/ui";
 import { format } from "date-fns";
 import {
@@ -32,6 +37,7 @@ import {
   TrendingUp,
   TrendingDown,
   Check,
+  FileText,
 } from "lucide-react";
 import {
   EngagementsChart,
@@ -41,6 +47,7 @@ import {
   BrowserChart,
   OSChart,
 } from "@/components/dashboard";
+import { LiveClickIndicator } from "@/components/dashboard/LiveClickCounter";
 
 const DEVICE_COLORS = {
   Desktop: "#3B82F6",
@@ -110,11 +117,17 @@ export default function LinkAnalyticsPage() {
     }
   }, [dateRange]);
 
-  const handleExport = async () => {
+  const handleExport = async (format: 'csv' | 'pdf' = 'csv') => {
     try {
       const token = localStorage.getItem("token");
+      const days = dateRange === "7d" ? 7 : dateRange === "30d" ? 30 : 90;
+
+      const endpoint = format === 'pdf'
+        ? `/links/${id}/analytics/export/pdf?days=${days}`
+        : `/links/${id}/analytics/export`;
+
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/links/${id}/analytics/export`,
+        `${process.env.NEXT_PUBLIC_API_URL}${endpoint}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -124,8 +137,9 @@ export default function LinkAnalyticsPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "analytics.csv";
+      a.download = format === 'pdf' ? `analytics-${new Date().toISOString().split('T')[0]}.pdf` : "analytics.csv";
       a.click();
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       alert("Failed to export analytics");
     }
@@ -315,6 +329,9 @@ export default function LinkAnalyticsPage() {
                     {link.tags.length > 2 && ` +${link.tags.length - 2} more`}
                   </div>
                 )}
+                <div className="ml-auto">
+                  <LiveClickIndicator linkId={id} />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -682,9 +699,23 @@ export default function LinkAnalyticsPage() {
             <CardTitle className="text-lg font-semibold">
               Recent Activity
             </CardTitle>
-            <Button variant="ghost" size="icon" onClick={handleExport}>
-              <Download className="h-4 w-4 text-blue-600" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Download className="h-4 w-4 text-blue-600" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExport('csv')}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export as CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Export as PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </CardHeader>
           <CardContent className="p-0">
             <Table>

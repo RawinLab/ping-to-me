@@ -1,6 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { AnalyticsController, LinkAnalyticsController } from "../analytics.controller";
 import { AnalyticsService } from "../analytics.service";
+import { AnalyticsPdfService } from "../pdf/analytics-pdf.service";
 import { ConfigService } from "@nestjs/config";
 import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import { ClickSource } from "@prisma/client";
@@ -34,6 +35,11 @@ describe("AnalyticsController", () => {
     logAccess: jest.fn(),
   };
 
+  const mockAnalyticsPdfService = {
+    generateLinkReport: jest.fn(),
+    generateDashboardReport: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AnalyticsController],
@@ -41,6 +47,10 @@ describe("AnalyticsController", () => {
         {
           provide: AnalyticsService,
           useValue: mockAnalyticsService,
+        },
+        {
+          provide: AnalyticsPdfService,
+          useValue: mockAnalyticsPdfService,
         },
         {
           provide: ConfigService,
@@ -444,6 +454,11 @@ describe("LinkAnalyticsController", () => {
     logAccess: jest.fn(),
   };
 
+  const mockAnalyticsPdfService = {
+    generateLinkReport: jest.fn(),
+    generateDashboardReport: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [LinkAnalyticsController],
@@ -451,6 +466,10 @@ describe("LinkAnalyticsController", () => {
         {
           provide: AnalyticsService,
           useValue: mockAnalyticsService,
+        },
+        {
+          provide: AnalyticsPdfService,
+          useValue: mockAnalyticsPdfService,
         },
         {
           provide: PermissionService,

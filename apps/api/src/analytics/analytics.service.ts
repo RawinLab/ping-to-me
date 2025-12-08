@@ -2,16 +2,25 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  Inject,
+  forwardRef,
+  Optional,
 } from "@nestjs/common";
 import { PrismaClient, ClickSource } from "@prisma/client";
 import { UAParser } from "ua-parser-js";
 import { createHash } from "crypto";
 import { PrismaService } from "../prisma/prisma.service";
 import { isBot } from "./utils/bot-filter";
+import { AnalyticsGateway } from "./realtime/analytics.gateway";
 
 @Injectable()
 export class AnalyticsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional()
+    @Inject(forwardRef(() => AnalyticsGateway))
+    private readonly analyticsGateway: AnalyticsGateway,
+  ) {}
 
   /**
    * Generate a session hash from IP, User Agent, and Date (day only)
@@ -65,7 +74,7 @@ export class AnalyticsService {
     const clickTimestamp = new Date(data.timestamp);
     const sessionId = this.generateSessionHash(data.ip, data.userAgent, clickTimestamp);
 
-    return this.prisma.clickEvent.create({
+    const clickEvent = await this.prisma.clickEvent.create({
       data: {
         linkId: link.id,
         timestamp: clickTimestamp,
@@ -81,6 +90,28 @@ export class AnalyticsService {
         device,
       },
     });
+
+    // Emit real-time click event via WebSocket
+    if (this.analyticsGateway) {
+      try {
+        this.analyticsGateway.emitClickEvent(link.id, link.userId, {
+          linkId: link.id,
+          timestamp: clickTimestamp,
+          country: data.country,
+          city: clickEvent.city,
+          device,
+          browser,
+          os,
+          referrer: data.referrer,
+          source: data.source,
+        });
+      } catch (error) {
+        // Don't fail the request if WebSocket fails
+        console.error('Failed to emit WebSocket event:', error);
+      }
+    }
+
+    return clickEvent;
   }
 
   async getLinkAnalytics(linkId: string, userId: string, days: number = 30) {
@@ -98,21 +129,69 @@ export class AnalyticsService {
     const startDate = new Date(now);
     startDate.setDate(startDate.getDate() - days);
 
-    const clicks = await this.prisma.clickEvent.findMany({
-      where: {
-        linkId,
-        timestamp: { gte: startDate },
-      },
-      orderBy: { timestamp: "desc" },
-      take: 1000, // Increase limit for aggregation
-    });
+    // Use aggregated data for queries > 7 days for better performance
+    const useAggregatedData = days > 7;
 
-    const totalClicks = await this.prisma.clickEvent.count({
-      where: {
-        linkId,
-        timestamp: { gte: startDate },
-      },
-    });
+    let clicks: any[] = [];
+    let totalClicks = 0;
+    let uniqueVisitors = 0;
+
+    if (useAggregatedData) {
+      // Use aggregated data for historical analysis
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      // Get aggregated data for dates older than 7 days
+      const aggregatedData = await this.prisma.analyticsDaily.findMany({
+        where: {
+          linkId,
+          date: {
+            gte: startDate,
+            lt: sevenDaysAgo,
+          },
+        },
+        orderBy: { date: 'asc' },
+      });
+
+      // Get recent clicks (last 7 days) from ClickEvent for accuracy
+      const recentClicks = await this.prisma.clickEvent.findMany({
+        where: {
+          linkId,
+          timestamp: { gte: sevenDaysAgo },
+        },
+        orderBy: { timestamp: "desc" },
+      });
+
+      // Combine aggregated + recent data
+      clicks = recentClicks; // For detailed display
+      totalClicks = aggregatedData.reduce((sum, d) => sum + d.totalClicks, 0) + recentClicks.length;
+
+      // Calculate unique visitors from aggregated data (approximation)
+      const aggregatedUniqueVisitors = aggregatedData.reduce((sum, d) => sum + d.uniqueVisitors, 0);
+      const recentSessionIds = new Set(
+        recentClicks
+          .filter((c) => c.sessionId !== null)
+          .map((c) => c.sessionId as string),
+      );
+      uniqueVisitors = aggregatedUniqueVisitors + recentSessionIds.size;
+    } else {
+      // For short time ranges (≤7 days), use raw click events
+      clicks = await this.prisma.clickEvent.findMany({
+        where: {
+          linkId,
+          timestamp: { gte: startDate },
+        },
+        orderBy: { timestamp: "desc" },
+        take: 1000, // Increase limit for aggregation
+      });
+
+      totalClicks = await this.prisma.clickEvent.count({
+        where: {
+          linkId,
+          timestamp: { gte: startDate },
+        },
+      });
+    }
 
     // Also get all-time total for display
     const allTimeClicks = await this.prisma.clickEvent.count({
@@ -182,6 +261,71 @@ export class AnalyticsService {
     const sources: Record<string, number> = {};
     const clicksByDate: Record<string, number> = {};
 
+    // If using aggregated data, merge it first
+    if (useAggregatedData) {
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const aggregatedData = await this.prisma.analyticsDaily.findMany({
+        where: {
+          linkId,
+          date: {
+            gte: startDate,
+            lt: sevenDaysAgo,
+          },
+        },
+        orderBy: { date: 'asc' },
+      });
+
+      // Merge aggregated data
+      aggregatedData.forEach((daily) => {
+        // Add to clicksByDate
+        const dateStr = daily.date.toISOString().split('T')[0];
+        clicksByDate[dateStr] = daily.totalClicks;
+
+        // Merge countries
+        if (daily.countries) {
+          const countriesData = daily.countries as Record<string, number>;
+          Object.entries(countriesData).forEach(([country, count]) => {
+            countries[country] = (countries[country] || 0) + count;
+          });
+        }
+
+        // Merge devices
+        if (daily.devices) {
+          const devicesData = daily.devices as Record<string, number>;
+          Object.entries(devicesData).forEach(([device, count]) => {
+            devices[device] = (devices[device] || 0) + count;
+          });
+        }
+
+        // Merge browsers
+        if (daily.browsers) {
+          const browsersData = daily.browsers as Record<string, number>;
+          Object.entries(browsersData).forEach(([browser, count]) => {
+            browsers[browser] = (browsers[browser] || 0) + count;
+          });
+        }
+
+        // Merge OS
+        if (daily.os) {
+          const osData = daily.os as Record<string, number>;
+          Object.entries(osData).forEach(([osName, count]) => {
+            os[osName] = (os[osName] || 0) + count;
+          });
+        }
+
+        // Merge referrers
+        if (daily.referrers) {
+          const referrersData = daily.referrers as Record<string, number>;
+          Object.entries(referrersData).forEach(([referrer, count]) => {
+            referrers[referrer] = (referrers[referrer] || 0) + count;
+          });
+        }
+      });
+    }
+
+    // Process recent clicks (or all clicks if not using aggregated data)
     clicks.forEach((click) => {
       // Country
       const country = click.country || "Unknown";
@@ -231,16 +375,18 @@ export class AnalyticsService {
       .map(([date, count]) => ({ date, clicks: count }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
-    // Count unique visitors (distinct sessionIds)
-    const uniqueVisitorsResult = await this.prisma.clickEvent.groupBy({
-      by: ['sessionId'],
-      where: {
-        linkId,
-        timestamp: { gte: startDate },
-        sessionId: { not: null },
-      },
-    });
-    const uniqueVisitors = uniqueVisitorsResult.length;
+    // Count unique visitors (already calculated if using aggregated data)
+    if (!useAggregatedData) {
+      const uniqueVisitorsResult = await this.prisma.clickEvent.groupBy({
+        by: ['sessionId'],
+        where: {
+          linkId,
+          timestamp: { gte: startDate },
+          sessionId: { not: null },
+        },
+      });
+      uniqueVisitors = uniqueVisitorsResult.length;
+    }
 
     return {
       totalClicks,

@@ -140,4 +140,100 @@ PingTO.Me - URL Shortener Platform
       html: htmlContent,
     });
   }
+
+  async sendScheduledReport(params: {
+    to: string[];
+    userName: string;
+    reportType: string;
+    frequency: string;
+    format: string;
+    content: string;
+    filename: string;
+    contentType: string;
+  }) {
+    const frequencyDisplay = params.frequency.toLowerCase();
+    const formatDisplay = params.format.toUpperCase();
+
+    const textContent = `
+Hi ${params.userName},
+
+Your ${frequencyDisplay} analytics report is ready!
+
+Report: ${params.reportType}
+Format: ${formatDisplay}
+
+Please find your report attached to this email.
+
+---
+PingTO.Me - URL Shortener Platform
+    `.trim();
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background-color: #4F46E5; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+    .content { background-color: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+    .report-info { background-color: #fff; padding: 20px; margin: 20px 0; border-left: 4px solid #4F46E5; }
+    .info-row { display: flex; margin: 10px 0; }
+    .info-label { font-weight: bold; width: 120px; color: #6B7280; }
+    .info-value { color: #111827; }
+    .footer { text-align: center; padding: 20px; color: #6B7280; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📊 Analytics Report</h1>
+    </div>
+    <div class="content">
+      <p>Hi ${params.userName},</p>
+
+      <p>Your ${frequencyDisplay} analytics report is ready!</p>
+
+      <div class="report-info">
+        <div class="info-row">
+          <div class="info-label">Report:</div>
+          <div class="info-value">${params.reportType}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Frequency:</div>
+          <div class="info-value">${params.frequency}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Format:</div>
+          <div class="info-value">${formatDisplay}</div>
+        </div>
+      </div>
+
+      <p>Your report is attached to this email.</p>
+    </div>
+    <div class="footer">
+      <p>PingTO.Me - URL Shortener Platform</p>
+      <p>You're receiving this email because you set up a scheduled report.</p>
+      <p>To manage your scheduled reports, visit your dashboard settings.</p>
+    </div>
+  </div>
+</body>
+</html>
+    `.trim();
+
+    await this.transporter.sendMail({
+      from: this.configService.get("EMAIL_FROM"),
+      to: params.to,
+      subject: `Your ${params.frequency} Analytics Report - PingTO.Me`,
+      text: textContent,
+      html: htmlContent,
+      attachments: [
+        {
+          filename: params.filename,
+          content: params.content,
+          contentType: params.contentType,
+        },
+      ],
+    });
+  }
 }

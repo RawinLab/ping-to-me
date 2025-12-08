@@ -35,6 +35,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { EngagementsChart } from "@/components/dashboard";
+import { LiveClickCounter } from "@/components/dashboard/LiveClickCounter";
 
 export default function DashboardPage() {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -337,34 +338,44 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {/* Engagements Chart */}
-      {metrics && chartData.length > 0 && (
-        <Card className="border-slate-200 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <div>
-              <CardTitle className="text-lg font-semibold text-slate-900">
-                Engagements Overview
-              </CardTitle>
-              <p className="text-sm text-slate-500 mt-0.5">
-                Track your link performance over time
-              </p>
-            </div>
-            <Link href="/dashboard/analytics">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="gap-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-              >
-                View Analytics
-                <ExternalLink className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent>
-            <EngagementsChart data={chartData} onExport={handleExport} />
-          </CardContent>
-        </Card>
-      )}
+      {/* Live Analytics Section */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="md:col-span-2">
+          {/* Engagements Chart */}
+          {metrics && chartData.length > 0 && (
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <div>
+                  <CardTitle className="text-lg font-semibold text-slate-900">
+                    Engagements Overview
+                  </CardTitle>
+                  <p className="text-sm text-slate-500 mt-0.5">
+                    Track your link performance over time
+                  </p>
+                </div>
+                <Link href="/dashboard/analytics">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  >
+                    View Analytics
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </Button>
+                </Link>
+              </CardHeader>
+              <CardContent>
+                <EngagementsChart data={chartData} onExport={handleExport} />
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Live Activity Feed */}
+        <div className="md:col-span-1">
+          <LiveClickCounter dashboard={true} showFeed={true} />
+        </div>
+      </div>
 
       {/* Recent Links */}
       <Card className="border-slate-200 shadow-sm">

@@ -38,6 +38,7 @@ model User {
   folders           Folder[]
   sentInvitations   OrganizationInvitation[] @relation("SentInvitations")
   invitedMembers    OrganizationMember[]     @relation("InvitedByUser")
+  reportSchedules   ReportSchedule[]
 }
 
 model Account {
@@ -151,6 +152,7 @@ model Organization {
   invitations OrganizationInvitation[]
   usageTracking UsageTracking[]
   folders     Folder[]
+  reportSchedules ReportSchedule[]
 }
 
 model OrganizationSettings {
@@ -346,6 +348,8 @@ model Link {
   clicks           ClickEvent[]
   qrCode           QrCode?
   bioPageLinks     BioPageLink[]
+  analyticsDaily   AnalyticsDaily[]
+  reportSchedules  ReportSchedule[]
 
   @@index([userId])
   @@index([tags])
@@ -406,6 +410,29 @@ model ClickEvent {
   link      Link        @relation(fields: [linkId], references: [id])
 
   @@index([linkId, sessionId])
+  @@index([linkId, timestamp])
+}
+
+model AnalyticsDaily {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  linkId         String   @db.Uuid
+  date           DateTime @db.Date
+  totalClicks    Int      @default(0)
+  uniqueVisitors Int      @default(0)
+  countries      Json?    // { "US": 50, "UK": 30 }
+  devices        Json?    // { "Desktop": 60, "Mobile": 40 }
+  browsers       Json?    // { "Chrome": 70, "Safari": 20 }
+  os             Json?    // { "Windows": 50, "macOS": 30 }
+  referrers      Json?    // { "google.com": 40, "direct": 30 }
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  link           Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@unique([linkId, date])
+  @@index([linkId])
+  @@index([date])
+  @@map("analytics_daily")
 }
 
 model Domain {
@@ -647,4 +674,37 @@ model UsageEvent {
   @@index([organizationId, createdAt])
   @@index([eventType, createdAt])
   @@map("usage_events")
+}
+
+model ReportSchedule {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String          @db.Uuid
+  organizationId String?         @db.Uuid
+  linkId         String?         @db.Uuid  // null = dashboard report
+  frequency      ReportFrequency
+  dayOfWeek      Int?            // 0-6 for weekly (0=Sunday)
+  dayOfMonth     Int?            // 1-31 for monthly
+  time           String          @default("09:00")  // HH:mm format
+  timezone       String          @default("UTC")
+  format         String          @default("pdf")  // 'pdf' or 'csv'
+  recipients     String[]        // Additional email addresses
+  enabled        Boolean         @default(true)
+  lastSentAt     DateTime?
+  nextRunAt      DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization?   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  link           Link?           @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([nextRunAt])
+  @@index([enabled])
+}
+
+enum ReportFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
 }

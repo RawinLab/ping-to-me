@@ -15,6 +15,10 @@ import {
   TableHeader,
   TableRow,
   Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@pingtome/ui";
 import { format } from "date-fns";
 import {
@@ -26,6 +30,8 @@ import {
   BarChart3,
   Link2,
   MousePointerClick,
+  FileText,
+  ChevronDown,
 } from "lucide-react";
 import {
   EngagementsChart,
@@ -66,20 +72,26 @@ export default function AnalyticsPage() {
     fetchAnalytics();
   }, [fetchAnalytics]);
 
-  const handleExport = async () => {
+  const handleExport = async (format: 'csv' | 'pdf' = 'csv') => {
     try {
       const token = localStorage.getItem("token");
       const days = dateRange === "7d" ? 7 : dateRange === "30d" ? 30 : 90;
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
 
-      const params = new URLSearchParams({
-        startDate: startDate.toISOString(),
-        format: "csv",
-      });
+      let endpoint: string;
+      if (format === 'pdf') {
+        endpoint = `/analytics/export/pdf?days=${days}`;
+      } else {
+        const params = new URLSearchParams({
+          startDate: startDate.toISOString(),
+          format: "csv",
+        });
+        endpoint = `/analytics/export?${params}`;
+      }
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/analytics/export?${params}`,
+        `${process.env.NEXT_PUBLIC_API_URL}${endpoint}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -89,7 +101,8 @@ export default function AnalyticsPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `dashboard-analytics-${new Date().toISOString().split("T")[0]}.csv`;
+      const extension = format === 'pdf' ? 'pdf' : 'csv';
+      a.download = `dashboard-analytics-${new Date().toISOString().split("T")[0]}.${extension}`;
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {
@@ -184,10 +197,25 @@ export default function AnalyticsPage() {
               Track performance across all your links
             </p>
           </div>
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport('csv')}>
+                <Download className="h-4 w-4 mr-2" />
+                Export as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                <FileText className="h-4 w-4 mr-2" />
+                Export as PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Stats Cards */}

@@ -18,6 +18,13 @@ describe("AnalyticsService", () => {
       findMany: jest.fn(),
       groupBy: jest.fn(),
     },
+    analyticsDaily: {
+      findMany: jest.fn().mockResolvedValue([]),
+      findUnique: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      upsert: jest.fn(),
+    },
   };
 
   // Mock Link data
@@ -863,7 +870,8 @@ describe("AnalyticsService", () => {
         { sessionId: "session3" },
       ]);
 
-      const result = await service.getLinkAnalytics("link-123", "user-123", 30);
+      // Use 7 days to trigger the raw click events path (not aggregated)
+      const result = await service.getLinkAnalytics("link-123", "user-123", 7);
 
       expect(result.uniqueVisitors).toBe(3);
       expect(result.totalClicks).toBe(10);
