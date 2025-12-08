@@ -38,6 +38,7 @@ const editLinkSchema = z.object({
   title: z.string().optional(),
   campaignId: z.string().optional(),
   expirationDate: z.string().optional(),
+  maxClicks: z.string().optional(),
 });
 
 type EditLinkFormData = z.infer<typeof editLinkSchema>;
@@ -50,6 +51,7 @@ interface EditLinkModalProps {
     tags?: string[];
     campaignId?: string;
     expirationDate?: string;
+    maxClicks?: number;
   };
   onSuccess?: () => void;
   children?: React.ReactNode;
@@ -78,6 +80,7 @@ export function EditLinkModal({
       title: link.title || "",
       campaignId: link.campaignId || "none",
       expirationDate: link.expirationDate?.split("T")[0] || "",
+      maxClicks: link.maxClicks ? String(link.maxClicks) : "",
     },
   });
 
@@ -91,6 +94,7 @@ export function EditLinkModal({
         title: link.title || "",
         campaignId: link.campaignId || "none",
         expirationDate: link.expirationDate?.split("T")[0] || "",
+        maxClicks: link.maxClicks ? String(link.maxClicks) : "",
       });
       setSelectedTags(link.tags || []);
     }
@@ -137,6 +141,7 @@ export function EditLinkModal({
           tags: selectedTags,
           campaignId: data.campaignId === "none" ? null : data.campaignId,
           expirationDate: data.expirationDate || undefined,
+          maxClicks: data.maxClicks ? parseInt(data.maxClicks, 10) : undefined,
         }),
       });
       setOpen(false);
@@ -301,6 +306,23 @@ export function EditLinkModal({
               type="date"
               {...form.register("expirationDate")}
             />
+          </div>
+
+          {/* Click Limit */}
+          <div className="space-y-2">
+            <Label htmlFor="maxClicks">
+              Click Limit <span className="text-muted-foreground">(optional)</span>
+            </Label>
+            <Input
+              type="number"
+              id="maxClicks"
+              min="1"
+              placeholder="Unlimited"
+              {...form.register("maxClicks")}
+            />
+            <p className="text-xs text-muted-foreground">
+              Automatically disable the link after reaching this number of clicks
+            </p>
           </div>
 
           <DialogFooter className="pt-4">

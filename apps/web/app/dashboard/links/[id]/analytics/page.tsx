@@ -38,6 +38,7 @@ import {
   TrendingDown,
   Check,
   FileText,
+  Settings,
 } from "lucide-react";
 import {
   EngagementsChart,
@@ -306,6 +307,14 @@ export default function LinkAnalyticsPage() {
                     ) : (
                       <Copy className="h-4 w-4" />
                     )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="rounded-lg"
+                    onClick={() => router.push(`/dashboard/links/${id}/settings`)}
+                  >
+                    <Settings className="h-4 w-4" />
                   </Button>
                   <Button variant="outline" size="icon" className="rounded-lg">
                     <Pencil className="h-4 w-4" />

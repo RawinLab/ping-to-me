@@ -73,6 +73,7 @@ const createLinkSchema = z.object({
   expirationDate: z.string().optional(),
   password: z.string().optional(),
   deepLinkFallback: z.string().optional(),
+  maxClicks: z.string().optional(),
 });
 
 type CreateLinkFormData = z.infer<typeof createLinkSchema>;
@@ -415,6 +416,7 @@ export default function CreateLinkPage() {
         expirationDate: data.expirationDate || undefined,
         password: data.password || undefined,
         deepLinkFallback: data.deepLinkFallback || undefined,
+        maxClicks: data.maxClicks ? parseInt(data.maxClicks, 10) : undefined,
         redirectType: parseInt(redirectType) as 301 | 302,
         // QR Code customization
         generateQrCode,
@@ -1225,6 +1227,24 @@ export default function CreateLinkPage() {
                     />
                     <p className="text-xs text-muted-foreground">
                       Fallback URL when the primary deep link cannot be opened
+                    </p>
+                  </div>
+
+                  {/* Click Limit */}
+                  <div className="space-y-2">
+                    <Label htmlFor="maxClicks">
+                      Click Limit{" "}
+                      <span className="text-muted-foreground">(optional)</span>
+                    </Label>
+                    <Input
+                      type="number"
+                      id="maxClicks"
+                      min="1"
+                      placeholder="Unlimited"
+                      {...register("maxClicks")}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Automatically disable the link after reaching this number of clicks
                     </p>
                   </div>
                 </div>
