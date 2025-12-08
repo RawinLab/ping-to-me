@@ -11,7 +11,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
-  TooltipProps,
 } from "recharts";
 
 interface CountryData {
@@ -62,9 +61,9 @@ const getColor = (value: number, maxValue: number): string => {
 /**
  * Custom tooltip for the bar chart
  */
-const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
+const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: CountryData }> }) => {
   if (active && payload && payload.length) {
-    const data = payload[0].payload as CountryData;
+    const data = payload[0].payload;
     return (
       <div className="bg-popover border border-border rounded-lg shadow-lg p-3">
         <div className="flex items-center gap-2 mb-1">
@@ -240,9 +239,9 @@ export function GeographicMap({
                 <Bar
                   dataKey="value"
                   radius={[0, 4, 4, 0]}
-                  onClick={(data) => {
-                    if (data.code && onCountryClick) {
-                      onCountryClick(data.code);
+                  onClick={(data: { payload?: CountryData }) => {
+                    if (data.payload?.code && onCountryClick) {
+                      onCountryClick(data.payload.code);
                     }
                   }}
                   className={onCountryClick ? "cursor-pointer" : ""}

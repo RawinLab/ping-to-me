@@ -7,3 +7,5 @@ export { BrowserChart } from "./BrowserChart";
 export { OSChart } from "./OSChart";
 export { DateRangePicker } from "./DateRangePicker";
 export { GeographicMap } from "./GeographicMap";
+export { HourlyHeatmap } from "./HourlyHeatmap";
+export { DayOfWeekChart } from "./DayOfWeekChart";

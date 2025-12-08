@@ -248,10 +248,12 @@ describe("AnalyticsService", () => {
       mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
       mockPrismaService.clickEvent.findMany.mockResolvedValue(clickEvents);
       mockPrismaService.clickEvent.count.mockResolvedValue(2);
+      mockPrismaService.clickEvent.groupBy.mockResolvedValue([{ sessionId: "session1" }]);
 
       const result = await service.getLinkAnalytics("link-123", "user-123", 30);
 
       expect(result).toHaveProperty("totalClicks", 2);
+      expect(result).toHaveProperty("uniqueVisitors", 1);
       expect(result).toHaveProperty("recentClicks");
       expect(result).toHaveProperty("clicksByDate");
       expect(result).toHaveProperty("devices");
@@ -285,6 +287,7 @@ describe("AnalyticsService", () => {
       mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
       mockPrismaService.clickEvent.findMany.mockResolvedValue([]);
       mockPrismaService.clickEvent.count.mockResolvedValue(0);
+      mockPrismaService.clickEvent.groupBy.mockResolvedValue([]);
 
       await service.getLinkAnalytics("link-123", "user-123", 30);
 
@@ -308,6 +311,7 @@ describe("AnalyticsService", () => {
         .mockResolvedValueOnce(100) // allTimeClicks
         .mockResolvedValueOnce(60) // clicksLast7Days
         .mockResolvedValueOnce(40); // clicksPrevious7Days
+      mockPrismaService.clickEvent.groupBy.mockResolvedValue([]);
 
       const result = await service.getLinkAnalytics("link-123", "user-123", 30);
 
@@ -728,6 +732,249 @@ describe("AnalyticsService", () => {
 
       expect(() => JSON.parse(result.content)).not.toThrow();
       expect(result.content).toContain("\n"); // Pretty-printed with newlines
+    });
+  });
+
+  describe("trackClick with sessionId", () => {
+    it("should generate and store sessionId when tracking clicks", async () => {
+      const mockLink = {
+        id: "link-123",
+        slug: "test-slug",
+        userId: "user-123",
+      };
+      mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
+      mockPrismaService.clickEvent.create.mockResolvedValue({});
+
+      const clickData = {
+        slug: "test-slug",
+        timestamp: "2024-12-01T10:00:00Z",
+        userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        ip: "192.168.1.1",
+        country: "US",
+      };
+
+      await service.trackClick(clickData);
+
+      expect(mockPrismaService.clickEvent.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          linkId: "link-123",
+          sessionId: expect.any(String),
+        }),
+      });
+
+      // Verify sessionId is a 64-character hex string (SHA256)
+      const callArgs = mockPrismaService.clickEvent.create.mock.calls[0][0];
+      expect(callArgs.data.sessionId).toMatch(/^[a-f0-9]{64}$/);
+    });
+
+    it("should generate same sessionId for same IP, UA, and date", async () => {
+      const mockLink = {
+        id: "link-123",
+        slug: "test-slug",
+        userId: "user-123",
+      };
+      mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
+      mockPrismaService.clickEvent.create.mockResolvedValue({});
+
+      const clickData = {
+        slug: "test-slug",
+        timestamp: "2024-12-01T10:00:00Z",
+        userAgent: "Mozilla/5.0",
+        ip: "192.168.1.1",
+        country: "US",
+      };
+
+      // Track first click
+      await service.trackClick(clickData);
+      const firstSessionId = mockPrismaService.clickEvent.create.mock.calls[0][0].data.sessionId;
+
+      // Track second click same day, different time
+      const clickData2 = { ...clickData, timestamp: "2024-12-01T15:00:00Z" };
+      await service.trackClick(clickData2);
+      const secondSessionId = mockPrismaService.clickEvent.create.mock.calls[1][0].data.sessionId;
+
+      expect(firstSessionId).toBe(secondSessionId);
+    });
+
+    it("should generate different sessionId for different dates", async () => {
+      const mockLink = {
+        id: "link-123",
+        slug: "test-slug",
+        userId: "user-123",
+      };
+      mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
+      mockPrismaService.clickEvent.create.mockResolvedValue({});
+
+      const clickData = {
+        slug: "test-slug",
+        timestamp: "2024-12-01T10:00:00Z",
+        userAgent: "Mozilla/5.0",
+        ip: "192.168.1.1",
+        country: "US",
+      };
+
+      // Track first click
+      await service.trackClick(clickData);
+      const firstSessionId = mockPrismaService.clickEvent.create.mock.calls[0][0].data.sessionId;
+
+      // Track second click next day
+      const clickData2 = { ...clickData, timestamp: "2024-12-02T10:00:00Z" };
+      await service.trackClick(clickData2);
+      const secondSessionId = mockPrismaService.clickEvent.create.mock.calls[1][0].data.sessionId;
+
+      expect(firstSessionId).not.toBe(secondSessionId);
+    });
+  });
+
+  describe("getLinkAnalytics with uniqueVisitors", () => {
+    it("should include uniqueVisitors in analytics response", async () => {
+      const mockLink = {
+        id: "link-123",
+        slug: "test-slug",
+        userId: "user-123",
+      };
+
+      mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
+      mockPrismaService.clickEvent.findMany.mockResolvedValue([]);
+      mockPrismaService.clickEvent.count.mockResolvedValue(0);
+      mockPrismaService.clickEvent.groupBy.mockResolvedValue([]);
+
+      const result = await service.getLinkAnalytics("link-123", "user-123", 30);
+
+      expect(result).toHaveProperty("uniqueVisitors");
+      expect(result.uniqueVisitors).toBe(0);
+    });
+
+    it("should count unique visitors correctly", async () => {
+      const mockLink = {
+        id: "link-123",
+        slug: "test-slug",
+        userId: "user-123",
+      };
+
+      mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
+      mockPrismaService.clickEvent.findMany.mockResolvedValue([]);
+      mockPrismaService.clickEvent.count.mockResolvedValue(10);
+
+      // Mock 3 unique sessions with multiple clicks
+      mockPrismaService.clickEvent.groupBy.mockResolvedValue([
+        { sessionId: "session1" },
+        { sessionId: "session2" },
+        { sessionId: "session3" },
+      ]);
+
+      const result = await service.getLinkAnalytics("link-123", "user-123", 30);
+
+      expect(result.uniqueVisitors).toBe(3);
+      expect(result.totalClicks).toBe(10);
+    });
+  });
+
+  describe("getUniqueVisitors", () => {
+    const mockLink = {
+      id: "link-123",
+      slug: "test-slug",
+      userId: "user-123",
+    };
+
+    it("should return unique visitor metrics", async () => {
+      mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
+
+      const mockClicks = [
+        { sessionId: "session1", timestamp: new Date("2024-12-01") },
+        { sessionId: "session1", timestamp: new Date("2024-12-01") },
+        { sessionId: "session2", timestamp: new Date("2024-12-02") },
+        { sessionId: "session2", timestamp: new Date("2024-12-02") },
+        { sessionId: "session2", timestamp: new Date("2024-12-02") },
+        { sessionId: "session3", timestamp: new Date("2024-12-03") },
+      ];
+
+      mockPrismaService.clickEvent.findMany.mockResolvedValue(mockClicks);
+
+      const result = await service.getUniqueVisitors("link-123", "user-123", 30);
+
+      expect(result).toHaveProperty("totalClicks", 6);
+      expect(result).toHaveProperty("uniqueVisitors", 3);
+      expect(result).toHaveProperty("returningVisitors", 2); // session1 and session2 have >1 click
+      expect(result).toHaveProperty("uniqueByDate");
+      expect(result.uniqueByDate).toBeInstanceOf(Array);
+    });
+
+    it("should calculate unique visitors by date correctly", async () => {
+      mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
+
+      const mockClicks = [
+        { sessionId: "session1", timestamp: new Date("2024-12-01T10:00:00Z") },
+        { sessionId: "session1", timestamp: new Date("2024-12-01T15:00:00Z") },
+        { sessionId: "session2", timestamp: new Date("2024-12-01T12:00:00Z") },
+        { sessionId: "session3", timestamp: new Date("2024-12-02T10:00:00Z") },
+      ];
+
+      mockPrismaService.clickEvent.findMany.mockResolvedValue(mockClicks);
+
+      const result = await service.getUniqueVisitors("link-123", "user-123", 30);
+
+      expect(result.uniqueByDate).toHaveLength(2);
+      expect(result.uniqueByDate[0]).toEqual({
+        date: "2024-12-01",
+        unique: 2,
+        total: 3,
+      });
+      expect(result.uniqueByDate[1]).toEqual({
+        date: "2024-12-02",
+        unique: 1,
+        total: 1,
+      });
+    });
+
+    it("should throw NotFoundException for non-existent link", async () => {
+      mockPrismaService.link.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.getUniqueVisitors("non-existent", "user-123", 30),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it("should throw ForbiddenException for unauthorized access", async () => {
+      mockPrismaService.link.findUnique.mockResolvedValue({
+        ...mockLink,
+        userId: "other-user",
+      });
+
+      await expect(
+        service.getUniqueVisitors("link-123", "user-123", 30),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("should handle zero clicks", async () => {
+      mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
+      mockPrismaService.clickEvent.findMany.mockResolvedValue([]);
+
+      const result = await service.getUniqueVisitors("link-123", "user-123", 30);
+
+      expect(result).toEqual({
+        totalClicks: 0,
+        uniqueVisitors: 0,
+        returningVisitors: 0,
+        uniqueByDate: [],
+      });
+    });
+
+    it("should filter out null sessionIds", async () => {
+      mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
+
+      const mockClicks = [
+        { sessionId: "session1", timestamp: new Date("2024-12-01") },
+        { sessionId: null, timestamp: new Date("2024-12-01") },
+        { sessionId: "session2", timestamp: new Date("2024-12-02") },
+      ];
+
+      mockPrismaService.clickEvent.findMany.mockResolvedValue(mockClicks);
+
+      const result = await service.getUniqueVisitors("link-123", "user-123", 30);
+
+      expect(result.totalClicks).toBe(3);
+      expect(result.uniqueVisitors).toBe(2); // Null sessionId not counted
     });
   });
 });

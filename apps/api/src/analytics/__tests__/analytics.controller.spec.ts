@@ -433,6 +433,7 @@ describe("LinkAnalyticsController", () => {
     getQrAnalytics: jest.fn(),
     exportLinkAnalytics: jest.fn(),
     exportDashboard: jest.fn(),
+    getHourlyHeatmap: jest.fn(),
   };
 
   const mockPermissionService = {
@@ -862,6 +863,136 @@ describe("LinkAnalyticsController", () => {
         "link-123",
         "user-123",
         filters,
+      );
+    });
+  });
+
+  describe("getHourlyHeatmap", () => {
+    it("should retrieve hourly heatmap for a specific link", async () => {
+      const mockRequest = { user: { id: "user-123" } };
+      const mockHeatmapData = {
+        heatmapData: [
+          { day: 0, hour: 10, count: 5 },
+          { day: 1, hour: 14, count: 3 },
+        ],
+        maxCount: 5,
+      };
+
+      mockAnalyticsService.getHourlyHeatmap.mockResolvedValue(mockHeatmapData);
+
+      const result = await controller.getHourlyHeatmap(
+        mockRequest,
+        "link-123",
+        "30",
+      );
+
+      expect(mockAnalyticsService.getHourlyHeatmap).toHaveBeenCalledWith(
+        "link-123",
+        "user-123",
+        30,
+      );
+      expect(result).toEqual(mockHeatmapData);
+    });
+
+    it("should use default days of 30 when not specified", async () => {
+      const mockRequest = { user: { id: "user-123" } };
+      mockAnalyticsService.getHourlyHeatmap.mockResolvedValue({
+        heatmapData: [],
+        maxCount: 0,
+      });
+
+      await controller.getHourlyHeatmap(mockRequest, "link-123");
+
+      expect(mockAnalyticsService.getHourlyHeatmap).toHaveBeenCalledWith(
+        "link-123",
+        "user-123",
+        30,
+      );
+    });
+
+    it("should parse custom days parameter", async () => {
+      const mockRequest = { user: { id: "user-123" } };
+      mockAnalyticsService.getHourlyHeatmap.mockResolvedValue({
+        heatmapData: [],
+        maxCount: 0,
+      });
+
+      await controller.getHourlyHeatmap(mockRequest, "link-123", "7");
+
+      expect(mockAnalyticsService.getHourlyHeatmap).toHaveBeenCalledWith(
+        "link-123",
+        "user-123",
+        7,
+      );
+    });
+
+    it("should throw NotFoundException if link does not exist", async () => {
+      const mockRequest = { user: { id: "user-123" } };
+      mockAnalyticsService.getHourlyHeatmap.mockRejectedValue(
+        new NotFoundException("Link not found"),
+      );
+
+      await expect(
+        controller.getHourlyHeatmap(mockRequest, "non-existent", "30"),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it("should throw ForbiddenException if user does not own link", async () => {
+      const mockRequest = { user: { id: "user-123" } };
+      mockAnalyticsService.getHourlyHeatmap.mockRejectedValue(
+        new ForbiddenException("Access denied"),
+      );
+
+      await expect(
+        controller.getHourlyHeatmap(mockRequest, "link-456", "30"),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it("should return complete heatmap data structure", async () => {
+      const mockRequest = { user: { id: "user-123" } };
+      const heatmapData = [];
+
+      // Create 7x24 grid
+      for (let day = 0; day < 7; day++) {
+        for (let hour = 0; hour < 24; hour++) {
+          heatmapData.push({ day, hour, count: 0 });
+        }
+      }
+
+      const mockHeatmapResponse = {
+        heatmapData,
+        maxCount: 0,
+      };
+
+      mockAnalyticsService.getHourlyHeatmap.mockResolvedValue(mockHeatmapResponse);
+
+      const result = await controller.getHourlyHeatmap(mockRequest, "link-123");
+
+      expect(result.heatmapData).toHaveLength(168); // 7 * 24
+      expect(result.maxCount).toBe(0);
+    });
+
+    it("should handle various days parameter values", async () => {
+      const mockRequest = { user: { id: "user-123" } };
+      mockAnalyticsService.getHourlyHeatmap.mockResolvedValue({
+        heatmapData: [],
+        maxCount: 0,
+      });
+
+      // Test 7 days
+      await controller.getHourlyHeatmap(mockRequest, "link-123", "7");
+      expect(mockAnalyticsService.getHourlyHeatmap).toHaveBeenLastCalledWith(
+        "link-123",
+        "user-123",
+        7,
+      );
+
+      // Test 90 days
+      await controller.getHourlyHeatmap(mockRequest, "link-123", "90");
+      expect(mockAnalyticsService.getHourlyHeatmap).toHaveBeenLastCalledWith(
+        "link-123",
+        "user-123",
+        90,
       );
     });
   });

@@ -401,8 +401,11 @@ model ClickEvent {
   referrer  String?
   userAgent String?
   source    ClickSource @default(DIRECT)
+  sessionId String?     @db.VarChar(64)
 
   link      Link        @relation(fields: [linkId], references: [id])
+
+  @@index([linkId, sessionId])
 }
 
 model Domain {

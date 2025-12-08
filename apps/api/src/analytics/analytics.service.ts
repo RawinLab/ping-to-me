@@ -5,12 +5,28 @@ import {
 } from "@nestjs/common";
 import { PrismaClient, ClickSource } from "@prisma/client";
 import { UAParser } from "ua-parser-js";
+import { createHash } from "crypto";
 import { PrismaService } from "../prisma/prisma.service";
 import { isBot } from "./utils/bot-filter";
 
 @Injectable()
 export class AnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Generate a session hash from IP, User Agent, and Date (day only)
+   * This provides privacy-preserving visitor tracking
+   */
+  private generateSessionHash(ip?: string, userAgent?: string, timestamp?: Date): string {
+    const date = timestamp || new Date();
+    const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    const ipString = ip || 'unknown';
+    const uaString = userAgent || 'unknown';
+
+    // Create hash from IP + UserAgent + Date
+    const hashInput = `${ipString}${uaString}${dateString}`;
+    return createHash('sha256').update(hashInput).digest('hex');
+  }
 
   async trackClick(data: {
     slug: string;
@@ -45,15 +61,20 @@ export class AnalyticsService {
       if (device === "tablet") device = "Tablet";
     }
 
+    // Generate session hash for unique visitor tracking
+    const clickTimestamp = new Date(data.timestamp);
+    const sessionId = this.generateSessionHash(data.ip, data.userAgent, clickTimestamp);
+
     return this.prisma.clickEvent.create({
       data: {
         linkId: link.id,
-        timestamp: new Date(data.timestamp),
+        timestamp: clickTimestamp,
         userAgent: data.userAgent,
         ip: data.ip,
         country: data.country || "Unknown",
         source: data.source || ClickSource.DIRECT,
         referrer: data.referrer,
+        sessionId,
         // Store parsed data for analytics aggregation
         browser,
         os,
@@ -210,8 +231,20 @@ export class AnalyticsService {
       .map(([date, count]) => ({ date, clicks: count }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
+    // Count unique visitors (distinct sessionIds)
+    const uniqueVisitorsResult = await this.prisma.clickEvent.groupBy({
+      by: ['sessionId'],
+      where: {
+        linkId,
+        timestamp: { gte: startDate },
+        sessionId: { not: null },
+      },
+    });
+    const uniqueVisitors = uniqueVisitorsResult.length;
+
     return {
       totalClicks,
+      uniqueVisitors,
       allTimeClicks,
       clicksLast7Days,
       weeklyChange,
@@ -227,6 +260,89 @@ export class AnalyticsService {
       referrers,
       sources,
       days, // Include days in response for frontend reference
+    };
+  }
+
+
+  async getUniqueVisitors(linkId: string, userId: string, days: number = 30) {
+    // Verify ownership
+    const link = await this.prisma.link.findUnique({ where: { id: linkId } });
+    if (!link) {
+      throw new NotFoundException("Link not found");
+    }
+    if (link.userId !== userId) {
+      throw new ForbiddenException("Access denied");
+    }
+
+    // Calculate date range
+    const now = new Date();
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - days);
+
+    // Get all clicks in date range
+    const allClicks = await this.prisma.clickEvent.findMany({
+      where: {
+        linkId,
+        timestamp: { gte: startDate },
+      },
+      select: {
+        sessionId: true,
+        timestamp: true,
+      },
+    });
+
+    const totalClicks = allClicks.length;
+
+    // Count unique visitors (distinct sessionIds)
+    const uniqueSessionIds = new Set(
+      allClicks
+        .filter((click) => click.sessionId !== null)
+        .map((click) => click.sessionId as string)
+    );
+    const uniqueVisitors = uniqueSessionIds.size;
+
+    // Calculate returning visitors (sessions with more than 1 click)
+    const sessionClickCounts: Record<string, number> = {};
+    allClicks.forEach((click) => {
+      if (click.sessionId) {
+        sessionClickCounts[click.sessionId] = (sessionClickCounts[click.sessionId] || 0) + 1;
+      }
+    });
+
+    const returningVisitors = Object.values(sessionClickCounts).filter(
+      (count) => count > 1
+    ).length;
+
+    // Calculate unique visitors by date
+    const clicksByDate: Record<string, { unique: Set<string>; total: number }> = {};
+
+    allClicks.forEach((click) => {
+      const date = click.timestamp.toISOString().split('T')[0];
+
+      if (!clicksByDate[date]) {
+        clicksByDate[date] = { unique: new Set(), total: 0 };
+      }
+
+      clicksByDate[date].total += 1;
+
+      if (click.sessionId) {
+        clicksByDate[date].unique.add(click.sessionId);
+      }
+    });
+
+    const uniqueByDate = Object.entries(clicksByDate)
+      .map(([date, data]) => ({
+        date,
+        unique: data.unique.size,
+        total: data.total,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    return {
+      totalClicks,
+      uniqueVisitors,
+      returningVisitors,
+      uniqueByDate,
     };
   }
 
@@ -630,5 +746,162 @@ export class AnalyticsService {
         filename: `dashboard-analytics-${new Date().toISOString().split('T')[0]}.json`,
       };
     }
+  }
+
+  async getHourlyHeatmap(linkId: string, userId: string, days: number = 30) {
+    // Verify ownership
+    const link = await this.prisma.link.findUnique({ where: { id: linkId } });
+    if (!link) {
+      throw new NotFoundException("Link not found");
+    }
+    if (link.userId !== userId) {
+      throw new ForbiddenException("Access denied");
+    }
+
+    // Calculate date range
+    const now = new Date();
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - days);
+
+    // Fetch click events in date range
+    const clicks = await this.prisma.clickEvent.findMany({
+      where: {
+        linkId,
+        timestamp: { gte: startDate },
+      },
+      select: {
+        timestamp: true,
+      },
+    });
+
+    // Initialize 7x24 grid (7 days x 24 hours)
+    const heatmapGrid: Record<string, number> = {};
+    let maxCount = 0;
+
+    // Aggregate clicks by day of week and hour
+    clicks.forEach((click) => {
+      // Use UTC to ensure consistency
+      const day = click.timestamp.getUTCDay(); // 0-6 (0=Sunday)
+      const hour = click.timestamp.getUTCHours(); // 0-23
+
+      const key = `${day}-${hour}`;
+      heatmapGrid[key] = (heatmapGrid[key] || 0) + 1;
+
+      // Track max count for color scaling
+      if (heatmapGrid[key] > maxCount) {
+        maxCount = heatmapGrid[key];
+      }
+    });
+
+    // Build complete heatmap data (including empty cells)
+    const heatmapData: Array<{ day: number; hour: number; count: number }> = [];
+
+    for (let day = 0; day < 7; day++) {
+      for (let hour = 0; hour < 24; hour++) {
+        const key = `${day}-${hour}`;
+        heatmapData.push({
+          day,
+          hour,
+          count: heatmapGrid[key] || 0,
+        });
+      }
+    }
+
+    return {
+      heatmapData,
+      maxCount,
+    };
+  }
+
+  async getDayOfWeekStats(linkId: string, userId: string, days: number = 30) {
+    const link = await this.prisma.link.findUnique({ where: { id: linkId } });
+    if (!link) {
+      throw new NotFoundException("Link not found");
+    }
+    if (link.userId !== userId) {
+      throw new ForbiddenException("Access denied");
+    }
+
+    const now = new Date();
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - days);
+
+    const clicks = await this.prisma.clickEvent.findMany({
+      where: {
+        linkId,
+        timestamp: { gte: startDate },
+      },
+      select: {
+        timestamp: true,
+      },
+    });
+
+    const dayNames = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+
+    const dayCounts: Record<number, number> = {
+      0: 0,
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0,
+      6: 0,
+    };
+
+    clicks.forEach((click) => {
+      const dayOfWeek = click.timestamp.getDay();
+      dayCounts[dayOfWeek] += 1;
+    });
+
+    const totalClicks = clicks.length;
+
+    const dayStats = Object.entries(dayCounts).map(([day, count]) => {
+      const dayNum = parseInt(day, 10);
+      return {
+        day: dayNum,
+        dayName: dayNames[dayNum],
+        count,
+        percentage: totalClicks > 0 ? Math.round((count / totalClicks) * 100) : 0,
+      };
+    });
+
+    let bestDay = dayStats[0];
+    let worstDay = dayStats[0];
+
+    dayStats.forEach((dayStat) => {
+      if (dayStat.count > bestDay.count) {
+        bestDay = dayStat;
+      }
+      if (dayStat.count < worstDay.count || worstDay.count === 0) {
+        worstDay = dayStat;
+      }
+    });
+
+    if (totalClicks === 0) {
+      worstDay = { day: 0, dayName: "N/A", count: 0, percentage: 0 };
+    }
+
+    return {
+      dayStats,
+      bestDay: {
+        day: bestDay.day,
+        dayName: bestDay.dayName,
+        count: bestDay.count,
+      },
+      worstDay: {
+        day: worstDay.day,
+        dayName: worstDay.dayName,
+        count: worstDay.count,
+      },
+      totalClicks,
+    };
   }
 }
