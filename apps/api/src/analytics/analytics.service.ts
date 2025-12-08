@@ -18,6 +18,7 @@ export class AnalyticsService {
     ip?: string;
     country?: string;
     source?: ClickSource;
+    referrer?: string;
   }) {
     const link = await this.prisma.link.findUnique({
       where: { slug: data.slug },
@@ -46,6 +47,7 @@ export class AnalyticsService {
         ip: data.ip,
         country: data.country || "Unknown",
         source: data.source || ClickSource.DIRECT,
+        referrer: data.referrer,
         // Store parsed data for analytics aggregation
         browser,
         os,
@@ -379,5 +381,93 @@ export class AnalyticsService {
       apiClicks,
       qrPercentage,
     };
+  }
+
+  async exportLinkAnalytics(
+    linkId: string,
+    userId: string,
+    filters: {
+      startDate?: string;
+      endDate?: string;
+      format?: 'csv' | 'json';
+      limit?: number;
+    },
+  ) {
+    // Verify ownership
+    const link = await this.prisma.link.findUnique({ where: { id: linkId } });
+    if (!link) {
+      throw new NotFoundException("Link not found");
+    }
+    if (link.userId !== userId) {
+      throw new ForbiddenException("Access denied");
+    }
+
+    // Build date filter
+    const dateFilter: any = {};
+    if (filters.startDate) {
+      dateFilter.gte = new Date(filters.startDate);
+    }
+    if (filters.endDate) {
+      dateFilter.lte = new Date(filters.endDate);
+    }
+
+    // Query click events
+    const clickEvents = await this.prisma.clickEvent.findMany({
+      where: {
+        linkId,
+        ...(Object.keys(dateFilter).length > 0 && { timestamp: dateFilter }),
+      },
+      orderBy: { timestamp: 'desc' },
+      take: filters.limit || 10000,
+    });
+
+    const format = filters.format || 'csv';
+
+    if (format === 'csv') {
+      // Generate CSV
+      const headers = [
+        'timestamp',
+        'country',
+        'city',
+        'device',
+        'browser',
+        'os',
+        'referrer',
+        'source',
+        'ip',
+      ];
+
+      const rows = clickEvents.map((event) => [
+        event.timestamp.toISOString(),
+        event.country || '',
+        event.city || '',
+        event.device || '',
+        event.browser || '',
+        event.os || '',
+        event.referrer || '',
+        event.source || '',
+        event.ip || '',
+      ]);
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map((row) =>
+          row.map((cell) => `"${cell.toString().replace(/"/g, '""')}"`).join(','),
+        ),
+      ].join('\n');
+
+      return {
+        content: csvContent,
+        contentType: 'text/csv',
+        filename: `link-${link.slug}-analytics-${new Date().toISOString().split('T')[0]}.csv`,
+      };
+    } else {
+      // JSON format
+      return {
+        content: JSON.stringify(clickEvents, null, 2),
+        contentType: 'application/json',
+        filename: `link-${link.slug}-analytics-${new Date().toISOString().split('T')[0]}.json`,
+      };
+    }
   }
 }

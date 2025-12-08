@@ -28,4 +28,8 @@ export class TrackClickDto {
   @IsEnum(ClickSource)
   @IsOptional()
   source?: ClickSource;
+
+  @IsString()
+  @IsOptional()
+  referrer?: string;
 }

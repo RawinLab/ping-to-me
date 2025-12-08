@@ -3,6 +3,7 @@ import { Hono } from "hono";
 type Bindings = {
   LINKS_KV: KVNamespace;
   API_URL: string;
+  ANALYTICS_API_KEY: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -119,7 +120,10 @@ app.get("/:slug", async (c) => {
     c.executionCtx.waitUntil(
       fetch(`${apiUrl}/analytics/track`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Api-Key": c.env.ANALYTICS_API_KEY,
+        },
         body: JSON.stringify({
           slug,
           timestamp: new Date().toISOString(),
@@ -127,6 +131,7 @@ app.get("/:slug", async (c) => {
           ip: c.req.header("cf-connecting-ip"),
           country: c.req.header("cf-ipcountry"),
           source: clickSource,
+          referrer: c.req.header("referer") || "direct",
         }),
       }).catch((err) => console.error("Analytics error:", err)),
     );

@@ -3,3 +3,5 @@ export { EngagementsChart } from "./EngagementsChart";
 export { LocationsChart } from "./LocationsChart";
 export { DevicesChart } from "./DevicesChart";
 export { ReferrersChart } from "./ReferrersChart";
+export { BrowserChart } from "./BrowserChart";
+export { OSChart } from "./OSChart";
