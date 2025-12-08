@@ -240,19 +240,26 @@
 - [x] Create RedirectRule model ✅
 - [x] Implement conditional routing logic in redirector ✅
 - [x] API endpoints for managing redirect rules ✅
-- [ ] UI for managing redirect rules (pending)
+- [x] UI for managing redirect rules ✅ (RedirectRulesManager component)
 
 ### Task 1.2.13: Click-Based Expiration ✅
 - [x] Add maxClicks field to Link model ✅
 - [x] Update redirector to check click count ✅
 - [x] Disable link when max reached ✅
 - [x] GET /links/:id/click-limit endpoint ✅
+- [x] UI for click limit in link creation/edit forms ✅
 
 ### Task 1.2.14: A/B Testing / Link Rotation ✅
 - [x] Create LinkVariant model ✅
 - [x] Implement weighted random selection in redirector ✅
 - [x] API endpoints for managing variants ✅
-- [ ] UI for managing variants (pending)
+- [x] UI for managing variants ✅ (LinkVariantsManager component)
+
+### Task 1.2.15: Link Settings Page ✅
+- [x] Create /dashboard/links/[id]/settings page
+- [x] Add tabs for General, Smart Redirects, and A/B Testing
+- [x] Add Settings button to analytics page header
+- [x] Component index file for link components
 
 ---
 
