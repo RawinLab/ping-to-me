@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
@@ -53,15 +54,34 @@ export class FoldersService {
     return folder;
   }
 
-  async findAll(userId: string, organizationId?: string) {
+  async findAll(userId: string, organizationId?: string, parentId?: string | null) {
+    const where: any = {};
+
+    if (organizationId) {
+      where.organizationId = organizationId;
+    } else {
+      where.userId = userId;
+    }
+
+    // Filter by parent (null means root folders)
+    if (parentId === 'root' || parentId === null) {
+      where.parentId = null;
+    } else if (parentId) {
+      where.parentId = parentId;
+    }
+
     return this.prisma.folder.findMany({
-      where: {
-        userId,
-        ...(organizationId ? { organizationId } : {}),
-      },
+      where,
       include: {
         _count: {
           select: { links: true, children: true },
+        },
+        children: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+          },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -263,6 +283,123 @@ export class FoldersService {
     }
 
     return updatedLink;
+  }
+
+  async move(userId: string, folderId: string, newParentId: string | null) {
+    // Get folder to move
+    const folder = await this.prisma.folder.findUnique({
+      where: { id: folderId },
+      include: { children: true },
+    });
+
+    if (!folder) {
+      throw new NotFoundException('Folder not found');
+    }
+
+    // Verify access
+    await this.verifyFolderAccess(userId, folder);
+
+    // Prevent moving to itself
+    if (newParentId === folderId) {
+      throw new BadRequestException('Cannot move folder to itself');
+    }
+
+    // If moving to a parent, verify the parent exists and belongs to same org
+    if (newParentId) {
+      const newParent = await this.prisma.folder.findUnique({
+        where: { id: newParentId },
+      });
+
+      if (!newParent) {
+        throw new NotFoundException('Parent folder not found');
+      }
+
+      if (newParent.organizationId !== folder.organizationId) {
+        throw new BadRequestException('Cannot move folder to different organization');
+      }
+
+      // Prevent circular reference - check if newParent is a descendant of folder
+      const isCircular = await this.isDescendant(newParentId, folderId);
+      if (isCircular) {
+        throw new BadRequestException('Cannot move folder to its own descendant');
+      }
+    }
+
+    // Get before state for audit
+    const before = { parentId: folder.parentId };
+
+    // Update folder
+    const updated = await this.prisma.folder.update({
+      where: { id: folderId },
+      data: { parentId: newParentId },
+    });
+
+    // Audit log
+    this.auditService.logResourceEvent(
+      userId,
+      folder.organizationId,
+      'folder.moved',
+      'Folder',
+      folderId,
+      {
+        changes: {
+          before: { parentId: before.parentId },
+          after: { parentId: newParentId },
+        },
+        details: {
+          name: folder.name,
+          newParentId,
+        },
+      }
+    ).catch(() => {});
+
+    return updated;
+  }
+
+  async getTree(userId: string, organizationId: string) {
+    // Get all folders for the organization
+    const allFolders = await this.prisma.folder.findMany({
+      where: { organizationId },
+      include: {
+        _count: {
+          select: { links: true },
+        },
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    // Build tree structure
+    const folderMap = new Map(allFolders.map(f => [f.id, { ...f, children: [] as any[] }]));
+    const rootFolders: any[] = [];
+
+    for (const folder of allFolders) {
+      const folderWithChildren = folderMap.get(folder.id)!;
+      if (folder.parentId && folderMap.has(folder.parentId)) {
+        folderMap.get(folder.parentId)!.children.push(folderWithChildren);
+      } else {
+        rootFolders.push(folderWithChildren);
+      }
+    }
+
+    return rootFolders;
+  }
+
+  // Helper to check if targetId is a descendant of ancestorId
+  private async isDescendant(targetId: string, ancestorId: string): Promise<boolean> {
+    const target = await this.prisma.folder.findUnique({
+      where: { id: targetId },
+      select: { parentId: true },
+    });
+
+    if (!target || !target.parentId) {
+      return false;
+    }
+
+    if (target.parentId === ancestorId) {
+      return true;
+    }
+
+    return this.isDescendant(target.parentId, ancestorId);
   }
 
   /**

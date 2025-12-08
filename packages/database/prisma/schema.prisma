@@ -473,6 +473,13 @@ enum Role {
   MEMBER
 }
 
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
 
 model Tag {
   id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -491,6 +498,21 @@ model Campaign {
   name           String
   description    String?
   organizationId String   @db.Uuid
+
+  // New fields
+  startDate      DateTime?
+  endDate        DateTime?
+  status         CampaignStatus @default(DRAFT)
+  goalType       String?    // 'clicks' | 'conversions'
+  goalTarget     Int?
+
+  // UTM fields
+  utmSource      String?
+  utmMedium      String?
+  utmCampaign    String?
+  utmTerm        String?
+  utmContent     String?
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

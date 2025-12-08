@@ -57,7 +57,11 @@ export class FoldersController {
 
   @Get()
   @Permission({ resource: "folder", action: "read" })
-  async findAll(@Request() req, @Query("orgId") orgId?: string) {
+  async findAll(
+    @Request() req,
+    @Query("orgId") orgId?: string,
+    @Query("parentId") parentId?: string,
+  ) {
     let organizationId = orgId;
     if (!orgId || orgId === "default") {
       // Get default org if not specified
@@ -69,7 +73,22 @@ export class FoldersController {
       }
     }
 
-    return this.foldersService.findAll(req.user.id, organizationId);
+    return this.foldersService.findAll(req.user.id, organizationId, parentId);
+  }
+
+  @Get("tree")
+  @Permission({ resource: "folder", action: "read" })
+  async getTree(@Request() req, @Query("orgId") orgId?: string) {
+    let organizationId = orgId;
+    if (!orgId || orgId === "default") {
+      const member = await this.prisma.organizationMember.findFirst({
+        where: { userId: req.user.id },
+      });
+      if (!member) return [];
+      organizationId = member.organizationId;
+    }
+
+    return this.foldersService.getTree(req.user.id, organizationId);
   }
 
   @Get(":id")
@@ -112,5 +131,15 @@ export class FoldersController {
     @Param("linkId") linkId: string,
   ) {
     return this.foldersService.removeLinkFromFolder(req.user.id, linkId);
+  }
+
+  @Post(":id/move")
+  @Permission({ resource: "folder", action: "update" })
+  async move(
+    @Request() req,
+    @Param("id") id: string,
+    @Body() body: { parentId: string | null },
+  ) {
+    return this.foldersService.move(req.user.id, id, body.parentId);
   }
 }

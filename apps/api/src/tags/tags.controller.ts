@@ -71,4 +71,28 @@ export class TagsController {
   remove(@Request() req, @Param("id") id: string) {
     return this.tagsService.remove(req.user.id, id);
   }
+
+  @Get('statistics')
+  @Permission({ resource: 'tag', action: 'read' })
+  async getStatistics(@Request() req, @Query('orgId') orgId?: string) {
+    let organizationId = orgId;
+    if (!orgId || orgId === 'default') {
+      const member = await this.prisma.organizationMember.findFirst({
+        where: { userId: req.user.id },
+      });
+      if (!member) return { tags: [], totalTags: 0, unusedTags: 0, usedTags: 0 };
+      organizationId = member.organizationId;
+    }
+    return this.tagsService.getStatistics(req.user.id, organizationId);
+  }
+
+  @Post(':id/merge')
+  @Permission({ resource: 'tag', action: 'delete' })
+  async merge(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() body: { targetTagId: string },
+  ) {
+    return this.tagsService.merge(req.user.id, id, body.targetTagId);
+  }
 }

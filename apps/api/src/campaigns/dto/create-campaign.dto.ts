@@ -5,6 +5,14 @@ export enum CampaignGoalType {
   CONVERSIONS = 'conversions',
 }
 
+export enum CampaignStatus {
+  DRAFT = 'DRAFT',
+  ACTIVE = 'ACTIVE',
+  PAUSED = 'PAUSED',
+  COMPLETED = 'COMPLETED',
+  ARCHIVED = 'ARCHIVED',
+}
+
 export class CreateCampaignDto {
   @IsString()
   @MinLength(1)
@@ -27,6 +35,10 @@ export class CreateCampaignDto {
   @IsOptional()
   @IsDateString()
   endDate?: string;
+
+  @IsOptional()
+  @IsEnum(CampaignStatus)
+  status?: CampaignStatus;
 
   @IsOptional()
   @IsEnum(CampaignGoalType)

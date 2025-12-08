@@ -40,12 +40,20 @@ export class CampaignsController {
       if (!member) throw new BadRequestException("User has no organization");
       orgId = member.organizationId;
     }
-    return this.campaignsService.create(
-      req.user.id,
-      orgId,
-      createCampaignDto.name,
-      createCampaignDto.description,
-    );
+    return this.campaignsService.create(req.user.id, orgId, {
+      name: createCampaignDto.name,
+      description: createCampaignDto.description,
+      startDate: createCampaignDto.startDate,
+      endDate: createCampaignDto.endDate,
+      status: createCampaignDto.status,
+      goalType: createCampaignDto.goalType,
+      goalTarget: createCampaignDto.goalTarget,
+      utmSource: createCampaignDto.utmSource,
+      utmMedium: createCampaignDto.utmMedium,
+      utmCampaign: createCampaignDto.utmCampaign,
+      utmTerm: createCampaignDto.utmTerm,
+      utmContent: createCampaignDto.utmContent,
+    });
   }
 
   @Get()
@@ -75,5 +83,11 @@ export class CampaignsController {
   @Permission({ resource: "campaign", action: "delete", context: "own" })
   remove(@Request() req, @Param("id") id: string) {
     return this.campaignsService.remove(req.user.id, id);
+  }
+
+  @Get(":id/analytics")
+  @Permission({ resource: "campaign", action: "read" })
+  async getAnalytics(@Request() req, @Param("id") id: string) {
+    return this.campaignsService.getAnalytics(req.user.id, id);
   }
 }

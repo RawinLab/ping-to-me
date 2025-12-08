@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
 
@@ -141,5 +141,109 @@ export class TagsService {
     }
 
     return deleted;
+  }
+
+  async getStatistics(userId: string, orgId: string) {
+    // Get all tags for the organization
+    const tags = await this.prisma.tag.findMany({
+      where: { organizationId: orgId },
+    });
+
+    // Count links per tag by checking Link.tags array contains tag name
+    const tagStats = await Promise.all(
+      tags.map(async (tag) => {
+        const linkCount = await this.prisma.link.count({
+          where: {
+            organizationId: orgId,
+            tags: { has: tag.name },
+          },
+        });
+        return {
+          ...tag,
+          linkCount,
+        };
+      })
+    );
+
+    const totalTags = tags.length;
+    const unusedTags = tagStats.filter(t => t.linkCount === 0).length;
+
+    return {
+      tags: tagStats,
+      totalTags,
+      unusedTags,
+      usedTags: totalTags - unusedTags,
+    };
+  }
+
+  async merge(userId: string, sourceTagId: string, targetTagId: string) {
+    // Get both tags
+    const sourceTag = await this.prisma.tag.findUnique({ where: { id: sourceTagId } });
+    const targetTag = await this.prisma.tag.findUnique({ where: { id: targetTagId } });
+
+    if (!sourceTag || !targetTag) {
+      throw new NotFoundException('Tag not found');
+    }
+
+    if (sourceTag.organizationId !== targetTag.organizationId) {
+      throw new BadRequestException('Cannot merge tags from different organizations');
+    }
+
+    if (sourceTagId === targetTagId) {
+      throw new BadRequestException('Cannot merge tag with itself');
+    }
+
+    // Use transaction
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Find all links with source tag
+      const linksWithSourceTag = await tx.link.findMany({
+        where: {
+          organizationId: sourceTag.organizationId,
+          tags: { has: sourceTag.name },
+        },
+        select: { id: true, tags: true },
+      });
+
+      // Update each link: replace source tag with target tag (if not already has target)
+      for (const link of linksWithSourceTag) {
+        let newTags = link.tags.filter(t => t !== sourceTag.name);
+        if (!newTags.includes(targetTag.name)) {
+          newTags.push(targetTag.name);
+        }
+        await tx.link.update({
+          where: { id: link.id },
+          data: { tags: newTags },
+        });
+      }
+
+      // Delete source tag
+      await tx.tag.delete({ where: { id: sourceTagId } });
+
+      return { mergedLinksCount: linksWithSourceTag.length };
+    });
+
+    // Audit log
+    this.auditService.logResourceEvent(
+      userId,
+      sourceTag.organizationId,
+      'tag.merged',
+      'Tag',
+      targetTagId,
+      {
+        details: {
+          sourceTagId,
+          sourceTagName: sourceTag.name,
+          targetTagId,
+          targetTagName: targetTag.name,
+          mergedLinksCount: result.mergedLinksCount,
+        },
+      }
+    ).catch(() => {});
+
+    return {
+      success: true,
+      mergedLinksCount: result.mergedLinksCount,
+      targetTag,
+    };
   }
 }
