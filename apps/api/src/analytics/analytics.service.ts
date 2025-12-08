@@ -12,6 +12,7 @@ import { createHash } from "crypto";
 import { PrismaService } from "../prisma/prisma.service";
 import { isBot } from "./utils/bot-filter";
 import { AnalyticsGateway } from "./realtime/analytics.gateway";
+import { LinksService } from "../links/links.service";
 
 @Injectable()
 export class AnalyticsService {
@@ -20,6 +21,9 @@ export class AnalyticsService {
     @Optional()
     @Inject(forwardRef(() => AnalyticsGateway))
     private readonly analyticsGateway: AnalyticsGateway,
+    @Optional()
+    @Inject(forwardRef(() => LinksService))
+    private readonly linksService: LinksService,
   ) {}
 
   /**
@@ -109,6 +113,13 @@ export class AnalyticsService {
         // Don't fail the request if WebSocket fails
         console.error('Failed to emit WebSocket event:', error);
       }
+    }
+
+    // Check and update click limit (async, non-blocking)
+    if (this.linksService) {
+      this.linksService
+        .incrementClickCount(data.slug)
+        .catch((err) => console.error("Failed to check click limit:", err));
     }
 
     return clickEvent;

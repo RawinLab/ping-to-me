@@ -9,6 +9,8 @@ import {
   MaxLength,
   Matches,
   IsBoolean,
+  IsInt,
+  Min,
 } from 'class-validator';
 
 export class CreateLinkDto {
@@ -42,6 +44,11 @@ export class CreateLinkDto {
   @IsOptional()
   @IsDateString({}, { message: 'Expiration date must be a valid ISO 8601 date string' })
   expirationDate?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  maxClicks?: number;
 
   @IsOptional()
   @IsString()

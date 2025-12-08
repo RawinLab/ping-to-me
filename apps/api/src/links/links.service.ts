@@ -221,6 +221,7 @@ export class LinksService {
         expirationDate: dto.expirationDate
           ? new Date(dto.expirationDate)
           : null,
+        maxClicks: dto.maxClicks || null,
         passwordHash: dto.password ? await bcrypt.hash(dto.password, 10) : null,
         redirectType: dto.redirectType || 301,
         deepLinkFallback: dto.deepLinkFallback,
@@ -285,11 +286,18 @@ export class LinksService {
       return;
     }
 
+    // Get current click count for maxClicks validation
+    const currentClicks = await this.prisma.clickEvent.count({
+      where: { linkId: link.id },
+    });
+
     const kvKey = link.slug;
     const kvValue = JSON.stringify({
       url: link.originalUrl,
       passwordHash: link.passwordHash,
       expirationDate: link.expirationDate,
+      maxClicks: link.maxClicks,
+      currentClicks,
       deepLinkFallback: link.deepLinkFallback,
       status: link.status,
       redirectType: link.redirectType,
@@ -420,10 +428,22 @@ export class LinksService {
       throw new ForbiddenException("Link has expired");
     }
 
+    // Get current click count for maxClicks validation
+    const currentClicks = await this.prisma.clickEvent.count({
+      where: { linkId: link.id },
+    });
+
+    // Check if maxClicks limit reached
+    if (link.maxClicks && currentClicks >= link.maxClicks) {
+      throw new ForbiddenException("Link has reached its maximum click limit");
+    }
+
     return {
       originalUrl: link.originalUrl,
       passwordHash: link.passwordHash,
       expirationDate: link.expirationDate,
+      maxClicks: link.maxClicks,
+      currentClicks,
       deepLinkFallback: link.deepLinkFallback,
       redirectType: link.redirectType,
     };
@@ -614,6 +634,7 @@ export class LinksService {
       description: link.description,
       tags: link.tags,
       expirationDate: link.expirationDate,
+      maxClicks: link.maxClicks,
       status: link.status,
       deepLinkFallback: link.deepLinkFallback,
       campaignId: link.campaignId,
@@ -629,6 +650,7 @@ export class LinksService {
         expirationDate: data.expirationDate
           ? new Date(data.expirationDate)
           : undefined,
+        maxClicks: data.maxClicks,
         status: data.status,
         passwordHash: data.password ? await bcrypt.hash(data.password, 10) : undefined,
         deepLinkFallback: data.deepLinkFallback,
@@ -643,6 +665,7 @@ export class LinksService {
       description: updated.description,
       tags: updated.tags,
       expirationDate: updated.expirationDate,
+      maxClicks: updated.maxClicks,
       status: updated.status,
       deepLinkFallback: updated.deepLinkFallback,
       campaignId: updated.campaignId,
@@ -1362,5 +1385,64 @@ export class LinksService {
       `${slug}-${nanoid(4)}`,
       `my-${slug}`,
     ].slice(0, 3);
+  }
+
+  async incrementClickCount(slug: string): Promise<{ success: boolean; maxReached: boolean }> {
+    const link = await this.prisma.link.findUnique({
+      where: { slug },
+      select: { id: true, maxClicks: true, status: true },
+    });
+
+    if (!link) return { success: false, maxReached: false };
+
+    // Get current click count
+    const clickCount = await this.prisma.clickEvent.count({
+      where: { linkId: link.id },
+    });
+
+    // Check if max clicks reached
+    if (link.maxClicks && clickCount >= link.maxClicks) {
+      // Update link status to DISABLED only if not already disabled
+      if (link.status !== LinkStatus.DISABLED) {
+        await this.prisma.link.update({
+          where: { id: link.id },
+          data: { status: LinkStatus.DISABLED },
+        });
+
+        // Remove from KV cache
+        await this.deleteFromKv(slug);
+      }
+
+      return { success: true, maxReached: true };
+    }
+
+    return { success: true, maxReached: false };
+  }
+
+  async getClickLimitStatus(userId: string, linkId: string) {
+    const link = await this.prisma.link.findUnique({
+      where: { id: linkId },
+      select: { userId: true, maxClicks: true, id: true },
+    });
+
+    if (!link || link.userId !== userId) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    const currentClicks = await this.prisma.clickEvent.count({
+      where: { linkId },
+    });
+
+    return {
+      maxClicks: link.maxClicks,
+      currentClicks,
+      remaining: link.maxClicks ? Math.max(0, link.maxClicks - currentClicks) : null,
+      isLimited: link.maxClicks !== null,
+      limitReached: link.maxClicks ? currentClicks >= link.maxClicks : false,
+    };
+  }
+
+  private async removeFromKv(slug: string) {
+    await this.deleteFromKv(slug);
   }
 }

@@ -5,6 +5,7 @@ export interface CreateLinkDto {
   description?: string;
   tags?: string[];
   expirationDate?: string; // ISO Date
+  maxClicks?: number; // Maximum number of clicks allowed (TASK-1.2.13)
   password?: string;
   redirectType?: 301 | 302;
   deepLinkFallback?: string;

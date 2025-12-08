@@ -37,7 +37,7 @@ export class MetadataService {
         favicon: result.favicon || undefined,
       };
     } catch (error) {
-      this.logger.warn(`Failed to scrape metadata for ${url}: ${error.message}`);
+      this.logger.warn(`Failed to scrape metadata for ${url}: ${(error as Error).message}`);
       return {};
     }
   }
@@ -65,10 +65,10 @@ export class MetadataService {
     await this.prisma.link.update({
       where: { id: linkId },
       data: {
-        ogTitle: metadata.ogTitle,
-        ogDescription: metadata.ogDescription,
-        ogImage: metadata.ogImage,
-        siteName: metadata.siteName,
+        title: metadata.ogTitle || undefined,
+        description: metadata.ogDescription || undefined,
+        // Note: ogImage and siteName are not stored in the Link model currently
+        // They could be added as separate fields if needed in the future
       },
     });
   }

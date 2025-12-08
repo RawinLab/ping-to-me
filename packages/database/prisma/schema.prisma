@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email         String    @unique
   emailVerified DateTime?
   image         String?
@@ -22,38 +22,38 @@ model User {
   stripeCustomerId   String?
   subscriptionId     String?
   subscriptionStatus String?
-  plan               String   @default("free")
+  plan               String    @default("free")
   planExpiresAt      DateTime?
 
   // Two-Factor Authentication
-  twoFactorEnabled   Boolean  @default(false)
-  twoFactorSecret    String?
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String?
 
-  memberships       OrganizationMember[]
-  accounts          Account[]
-  sessions          Session[]
-  backupCodes       BackupCode[]
-  links             Link[]
-  notifications     Notification[]
-  folders           Folder[]
-  sentInvitations   OrganizationInvitation[] @relation("SentInvitations")
-  invitedMembers    OrganizationMember[]     @relation("InvitedByUser")
-  reportSchedules   ReportSchedule[]
+  memberships     OrganizationMember[]
+  accounts        Account[]
+  sessions        Session[]
+  backupCodes     BackupCode[]
+  links           Link[]
+  notifications   Notification[]
+  folders         Folder[]
+  sentInvitations OrganizationInvitation[] @relation("SentInvitations")
+  invitedMembers  OrganizationMember[]     @relation("InvitedByUser")
+  reportSchedules ReportSchedule[]
 }
 
 model Account {
-  id                 String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId             String  @db.Uuid
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
+  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String  @db.Uuid
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -67,14 +67,14 @@ model Session {
   expires      DateTime
 
   // Enhanced session tracking
-  tokenHash    String?  // Hashed refresh token
-  deviceInfo   String?  // Parsed user agent (e.g., "Chrome on Windows")
-  ipAddress    String?
-  location     String?  // Geo-resolved (e.g., "Bangkok, Thailand")
-  lastActive   DateTime @default(now())
-  createdAt    DateTime @default(now())
+  tokenHash  String? // Hashed refresh token
+  deviceInfo String? // Parsed user agent (e.g., "Chrome on Windows")
+  ipAddress  String?
+  location   String? // Geo-resolved (e.g., "Bangkok, Thailand")
+  lastActive DateTime @default(now())
+  createdAt  DateTime @default(now())
 
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expires])
@@ -83,11 +83,11 @@ model Session {
 model BackupCode {
   id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId    String    @db.Uuid
-  code      String    // Hashed backup code
+  code      String // Hashed backup code
   usedAt    DateTime?
   createdAt DateTime  @default(now())
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -98,8 +98,8 @@ model LoginAttempt {
   success   Boolean
   ipAddress String?
   userAgent String?
-  location  String?  // Geo-resolved
-  reason    String?  // 'invalid_password', 'user_not_found', '2fa_failed', 'account_locked'
+  location  String? // Geo-resolved
+  reason    String? // 'invalid_password', 'user_not_found', '2fa_failed', 'account_locked'
   createdAt DateTime @default(now())
 
   @@index([email, createdAt])
@@ -118,7 +118,7 @@ model Notification {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId    String   @db.Uuid
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String   // INFO, WARNING, ERROR
+  type      String // INFO, WARNING, ERROR
   title     String
   message   String
   read      Boolean  @default(false)
@@ -128,37 +128,37 @@ model Notification {
 }
 
 model Organization {
-  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug             String   @unique
-  name             String
-  logo             String?
-  description      String?
-  timezone         String   @default("UTC")
-  dataRetentionDays Int     @default(90)
-  defaultDomainId  String?  @db.Uuid
-  plan             PlanType @default(FREE)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt @default(now())
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug              String   @unique
+  name              String
+  logo              String?
+  description       String?
+  timezone          String   @default("UTC")
+  dataRetentionDays Int      @default(90)
+  defaultDomainId   String?  @db.Uuid
+  plan              PlanType @default(FREE)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now()) @updatedAt
 
-  members     OrganizationMember[]
-  links       Link[]
-  domains     Domain[]
-  tags        Tag[]
-  campaigns   Campaign[]
-  bioPages    BioPage[]
-  apiKeys     ApiKey[]
-  webhooks    Webhook[]
-  settings    OrganizationSettings?
-  invitations OrganizationInvitation[]
-  usageTracking UsageTracking[]
-  folders     Folder[]
+  members         OrganizationMember[]
+  links           Link[]
+  domains         Domain[]
+  tags            Tag[]
+  campaigns       Campaign[]
+  bioPages        BioPage[]
+  apiKeys         ApiKey[]
+  webhooks        Webhook[]
+  settings        OrganizationSettings?
+  invitations     OrganizationInvitation[]
+  usageTracking   UsageTracking[]
+  folders         Folder[]
   reportSchedules ReportSchedule[]
 }
 
 model OrganizationSettings {
   id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   organizationId     String   @unique @db.Uuid
-  ipAllowlist        Json?    // Array of allowed IP addresses/ranges
+  ipAllowlist        Json? // Array of allowed IP addresses/ranges
   ssoEnabled         Boolean  @default(false)
   ssoProviderId      String?
   enforced2FA        Boolean  @default(false)
@@ -169,7 +169,7 @@ model OrganizationSettings {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 
 model OrganizationInvitation {
@@ -178,7 +178,7 @@ model OrganizationInvitation {
   email           String
   role            MemberRole @default(VIEWER)
   token           String     @unique
-  tokenHash       String?    // Hashed token for secure storage
+  tokenHash       String? // Hashed token for secure storage
   invitedById     String     @db.Uuid
   personalMessage String?
   expiresAt       DateTime
@@ -186,8 +186,8 @@ model OrganizationInvitation {
   declinedAt      DateTime?
   createdAt       DateTime   @default(now())
 
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  invitedBy       User         @relation("SentInvitations", fields: [invitedById], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy    User         @relation("SentInvitations", fields: [invitedById], references: [id])
 
   @@unique([organizationId, email])
   @@index([token])
@@ -201,58 +201,58 @@ model ApiKey {
   keyHash        String    @unique
   name           String
   organizationId String    @db.Uuid
-  scopes         String[]  // List of allowed scopes (e.g., ['link:read', 'link:create'])
+  scopes         String[] // List of allowed scopes (e.g., ['link:read', 'link:create'])
   ipWhitelist    String[]  @default([]) // IP restrictions (e.g., ['192.168.1.1', '10.0.0.0/8']), empty = no restriction
-  rateLimit      Int?      // Optional requests per minute override
+  rateLimit      Int? // Optional requests per minute override
   expiresAt      DateTime? // Optional expiration date
   lastUsedAt     DateTime?
   createdAt      DateTime  @default(now())
 
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
 }
 
 model Webhook {
-  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   url            String
   events         String[]
   secret         String
-  organizationId String    @db.Uuid
-  isActive       Boolean   @default(true)
-  createdAt      DateTime  @default(now())
+  organizationId String   @db.Uuid
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
 
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
 }
 
 model BioPage {
-  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug           String    @unique
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug           String   @unique
   title          String
   description    String?
   avatarUrl      String?
   theme          Json?
-  content        Json?     // Legacy: will be migrated to BioPageLink
-  layout         String    @default("stacked") // 'stacked' | 'grid'
-  socialLinks    Json?     // SocialLink[] array
-  showBranding   Boolean   @default(true)
-  isPublished    Boolean   @default(true)
-  viewCount      Int       @default(0)
-  organizationId String    @db.Uuid
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  content        Json? // Legacy: will be migrated to BioPageLink
+  layout         String   @default("stacked") // 'stacked' | 'grid'
+  socialLinks    Json? // SocialLink[] array
+  showBranding   Boolean  @default(true)
+  isPublished    Boolean  @default(true)
+  viewCount      Int      @default(0)
+  organizationId String   @db.Uuid
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  bioLinks       BioPageLink[]
-  analytics      BioPageAnalytics[]
+  organization Organization       @relation(fields: [organizationId], references: [id])
+  bioLinks     BioPageLink[]
+  analytics    BioPageAnalytics[]
 }
 
 model BioPageLink {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   bioPageId    String   @db.Uuid
-  linkId       String?  @db.Uuid    // Reference to Link model (optional)
-  externalUrl  String?              // For external URLs not in Link model
+  linkId       String?  @db.Uuid // Reference to Link model (optional)
+  externalUrl  String? // For external URLs not in Link model
   title        String
   description  String?
-  icon         String?              // Emoji or icon name
+  icon         String? // Emoji or icon name
   thumbnailUrl String?
   buttonColor  String?
   textColor    String?
@@ -262,120 +262,167 @@ model BioPageLink {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  bioPage      BioPage  @relation(fields: [bioPageId], references: [id], onDelete: Cascade)
-  link         Link?    @relation(fields: [linkId], references: [id])
+  bioPage BioPage @relation(fields: [bioPageId], references: [id], onDelete: Cascade)
+  link    Link?   @relation(fields: [linkId], references: [id])
 
   @@index([bioPageId, order])
 }
 
 model BioPageAnalytics {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  bioPageId   String   @db.Uuid
-  eventType   String   // 'page_view', 'link_click'
-  bioLinkId   String?  @db.Uuid
-  timestamp   DateTime @default(now())
-  ip          String?
-  country     String?
-  city        String?
-  device      String?  // 'mobile', 'tablet', 'desktop'
-  browser     String?
-  os          String?
-  referrer    String?
-  userAgent   String?
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bioPageId String   @db.Uuid
+  eventType String // 'page_view', 'link_click'
+  bioLinkId String?  @db.Uuid
+  timestamp DateTime @default(now())
+  ip        String?
+  country   String?
+  city      String?
+  device    String? // 'mobile', 'tablet', 'desktop'
+  browser   String?
+  os        String?
+  referrer  String?
+  userAgent String?
 
-  bioPage     BioPage  @relation(fields: [bioPageId], references: [id], onDelete: Cascade)
+  bioPage BioPage @relation(fields: [bioPageId], references: [id], onDelete: Cascade)
 
   @@index([bioPageId, timestamp])
   @@index([bioPageId, eventType])
 }
 
 model OrganizationMember {
-  userId         String       @db.Uuid
-  organizationId String       @db.Uuid
-  role           MemberRole   @default(VIEWER)
-  joinedAt       DateTime     @default(now())
+  userId         String     @db.Uuid
+  organizationId String     @db.Uuid
+  role           MemberRole @default(VIEWER)
+  joinedAt       DateTime   @default(now())
   lastActiveAt   DateTime?
-  invitedById    String?      @db.Uuid
+  invitedById    String?    @db.Uuid
 
-  user           User         @relation(fields: [userId], references: [id])
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  invitedBy      User?        @relation("InvitedByUser", fields: [invitedById], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  invitedBy    User?        @relation("InvitedByUser", fields: [invitedById], references: [id])
 
   @@id([userId, organizationId])
   @@index([invitedById])
 }
 
 model Link {
-  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  originalUrl      String    @db.VarChar(2048)
-  slug             String    @unique
-  title            String?   @db.VarChar(200)
-  description      String?   @db.Text
-  tags             String[]
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  originalUrl String   @db.VarChar(2048)
+  slug        String   @unique
+  title       String?  @db.VarChar(200)
+  description String?  @db.Text
+  tags        String[]
 
   // Metadata
   expirationDate   DateTime?
+  maxClicks        Int? // Maximum clicks allowed (null = unlimited)
   passwordHash     String?
   redirectType     Int       @default(301) // 301 or 302
   deepLinkFallback String?   @db.VarChar(2048)
 
   // Relations
-  userId           String    @db.Uuid
-  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Organization/Campaign/Folder
-  organizationId   String?   @db.Uuid
-  organization     Organization? @relation(fields: [organizationId], references: [id])
-  campaignId       String?   @db.Uuid
-  campaign         Campaign? @relation(fields: [campaignId], references: [id])
-  folderId         String?   @db.Uuid
-  folder           Folder?   @relation(fields: [folderId], references: [id])
+  organizationId String?       @db.Uuid
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  campaignId     String?       @db.Uuid
+  campaign       Campaign?     @relation(fields: [campaignId], references: [id])
+  folderId       String?       @db.Uuid
+  folder         Folder?       @relation(fields: [folderId], references: [id])
 
   // Custom domain
-  domainId         String?   @db.Uuid
-  domain           Domain?   @relation(fields: [domainId], references: [id])
+  domainId String? @db.Uuid
+  domain   Domain? @relation(fields: [domainId], references: [id])
 
   // Safety check fields
-  safetyStatus     String?    // 'safe' | 'unsafe' | 'pending' | 'unknown'
-  safetyCheckDate  DateTime?
-  safetyThreats    String[]   @default([])
+  safetyStatus    String? // 'safe' | 'unsafe' | 'pending' | 'unknown'
+  safetyCheckDate DateTime?
+  safetyThreats   String[]  @default([])
 
   // UTM Parameters
-  utmSource     String?
-  utmMedium     String?
-  utmCampaign   String?
-  utmContent    String?
-  utmTerm       String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmContent  String?
+  utmTerm     String?
 
-  status           LinkStatus @default(ACTIVE)
-  deletedAt        DateTime?
-  createdAt        DateTime   @default(now())
-  updatedAt        DateTime   @updatedAt
+  status    LinkStatus @default(ACTIVE)
+  deletedAt DateTime?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
-  clicks           ClickEvent[]
-  qrCode           QrCode?
-  bioPageLinks     BioPageLink[]
-  analyticsDaily   AnalyticsDaily[]
-  reportSchedules  ReportSchedule[]
+  clicks          ClickEvent[]
+  qrCode          QrCode?
+  bioPageLinks    BioPageLink[]
+  analyticsDaily  AnalyticsDaily[]
+  reportSchedules ReportSchedule[]
+  redirectRules   RedirectRule[]
+  variants        LinkVariant[]
 
   @@index([userId])
   @@index([tags])
 }
 
+model RedirectRule {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  linkId   String @db.Uuid
+  priority Int    @default(0) // Higher = evaluated first
+
+  // Conditions (all optional, evaluated as AND)
+  countries String[] @default([]) // ISO country codes (e.g., ['US', 'CA'])
+  devices   String[] @default([]) // 'mobile', 'tablet', 'desktop'
+  browsers  String[] @default([]) // 'chrome', 'safari', 'firefox', etc.
+  os        String[] @default([]) // 'windows', 'macos', 'ios', 'android'
+  languages String[] @default([]) // Browser language codes
+  dateRange Json? // { start: Date, end: Date }
+  timeRange Json? // { start: "09:00", end: "17:00" }
+
+  // Target
+  targetUrl    String @db.VarChar(2048)
+  redirectType Int    @default(302) // 301 or 302
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  link Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([linkId, priority])
+}
+
+model LinkVariant {
+  id        String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  linkId    String @db.Uuid
+  name      String @db.VarChar(100) // Variant name (e.g., "Control", "Variant A")
+  targetUrl String @db.VarChar(2048)
+  weight    Int    @default(50) // Weight for distribution (0-100)
+  clicks    Int    @default(0) // Track clicks per variant
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  link Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([linkId])
+}
+
 model QrCode {
-  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  linkId           String   @unique @db.Uuid
-  link             Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
-  foregroundColor  String   @default("#000000")
-  backgroundColor  String   @default("#FFFFFF")
-  logoUrl          String?
-  logoSizePercent  Int      @default(20)
-  errorCorrection  String   @default("M") // L, M, Q, H
-  borderSize       Int      @default(2)
-  size             Int      @default(300)
-  qrCodeUrl        String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  linkId          String   @unique @db.Uuid
+  link            Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  foregroundColor String   @default("#000000")
+  backgroundColor String   @default("#FFFFFF")
+  logoUrl         String?
+  logoSizePercent Int      @default(20)
+  errorCorrection String   @default("M") // L, M, Q, H
+  borderSize      Int      @default(2)
+  size            Int      @default(300)
+  qrCodeUrl       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model BlockedDomain {
@@ -414,7 +461,7 @@ model ClickEvent {
   source    ClickSource @default(DIRECT)
   sessionId String?     @db.VarChar(64)
 
-  link      Link        @relation(fields: [linkId], references: [id])
+  link Link @relation(fields: [linkId], references: [id])
 
   @@index([linkId, sessionId])
   @@index([linkId, timestamp])
@@ -426,15 +473,15 @@ model AnalyticsDaily {
   date           DateTime @db.Date
   totalClicks    Int      @default(0)
   uniqueVisitors Int      @default(0)
-  countries      Json?    // { "US": 50, "UK": 30 }
-  devices        Json?    // { "Desktop": 60, "Mobile": 40 }
-  browsers       Json?    // { "Chrome": 70, "Safari": 20 }
-  os             Json?    // { "Windows": 50, "macOS": 30 }
-  referrers      Json?    // { "google.com": 40, "direct": 30 }
+  countries      Json? // { "US": 50, "UK": 30 }
+  devices        Json? // { "Desktop": 60, "Mobile": 40 }
+  browsers       Json? // { "Chrome": 70, "Safari": 20 }
+  os             Json? // { "Windows": 50, "macOS": 30 }
+  referrers      Json? // { "google.com": 40, "direct": 30 }
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  link           Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  link Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
 
   @@unique([linkId, date])
   @@index([linkId])
@@ -443,14 +490,14 @@ model AnalyticsDaily {
 }
 
 model Domain {
-  id                   String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  hostname             String       @unique
-  organizationId       String       @db.Uuid
+  id             String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  hostname       String @unique
+  organizationId String @db.Uuid
 
   // Verification fields
   status               DomainStatus @default(PENDING)
   isVerified           Boolean      @default(false)
-  verificationType     String?      // 'txt' | 'cname'
+  verificationType     String? // 'txt' | 'cname'
   verificationToken    String?
   verificationAttempts Int          @default(0)
   lastVerifiedAt       DateTime?
@@ -459,18 +506,18 @@ model Domain {
   isDefault            Boolean      @default(false)
 
   // SSL fields
-  sslStatus            SslStatus    @default(PENDING)
-  sslProvider          String?      // e.g., 'letsencrypt'
-  sslCertificateId     String?
-  sslIssuedAt          DateTime?
-  sslExpiresAt         DateTime?
-  sslAutoRenew         Boolean      @default(true)
+  sslStatus        SslStatus @default(PENDING)
+  sslProvider      String? // e.g., 'letsencrypt'
+  sslCertificateId String?
+  sslIssuedAt      DateTime?
+  sslExpiresAt     DateTime?
+  sslAutoRenew     Boolean   @default(true)
 
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
-  organization         Organization @relation(fields: [organizationId], references: [id])
-  links                Link[]
+  organization Organization @relation(fields: [organizationId], references: [id])
+  links        Link[]
 
   @@index([organizationId])
   @@index([status])
@@ -525,55 +572,55 @@ model Tag {
   organizationId String   @db.Uuid
   createdAt      DateTime @default(now())
 
-  organization   Organization @relation(fields: [organizationId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
 
   @@unique([organizationId, name])
 }
 
 model Campaign {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id             String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name           String
   description    String?
-  organizationId String   @db.Uuid
+  organizationId String  @db.Uuid
 
   // New fields
-  startDate      DateTime?
-  endDate        DateTime?
-  status         CampaignStatus @default(DRAFT)
-  goalType       String?    // 'clicks' | 'conversions'
-  goalTarget     Int?
+  startDate  DateTime?
+  endDate    DateTime?
+  status     CampaignStatus @default(DRAFT)
+  goalType   String? // 'clicks' | 'conversions'
+  goalTarget Int?
 
   // UTM fields
-  utmSource      String?
-  utmMedium      String?
-  utmCampaign    String?
-  utmTerm        String?
-  utmContent     String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmTerm     String?
+  utmContent  String?
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  links          Link[]
+  organization Organization @relation(fields: [organizationId], references: [id])
+  links        Link[]
 }
 
 model Folder {
-  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name           String
   color          String?
-  userId         String        @db.Uuid
-  organizationId String?       @db.Uuid
-  parentId       String?       @db.Uuid
-  isArchived     Boolean       @default(false)
+  userId         String    @db.Uuid
+  organizationId String?   @db.Uuid
+  parentId       String?   @db.Uuid
+  isArchived     Boolean   @default(false)
   archivedAt     DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization   Organization? @relation(fields: [organizationId], references: [id])
-  parent         Folder?       @relation("FolderToFolder", fields: [parentId], references: [id], onDelete: Cascade)
-  children       Folder[]      @relation("FolderToFolder")
-  links          Link[]
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  parent       Folder?       @relation("FolderToFolder", fields: [parentId], references: [id], onDelete: Cascade)
+  children     Folder[]      @relation("FolderToFolder")
+  links        Link[]
 
   @@unique([organizationId, name, parentId])
   @@index([organizationId])
@@ -583,16 +630,16 @@ model AuditLog {
   id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId         String?  @db.Uuid
   organizationId String?  @db.Uuid
-  action         String   // e.g., 'link.created', 'member.invited', 'auth.login'
-  resource       String   // e.g., 'Link', 'Domain', 'OrganizationMember', 'User'
+  action         String // e.g., 'link.created', 'member.invited', 'auth.login'
+  resource       String // e.g., 'Link', 'Domain', 'OrganizationMember', 'User'
   resourceId     String?
   status         String   @default("success") // 'success' | 'failure'
-  details        Json?    // Additional context
-  changes        Json?    // { before: {...}, after: {...} } for tracking changes
+  details        Json? // Additional context
+  changes        Json? // { before: {...}, after: {...} } for tracking changes
   ipAddress      String?
   userAgent      String?
-  geoLocation    String?  // e.g., 'US, California' - resolved from IP
-  requestId      String?  // For request correlation/tracing
+  geoLocation    String? // e.g., 'US, California' - resolved from IP
+  requestId      String? // For request correlation/tracing
   createdAt      DateTime @default(now())
 
   @@index([userId])
@@ -609,14 +656,14 @@ model AccessLog {
   userId         String?      @db.Uuid
   apiKeyId       String?      @db.Uuid
   organizationId String?      @db.Uuid
-  resource       String       // link, team, billing, domain, etc.
-  action         String       // create, read, update, delete, etc.
+  resource       String // link, team, billing, domain, etc.
+  action         String // create, read, update, delete, etc.
   result         AccessResult // ALLOWED or DENIED
-  reason         String?      // Reason for denial (if denied)
+  reason         String? // Reason for denial (if denied)
   ipAddress      String?
   userAgent      String?
-  endpoint       String?      // API endpoint accessed
-  method         String?      // HTTP method (GET, POST, etc.)
+  endpoint       String? // API endpoint accessed
+  method         String? // HTTP method (GET, POST, etc.)
   createdAt      DateTime     @default(now())
 
   @@index([userId])
@@ -633,12 +680,12 @@ enum AccessResult {
 
 model PlanDefinition {
   id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name                   String   @unique  // 'free', 'pro', 'enterprise'
+  name                   String   @unique // 'free', 'pro', 'enterprise'
   displayName            String
-  linksPerMonth          Int      // -1 = unlimited
-  customDomains          Int      // -1 = unlimited
-  teamMembers            Int      // -1 = unlimited
-  apiCallsPerMonth       Int      // -1 = unlimited
+  linksPerMonth          Int // -1 = unlimited
+  customDomains          Int // -1 = unlimited
+  teamMembers            Int // -1 = unlimited
+  apiCallsPerMonth       Int // -1 = unlimited
   analyticsRetentionDays Int
   priceMonthly           Decimal  @db.Decimal(10, 2)
   priceYearly            Decimal  @db.Decimal(10, 2)
@@ -653,15 +700,15 @@ model PlanDefinition {
 }
 
 model UsageTracking {
-  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  organizationId   String   @db.Uuid
-  yearMonth        String   // 'YYYY-MM' format
-  linksCreated     Int      @default(0)
-  apiCalls         Int      @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @db.Uuid
+  yearMonth      String // 'YYYY-MM' format
+  linksCreated   Int      @default(0)
+  apiCalls       Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, yearMonth])
   @@index([organizationId])
@@ -673,7 +720,7 @@ model UsageEvent {
   id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   organizationId String   @db.Uuid
   userId         String?  @db.Uuid
-  eventType      String   // 'link_created', 'link_deleted', 'api_call', 'domain_added', etc.
+  eventType      String // 'link_created', 'link_deleted', 'api_call', 'domain_added', etc.
   resourceId     String?
   metadata       Json?
   createdAt      DateTime @default(now())
@@ -687,23 +734,23 @@ model ReportSchedule {
   id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId         String          @db.Uuid
   organizationId String?         @db.Uuid
-  linkId         String?         @db.Uuid  // null = dashboard report
+  linkId         String?         @db.Uuid // null = dashboard report
   frequency      ReportFrequency
-  dayOfWeek      Int?            // 0-6 for weekly (0=Sunday)
-  dayOfMonth     Int?            // 1-31 for monthly
-  time           String          @default("09:00")  // HH:mm format
+  dayOfWeek      Int? // 0-6 for weekly (0=Sunday)
+  dayOfMonth     Int? // 1-31 for monthly
+  time           String          @default("09:00") // HH:mm format
   timezone       String          @default("UTC")
-  format         String          @default("pdf")  // 'pdf' or 'csv'
-  recipients     String[]        // Additional email addresses
+  format         String          @default("pdf") // 'pdf' or 'csv'
+  recipients     String[] // Additional email addresses
   enabled        Boolean         @default(true)
   lastSentAt     DateTime?
   nextRunAt      DateTime?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization   Organization?   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  link           Link?           @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  link         Link?         @relation(fields: [linkId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([nextRunAt])

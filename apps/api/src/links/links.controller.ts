@@ -12,6 +12,7 @@ import {
   Res,
   Delete,
   BadRequestException,
+  Put,
 } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 import { FileInterceptor } from "@nestjs/platform-express";
@@ -31,13 +32,22 @@ import {
   BulkEditDto,
   CheckSlugDto,
   ExportFiltersDto,
+  CreateRedirectRuleDto,
+  UpdateRedirectRuleDto,
+  ReorderRedirectRulesDto,
+  CreateLinkVariantDto,
+  UpdateLinkVariantDto,
 } from "./dto";
+import { RedirectRulesService } from "./services/redirect-rules.service";
+import { LinkVariantsService } from "./services/link-variants.service";
 
 @Controller("links")
 export class LinksController {
   constructor(
     private readonly linksService: LinksService,
     private readonly qrCodeService: QrCodeService,
+    private readonly redirectRulesService: RedirectRulesService,
+    private readonly linkVariantsService: LinkVariantsService,
   ) {}
 
   @Post("import")
@@ -265,6 +275,13 @@ export class LinksController {
     return this.linksService.lookup(slug);
   }
 
+  @Get(":id/click-limit")
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: "link", action: "read" })
+  async getClickLimit(@Request() req, @Param("id") id: string) {
+    return this.linksService.getClickLimitStatus(req.user.id, id);
+  }
+
   // ============ QR Config Endpoints ============
 
   @Get(":id/qr")
@@ -287,5 +304,109 @@ export class LinksController {
     // Verify ownership
     await this.linksService.findOne(req.user.id, id);
     return this.qrCodeService.saveQrConfig(id, dto);
+  }
+
+  // ============ Redirect Rules Endpoints ============
+
+  @Get(":id/rules")
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: "link", action: "read" })
+  async getRedirectRules(@Request() req, @Param("id") id: string) {
+    return this.redirectRulesService.findAllByLink(req.user.id, id);
+  }
+
+  @Post(":id/rules")
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: "link", action: "update", context: "own" })
+  async createRedirectRule(
+    @Request() req,
+    @Param("id") id: string,
+    @Body() dto: CreateRedirectRuleDto,
+  ) {
+    return this.redirectRulesService.create(req.user.id, id, dto);
+  }
+
+  @Put(":id/rules/:ruleId")
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: "link", action: "update", context: "own" })
+  async updateRedirectRule(
+    @Request() req,
+    @Param("id") id: string,
+    @Param("ruleId") ruleId: string,
+    @Body() dto: UpdateRedirectRuleDto,
+  ) {
+    return this.redirectRulesService.update(req.user.id, id, ruleId, dto);
+  }
+
+  @Delete(":id/rules/:ruleId")
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: "link", action: "update", context: "own" })
+  async deleteRedirectRule(
+    @Request() req,
+    @Param("id") id: string,
+    @Param("ruleId") ruleId: string,
+  ) {
+    return this.redirectRulesService.delete(req.user.id, id, ruleId);
+  }
+
+  @Post(":id/rules/reorder")
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: "link", action: "update", context: "own" })
+  async reorderRedirectRules(
+    @Request() req,
+    @Param("id") id: string,
+    @Body() dto: ReorderRedirectRulesDto,
+  ) {
+    return this.redirectRulesService.reorder(req.user.id, id, dto.ruleIds);
+  }
+
+  // ============ Link Variant Endpoints (A/B Testing) ============
+
+  @Get(":id/variants")
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: "link", action: "read" })
+  async getVariants(@Request() req, @Param("id") id: string) {
+    return this.linkVariantsService.findAllByLink(req.user.id, id);
+  }
+
+  @Post(":id/variants")
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: "link", action: "update", context: "own" })
+  async createVariant(
+    @Request() req,
+    @Param("id") id: string,
+    @Body() dto: CreateLinkVariantDto,
+  ) {
+    return this.linkVariantsService.create(req.user.id, id, dto);
+  }
+
+  @Put(":id/variants/:variantId")
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: "link", action: "update", context: "own" })
+  async updateVariant(
+    @Request() req,
+    @Param("id") id: string,
+    @Param("variantId") variantId: string,
+    @Body() dto: UpdateLinkVariantDto,
+  ) {
+    return this.linkVariantsService.update(req.user.id, id, variantId, dto);
+  }
+
+  @Delete(":id/variants/:variantId")
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: "link", action: "update", context: "own" })
+  async deleteVariant(
+    @Request() req,
+    @Param("id") id: string,
+    @Param("variantId") variantId: string,
+  ) {
+    return this.linkVariantsService.delete(req.user.id, id, variantId);
+  }
+
+  @Get(":id/variants/stats")
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: "link", action: "read" })
+  async getVariantStats(@Request() req, @Param("id") id: string) {
+    return this.linkVariantsService.getVariantStats(req.user.id, id);
   }
 }
