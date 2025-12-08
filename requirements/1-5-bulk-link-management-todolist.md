@@ -1,6 +1,6 @@
 # Module 1.5: Bulk Link Management - Development Todolist
 
-> **Status**: ~75-80% Complete
+> **Status**: ~85-90% Complete
 > **Priority**: High
 > **Reference**: `requirements/1-5-bulk-link-management-plan.md`
 
@@ -80,66 +80,66 @@
 
 ---
 
-## Phase 2: Import Preview & Select All
+## Phase 2: Import Preview & Select All ✅ COMPLETED
 
-### Task 1.5.6: Import Preview Endpoint
-- [ ] **Create previewImport method**
+### Task 1.5.6: Import Preview Endpoint ✅
+- [x] **Create previewImport method**
   - File: `apps/api/src/links/links.service.ts`
   - Parse CSV without saving
   - Validate each row
   - Return: totalRows, validRows, invalidRows, preview (first 10)
 
-- [ ] **Add POST /links/import/preview endpoint**
+- [x] **Add POST /links/import/preview endpoint**
   - File: `apps/api/src/links/links.controller.ts`
   - Accept file upload, return preview data
 
-- [ ] **Create ImportPreviewModal component**
+- [x] **Create ImportPreviewModal component**
   - File: `apps/web/components/links/ImportPreviewModal.tsx`
   - Show parsed rows in table
   - Highlight validation errors
   - Show duplicate warnings
   - Confirm/Cancel buttons
 
-### Task 1.5.7: Select All Functionality
-- [ ] **Add header checkbox to LinksTable**
+### Task 1.5.7: Select All Functionality ✅
+- [x] **Add header checkbox to LinksTable**
   - File: `apps/web/components/links/LinksTable.tsx`
   - Toggle all visible links
   - Update selection count
 
-- [ ] **Handle pagination with select all**
+- [x] **Handle pagination with select all**
   - Option: "Select all X links" after select all visible
   - Clear selection on page change option
 
-### Task 1.5.8: Filtered Export
-- [ ] **Convert GET /links/export to POST**
+### Task 1.5.8: Filtered Export ✅
+- [x] **Convert GET /links/export to POST**
   - File: `apps/api/src/links/links.controller.ts`
   - Accept filter body instead of query params
 
-- [ ] **Create ExportFiltersDto**
+- [x] **Create ExportFiltersDto**
   - File: `apps/api/src/links/dto/export-filters.dto.ts`
   - Fields: tagIds, campaignId, status, startDate, endDate, format, selectedIds
 
-- [ ] **Implement filtered export logic**
+- [x] **Implement filtered export logic**
   - Apply all filters before export
   - Support JSON format option
 
-- [ ] **Create ExportOptionsDialog**
+- [x] **Create ExportOptionsDialog**
   - File: `apps/web/components/links/ExportOptionsDialog.tsx`
   - Scope: All / Filtered / Selected
   - Format: CSV / JSON
   - Date range filter
 
-### Task 1.5.9: Bulk Status Change
-- [ ] **Add status toggle UI to bulk actions**
+### Task 1.5.9: Bulk Status Change ✅
+- [x] **Add status toggle UI to bulk actions**
   - File: `apps/web/components/links/LinksTable.tsx`
   - Buttons: Enable, Disable, Archive
 
-### Task 1.5.10: Progress Indicators
-- [ ] **Add loading state to bulk operations**
+### Task 1.5.10: Progress Indicators ✅
+- [x] **Add loading state to bulk operations**
   - Show spinner during operation
   - Show progress bar for large imports
 
-- [ ] **Create ProgressWithLabel component**
+- [x] **Create ProgressWithLabel component**
   - File: `apps/web/components/ui/progress-with-label.tsx`
   - Show: current/total, percentage
   - Optional cancel button
@@ -148,10 +148,11 @@
 
 ## Phase 3: Medium Priority Enhancements
 
-### Task 1.5.11: JSON Export Support
-- [ ] **Add format parameter to export**
+### Task 1.5.11: JSON Export Support ✅
+- [x] **Add format parameter to export**
   - Support `format: 'csv' | 'json'`
   - Return JSON array for json format
+  - Implemented in POST /links/export endpoint
 
 ### Task 1.5.12: Drag-and-Drop File Upload
 - [ ] **Add drop zone to ImportLinksModal**
@@ -159,10 +160,10 @@
   - Visual drop zone with instructions
   - Accept CSV files only
 
-### Task 1.5.13: Bulk Archive
-- [ ] **Add archive action to bulk edit**
+### Task 1.5.13: Bulk Archive ✅
+- [x] **Add archive action to bulk edit**
   - Set status to ARCHIVED for selected links
-  - Button in bulk actions toolbar
+  - Button in bulk actions toolbar (LinksTable.tsx)
 
 ### Task 1.5.14: Bulk Move to Folder
 - [ ] **Add folder selector to BulkEditDialog**
@@ -170,8 +171,8 @@
   - Dropdown to select destination folder
   - "None" option to unassign
 
-### Task 1.5.15: CSV Template Download
-- [ ] **Create GET /links/import/template endpoint**
+### Task 1.5.15: CSV Template Download ✅
+- [x] **Create GET /links/import/template endpoint**
   - Return CSV with headers and example row
   - Headers: originalUrl, slug, title, description, tags, expirationDate
 

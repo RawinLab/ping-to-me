@@ -44,6 +44,8 @@ import {
   Sparkles,
   Plus,
   ArchiveRestore,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -124,6 +126,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [inlineTagLinkId, setInlineTagLinkId] = useState<string | null>(null);
     const [inlineTagValue, setInlineTagValue] = useState<string>("");
+    const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
     // Permission and auth context
     const { user } = useAuth();
@@ -284,6 +287,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
         });
         return;
       }
+      setBulkActionLoading(true);
       try {
         await apiRequest("/links/bulk-status", {
           method: "POST",
@@ -308,6 +312,8 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
         } else {
           toast.error("Failed to update link status");
         }
+      } finally {
+        setBulkActionLoading(false);
       }
     };
 
@@ -426,6 +432,16 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
         newSelected.add(id);
       }
       setSelectedIds(newSelected);
+    };
+
+    const toggleSelectAll = () => {
+      if (selectedIds.size === links.length && links.length > 0) {
+        // All are selected, deselect all
+        setSelectedIds(new Set());
+      } else {
+        // Select all visible links
+        setSelectedIds(new Set(links.map((link) => link.id)));
+      }
     };
 
     // Render link card (list view)
@@ -1069,12 +1085,33 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                 {selectedIds.size} link{selectedIds.size > 1 ? "s" : ""}{" "}
                 selected
               </span>
+              {selectedIds.size < links.length && links.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleSelectAll}
+                  className="text-blue-400 hover:text-blue-300 hover:bg-white/10 text-xs rounded-lg"
+                >
+                  Select all {links.length} links
+                </Button>
+              )}
+              {selectedIds.size === links.length && links.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedIds(new Set())}
+                  className="text-blue-400 hover:text-blue-300 hover:bg-white/10 text-xs rounded-lg"
+                >
+                  Deselect all
+                </Button>
+              )}
             </div>
             <div className="flex gap-2">
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => setBulkTagDialogOpen(true)}
+                disabled={bulkActionLoading}
                 className="bg-white/10 hover:bg-white/20 text-white border-0 rounded-lg"
               >
                 <Tags className="mr-2 h-4 w-4" /> Add tag
@@ -1083,30 +1120,34 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                 variant="secondary"
                 size="sm"
                 onClick={() => handleBulkStatusChange("ACTIVE")}
+                disabled={bulkActionLoading}
                 className="bg-white/10 hover:bg-white/20 text-white border-0 rounded-lg"
               >
-                <PlayCircle className="mr-2 h-4 w-4" /> Enable All
+                <CheckCircle className="mr-2 h-4 w-4" /> Enable
               </Button>
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => handleBulkStatusChange("DISABLED")}
+                disabled={bulkActionLoading}
                 className="bg-white/10 hover:bg-white/20 text-white border-0 rounded-lg"
               >
-                <PauseCircle className="mr-2 h-4 w-4" /> Disable All
+                <XCircle className="mr-2 h-4 w-4" /> Disable
               </Button>
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => handleBulkStatusChange("ARCHIVED")}
+                disabled={bulkActionLoading}
                 className="bg-white/10 hover:bg-white/20 text-white border-0 rounded-lg"
               >
-                <Archive className="mr-2 h-4 w-4" /> Archive All
+                <Archive className="mr-2 h-4 w-4" /> Archive
               </Button>
               <Button
                 variant="destructive"
                 size="sm"
                 onClick={handleBulkDelete}
+                disabled={bulkActionLoading}
                 className="rounded-lg"
               >
                 <Trash2 className="mr-2 h-4 w-4" /> Delete

@@ -11,6 +11,7 @@ import {
   UploadedFile,
   Res,
   Delete,
+  BadRequestException,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Response } from "express";
@@ -28,6 +29,7 @@ import {
   BulkStatusDto,
   BulkEditDto,
   CheckSlugDto,
+  ExportFiltersDto,
 } from "./dto";
 
 @Controller("links")
@@ -47,6 +49,27 @@ export class LinksController {
     @Query('organizationId') organizationId?: string,
   ) {
     return this.linksService.importLinks(req.user.id, file.buffer, organizationId);
+  }
+
+  @Post("import/preview")
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: "link", action: "bulk" })
+  @UseInterceptors(FileInterceptor("file"))
+  async importPreview(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+    return this.linksService.previewImport(file.buffer);
+  }
+
+  @Get("import/template")
+  @UseGuards(JwtAuthGuard)
+  async downloadTemplate(@Res() res: Response) {
+    const template = 'originalUrl,slug,title,description,tags\n' +
+      'https://example.com,my-link,Example Link,Description here,"tag1,tag2"\n';
+    res.header("Content-Type", "text/csv");
+    res.header("Content-Disposition", 'attachment; filename="import-template.csv"');
+    res.send(template);
   }
 
   @Post("bulk-delete")
@@ -94,10 +117,31 @@ export class LinksController {
     @Res() res: Response,
     @Query('organizationId') organizationId?: string,
   ) {
-    const csv = await this.linksService.exportLinks(req.user.id, organizationId);
+    const csv = await this.linksService.exportLinks(req.user.id, { organizationId });
     res.header("Content-Type", "text/csv");
     res.header("Content-Disposition", 'attachment; filename="links.csv"');
     res.send(csv);
+  }
+
+  @Post("export")
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: "link", action: "export" })
+  async exportFiltered(
+    @Request() req,
+    @Body() filters: ExportFiltersDto,
+    @Res() res: Response,
+  ) {
+    const data = await this.linksService.exportLinks(req.user.id, filters);
+
+    if (filters.format === 'json') {
+      res.header("Content-Type", "application/json");
+      res.header("Content-Disposition", 'attachment; filename="links.json"');
+    } else {
+      res.header("Content-Type", "text/csv");
+      res.header("Content-Disposition", 'attachment; filename="links.csv"');
+    }
+
+    res.send(data);
   }
 
   @Post("check-slug")

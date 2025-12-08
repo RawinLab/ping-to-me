@@ -827,7 +827,7 @@ describe("LinksService", () => {
       (prisma.link.findMany as jest.Mock).mockResolvedValue(mockLinks);
       (prisma.clickEvent.groupBy as jest.Mock).mockResolvedValue([]);
 
-      await service.exportLinks(userId, organizationId);
+      await service.exportLinks(userId, { organizationId });
 
       expect(prisma.link.findMany).toHaveBeenCalledWith({
         where: { userId, organizationId },

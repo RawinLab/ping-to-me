@@ -704,11 +704,171 @@ export class LinksService {
     return results;
   }
 
-  async exportLinks(userId: string, organizationId?: string) {
+  async previewImport(fileBuffer: Buffer): Promise<{
+    totalRows: number;
+    validRows: number;
+    invalidRows: number;
+    preview: Array<{
+      rowNumber: number;
+      data: {
+        originalUrl: string;
+        slug?: string;
+        title?: string;
+        description?: string;
+        tags?: string[];
+      };
+      errors: string[];
+      warnings: string[];
+    }>;
+    duplicateSlugs: string[];
+  }> {
+    const { parse } = await import("csv-parse/sync");
+
+    let records: any[];
+    try {
+      records = parse(fileBuffer, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true,
+      });
+    } catch (e) {
+      throw new BadRequestException('Invalid CSV format: ' + (e as Error).message);
+    }
+
+    const preview: Array<{
+      rowNumber: number;
+      data: any;
+      errors: string[];
+      warnings: string[];
+    }> = [];
+
+    let validRows = 0;
+    let invalidRows = 0;
+    const slugsInFile = new Set<string>();
+    const duplicateSlugs: string[] = [];
+
+    for (let i = 0; i < records.length; i++) {
+      const record = records[i];
+      const rowNumber = i + 1;
+      const errors: string[] = [];
+      const warnings: string[] = [];
+
+      // Extract data
+      const originalUrl = record.originalUrl || record.url || '';
+      const slug = record.slug || undefined;
+      const title = record.title || undefined;
+      const description = record.description || undefined;
+      const tags = record.tags ? record.tags.split(',').map((t: string) => t.trim()) : [];
+
+      // Validate URL
+      if (!originalUrl) {
+        errors.push('Missing required field: originalUrl');
+      } else {
+        try {
+          new URL(originalUrl);
+        } catch {
+          errors.push('Invalid URL format');
+        }
+      }
+
+      // Check for duplicate slugs within file
+      if (slug) {
+        if (slugsInFile.has(slug)) {
+          warnings.push(`Duplicate slug "${slug}" in file`);
+          duplicateSlugs.push(slug);
+        } else {
+          slugsInFile.add(slug);
+        }
+
+        // Check if slug exists in database
+        const existing = await this.prisma.link.findUnique({
+          where: { slug },
+          select: { id: true },
+        });
+        if (existing) {
+          errors.push(`Slug "${slug}" already exists in database`);
+        }
+
+        // Check reserved slugs
+        if (this.RESERVED_SLUGS.includes(slug.toLowerCase())) {
+          errors.push(`Slug "${slug}" is reserved`);
+        }
+      }
+
+      // Track valid/invalid
+      if (errors.length > 0) {
+        invalidRows++;
+      } else {
+        validRows++;
+      }
+
+      // Add to preview (first 10 rows for display, but validate all)
+      if (preview.length < 10) {
+        preview.push({
+          rowNumber,
+          data: {
+            originalUrl,
+            slug,
+            title,
+            description,
+            tags,
+          },
+          errors,
+          warnings,
+        });
+      }
+    }
+
+    return {
+      totalRows: records.length,
+      validRows,
+      invalidRows,
+      preview,
+      duplicateSlugs: [...new Set(duplicateSlugs)],
+    };
+  }
+
+  async exportLinks(userId: string, filters?: {
+    organizationId?: string;
+    tagIds?: string[];
+    campaignId?: string;
+    status?: string;
+    startDate?: string;
+    endDate?: string;
+    format?: 'csv' | 'json';
+    selectedIds?: string[];
+  }) {
     // Build where clause
     const where: any = { userId };
-    if (organizationId) {
-      where.organizationId = organizationId;
+
+    if (filters?.organizationId) {
+      where.organizationId = filters.organizationId;
+    }
+
+    if (filters?.selectedIds && filters.selectedIds.length > 0) {
+      where.id = { in: filters.selectedIds };
+    }
+
+    if (filters?.campaignId) {
+      where.campaignId = filters.campaignId;
+    }
+
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+
+    if (filters?.tagIds && filters.tagIds.length > 0) {
+      where.tags = { hasSome: filters.tagIds };
+    }
+
+    if (filters?.startDate || filters?.endDate) {
+      where.createdAt = {};
+      if (filters.startDate) {
+        where.createdAt.gte = new Date(filters.startDate);
+      }
+      if (filters.endDate) {
+        where.createdAt.lte = new Date(filters.endDate);
+      }
     }
 
     const links = await this.prisma.link.findMany({
@@ -717,6 +877,9 @@ export class LinksService {
     });
 
     if (links.length === 0) {
+      if (filters?.format === 'json') {
+        return JSON.stringify([]);
+      }
       return this.generateEmptyCsv();
     }
 
@@ -734,6 +897,26 @@ export class LinksService {
       clickCountMap.set(cc.linkId, cc._count.id);
     }
 
+    // Prepare data
+    const exportData = links.map((link) => ({
+      originalUrl: link.originalUrl,
+      slug: link.slug,
+      title: link.title || "",
+      description: link.description || "",
+      tags: link.tags.join(", "),
+      status: link.status,
+      createdAt: link.createdAt.toISOString(),
+      clicks: clickCountMap.get(link.id) || 0,
+      expirationDate: link.expirationDate?.toISOString() || "",
+      campaignId: link.campaignId || "",
+    }));
+
+    // Return JSON format
+    if (filters?.format === 'json') {
+      return JSON.stringify(exportData, null, 2);
+    }
+
+    // Return CSV format (default)
     const { stringify } = await import("csv-stringify/sync");
 
     // Sanitize CSV fields to prevent CSV injection
@@ -747,15 +930,13 @@ export class LinksService {
     };
 
     const csv = stringify(
-      links.map((link) => ({
-        originalUrl: sanitizeCsvField(link.originalUrl),
-        slug: sanitizeCsvField(link.slug),
-        title: sanitizeCsvField(link.title || ""),
-        description: sanitizeCsvField(link.description || ""),
-        tags: sanitizeCsvField(link.tags.join(", ")),
-        status: link.status,
-        createdAt: link.createdAt.toISOString(),
-        clicks: clickCountMap.get(link.id) || 0, // Use actual click count
+      exportData.map(row => ({
+        ...row,
+        originalUrl: sanitizeCsvField(row.originalUrl),
+        slug: sanitizeCsvField(row.slug),
+        title: sanitizeCsvField(row.title),
+        description: sanitizeCsvField(row.description),
+        tags: sanitizeCsvField(row.tags),
       })),
       {
         header: true,
@@ -768,6 +949,8 @@ export class LinksService {
           "status",
           "createdAt",
           "clicks",
+          "expirationDate",
+          "campaignId",
         ],
       },
     );
