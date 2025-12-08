@@ -629,7 +629,16 @@ export class LinksService {
       clicks,
     };
   }
-  async importLinks(userId: string, fileBuffer: Buffer, organizationId?: string) {
+  private getMaxImportRows(plan?: string): number {
+    const limits: Record<string, number> = {
+      FREE: 100,
+      PRO: 1000,
+      ENTERPRISE: 10000,
+    };
+    return limits[plan?.toUpperCase() || 'FREE'] || 100;
+  }
+
+  async importLinks(userId: string, fileBuffer: Buffer, organizationId?: string, userPlan?: string) {
     const { parse } = await import("csv-parse/sync");
 
     const records = parse(fileBuffer, {
@@ -637,6 +646,14 @@ export class LinksService {
       skip_empty_lines: true,
       trim: true,
     });
+
+    // Check max rows limit
+    const maxRows = this.getMaxImportRows(userPlan);
+    if (records.length > maxRows) {
+      throw new BadRequestException(
+        `CSV exceeds maximum allowed rows. Your plan allows ${maxRows} rows, but the file contains ${records.length} rows.`
+      );
+    }
 
     const results = {
       total: records.length,
@@ -659,6 +676,7 @@ export class LinksService {
             tags: record.tags
               ? record.tags.split(",").map((t: string) => t.trim())
               : [],
+            expirationDate: record.expirationDate || undefined,
             organizationId: organizationId, // Add organization context
           };
 
@@ -701,7 +719,24 @@ export class LinksService {
         .catch((err) => console.error("Audit log failed:", err));
     }
 
-    return results;
+    // Generate CSV of failed rows if any
+    let failedRowsCsv: string | null = null;
+    if (results.errors.length > 0) {
+      const headers = 'originalUrl,slug,title,description,tags,expirationDate,error\n';
+      const rows = results.errors.map(err => {
+        const row = err.row;
+        return `"${this.sanitizeCsvField(row.originalUrl || '')}","${this.sanitizeCsvField(row.slug || '')}","${this.sanitizeCsvField(row.title || '')}","${this.sanitizeCsvField(row.description || '')}","${this.sanitizeCsvField(row.tags || '')}","${this.sanitizeCsvField(row.expirationDate || '')}","${this.sanitizeCsvField(err.error)}"`;
+      }).join('\n');
+      failedRowsCsv = headers + rows;
+    }
+
+    return { ...results, failedRowsCsv };
+  }
+
+  private sanitizeCsvField(value: string): string {
+    if (!value) return '';
+    // Escape quotes by doubling them (CSV standard)
+    return value.replace(/"/g, '""');
   }
 
   async previewImport(fileBuffer: Buffer): Promise<{
@@ -716,6 +751,7 @@ export class LinksService {
         title?: string;
         description?: string;
         tags?: string[];
+        expirationDate?: string;
       };
       errors: string[];
       warnings: string[];
@@ -759,6 +795,7 @@ export class LinksService {
       const title = record.title || undefined;
       const description = record.description || undefined;
       const tags = record.tags ? record.tags.split(',').map((t: string) => t.trim()) : [];
+      const expirationDate = record.expirationDate || undefined;
 
       // Validate URL
       if (!originalUrl) {
@@ -795,6 +832,16 @@ export class LinksService {
         }
       }
 
+      // Validate expiration date
+      if (expirationDate) {
+        const date = new Date(expirationDate);
+        if (isNaN(date.getTime())) {
+          errors.push('Invalid expirationDate format (use ISO 8601, e.g., 2024-12-31)');
+        } else if (date < new Date()) {
+          warnings.push('Expiration date is in the past');
+        }
+      }
+
       // Track valid/invalid
       if (errors.length > 0) {
         invalidRows++;
@@ -812,6 +859,7 @@ export class LinksService {
             title,
             description,
             tags,
+            expirationDate,
           },
           errors,
           warnings,

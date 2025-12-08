@@ -13,6 +13,7 @@ import {
   Delete,
   BadRequestException,
 } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { Response } from "express";
 import { LinksService } from "./links.service";
@@ -42,18 +43,20 @@ export class LinksController {
   @Post("import")
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission({ resource: "link", action: "bulk" })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseInterceptors(FileInterceptor("file"))
   async import(
     @Request() req,
     @UploadedFile() file: Express.Multer.File,
     @Query('organizationId') organizationId?: string,
   ) {
-    return this.linksService.importLinks(req.user.id, file.buffer, organizationId);
+    return this.linksService.importLinks(req.user.id, file.buffer, organizationId, req.user.plan);
   }
 
   @Post("import/preview")
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission({ resource: "link", action: "bulk" })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseInterceptors(FileInterceptor("file"))
   async importPreview(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
@@ -65,8 +68,8 @@ export class LinksController {
   @Get("import/template")
   @UseGuards(JwtAuthGuard)
   async downloadTemplate(@Res() res: Response) {
-    const template = 'originalUrl,slug,title,description,tags\n' +
-      'https://example.com,my-link,Example Link,Description here,"tag1,tag2"\n';
+    const template = 'originalUrl,slug,title,description,tags,expirationDate\n' +
+      'https://example.com,my-link,Example Link,Description here,"tag1,tag2",2024-12-31\n';
     res.header("Content-Type", "text/csv");
     res.header("Content-Disposition", 'attachment; filename="import-template.csv"');
     res.send(template);
@@ -75,6 +78,7 @@ export class LinksController {
   @Post("bulk-delete")
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission({ resource: "link", action: "bulk" })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async bulkDelete(
     @Request() req,
     @Body() body: BulkDeleteDto,
@@ -85,6 +89,7 @@ export class LinksController {
   @Post("bulk-tag")
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission({ resource: "link", action: "bulk" })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async bulkTag(
     @Request() req,
     @Body() body: BulkTagDto,
@@ -95,6 +100,7 @@ export class LinksController {
   @Post("bulk-status")
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission({ resource: "link", action: "bulk" })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async bulkStatus(@Request() req, @Body() body: BulkStatusDto) {
     return this.linksService.updateStatusMany(req.user.id, body.ids, body.status);
   }
@@ -102,6 +108,7 @@ export class LinksController {
   @Post("bulk-edit")
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission({ resource: "link", action: "bulk" })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async bulkEdit(
     @Request() req,
     @Body() body: BulkEditDto,
@@ -112,6 +119,7 @@ export class LinksController {
   @Get("export")
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission({ resource: "link", action: "export" })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async export(
     @Request() req,
     @Res() res: Response,
@@ -126,6 +134,7 @@ export class LinksController {
   @Post("export")
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission({ resource: "link", action: "export" })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   async exportFiltered(
     @Request() req,
     @Body() filters: ExportFiltersDto,

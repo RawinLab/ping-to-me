@@ -870,4 +870,104 @@ describe("LinksService", () => {
       expect(csv).toContain("'-Description");
     });
   });
+
+  describe("importLinks with max rows enforcement", () => {
+    it("should allow import within FREE plan limit (100 rows)", async () => {
+      const userId = "user-123";
+      const csvContent = "originalUrl,slug,title\n" +
+        Array(50).fill(0).map((_, i) => `https://example${i}.com,slug${i},Title ${i}`).join("\n");
+      const buffer = Buffer.from(csvContent);
+
+      (prisma.blockedDomain.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.link.findUnique as jest.Mock).mockResolvedValue(null);
+      (prisma.domain.findFirst as jest.Mock).mockResolvedValue(null);
+      (prisma.link.create as jest.Mock).mockResolvedValue({
+        id: "link-123",
+        slug: "test",
+        status: LinkStatus.ACTIVE,
+        createdAt: new Date(),
+      });
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        text: jest.fn().mockResolvedValue(""),
+      });
+
+      const mockTransaction = jest.fn(async (callback) => {
+        return callback(prisma);
+      });
+      (prisma.$transaction as jest.Mock) = mockTransaction;
+
+      const result = await service.importLinks(userId, buffer, undefined, "FREE");
+
+      expect(result.total).toBe(50);
+    });
+
+    it("should reject import exceeding FREE plan limit (100 rows)", async () => {
+      const userId = "user-123";
+      const csvContent = "originalUrl,slug,title\n" +
+        Array(150).fill(0).map((_, i) => `https://example${i}.com,slug${i},Title ${i}`).join("\n");
+      const buffer = Buffer.from(csvContent);
+
+      await expect(
+        service.importLinks(userId, buffer, undefined, "FREE")
+      ).rejects.toThrow(BadRequestException);
+
+      await expect(
+        service.importLinks(userId, buffer, undefined, "FREE")
+      ).rejects.toThrow("CSV exceeds maximum allowed rows. Your plan allows 100 rows, but the file contains 150 rows.");
+    });
+
+    it("should reject import exceeding PRO plan limit (1000 rows)", async () => {
+      const userId = "user-123";
+      const csvContent = "originalUrl,slug,title\n" +
+        Array(1500).fill(0).map((_, i) => `https://example${i}.com,slug${i},Title ${i}`).join("\n");
+      const buffer = Buffer.from(csvContent);
+
+      await expect(
+        service.importLinks(userId, buffer, undefined, "PRO")
+      ).rejects.toThrow("CSV exceeds maximum allowed rows. Your plan allows 1000 rows, but the file contains 1500 rows.");
+    });
+
+    it("should reject import exceeding ENTERPRISE plan limit (10000 rows)", async () => {
+      const userId = "user-123";
+      const csvContent = "originalUrl,slug,title\n" +
+        Array(15000).fill(0).map((_, i) => `https://example${i}.com,slug${i},Title ${i}`).join("\n");
+      const buffer = Buffer.from(csvContent);
+
+      await expect(
+        service.importLinks(userId, buffer, undefined, "ENTERPRISE")
+      ).rejects.toThrow("CSV exceeds maximum allowed rows. Your plan allows 10000 rows, but the file contains 15000 rows.");
+    });
+
+    it("should default to FREE plan limit when no plan is specified", async () => {
+      const userId = "user-123";
+      const csvContent = "originalUrl,slug,title\n" +
+        Array(150).fill(0).map((_, i) => `https://example${i}.com,slug${i},Title ${i}`).join("\n");
+      const buffer = Buffer.from(csvContent);
+
+      await expect(
+        service.importLinks(userId, buffer, undefined, undefined)
+      ).rejects.toThrow("CSV exceeds maximum allowed rows. Your plan allows 100 rows, but the file contains 150 rows.");
+    });
+
+    it("should be case-insensitive for plan names", async () => {
+      const userId = "user-123";
+
+      // Test lowercase "free" with 150 rows (exceeds FREE limit of 100)
+      const freeBuffer = Buffer.from("originalUrl,slug,title\n" +
+        Array(150).fill(0).map((_, i) => `https://example${i}.com,slug${i},Title ${i}`).join("\n"));
+
+      await expect(
+        service.importLinks(userId, freeBuffer, undefined, "free")
+      ).rejects.toThrow("CSV exceeds maximum allowed rows. Your plan allows 100 rows");
+
+      // Test mixed case "Pro" with 1500 rows (exceeds PRO limit of 1000)
+      const proBuffer = Buffer.from("originalUrl,slug,title\n" +
+        Array(1500).fill(0).map((_, i) => `https://example${i}.com,slug${i},Title ${i}`).join("\n"));
+
+      await expect(
+        service.importLinks(userId, proBuffer, undefined, "Pro")
+      ).rejects.toThrow("CSV exceeds maximum allowed rows. Your plan allows 1000 rows");
+    });
+  });
 });

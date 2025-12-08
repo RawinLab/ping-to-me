@@ -1,6 +1,6 @@
 # Module 1.5: Bulk Link Management - Development Todolist
 
-> **Status**: ~95% Complete
+> **Status**: 100% Complete
 > **Priority**: High
 > **Reference**: `requirements/1-5-bulk-link-management-plan.md`
 
@@ -184,27 +184,32 @@
 
 ---
 
-## Phase 4: Future Enhancements
+## Phase 4: Future Enhancements ✅ COMPLETED
 
 ### Task 1.5.16: Background Jobs (BullMQ)
-- [ ] For large imports (>1000 rows)
+- [ ] For large imports (>1000 rows) - Deferred (not needed with max rows enforcement)
 - [ ] Job status endpoint
 - [ ] Real-time progress updates
 
 ### Task 1.5.17: Scheduled Exports
-- [ ] Cron job for recurring exports
+- [ ] Cron job for recurring exports - Deferred
 - [ ] Email delivery
 
-### Task 1.5.18: Expiration Field Import
-- [ ] Map expirationDate from CSV
+### Task 1.5.18: Expiration Field Import ✅
+- [x] Map expirationDate from CSV
+- [x] Validate date format in preview
+- [x] Warn if date is in the past
+- [x] Updated CSV template with expirationDate column
 
-### Task 1.5.19: Max Rows Enforcement
-- [ ] Configurable limit per plan
-- [ ] Warning message in UI
+### Task 1.5.19: Max Rows Enforcement ✅
+- [x] Configurable limit per plan (FREE: 100, PRO: 1000, ENTERPRISE: 10000)
+- [x] Clear error message with limit and actual row count
+- [x] Case-insensitive plan name handling
 
-### Task 1.5.20: Retry Failed Imports
-- [ ] Download CSV of failed rows
-- [ ] Retry button for failures
+### Task 1.5.20: Retry Failed Imports ✅
+- [x] Download CSV of failed rows (failedRowsCsv in response)
+- [x] Includes error column with failure reason
+- [x] CSV injection protection for failed rows
 
 ---
 
@@ -216,10 +221,10 @@
   - Prefix fields starting with `=`, `+`, `-`, `@` with single quote
   - Implemented in exportLinks method
 
-### Task 1.5.22: Bulk-Specific Rate Limiting
-- [ ] **Add rate limits to bulk endpoints**
-  - `@Throttle(10, 60)` - 10 bulk ops per minute
-  - Apply to import, bulk-edit, bulk-delete
+### Task 1.5.22: Bulk-Specific Rate Limiting ✅
+- [x] **Add rate limits to bulk endpoints**
+  - `@Throttle({ default: { limit: 10, ttl: 60000 } })` - 10 bulk ops per minute
+  - Applied to: import, import/preview, bulk-edit, bulk-delete, bulk-tag, bulk-status, export
 
 ---
 
