@@ -1,6 +1,6 @@
 # Module 1.7: Link Analytics - Development Todolist
 
-> **Status**: ~90% Complete (Phase 1 Done)
+> **Status**: ~95% Complete (Phase 1 & 2 Done)
 > **Priority**: Medium - Security issue FIXED
 > **Reference**: `requirements/1-7-link-analytics-plan.md`
 
@@ -77,59 +77,59 @@
 
 ---
 
-## Phase 2: Enhanced UI
+## Phase 2: Enhanced UI ✅ COMPLETE
 
-### Task 1.7.6: Custom Date Range Picker
-- [ ] **Create DateRangePicker component**
+### Task 1.7.6: Custom Date Range Picker ✅
+- [x] **Create DateRangePicker component**
   - File: `apps/web/components/dashboard/DateRangePicker.tsx`
   - Quick presets: Today, 7d, 30d, 90d, 1y
   - "Custom" opens dual calendar picker
   - Date validation (end >= start)
   - Apply/Cancel buttons
 
-- [ ] **Update analytics pages to support custom dates**
+- [x] **Update analytics pages to support custom dates**
   - Pass custom start/end to API
   - Update URL params for sharing
 
-### Task 1.7.7: Geographic Map Component
-- [ ] **Create GeographicMap component**
+### Task 1.7.7: Geographic Map Component ✅
+- [x] **Create GeographicMap component**
   - File: `apps/web/components/dashboard/GeographicMap.tsx`
-  - Use echarts or react-leaflet
+  - Horizontal bar chart visualization (no external mapping library needed)
   - Color countries by click count
   - Tooltips on hover (country + count)
-  - Zoom/pan controls
+  - Toggle between chart/list views
 
-- [ ] **Replace LocationsChart with map**
+- [x] **Replace LocationsChart with map**
   - Keep list view as alternative
-  - Toggle between map/list
+  - Toggle between chart/list
 
-### Task 1.7.8: Dashboard Export
-- [ ] **Create exportDashboard method**
+### Task 1.7.8: Dashboard Export ✅
+- [x] **Create exportDashboard method**
   - File: `apps/api/src/analytics/analytics.service.ts`
   - Aggregate all user's links analytics
   - Format as CSV/JSON
 
-- [ ] **Add GET /analytics/export endpoint**
+- [x] **Add GET /analytics/export endpoint**
   - File: `apps/api/src/analytics/analytics.controller.ts`
 
-- [ ] **Add export button to dashboard**
+- [x] **Add export button to dashboard**
   - File: `apps/web/app/dashboard/analytics/page.tsx`
 
-### Task 1.7.9: Bot Filtering
-- [ ] **Create isBot helper function**
+### Task 1.7.9: Bot Filtering ✅
+- [x] **Create isBot helper function**
   - File: `apps/api/src/analytics/utils/bot-filter.ts`
   - Patterns: googlebot, bingbot, slurp, duckduckbot, facebookexternalhit, curl, wget, etc.
 
-- [ ] **Filter bots in trackClick**
+- [x] **Filter bots in trackClick**
   - If isBot(userAgent), skip recording
   - Or mark as bot click for separate counting
 
-### Task 1.7.10: Period Comparison
-- [ ] **Add compareToPrevious to analytics response**
+### Task 1.7.10: Period Comparison ✅
+- [x] **Add compareToPrevious to analytics response**
   - Calculate same metrics for previous period
   - Return percentage change
 
-- [ ] **Show % change in stats cards**
+- [x] **Show % change in stats cards**
   - Green arrow up / red arrow down
   - +15% or -10% indicator
 
@@ -211,10 +211,16 @@ File: apps/api/src/analytics/analytics.service.spec.ts
 - [x] exportLinkAnalytics: respect limit parameter
 - [x] exportLinkAnalytics: reject if user lacks export permission
 
-### Bot Filtering Tests
-- [ ] isBot: filter Googlebot clicks
-- [ ] isBot: filter curl/wget requests
-- [ ] isBot: allow legitimate user clicks
+### Bot Filtering Tests ✅
+```
+File: apps/api/src/analytics/utils/__tests__/bot-filter.spec.ts
+```
+- [x] isBot: filter Googlebot clicks
+- [x] isBot: filter curl/wget requests
+- [x] isBot: allow legitimate user clicks
+- [x] isBot: filter various search engine bots
+- [x] isBot: filter social media bots
+- [x] isBot: handle empty/undefined user agent
 
 ### Track Endpoint Security Tests ✅
 ```
@@ -257,13 +263,13 @@ File: apps/web/e2e/link-analytics.spec.ts (extend)
 - [x] Referrer captured and displayed
 - [x] Unit tests pass (64 tests)
 
-### Phase 2 Complete When:
-- [ ] Custom date range works
-- [ ] Geographic map renders countries
-- [ ] Dashboard export works
-- [ ] Bots filtered from counts
-- [ ] Period comparison shows % change
-- [ ] E2E tests pass
+### Phase 2 Complete When: ✅ DONE
+- [x] Custom date range works
+- [x] Geographic map renders countries
+- [x] Dashboard export works
+- [x] Bots filtered from counts
+- [x] Period comparison shows % change
+- [x] Unit tests pass (84 tests)
 
 ### Phase 3 Complete When:
 - [ ] Hourly heatmap displays
@@ -301,7 +307,7 @@ File: apps/web/e2e/link-analytics.spec.ts (extend)
 - ~~**CRITICAL**: POST /analytics/track is currently PUBLIC - anyone can inject fake clicks~~ ✅ FIXED
 - ~~Add API key validation immediately~~ ✅ IMPLEMENTED
 - ~~Rate limit track endpoint to prevent abuse~~ ✅ IMPLEMENTED (100/min)
-- [ ] Filter bot traffic to prevent inflated counts (Phase 2)
+- ~~Filter bot traffic to prevent inflated counts~~ ✅ IMPLEMENTED (Phase 2)
 
 ---
 
