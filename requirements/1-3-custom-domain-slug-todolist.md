@@ -1,7 +1,7 @@
 # Module 1.3: Custom Domain & Slug - Development Todolist
 
-> **Status**: ~95% Complete
-> **Priority**: Low - Only optional analytics and future enhancements remaining
+> **Status**: 100% Complete
+> **Priority**: Done - All core features implemented, only future enhancements remaining
 > **Reference**: `requirements/1-3-custom-domain-slug-plan.md`
 
 ---
@@ -68,14 +68,14 @@
   - Combine search and status filters
   - Show result count
 
-### Task 1.3.5: Domain Analytics Summary (Optional)
-- [ ] **Create analytics endpoint**
+### Task 1.3.5: Domain Analytics Summary ✅
+- [x] **Create analytics endpoint**
   - Endpoint: `GET /domains/:id/analytics`
-  - Return: totalClicks, totalLinks, clicksByDay
+  - Return: totalClicks, totalLinks, clicksByDay, topLinks, changePercent
 
-- [ ] **Add analytics card to domain details**
+- [x] **Add analytics card to domain details**
   - File: `apps/web/app/dashboard/domains/[id]/page.tsx`
-  - Display: Total clicks, trend, top links
+  - Display: Total clicks, trend, top links, avg clicks per link
 
 ---
 
@@ -98,20 +98,20 @@
   - Change domain selector to different domain
   - Verify selection persists
 
-### Task 1.3.7: RBAC Permission E2E Tests
-- [ ] **DOM-040: OWNER can manage domains**
+### Task 1.3.7: RBAC Permission E2E Tests ✅
+- [x] **DOM-040: OWNER can manage domains**
   - Login as owner
   - Verify add/delete buttons visible
 
-- [ ] **DOM-041: ADMIN can manage domains**
+- [x] **DOM-041: ADMIN can manage domains**
   - Login as admin
   - Verify add button visible
 
-- [ ] **DOM-042: EDITOR cannot manage domains**
+- [x] **DOM-042: EDITOR cannot manage domains**
   - Login as editor
   - Verify add/delete buttons not visible or redirected
 
-- [ ] **DOM-043: VIEWER cannot manage domains**
+- [x] **DOM-043: VIEWER cannot manage domains**
   - Login as viewer
   - Verify no domain management access
 
