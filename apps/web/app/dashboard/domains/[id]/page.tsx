@@ -26,6 +26,7 @@ import {
   Clock,
   Loader2,
   AlertTriangle,
+  BarChart3,
 } from "lucide-react";
 import { format } from "date-fns";
 import { SslStatusBadge } from "@/components/domains/SslStatusBadge";
@@ -49,6 +50,14 @@ export default function DomainDetailsPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [analytics, setAnalytics] = useState<{
+    totalClicks: number;
+    totalLinks: number;
+    changePercent: number;
+    clicksByDay: { date: string; clicks: number }[];
+    topLinks: { id: string; slug: string; title: string | null; clicks: number }[];
+  } | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
   // Mock orgId for now, in real app get from context/auth
   const orgId = "123e4567-e89b-12d3-a456-426614174000";
@@ -57,6 +66,7 @@ export default function DomainDetailsPage() {
     if (domainId) {
       fetchDomain();
       fetchLinks();
+      fetchAnalytics();
     }
   }, [domainId, currentPage]);
 
@@ -86,6 +96,18 @@ export default function DomainDetailsPage() {
       console.error("Failed to load links", err);
     } finally {
       setLinksLoading(false);
+    }
+  };
+
+  const fetchAnalytics = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const res = await domainsApi.getAnalytics(orgId, domainId);
+      setAnalytics(res);
+    } catch (err) {
+      console.error("Failed to load analytics", err);
+    } finally {
+      setAnalyticsLoading(false);
     }
   };
 
@@ -348,6 +370,104 @@ export default function DomainDetailsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Analytics Summary Card */}
+        {domain.isVerified && (
+          <Card data-testid="domain-analytics-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <BarChart3 className="h-5 w-5" />
+                Analytics Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {analyticsLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-24 bg-slate-100 rounded-lg animate-pulse" />
+                  ))}
+                </div>
+              ) : analytics ? (
+                <div className="space-y-6">
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4">
+                      <p className="text-sm text-blue-600 font-medium">Total Clicks</p>
+                      <div className="flex items-baseline gap-2 mt-1">
+                        <p className="text-3xl font-bold text-blue-700">
+                          {analytics.totalClicks.toLocaleString()}
+                        </p>
+                        {analytics.changePercent !== 0 && (
+                          <span
+                            className={`text-sm font-medium ${
+                              analytics.changePercent > 0
+                                ? "text-emerald-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            {analytics.changePercent > 0 ? "+" : ""}
+                            {analytics.changePercent}%
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-blue-500 mt-1">Last 30 days</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-4">
+                      <p className="text-sm text-emerald-600 font-medium">Total Links</p>
+                      <p className="text-3xl font-bold text-emerald-700 mt-1">
+                        {analytics.totalLinks.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-emerald-500 mt-1">Using this domain</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4">
+                      <p className="text-sm text-purple-600 font-medium">Avg. Clicks/Link</p>
+                      <p className="text-3xl font-bold text-purple-700 mt-1">
+                        {analytics.totalLinks > 0
+                          ? Math.round(analytics.totalClicks / analytics.totalLinks)
+                          : 0}
+                      </p>
+                      <p className="text-xs text-purple-500 mt-1">Performance metric</p>
+                    </div>
+                  </div>
+
+                  {/* Top Links */}
+                  {analytics.topLinks.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium text-slate-700 mb-3">
+                        Top Performing Links
+                      </p>
+                      <div className="space-y-2">
+                        {analytics.topLinks.map((link, index) => (
+                          <div
+                            key={link.id}
+                            className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm font-medium text-slate-400 w-6">
+                                #{index + 1}
+                              </span>
+                              <div>
+                                <p className="text-sm font-medium text-slate-900">
+                                  /{link.slug}
+                                </p>
+                                {link.title && (
+                                  <p className="text-xs text-slate-500">{link.title}</p>
+                                )}
+                              </div>
+                            </div>
+                            <Badge variant="outline">{link.clicks} clicks</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">No analytics data available</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* DNS Verification Card */}
         {!domain.isVerified && (

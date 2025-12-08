@@ -713,4 +713,106 @@ export class DomainService {
 
     return deletedDomain;
   }
+
+  /**
+   * Get domain analytics summary (TASK-1.3.5)
+   */
+  async getAnalytics(domainId: string, period: string = '30d') {
+    // Verify domain exists
+    const domain = await this.prisma.domain.findUnique({
+      where: { id: domainId },
+    });
+
+    if (!domain) throw new Error('Domain not found');
+
+    // Calculate period start date
+    const periodDays = parseInt(period.replace('d', ''), 10) || 30;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - periodDays);
+
+    // Get all links for this domain with their click events
+    const links = await this.prisma.link.findMany({
+      where: { domainId },
+      include: {
+        clicks: {
+          where: {
+            timestamp: {
+              gte: startDate,
+            },
+          },
+          select: {
+            timestamp: true,
+          },
+        },
+      },
+    });
+
+    // Calculate total clicks
+    const totalClicks = links.reduce((sum, link) => sum + link.clicks.length, 0);
+
+    // Aggregate clicks by day
+    const clicksByDay: Record<string, number> = {};
+    links.forEach((link) => {
+      link.clicks.forEach((click) => {
+        const day = click.timestamp.toISOString().split('T')[0];
+        clicksByDay[day] = (clicksByDay[day] || 0) + 1;
+      });
+    });
+
+    // Convert to sorted array
+    const clicksByDayArray = Object.entries(clicksByDay)
+      .map(([date, clicks]) => ({ date, clicks }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    // Get top performing links
+    const topLinks = links
+      .map((link) => ({
+        id: link.id,
+        slug: link.slug,
+        title: link.title,
+        clicks: link.clicks.length,
+      }))
+      .sort((a, b) => b.clicks - a.clicks)
+      .slice(0, 5);
+
+    // Calculate previous period for comparison
+    const prevStartDate = new Date(startDate);
+    prevStartDate.setDate(prevStartDate.getDate() - periodDays);
+
+    const prevLinks = await this.prisma.link.findMany({
+      where: { domainId },
+      include: {
+        clicks: {
+          where: {
+            timestamp: {
+              gte: prevStartDate,
+              lt: startDate,
+            },
+          },
+        },
+      },
+    });
+
+    const prevTotalClicks = prevLinks.reduce(
+      (sum, link) => sum + link.clicks.length,
+      0
+    );
+
+    // Calculate change percentage
+    const changePercent =
+      prevTotalClicks > 0
+        ? Math.round(((totalClicks - prevTotalClicks) / prevTotalClicks) * 100)
+        : totalClicks > 0
+          ? 100
+          : 0;
+
+    return {
+      totalClicks,
+      totalLinks: links.length,
+      changePercent,
+      period,
+      clicksByDay: clicksByDayArray,
+      topLinks,
+    };
+  }
 }

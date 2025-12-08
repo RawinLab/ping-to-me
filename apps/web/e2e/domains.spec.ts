@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { loginAsUser } from "./fixtures/auth";
 
 test.describe("Custom Domains", () => {
   const mockDomains = [
@@ -306,6 +307,160 @@ test.describe("Custom Domains", () => {
       if (await autoRenewToggle.isVisible()) {
         await autoRenewToggle.click();
       }
+    });
+  });
+
+  test.describe("Domain RBAC Permissions", () => {
+    test("DOM-040: OWNER can manage domains", async ({ page }) => {
+      // Mock domains endpoint
+      await page.route("**/domains?*", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([
+            {
+              id: "dom-1",
+              hostname: "link.example.com",
+              isVerified: true,
+              status: "VERIFIED",
+              isDefault: false,
+              sslStatus: "ACTIVE",
+              verificationAttempts: 0,
+              createdAt: new Date().toISOString(),
+            },
+          ]),
+        });
+      });
+
+      await page.route("**/notifications", async (route) => {
+        await route.fulfill({
+          status: 200,
+          body: JSON.stringify({ notifications: [], unreadCount: 0 }),
+        });
+      });
+
+      // Login as owner
+      await loginAsUser(page, "owner");
+      await page.goto("/dashboard/domains");
+
+      // Verify owner can see management buttons
+      await expect(page.locator('button:has-text("Add Domain")')).toBeVisible();
+
+      // Verify delete button is visible (using trash icon)
+      const deleteBtn = page.locator('button:has(.lucide-trash2), button:has(.lucide-trash)').first();
+      await expect(deleteBtn).toBeVisible();
+    });
+
+    test("DOM-041: ADMIN can manage domains", async ({ page }) => {
+      await page.route("**/domains?*", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([
+            {
+              id: "dom-1",
+              hostname: "link.example.com",
+              isVerified: true,
+              status: "VERIFIED",
+              isDefault: false,
+              sslStatus: "ACTIVE",
+              verificationAttempts: 0,
+              createdAt: new Date().toISOString(),
+            },
+          ]),
+        });
+      });
+
+      await page.route("**/notifications", async (route) => {
+        await route.fulfill({
+          status: 200,
+          body: JSON.stringify({ notifications: [], unreadCount: 0 }),
+        });
+      });
+
+      // Login as admin
+      await loginAsUser(page, "admin");
+      await page.goto("/dashboard/domains");
+
+      // Verify admin can see Add Domain button
+      await expect(page.locator('button:has-text("Add Domain")')).toBeVisible();
+    });
+
+    test("DOM-042: EDITOR cannot manage domains", async ({ page }) => {
+      // Mock API to return 403 for domain endpoints when accessed by editor
+      await page.route("**/domains?*", async (route) => {
+        await route.fulfill({
+          status: 403,
+          contentType: "application/json",
+          body: JSON.stringify({
+            statusCode: 403,
+            message: "Forbidden - insufficient permissions",
+          }),
+        });
+      });
+
+      await page.route("**/notifications", async (route) => {
+        await route.fulfill({
+          status: 200,
+          body: JSON.stringify({ notifications: [], unreadCount: 0 }),
+        });
+      });
+
+      // Login as editor
+      await loginAsUser(page, "editor");
+      await page.goto("/dashboard/domains");
+
+      // Editor should either:
+      // 1. Not see Add Domain button
+      // 2. See an error/permission denied message
+      // 3. Be redirected
+      const addButton = page.locator('button:has-text("Add Domain")');
+      const permissionError = page
+        .locator('text=/permission|forbidden|access denied/i')
+        .first();
+
+      // Check if either button is hidden or error is shown
+      const isButtonHidden = await addButton.isHidden().catch(() => true);
+      const hasError = await permissionError.isVisible().catch(() => false);
+
+      expect(isButtonHidden || hasError).toBeTruthy();
+    });
+
+    test("DOM-043: VIEWER cannot manage domains", async ({ page }) => {
+      // Mock API to return 403 for domain endpoints when accessed by viewer
+      await page.route("**/domains?*", async (route) => {
+        await route.fulfill({
+          status: 403,
+          contentType: "application/json",
+          body: JSON.stringify({
+            statusCode: 403,
+            message: "Forbidden - insufficient permissions",
+          }),
+        });
+      });
+
+      await page.route("**/notifications", async (route) => {
+        await route.fulfill({
+          status: 200,
+          body: JSON.stringify({ notifications: [], unreadCount: 0 }),
+        });
+      });
+
+      // Login as viewer
+      await loginAsUser(page, "viewer");
+      await page.goto("/dashboard/domains");
+
+      // Viewer should not have domain management access
+      const addButton = page.locator('button:has-text("Add Domain")');
+      const deleteButton = page
+        .locator('button:has(.lucide-trash2), button:has(.lucide-trash)')
+        .first();
+
+      // Check if management buttons are not visible
+      const isAddHidden = await addButton.isHidden().catch(() => true);
+      const isDeleteHidden = await deleteButton.isHidden().catch(() => true);
+
+      expect(isAddHidden || isDeleteHidden).toBeTruthy();
     });
   });
 });

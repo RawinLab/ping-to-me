@@ -88,6 +88,20 @@ export class DomainsController {
     });
   }
 
+  /**
+   * Get domain analytics summary
+   *
+   * GET /domains/:id/analytics
+   */
+  @Get(":id/analytics")
+  @Permission({ resource: "domain", action: "read" })
+  async getAnalytics(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Query("period") period: string = "30d",
+  ) {
+    return this.domainService.getAnalytics(id, period);
+  }
+
   @Patch(":id")
   @Permission({ resource: "domain", action: "update" })
   async update(

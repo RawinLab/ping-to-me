@@ -172,6 +172,24 @@ export async function getDomainLinks(
   return apiRequest(`/domains/${domainId}/links?${params.toString()}`);
 }
 
+/**
+ * Get analytics for a specific domain
+ */
+export async function getDomainAnalytics(
+  orgId: string,
+  domainId: string,
+  period = '30d'
+): Promise<{
+  totalClicks: number;
+  totalLinks: number;
+  changePercent: number;
+  clicksByDay: { date: string; clicks: number }[];
+  topLinks: { id: string; slug: string; title: string | null; clicks: number }[];
+}> {
+  const params = new URLSearchParams({ orgId, period });
+  return apiRequest(`/domains/${domainId}/analytics?${params.toString()}`);
+}
+
 // Export as a named object for convenience
 export const domainsApi = {
   list: listDomains,
@@ -184,4 +202,5 @@ export const domainsApi = {
   getSslStatus,
   updateSsl,
   getLinks: getDomainLinks,
+  getAnalytics: getDomainAnalytics,
 };
