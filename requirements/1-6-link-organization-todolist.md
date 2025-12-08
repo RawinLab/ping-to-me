@@ -1,7 +1,7 @@
 # Module 1.6: Link Organization (Tags, Folders, Campaigns) - Development Todolist
 
-> **Status**: ~75% Complete ✅
-> **Priority**: Medium - Phase 1 complete, Phase 2 remaining
+> **Status**: ~90% Complete ✅
+> **Priority**: Low - Phase 1 & 2 complete, Phase 3 (frontend) remaining
 > **Reference**: `requirements/1-6-link-organization-plan.md`
 > **Last Updated**: 2025-12-08
 
@@ -88,79 +88,81 @@
 
 ---
 
-## Phase 2: High Priority Features
+## Phase 2: High Priority Features ✅ COMPLETED
 
-### Task 1.6.6: Tag Usage Statistics
-- [ ] **Create getStatistics method**
+### Task 1.6.6: Tag Usage Statistics ✅
+- [x] **Create getStatistics method**
   - File: `apps/api/src/tags/tags.service.ts`
-  - Query link counts per tag using groupBy
+  - Query link counts per tag using has operator
   - Return: tags with linkCount, totalTags, unusedTags count
 
-- [ ] **Add GET /tags/statistics endpoint**
+- [x] **Add GET /tags/statistics endpoint**
   - File: `apps/api/src/tags/tags.controller.ts`
 
-- [ ] **Update TagsManager UI to show counts**
+- [ ] **Update TagsManager UI to show counts** (TODO - frontend)
   - File: `apps/web/components/tags/TagsManager.tsx`
   - Add usage count column
   - Highlight unused tags
   - Sort by usage option
 
-### Task 1.6.7: Campaign Analytics Endpoint
-- [ ] **Create getAnalytics method**
+### Task 1.6.7: Campaign Analytics Endpoint ✅
+- [x] **Create getAnalytics method**
   - File: `apps/api/src/campaigns/campaigns.service.ts`
   - Aggregate clicks from all campaign links
   - Return: totalLinks, totalClicks, uniqueClicks, clicksByDate, topLinks, clicksByCountry, goalProgress
 
-- [ ] **Add GET /campaigns/:id/analytics endpoint**
+- [x] **Add GET /campaigns/:id/analytics endpoint**
   - File: `apps/api/src/campaigns/campaigns.controller.ts`
 
-- [ ] **Create CampaignAnalytics component**
+- [ ] **Create CampaignAnalytics component** (TODO - frontend)
   - File: `apps/web/components/campaigns/CampaignAnalytics.tsx`
   - Stats cards, click chart, top links table
   - Goal progress bar if goal set
 
-### Task 1.6.8: Nested Folders
-- [ ] **Update Prisma schema with parentId**
+### Task 1.6.8: Nested Folders ✅
+- [x] **Update Prisma schema with parentId** (done in Phase 1)
   - File: `packages/database/prisma/schema.prisma`
   - Add: `parentId String? @db.Uuid`
   - Add self-relation: `parent Folder?`, `children Folder[]`
-  - Update unique constraint: `@@unique([userId, name, parentId])`
+  - Update unique constraint: `@@unique([organizationId, name, parentId])`
 
-- [ ] **Update findAll for tree queries**
+- [x] **Update findAll for tree queries**
   - Support `parentId` query parameter
   - Include children count
-  - Return nested structure option
+  - Return nested structure option via GET /folders/tree
 
-- [ ] **Add POST /folders/:id/move endpoint**
+- [x] **Add POST /folders/:id/move endpoint**
   - Move folder to new parent
-  - Prevent circular references
+  - Prevent circular references with isDescendant helper
 
-- [ ] **Create FolderTree component**
+- [ ] **Create FolderTree component** (TODO - frontend)
   - File: `apps/web/components/folders/FolderTree.tsx`
   - Collapsible tree structure
   - Link count badges
   - Context menu actions
 
-### Task 1.6.9: Campaign Dates
-- [ ] **Update Campaign schema**
+### Task 1.6.9: Campaign Dates ✅
+- [x] **Update Campaign schema**
   - Add: `startDate DateTime?`, `endDate DateTime?`
   - Add: `status CampaignStatus` enum (DRAFT, ACTIVE, PAUSED, COMPLETED, ARCHIVED)
+  - Add: goalType, goalTarget for campaign goals
+  - Add: UTM fields (utmSource, utmMedium, utmCampaign, utmTerm, utmContent)
 
-- [ ] **Add date pickers to campaign form**
+- [ ] **Add date pickers to campaign form** (TODO - frontend)
   - Start and end date inputs
   - Status badge based on dates
 
-### Task 1.6.10: Tag Merge
-- [ ] **Create merge method**
+### Task 1.6.10: Tag Merge ✅
+- [x] **Create merge method**
   - File: `apps/api/src/tags/tags.service.ts`
   - Replace sourceTag with targetTag in all Link.tags[]
   - Delete source tag
-  - Use transaction
+  - Use transaction for atomicity
 
-- [ ] **Add POST /tags/:id/merge endpoint**
+- [x] **Add POST /tags/:id/merge endpoint**
   - Body: `{ targetTagId: string }`
 
-- [ ] **Create TagMergeDialog component**
+- [ ] **Create TagMergeDialog component** (TODO - frontend)
   - File: `apps/web/components/tags/TagMergeDialog.tsx`
   - Source tag display
   - Target tag selector
