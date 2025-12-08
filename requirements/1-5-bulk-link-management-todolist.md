@@ -1,6 +1,6 @@
 # Module 1.5: Bulk Link Management - Development Todolist
 
-> **Status**: ~85-90% Complete
+> **Status**: ~95% Complete
 > **Priority**: High
 > **Reference**: `requirements/1-5-bulk-link-management-plan.md`
 
@@ -146,7 +146,7 @@
 
 ---
 
-## Phase 3: Medium Priority Enhancements
+## Phase 3: Medium Priority Enhancements ✅ COMPLETED
 
 ### Task 1.5.11: JSON Export Support ✅
 - [x] **Add format parameter to export**
@@ -154,31 +154,33 @@
   - Return JSON array for json format
   - Implemented in POST /links/export endpoint
 
-### Task 1.5.12: Drag-and-Drop File Upload
-- [ ] **Add drop zone to ImportLinksModal**
+### Task 1.5.12: Drag-and-Drop File Upload ✅
+- [x] **Add drop zone to ImportLinksModal**
   - File: `apps/web/components/links/ImportLinksModal.tsx`
-  - Visual drop zone with instructions
+  - Visual drop zone with drag-over highlight
   - Accept CSV files only
+  - Drag handlers: handleDragOver, handleDragLeave, handleDrop
 
 ### Task 1.5.13: Bulk Archive ✅
 - [x] **Add archive action to bulk edit**
   - Set status to ARCHIVED for selected links
   - Button in bulk actions toolbar (LinksTable.tsx)
 
-### Task 1.5.14: Bulk Move to Folder
-- [ ] **Add folder selector to BulkEditDialog**
+### Task 1.5.14: Bulk Move to Folder ✅
+- [x] **Add folder selector to BulkEditDialog**
   - File: `apps/web/components/links/BulkEditDialog.tsx`
   - Dropdown to select destination folder
   - "None" option to unassign
+  - Also includes: campaign selector, expiration date, tags with add/replace/remove
 
 ### Task 1.5.15: CSV Template Download ✅
 - [x] **Create GET /links/import/template endpoint**
   - Return CSV with headers and example row
   - Headers: originalUrl, slug, title, description, tags, expirationDate
 
-- [ ] **Add "Download Template" button**
+- [x] **Add "Download Template" button**
   - In ImportLinksModal
-  - Click downloads template CSV
+  - Now uses API endpoint instead of client-side generation
 
 ---
 

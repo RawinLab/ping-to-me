@@ -32,11 +32,42 @@ export function ImportLinksModal({
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
       setResult(null);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files[0]) {
+      const droppedFile = files[0];
+      // Validate CSV file
+      if (droppedFile.type === "text/csv" || droppedFile.name.endsWith(".csv")) {
+        setFile(droppedFile);
+        setResult(null);
+      } else {
+        alert("Please drop a valid CSV file");
+      }
     }
   };
 
@@ -77,16 +108,29 @@ export function ImportLinksModal({
     }
   };
 
-  const downloadTemplate = () => {
-    const csvContent =
-      "data:text/csv;charset=utf-8,originalUrl,slug,title,tags\nhttps://example.com,example,Example Title,tag1|tag2";
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "import_template.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const downloadTemplate = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/links/import/template`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to download template");
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "import-template.csv";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Template download failed", error);
+      alert("Failed to download template");
+    }
   };
 
   return (
@@ -99,14 +143,23 @@ export function ImportLinksModal({
 
         {!result ? (
           <div className="space-y-4 py-4">
-            <div className="flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 space-y-2">
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 space-y-2 transition-colors ${
+                isDragging
+                  ? "border-primary bg-primary/5"
+                  : "border-muted-foreground/25"
+              }`}
+            >
               <FileSpreadsheet className="h-8 w-8 text-muted-foreground" />
               <div className="text-center">
                 <Label
                   htmlFor="file"
                   className="cursor-pointer text-primary hover:underline"
                 >
-                  Choose CSV file
+                  {isDragging ? "Drop CSV file here" : "Choose CSV file or drag and drop"}
                 </Label>
                 <Input
                   id="file"
