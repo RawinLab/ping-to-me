@@ -38,6 +38,8 @@ import {
   LocationsChart,
   DevicesChart,
   ReferrersChart,
+  BrowserChart,
+  OSChart,
 } from "@/components/dashboard";
 
 const DEVICE_COLORS = {
@@ -196,6 +198,20 @@ export default function LinkAnalyticsPage() {
         DEVICE_COLORS.Other,
     }),
   );
+
+  // Process browser data
+  const browsersData = Object.entries(data.browsers || {}).map(
+    ([name, value]) => ({
+      name,
+      value: value as number,
+    }),
+  );
+
+  // Process OS data
+  const osData = Object.entries(data.os || {}).map(([name, value]) => ({
+    name,
+    value: value as number,
+  }));
 
   // Process referrers data
   const referrersData = Object.entries(data.referrers || {})
@@ -625,6 +641,20 @@ export default function LinkAnalyticsPage() {
           />
           <DevicesChart
             data={devicesData}
+            totalClicks={totalClicks}
+            onExport={handleExport}
+          />
+        </div>
+
+        {/* Browsers and Operating Systems */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <BrowserChart
+            data={browsersData}
+            totalClicks={totalClicks}
+            onExport={handleExport}
+          />
+          <OSChart
+            data={osData}
             totalClicks={totalClicks}
             onExport={handleExport}
           />
