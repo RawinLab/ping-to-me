@@ -31,8 +31,10 @@ interface AuthContextType {
   memberships: OrgMembership[];
   currentOrgId: string | null;
   loading: boolean;
-  login: (data: { email: string; password: string }) => Promise<void>;
+  sessionToken: string | null;
+  login: (data: { email: string; password: string }) => Promise<{ requires2FA: boolean }>;
   logout: () => Promise<void>;
+  verify2FA: (code: string) => Promise<void>;
   hasRole: (roles: string[]) => boolean;
   hasOrgRole: (orgId: string, roles: string[]) => boolean;
   canAccess: (feature: string) => boolean;
@@ -47,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [memberships, setMemberships] = useState<OrgMembership[]>([]);
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
   const initRef = useRef(false);
   const router = useRouter();
 
@@ -155,8 +158,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (data: { email: string; password: string }) => {
     const res = await api.post("/auth/login", data);
+
+    if (res.data.requires2FA) {
+      setSessionToken(res.data.sessionToken);
+      return { requires2FA: true };
+    }
+
     setUser(res.data.user);
     router.push("/dashboard");
+    return { requires2FA: false };
+  };
+
+  const verify2FA = async (code: string) => {
+    if (!sessionToken) {
+      throw new Error("No session token available");
+    }
+
+    const res = await api.post("/auth/login/2fa", {
+      sessionToken,
+      code,
+    });
+
+    setUser(res.data.user);
+    setSessionToken(null);
+
+    // Fetch memberships after successful 2FA
+    await refresh();
   };
 
   const logout = async () => {
@@ -165,6 +192,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setMemberships([]);
     setCurrentOrgId(null);
+    setSessionToken(null);
     router.push("/login");
   };
 
@@ -175,8 +203,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         memberships,
         currentOrgId,
         loading,
+        sessionToken,
         login,
         logout,
+        verify2FA,
         hasRole,
         hasOrgRole,
         canAccess,

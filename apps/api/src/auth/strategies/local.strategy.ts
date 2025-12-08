@@ -30,16 +30,20 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
         "account_locked",
       );
 
-      throw new UnauthorizedException(
-        `Account is locked due to too many failed login attempts. Please try again in ${lockStatus.remainingMinutes} minute(s).`
-      );
+      throw new UnauthorizedException({
+        message: `Account is locked due to too many failed login attempts. Try again in ${lockStatus.remainingMinutes} minute(s).`,
+        locked: true,
+        remainingMinutes: lockStatus.remainingMinutes,
+      });
     }
 
     // Validate user credentials
     const user = await this.authService.validateUser(email, pass, req);
 
     if (!user) {
-      throw new UnauthorizedException("Invalid credentials");
+      // Log failed login attempt (already logged in authService.validateUser, but not counted in lock check)
+      // Note: AuthService already logs this, so we don't need to log again
+      throw new UnauthorizedException("Invalid email or password");
     }
 
     // Log successful login attempt

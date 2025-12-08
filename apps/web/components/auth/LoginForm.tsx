@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -17,18 +17,43 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+interface LockStatus {
+  locked: boolean;
+  remainingMinutes?: number;
+}
+
 export function LoginForm() {
   const { login } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [lockStatus, setLockStatus] = useState<LockStatus | null>(null);
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   });
+
+  const email = watch("email");
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (countdown !== null && countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 60000); // Update every minute
+      return () => clearTimeout(timer);
+    } else if (countdown === 0) {
+      // Reset lock status when countdown reaches 0
+      setLockStatus(null);
+      setCountdown(null);
+      setError(null);
+    }
+  }, [countdown]);
 
   const handleSocialLogin = (provider: "github" | "google") => {
     setIsLoading(true);
@@ -38,11 +63,29 @@ export function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     setError(null);
+    setLockStatus(null);
 
     try {
-      await login(data);
+      const result = await login(data);
+      if (result.requires2FA) {
+        // Redirect to 2FA page is handled by AuthContext
+        window.location.href = "/login/2fa";
+      }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Login failed");
+      const errorData = err.response?.data;
+
+      // Check if account is locked
+      if (errorData?.locked) {
+        const remainingMinutes = errorData.remainingMinutes || 0;
+        setLockStatus({
+          locked: true,
+          remainingMinutes,
+        });
+        setCountdown(remainingMinutes);
+        setError(errorData.message || `Account is locked. Try again in ${remainingMinutes} minute(s).`);
+      } else {
+        setError(errorData?.message || "Login failed");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -90,14 +133,26 @@ export function LoginForm() {
           </div>
           {error && (
             <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>
+                {lockStatus?.locked && countdown !== null && countdown > 0 ? (
+                  <div>
+                    <p className="font-semibold">Account Locked</p>
+                    <p className="mt-1">
+                      Too many failed login attempts. Please try again in{" "}
+                      <span className="font-bold">{countdown}</span> minute{countdown !== 1 ? "s" : ""}.
+                    </p>
+                  </div>
+                ) : (
+                  error
+                )}
+              </AlertDescription>
             </Alert>
           )}
-          <Button disabled={isLoading}>
+          <Button disabled={isLoading || (lockStatus?.locked && (countdown || 0) > 0)}>
             {isLoading && (
               <span className="mr-2 h-4 w-4 animate-spin">...</span>
             )}
-            Sign In with Email
+            {lockStatus?.locked && (countdown || 0) > 0 ? "Account Locked" : "Sign In with Email"}
           </Button>
           {/* Removed "Email me a login link" button as per instruction */}
         </div>

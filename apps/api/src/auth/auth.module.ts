@@ -23,6 +23,9 @@ import { SessionController } from "./session.controller";
 // Login Security
 import { LoginSecurityService } from "./login-security.service";
 import { LoginActivityController } from "./login-activity.controller";
+// Two-Factor Authentication
+import { TwoFactorService } from "./two-factor.service";
+import { TwoFactorController } from "./two-factor.controller";
 
 @Module({
   imports: [
@@ -41,11 +44,12 @@ import { LoginActivityController } from "./login-activity.controller";
     ScheduleModule.forRoot(),
     forwardRef(() => AuditModule),
   ],
-  controllers: [AuthController, SessionController, LoginActivityController],
+  controllers: [AuthController, SessionController, LoginActivityController, TwoFactorController],
   providers: [
     AuthService,
     SessionService,
     LoginSecurityService,
+    TwoFactorService,
     JwtStrategy,
     LocalStrategy,
     GoogleStrategy,

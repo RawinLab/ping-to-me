@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from "@nestjs/common";
+import { Injectable, BadRequestException, UnauthorizedException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
@@ -6,11 +6,16 @@ import { MailService } from "../mail/mail.service";
 import { AuditService } from "../audit/audit.service";
 import { LoginSecurityService } from "./login-security.service";
 import { SessionService } from "./session.service";
+import { TwoFactorService } from "./two-factor.service";
 import { randomUUID } from "crypto";
 import { Request } from "express";
 
 @Injectable()
 export class AuthService {
+  // Temporary storage for pending 2FA sessions
+  // In production, consider using Redis or a distributed cache
+  private pending2FASessions = new Map<string, { userId: string; expiresAt: Date }>();
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -18,7 +23,20 @@ export class AuthService {
     private auditService: AuditService,
     private loginSecurityService: LoginSecurityService,
     private sessionService: SessionService,
-  ) {}
+    private twoFactorService: TwoFactorService,
+  ) {
+    // Cleanup expired sessions every 5 minutes
+    setInterval(() => this.cleanupExpiredSessions(), 5 * 60 * 1000);
+  }
+
+  private cleanupExpiredSessions() {
+    const now = new Date();
+    for (const [token, session] of this.pending2FASessions.entries()) {
+      if (session.expiresAt < now) {
+        this.pending2FASessions.delete(token);
+      }
+    }
+  }
 
   async register(email: string, password?: string, name?: string) {
     const existingUser = await this.prisma.user.findUnique({
@@ -199,6 +217,37 @@ export class AuthService {
   }
 
   async login(user: any, request?: any) {
+    // Check if 2FA is enabled for this user
+    if (user.twoFactorEnabled) {
+      // Generate temporary session token
+      const sessionToken = randomUUID();
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+      // Store session token
+      this.pending2FASessions.set(sessionToken, {
+        userId: user.id,
+        expiresAt,
+      });
+
+      // Extract IP and user agent for audit log
+      const ipAddress = request?.ip || request?.connection?.remoteAddress;
+      const userAgent = request?.headers?.['user-agent'];
+
+      // Audit log: 2FA challenge initiated
+      await this.auditService.logSecurityEvent(user.id, "auth.2fa_challenge", {
+        status: "success",
+        context: { ipAddress, userAgent },
+        details: { email: user.email },
+      });
+
+      // Return 2FA challenge response
+      return {
+        requires2FA: true,
+        sessionToken,
+      };
+    }
+
+    // Normal login flow (no 2FA)
     const payload = { sub: user.id, email: user.email, role: user.role };
 
     // Generate tokens
@@ -224,6 +273,81 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
+    };
+  }
+
+  async verify2FAAndLogin(sessionToken: string, code: string, request: Request) {
+    // Lookup session token
+    const session = this.pending2FASessions.get(sessionToken);
+
+    if (!session || session.expiresAt < new Date()) {
+      // Audit log: Invalid/expired 2FA session
+      await this.auditService.logSecurityEvent(null, "auth.2fa_verification_failed", {
+        status: "failure",
+        details: { reason: "invalid_or_expired_session" },
+      });
+      throw new UnauthorizedException("Invalid or expired session");
+    }
+
+    // Get user from database
+    const user = await this.prisma.user.findUnique({
+      where: { id: session.userId },
+    });
+
+    if (!user) {
+      this.pending2FASessions.delete(sessionToken);
+      throw new UnauthorizedException("User not found");
+    }
+
+    // Verify 2FA code (handles both TOTP and backup codes)
+    const isValid = await this.twoFactorService.verify(user.id, code);
+
+    if (!isValid) {
+      // Extract IP and user agent for audit log
+      const ipAddress = request?.ip || request?.connection?.remoteAddress;
+      const userAgent = request?.headers?.['user-agent'];
+
+      // Audit log: Failed 2FA verification
+      await this.auditService.logSecurityEvent(user.id, "auth.2fa_verification_failed", {
+        status: "failure",
+        context: { ipAddress, userAgent },
+        details: { email: user.email, reason: "invalid_code" },
+      });
+
+      throw new UnauthorizedException("Invalid verification code");
+    }
+
+    // Delete session token (single use)
+    this.pending2FASessions.delete(sessionToken);
+
+    // Generate JWT tokens
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: "7d" });
+
+    // Create session with device info, IP, etc.
+    if (request) {
+      await this.sessionService.createSession(user.id, refreshToken, request);
+    }
+
+    // Extract IP and user agent for audit log
+    const ipAddress = request?.ip || request?.connection?.remoteAddress;
+    const userAgent = request?.headers?.['user-agent'];
+
+    // Audit log: Successful 2FA login
+    await this.auditService.logSecurityEvent(user.id, "auth.login", {
+      status: "success",
+      context: { ipAddress, userAgent },
+      details: { email: user.email, method: "2fa" },
+    });
+
+    // Return user object without password
+    const { password, twoFactorSecret, ...userWithoutSensitive } = user;
+
+    return {
+      accessToken,
+      refreshToken,
+      user: userWithoutSensitive,
     };
   }
 
@@ -293,5 +417,55 @@ export class AuthService {
 
     const { password, ...result } = user;
     return result;
+  }
+
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+    currentSessionId?: string,
+  ): Promise<{ message: string }> {
+    // 1. Get user with password hash
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, password: true },
+    });
+
+    if (!user || !user.password) {
+      throw new BadRequestException(
+        "Cannot change password for OAuth-only accounts",
+      );
+    }
+
+    // 2. Verify current password
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
+    if (!isPasswordValid) {
+      throw new UnauthorizedException("Current password is incorrect");
+    }
+
+    // 3. Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // 4. Update password in database
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    // 5. Invalidate all other sessions (keep current)
+    if (currentSessionId) {
+      await this.sessionService.invalidateAllSessions(userId, currentSessionId);
+    }
+
+    // 6. Log audit event
+    await this.auditService.logSecurityEvent(userId, "auth.password_changed", {
+      status: "success",
+      details: { method: "change_password" },
+    });
+
+    return { message: "Password changed successfully" };
   }
 }
