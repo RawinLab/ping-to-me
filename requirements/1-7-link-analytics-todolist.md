@@ -1,78 +1,78 @@
 # Module 1.7: Link Analytics - Development Todolist
 
-> **Status**: ~80% Complete
-> **Priority**: High - Security issue (track endpoint is PUBLIC)
+> **Status**: ~90% Complete (Phase 1 Done)
+> **Priority**: Medium - Security issue FIXED
 > **Reference**: `requirements/1-7-link-analytics-plan.md`
 
 ---
 
-## Phase 1: Critical Features (P0)
+## Phase 1: Critical Features (P0) ✅ COMPLETE
 
-### Task 1.7.1: Analytics Export Endpoint
-- [ ] **Create ExportFiltersDto**
+### Task 1.7.1: Analytics Export Endpoint ✅
+- [x] **Create ExportFiltersDto**
   - File: `apps/api/src/analytics/dto/export-filters.dto.ts`
   - Fields: startDate, endDate, format ('csv'|'json'), limit (max 10000)
 
-- [ ] **Implement exportLinkAnalytics method**
+- [x] **Implement exportLinkAnalytics method**
   - File: `apps/api/src/analytics/analytics.service.ts`
   - Query ClickEvents with date filter
   - Format as CSV or JSON
   - Set response headers for download
 
-- [ ] **Add GET /links/:id/analytics/export endpoint**
+- [x] **Add GET /links/:id/analytics/export endpoint**
   - File: `apps/api/src/analytics/analytics.controller.ts`
   - Add: `@Permission({ resource: 'analytics', action: 'export' })`
   - Stream response for large exports
 
-- [ ] **Update export button in frontend**
+- [x] **Update export button in frontend**
   - File: `apps/web/app/links/[id]/analytics/page.tsx`
   - Remove "coming soon" state
   - Trigger actual download
 
-### Task 1.7.2: Browser Chart Component
-- [ ] **Create BrowserChart component**
+### Task 1.7.2: Browser Chart Component ✅
+- [x] **Create BrowserChart component**
   - File: `apps/web/components/dashboard/BrowserChart.tsx`
   - Donut/pie chart similar to DevicesChart
   - Colors: Chrome (blue), Safari (gray), Firefox (orange), Edge (green)
   - Legend with percentages
   - Handle >5 browsers with "Other"
 
-- [ ] **Add BrowserChart to link analytics page**
+- [x] **Add BrowserChart to link analytics page**
   - After DevicesChart section
 
-### Task 1.7.3: OS Chart Component
-- [ ] **Create OSChart component**
+### Task 1.7.3: OS Chart Component ✅
+- [x] **Create OSChart component**
   - File: `apps/web/components/dashboard/OSChart.tsx`
   - Same pattern as BrowserChart
   - Colors: Windows (blue), macOS (gray), iOS (black), Android (green), Linux (orange)
 
-- [ ] **Add OSChart to link analytics page**
+- [x] **Add OSChart to link analytics page**
   - After BrowserChart section
 
-### Task 1.7.4: Secure Track Endpoint
-- [ ] **Add API key validation to track endpoint**
+### Task 1.7.4: Secure Track Endpoint ✅
+- [x] **Add API key validation to track endpoint**
   - File: `apps/api/src/analytics/analytics.controller.ts`
   - Require `X-Api-Key` header
   - Validate against `ANALYTICS_API_KEY` env var
   - Reject without valid key (403 Forbidden)
 
-- [ ] **Update redirector to send API key**
+- [x] **Update redirector to send API key**
   - File: `apps/redirector/src/index.ts`
   - Add `X-Api-Key` header to track request
   - Add `ANALYTICS_API_KEY` to wrangler.toml vars
 
-- [ ] **Add rate limiting**
+- [x] **Add rate limiting**
   - `@Throttle({ limit: 100, ttl: 60000 })` - 100/min
 
-### Task 1.7.5: Capture Referrer in Redirector
-- [ ] **Add referrer to track payload**
+### Task 1.7.5: Capture Referrer in Redirector ✅
+- [x] **Add referrer to track payload**
   - File: `apps/redirector/src/index.ts`
   - Add: `referrer: c.req.header("referer") || "direct"`
 
-- [ ] **Update TrackClickDto to include referrer**
+- [x] **Update TrackClickDto to include referrer**
   - File: `apps/api/src/analytics/dto/track-click.dto.ts`
 
-- [ ] **Store referrer in ClickEvent**
+- [x] **Store referrer in ClickEvent**
   - Field already exists in schema
 
 ---
@@ -201,26 +201,29 @@
 
 ## Unit Tests Required
 
-### Analytics Export Tests
+### Analytics Export Tests ✅
 ```
-File: apps/api/src/analytics/__tests__/analytics.service.spec.ts
+File: apps/api/src/analytics/analytics.service.spec.ts
 ```
-- [ ] exportLinkAnalytics: generate CSV with all columns
-- [ ] exportLinkAnalytics: generate JSON export
-- [ ] exportLinkAnalytics: filter by date range
-- [ ] exportLinkAnalytics: respect limit parameter
-- [ ] exportLinkAnalytics: reject if user lacks export permission
+- [x] exportLinkAnalytics: generate CSV with all columns
+- [x] exportLinkAnalytics: generate JSON export
+- [x] exportLinkAnalytics: filter by date range
+- [x] exportLinkAnalytics: respect limit parameter
+- [x] exportLinkAnalytics: reject if user lacks export permission
 
 ### Bot Filtering Tests
 - [ ] isBot: filter Googlebot clicks
 - [ ] isBot: filter curl/wget requests
 - [ ] isBot: allow legitimate user clicks
 
-### Track Endpoint Security Tests
-- [ ] track: reject request without API key
-- [ ] track: reject request with invalid API key
-- [ ] track: accept request with valid API key
-- [ ] track: respect rate limits
+### Track Endpoint Security Tests ✅
+```
+File: apps/api/src/analytics/__tests__/analytics.controller.spec.ts
+```
+- [x] track: reject request without API key
+- [x] track: reject request with invalid API key
+- [x] track: accept request with valid API key
+- [x] track: respect rate limits
 
 ---
 
@@ -246,13 +249,13 @@ File: apps/web/e2e/link-analytics.spec.ts (extend)
 
 ## Acceptance Criteria
 
-### Phase 1 Complete When:
-- [ ] Export endpoint downloads CSV/JSON
-- [ ] BrowserChart renders with data
-- [ ] OSChart renders with data
-- [ ] Track endpoint requires valid API key
-- [ ] Referrer captured and displayed
-- [ ] Unit tests pass
+### Phase 1 Complete When: ✅ DONE
+- [x] Export endpoint downloads CSV/JSON
+- [x] BrowserChart renders with data
+- [x] OSChart renders with data
+- [x] Track endpoint requires valid API key
+- [x] Referrer captured and displayed
+- [x] Unit tests pass (64 tests)
 
 ### Phase 2 Complete When:
 - [ ] Custom date range works
@@ -295,10 +298,10 @@ File: apps/web/e2e/link-analytics.spec.ts (extend)
 
 ## Security Notes
 
-- **CRITICAL**: POST /analytics/track is currently PUBLIC - anyone can inject fake clicks
-- Add API key validation immediately
-- Rate limit track endpoint to prevent abuse
-- Filter bot traffic to prevent inflated counts
+- ~~**CRITICAL**: POST /analytics/track is currently PUBLIC - anyone can inject fake clicks~~ ✅ FIXED
+- ~~Add API key validation immediately~~ ✅ IMPLEMENTED
+- ~~Rate limit track endpoint to prevent abuse~~ ✅ IMPLEMENTED (100/min)
+- [ ] Filter bot traffic to prevent inflated counts (Phase 2)
 
 ---
 
