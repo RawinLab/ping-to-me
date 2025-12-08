@@ -1,7 +1,7 @@
 # Module 1.4: QR Code Generation - Development Todolist
 
-> **Status**: ~98% Complete (Production Ready)
-> **Priority**: Low - Core features complete
+> **Status**: 100% Complete (All Optional Enhancements Done)
+> **Priority**: Low - All features implemented
 > **Reference**: `requirements/1-4-qr-code-generation-plan.md`
 
 ---
@@ -77,8 +77,8 @@
   - Download returned ZIP file
   - Show progress indicator
 
-### Task 1.4.6: Batch Selection in Links Table
-- [ ] **Add batch QR download to links table** (Optional Enhancement)
+### Task 1.4.6: Batch Selection in Links Table ✅
+- [x] **Add batch QR download to links table** (Optional Enhancement)
   - File: `apps/web/components/links/LinksTable.tsx`
   - Add "Download QR Codes" to bulk actions dropdown
   - Reuse batch download logic
@@ -111,14 +111,14 @@
   - Call qr-summary endpoint
   - Display in stats cards
 
-### Task 1.4.9: QR vs Direct Comparison Chart
-- [ ] **Add comparison visualization** (Optional Enhancement)
+### Task 1.4.9: QR vs Direct Comparison Chart ✅
+- [x] **Add comparison visualization** (Optional Enhancement)
   - Show pie/bar chart of QR vs Direct clicks
   - Use existing charting library (Recharts)
 
 ---
 
-## Phase 4: User Experience Enhancements
+## Phase 4: User Experience Enhancements ✅ PARTIAL
 
 ### Task 1.4.10: QR Templates (Future)
 - [ ] **Add QrTemplate model to schema**
@@ -134,11 +134,11 @@
   - Dropdown to select saved template
   - "Save as Template" button
 
-### Task 1.4.11: Auto-Save Configuration
-- [ ] **Implement debounced auto-save**
+### Task 1.4.11: Auto-Save Configuration ✅
+- [x] **Implement debounced auto-save**
   - File: `apps/web/components/qrcode/QrCodeCustomizer.tsx`
-  - Debounce: 1000ms after last change
-  - Show "Saved" indicator
+  - Debounce: 1500ms after last change
+  - Show "Saved" indicator with status (idle/saving/saved)
   - Only save if linkId exists and changes detected
 
 ---
@@ -200,7 +200,7 @@ File: apps/web/e2e/qr-batch.spec.ts
 ### Phase 3 Complete When: ✅
 - [x] QR summary endpoint returns stats
 - [x] Stats cards display in gallery
-- [ ] Comparison chart visible (Optional Enhancement)
+- [x] Comparison chart visible (Optional Enhancement)
 
 ---
 
