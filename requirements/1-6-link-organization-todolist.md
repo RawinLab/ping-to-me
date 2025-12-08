@@ -1,49 +1,55 @@
 # Module 1.6: Link Organization (Tags, Folders, Campaigns) - Development Todolist
 
-> **Status**: ~55-60% Complete
-> **Priority**: High - CRITICAL security issue (Folders lack RBAC)
+> **Status**: ~75% Complete ✅
+> **Priority**: Medium - Phase 1 complete, Phase 2 remaining
 > **Reference**: `requirements/1-6-link-organization-plan.md`
+> **Last Updated**: 2025-12-08
 
 ---
 
-## Phase 1: Critical Fixes (P0 - IMMEDIATE)
+## Phase 1: Critical Fixes (P0 - IMMEDIATE) ✅ COMPLETED
 
-### Task 1.6.1: Add RBAC to Folders Controller
-- [ ] **Add PermissionGuard and decorators to all folder endpoints**
+### Task 1.6.1: Add RBAC to Folders Controller ✅
+- [x] **Add PermissionGuard and decorators to all folder endpoints**
   - File: `apps/api/src/folders/folders.controller.ts`
   - Add `@UseGuards(JwtAuthGuard, PermissionGuard)` to controller
   - Add `@Permission({ resource: 'folder', action: 'create' })` to POST
   - Add `@Permission({ resource: 'folder', action: 'read' })` to GET
-  - Add `@Permission({ resource: 'folder', action: 'update' })` to PATCH
+  - Add `@Permission({ resource: 'folder', action: 'update' })` to PUT
   - Add `@Permission({ resource: 'folder', action: 'delete' })` to DELETE
 
-- [ ] **Add folder to permission matrix**
+- [x] **Add folder to permission matrix**
   - File: `apps/api/src/auth/rbac/permission-matrix.ts`
   - OWNER: all actions = '*'
   - ADMIN: all actions = '*'
   - EDITOR: create/read = '*', update/delete = 'own'
   - VIEWER: read = '*'
 
-### Task 1.6.2: Add Organization Scope to Folders
-- [ ] **Update Prisma schema for Folder**
+### Task 1.6.2: Add Organization Scope to Folders ✅
+- [x] **Update Prisma schema for Folder**
   - File: `packages/database/prisma/schema.prisma`
   - Add: `organizationId String? @db.Uuid`
   - Add relation: `organization Organization? @relation(...)`
+  - Add: `parentId String? @db.Uuid` for nested folders
+  - Add self-relation for parent-child hierarchy
   - Add index: `@@index([organizationId])`
+  - Update unique constraint: `@@unique([organizationId, name, parentId])`
 
-- [ ] **Update FoldersService for org scope**
+- [x] **Update FoldersService for org scope**
   - File: `apps/api/src/folders/folders.service.ts`
   - Add organizationId to create/findAll queries
-  - Validate org ownership on update/delete
+  - Validate org ownership via verifyFolderAccess() helper
+  - Include children count in responses
 
-- [ ] **Update FoldersController**
-  - Add `@Query('orgId')` parameter to all endpoints
+- [x] **Update FoldersController**
+  - Add `@Query('orgId')` parameter to endpoints
+  - Add getDefaultOrgId() helper for default org resolution
 
-- [ ] **Update frontend to pass orgId**
+- [ ] **Update frontend to pass orgId** (TODO)
   - Update folder API calls to include organizationId
 
-### Task 1.6.3: Implement Tag Rename Cascade
-- [ ] **Update tags in Link.tags[] arrays on rename**
+### Task 1.6.3: Implement Tag Rename Cascade ✅
+- [x] **Update tags in Link.tags[] arrays on rename**
   - File: `apps/api/src/tags/tags.service.ts`
   - When renaming tag:
     1. Find all links with old tag name in tags array
@@ -51,33 +57,33 @@
     3. Use transaction for atomicity
   - Log affected link count in audit
 
-### Task 1.6.4: Create Validation DTOs
-- [ ] **Create CreateTagDto**
+### Task 1.6.4: Create Validation DTOs ✅
+- [x] **Create CreateTagDto**
   - File: `apps/api/src/tags/dto/create-tag.dto.ts`
   - Fields: name (@MinLength(1), @MaxLength(50), @Matches regex), color (@IsHexColor), description, organizationId
 
-- [ ] **Create UpdateTagDto**
+- [x] **Create UpdateTagDto**
   - File: `apps/api/src/tags/dto/update-tag.dto.ts`
-  - Partial of CreateTagDto
+  - Partial of CreateTagDto (excluding orgId)
 
-- [ ] **Create CreateFolderDto**
+- [x] **Create CreateFolderDto**
   - File: `apps/api/src/folders/dto/create-folder.dto.ts`
   - Fields: name, color, description, parentId, organizationId
 
-- [ ] **Create UpdateFolderDto**
+- [x] **Create UpdateFolderDto**
   - File: `apps/api/src/folders/dto/update-folder.dto.ts`
-  - Partial of CreateFolderDto
+  - Partial of CreateFolderDto (excluding orgId, parentId)
 
-- [ ] **Create CreateCampaignDto**
+- [x] **Create CreateCampaignDto**
   - File: `apps/api/src/campaigns/dto/create-campaign.dto.ts`
   - Fields: name, description, organizationId, startDate, endDate, goalType, goalTarget, UTM fields
 
-- [ ] **Apply DTOs to all controllers**
+- [x] **Apply DTOs to all controllers**
 
-### Task 1.6.5: Add Audit Logging to Folders
-- [ ] **Log all folder CRUD operations**
+### Task 1.6.5: Add Audit Logging to Folders ✅
+- [x] **Log all folder CRUD operations**
   - File: `apps/api/src/folders/folders.service.ts`
-  - Events: folder.created, folder.updated, folder.deleted
+  - Events: folder.created, folder.updated, folder.deleted, folder.link_added, folder.link_removed
   - Include: folderId, userId, organizationId, changes
 
 ---
