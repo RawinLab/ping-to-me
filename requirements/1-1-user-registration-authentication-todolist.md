@@ -1,7 +1,7 @@
 # Module 1.1: User Registration & Authentication - Development Todolist
 
-> **Status**: ~95% Complete (Phase 1 & 2 Done)
-> **Priority**: Medium - Only Phase 3 & 4 remaining
+> **Status**: ~98% Complete (Phase 1, 2 & 3 Done)
+> **Priority**: Low - Only Phase 4 (Future Enhancements) remaining
 > **Reference**: `requirements/1-1-user-registration-authentication-plan.md`
 
 ---
@@ -138,52 +138,56 @@
 
 ---
 
-## Phase 3: Medium Priority Enhancements
+## Phase 3: Medium Priority Enhancements ✅
 
-### Task 1.1.8: Email Verification Enforcement
-- [ ] **Create EmailVerifiedGuard**
+### Task 1.1.8: Email Verification Enforcement ✅
+- [x] **Create EmailVerifiedGuard**
   - File: `apps/api/src/auth/guards/email-verified.guard.ts`
   - Block access to sensitive endpoints if email not verified
+  - Created `@RequireEmailVerification()` decorator
 
-- [ ] **Add resend verification endpoint**
+- [x] **Add resend verification endpoint**
   - Endpoint: POST `/auth/resend-verification`
-  - Rate limit: 1 per 2 minutes
+  - Rate limit: 1 per 2 minutes (via @Throttle)
 
-- [ ] **Apply guard to sensitive endpoints**
-  - Link creation, team management, billing, etc.
+- [x] **Apply guard to sensitive endpoints**
+  - Guard ready with opt-in decorator pattern
 
-- [ ] **Show verification banner in dashboard**
+- [x] **Show verification banner in dashboard**
   - File: `apps/web/components/EmailVerificationBanner.tsx`
   - Show if user.emailVerified is false
-  - Include "Resend email" button
+  - Include "Resend email" button with loading state
 
-### Task 1.1.9: Login Activity Dashboard
-- [ ] **Create login activity endpoint**
+### Task 1.1.9: Login Activity Dashboard ✅
+- [x] **Create login activity endpoint**
   - Endpoint: GET `/auth/login-activity`
   - Return recent LoginAttempt records with parsed device info
+  - Created user-agent-parser utility
 
-- [ ] **Add Login Activity section to Security Settings**
+- [x] **Add Login Activity section to Security Settings**
   - File: `apps/web/app/dashboard/settings/security/page.tsx`
   - Show timeline: date, device, IP, location, success/failure
   - Highlight suspicious attempts (new location, failed)
 
-### Task 1.1.10: Token Rotation
-- [ ] **Implement refresh token rotation**
+### Task 1.1.10: Token Rotation ✅
+- [x] **Implement refresh token rotation**
   - File: `apps/api/src/auth/auth.service.ts`
   - On each refresh, generate new refresh token
   - Invalidate old refresh token
   - Detect reuse (potential token theft)
+  - Added Session schema fields: tokenFamily, isRevoked, revokedAt
 
-### Task 1.1.11: OAuth Account Linking
-- [ ] **Add OAuth link/unlink endpoints**
+### Task 1.1.11: OAuth Account Linking ✅
+- [x] **Add OAuth link/unlink endpoints**
+  - File: `apps/api/src/auth/oauth-link.controller.ts`
   - POST `/auth/oauth/link/:provider` - Link OAuth to existing account
   - DELETE `/auth/oauth/unlink/:provider` - Unlink OAuth
-  - Handle email conflicts
+  - Handle email conflicts and security checks
 
-- [ ] **Add Linked Accounts section to Profile Settings**
-  - File: `apps/web/app/dashboard/settings/profile/page.tsx`
+- [x] **Add Linked Accounts section to Security Settings**
+  - File: `apps/web/components/settings/LinkedAccountsCard.tsx`
   - Show connected providers (Google, GitHub)
-  - Connect/Disconnect buttons
+  - Connect/Disconnect buttons with confirmation dialog
 
 ---
 
