@@ -6,6 +6,7 @@ import {
 import { PrismaClient, ClickSource } from "@prisma/client";
 import { UAParser } from "ua-parser-js";
 import { PrismaService } from "../prisma/prisma.service";
+import { isBot } from "./utils/bot-filter";
 
 @Injectable()
 export class AnalyticsService {
@@ -20,10 +21,15 @@ export class AnalyticsService {
     source?: ClickSource;
     referrer?: string;
   }) {
+    // Skip bot traffic
+    if (isBot(data.userAgent)) {
+      return null; // Don't track bot clicks
+    }
+
     const link = await this.prisma.link.findUnique({
       where: { slug: data.slug },
     });
-    if (!link) return; // Ignore invalid slugs
+    if (!link) return null; // Ignore invalid slugs
 
     let browser = "Unknown";
     let os = "Unknown";
@@ -481,6 +487,97 @@ export class AnalyticsService {
         content: JSON.stringify(clickEvents, null, 2),
         contentType: 'application/json',
         filename: `link-${link.slug}-analytics-${new Date().toISOString().split('T')[0]}.json`,
+      };
+    }
+  }
+
+  async exportDashboard(
+    userId: string,
+    filters: {
+      startDate?: string;
+      endDate?: string;
+      format?: 'csv' | 'json';
+      limit?: number;
+    },
+  ) {
+    // Get all user's links
+    const links = await this.prisma.link.findMany({
+      where: { userId },
+      select: { id: true, slug: true, title: true, originalUrl: true },
+    });
+
+    const linkIds = links.map((l) => l.id);
+
+    // Build date filter
+    const dateFilter: any = {};
+    if (filters.startDate) {
+      dateFilter.gte = new Date(filters.startDate);
+    }
+    if (filters.endDate) {
+      dateFilter.lte = new Date(filters.endDate);
+    }
+
+    // Query all click events for user's links
+    const clickEvents = await this.prisma.clickEvent.findMany({
+      where: {
+        linkId: { in: linkIds },
+        ...(Object.keys(dateFilter).length > 0 && { timestamp: dateFilter }),
+      },
+      include: { link: { select: { slug: true, title: true } } },
+      orderBy: { timestamp: 'desc' },
+      take: filters.limit || 10000,
+    });
+
+    const format = filters.format || 'csv';
+
+    if (format === 'csv') {
+      // Generate CSV with link info
+      const headers = [
+        'timestamp',
+        'link_slug',
+        'link_title',
+        'country',
+        'city',
+        'device',
+        'browser',
+        'os',
+        'referrer',
+        'source',
+        'ip',
+      ];
+
+      const rows = clickEvents.map((event) => [
+        event.timestamp.toISOString(),
+        event.link?.slug || '',
+        event.link?.title || '',
+        event.country || '',
+        event.city || '',
+        event.device || '',
+        event.browser || '',
+        event.os || '',
+        event.referrer || '',
+        event.source || '',
+        event.ip || '',
+      ]);
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map((row) =>
+          row.map((cell) => `"${cell.toString().replace(/"/g, '""')}"`).join(','),
+        ),
+      ].join('\n');
+
+      return {
+        content: csvContent,
+        contentType: 'text/csv',
+        filename: `dashboard-analytics-${new Date().toISOString().split('T')[0]}.csv`,
+      };
+    } else {
+      // JSON format
+      return {
+        content: JSON.stringify(clickEvents, null, 2),
+        contentType: 'application/json',
+        filename: `dashboard-analytics-${new Date().toISOString().split('T')[0]}.json`,
       };
     }
   }

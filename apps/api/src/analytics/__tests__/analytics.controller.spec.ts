@@ -19,6 +19,7 @@ describe("AnalyticsController", () => {
     getLinkAnalytics: jest.fn(),
     getQrAnalytics: jest.fn(),
     exportLinkAnalytics: jest.fn(),
+    exportDashboard: jest.fn(),
   };
 
   const mockConfigService = {
@@ -259,6 +260,166 @@ describe("AnalyticsController", () => {
       );
     });
   });
+
+  describe("exportDashboard", () => {
+    it("should export dashboard analytics in CSV format", async () => {
+      const mockRequest = { user: { id: "user-123" } };
+      const mockResponse = {
+        setHeader: jest.fn(),
+        send: jest.fn(),
+      } as unknown as Response;
+
+      const exportResult = {
+        content: "timestamp,link_slug,link_title,country,city\n2024-12-01,test,Test Link,US,NYC",
+        contentType: "text/csv",
+        filename: "dashboard-analytics-2024-12-08.csv",
+      };
+
+      mockAnalyticsService.exportDashboard.mockResolvedValue(exportResult);
+
+      await controller.exportDashboard(
+        mockRequest,
+        { format: "csv" },
+        mockResponse,
+      );
+
+      expect(mockAnalyticsService.exportDashboard).toHaveBeenCalledWith(
+        "user-123",
+        { format: "csv" },
+      );
+
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        "Content-Type",
+        "text/csv",
+      );
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        "Content-Disposition",
+        'attachment; filename="dashboard-analytics-2024-12-08.csv"',
+      );
+      expect(mockResponse.send).toHaveBeenCalledWith(exportResult.content);
+    });
+
+    it("should export dashboard analytics in JSON format", async () => {
+      const mockRequest = { user: { id: "user-123" } };
+      const mockResponse = {
+        setHeader: jest.fn(),
+        send: jest.fn(),
+      } as unknown as Response;
+
+      const exportResult = {
+        content: '[{"id":"click-1","country":"US","link":{"slug":"test"}}]',
+        contentType: "application/json",
+        filename: "dashboard-analytics-2024-12-08.json",
+      };
+
+      mockAnalyticsService.exportDashboard.mockResolvedValue(exportResult);
+
+      await controller.exportDashboard(
+        mockRequest,
+        { format: "json" },
+        mockResponse,
+      );
+
+      expect(mockAnalyticsService.exportDashboard).toHaveBeenCalledWith(
+        "user-123",
+        { format: "json" },
+      );
+
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        "Content-Type",
+        "application/json",
+      );
+      expect(mockResponse.send).toHaveBeenCalledWith(exportResult.content);
+    });
+
+    it("should handle export with date range filters", async () => {
+      const mockRequest = { user: { id: "user-123" } };
+      const mockResponse = {
+        setHeader: jest.fn(),
+        send: jest.fn(),
+      } as unknown as Response;
+
+      const exportResult = {
+        content: "data",
+        contentType: "text/csv",
+        filename: "dashboard-analytics-2024-12-08.csv",
+      };
+
+      mockAnalyticsService.exportDashboard.mockResolvedValue(exportResult);
+
+      const filters = {
+        format: "csv" as const,
+        startDate: "2024-12-01",
+        endDate: "2024-12-08",
+      };
+
+      await controller.exportDashboard(
+        mockRequest,
+        filters,
+        mockResponse,
+      );
+
+      expect(mockAnalyticsService.exportDashboard).toHaveBeenCalledWith(
+        "user-123",
+        filters,
+      );
+    });
+
+    it("should handle export with limit parameter", async () => {
+      const mockRequest = { user: { id: "user-123" } };
+      const mockResponse = {
+        setHeader: jest.fn(),
+        send: jest.fn(),
+      } as unknown as Response;
+
+      const exportResult = {
+        content: "data",
+        contentType: "text/csv",
+        filename: "dashboard-analytics-2024-12-08.csv",
+      };
+
+      mockAnalyticsService.exportDashboard.mockResolvedValue(exportResult);
+
+      const filters = { format: "csv" as const, limit: 100 };
+
+      await controller.exportDashboard(
+        mockRequest,
+        filters,
+        mockResponse,
+      );
+
+      expect(mockAnalyticsService.exportDashboard).toHaveBeenCalledWith(
+        "user-123",
+        filters,
+      );
+    });
+
+    it("should set correct headers for CSV download", async () => {
+      const mockRequest = { user: { id: "user-123" } };
+      const mockResponse = {
+        setHeader: jest.fn(),
+        send: jest.fn(),
+      } as unknown as Response;
+
+      const csvContent = "timestamp,link_slug,country\n2024-12-01,test,US";
+      const exportResult = {
+        content: csvContent,
+        contentType: "text/csv",
+        filename: "dashboard-analytics-2024-12-08.csv",
+      };
+
+      mockAnalyticsService.exportDashboard.mockResolvedValue(exportResult);
+
+      await controller.exportDashboard(
+        mockRequest,
+        { format: "csv" },
+        mockResponse,
+      );
+
+      expect(mockResponse.setHeader).toHaveBeenCalledTimes(2);
+      expect(mockResponse.send).toHaveBeenCalledWith(csvContent);
+    });
+  });
 });
 
 describe("LinkAnalyticsController", () => {
@@ -271,6 +432,7 @@ describe("LinkAnalyticsController", () => {
     getLinkAnalytics: jest.fn(),
     getQrAnalytics: jest.fn(),
     exportLinkAnalytics: jest.fn(),
+    exportDashboard: jest.fn(),
   };
 
   const mockPermissionService = {

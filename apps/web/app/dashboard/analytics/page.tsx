@@ -66,8 +66,34 @@ export default function AnalyticsPage() {
   }, [fetchAnalytics]);
 
   const handleExport = async () => {
-    // TODO: Implement export
-    alert("Export functionality coming soon");
+    try {
+      const token = localStorage.getItem("token");
+      const days = dateRange === "7d" ? 7 : dateRange === "30d" ? 30 : 90;
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      const params = new URLSearchParams({
+        startDate: startDate.toISOString(),
+        format: "csv",
+      });
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/analytics/export?${params}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `dashboard-analytics-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Failed to export analytics");
+    }
   };
 
   if (loading && !data) {

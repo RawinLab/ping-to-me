@@ -139,6 +139,55 @@ describe("AnalyticsService", () => {
       expect(mockPrismaService.clickEvent.create).not.toHaveBeenCalled();
     });
 
+    it("should filter out bot traffic and not track clicks", async () => {
+      mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
+
+      // Test with Googlebot
+      const result = await service.trackClick({
+        slug: "test-slug",
+        timestamp: new Date().toISOString(),
+        userAgent: "Googlebot/2.1 (+http://www.google.com/bot.html)",
+        ip: "127.0.0.1",
+        country: "US",
+      });
+
+      expect(result).toBeNull();
+      expect(mockPrismaService.clickEvent.create).not.toHaveBeenCalled();
+      expect(mockPrismaService.link.findUnique).not.toHaveBeenCalled();
+    });
+
+    it("should filter out curl requests and not track clicks", async () => {
+      mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
+
+      const result = await service.trackClick({
+        slug: "test-slug",
+        timestamp: new Date().toISOString(),
+        userAgent: "curl/7.64.1",
+        ip: "127.0.0.1",
+        country: "US",
+      });
+
+      expect(result).toBeNull();
+      expect(mockPrismaService.clickEvent.create).not.toHaveBeenCalled();
+      expect(mockPrismaService.link.findUnique).not.toHaveBeenCalled();
+    });
+
+    it("should track clicks from legitimate browsers", async () => {
+      mockPrismaService.link.findUnique.mockResolvedValue(mockLink);
+      mockPrismaService.clickEvent.create.mockResolvedValue({});
+
+      await service.trackClick({
+        slug: "test-slug",
+        timestamp: new Date().toISOString(),
+        userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        ip: "127.0.0.1",
+        country: "US",
+      });
+
+      expect(mockPrismaService.link.findUnique).toHaveBeenCalled();
+      expect(mockPrismaService.clickEvent.create).toHaveBeenCalled();
+    });
+
     it("should parse user agent and store device info", async () => {
       const mockLink = {
         id: "link-123",

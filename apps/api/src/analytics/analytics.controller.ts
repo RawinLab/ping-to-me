@@ -50,6 +50,27 @@ export class AnalyticsController {
     const daysNum = days ? parseInt(days, 10) : 30;
     return this.analyticsService.getDashboardMetrics(req.user.id, daysNum);
   }
+
+  @UseGuards(AuthGuard, PermissionGuard)
+  @Get("export")
+  @Permission({ resource: "analytics", action: "export" })
+  async exportDashboard(
+    @Request() req,
+    @Query() filters: ExportFiltersDto,
+    @Res() res: Response,
+  ) {
+    const result = await this.analyticsService.exportDashboard(
+      req.user.id,
+      filters,
+    );
+
+    res.setHeader("Content-Type", result.contentType);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${result.filename}"`,
+    );
+    res.send(result.content);
+  }
 }
 
 @Controller("links")
