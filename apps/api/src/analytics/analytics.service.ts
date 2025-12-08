@@ -128,6 +128,29 @@ export class AnalyticsService {
       weeklyChange = 100;
     }
 
+    // Calculate previous period comparison
+    const previousStartDate = new Date(startDate);
+    previousStartDate.setDate(previousStartDate.getDate() - days);
+    const previousEndDate = new Date(startDate);
+    previousEndDate.setDate(previousEndDate.getDate() - 1);
+
+    const previousPeriodClicks = await this.prisma.clickEvent.count({
+      where: {
+        linkId,
+        timestamp: { gte: previousStartDate, lt: startDate },
+      },
+    });
+
+    // Calculate percentage change
+    let periodChange = 0;
+    if (previousPeriodClicks > 0) {
+      periodChange = Math.round(
+        ((totalClicks - previousPeriodClicks) / previousPeriodClicks) * 100,
+      );
+    } else if (totalClicks > 0) {
+      periodChange = 100;
+    }
+
     // Aggregate data
     const devices: Record<string, number> = {};
     const countries: Record<string, number> = {};
@@ -192,6 +215,8 @@ export class AnalyticsService {
       allTimeClicks,
       clicksLast7Days,
       weeklyChange,
+      periodChange,
+      previousPeriodClicks,
       recentClicks: clicks.slice(0, 50), // Return only recent 50 for table
       clicksByDate: clicksByDateArray,
       devices,
@@ -237,6 +262,29 @@ export class AnalyticsService {
     const allTimeClicks = await this.prisma.clickEvent.count({
       where: { linkId: { in: linkIds } },
     });
+
+    // Calculate previous period comparison
+    const previousStartDate = new Date(startDate);
+    previousStartDate.setDate(previousStartDate.getDate() - days);
+    const previousEndDate = new Date(startDate);
+    previousEndDate.setDate(previousEndDate.getDate() - 1);
+
+    const previousPeriodClicks = await this.prisma.clickEvent.count({
+      where: {
+        linkId: { in: linkIds },
+        timestamp: { gte: previousStartDate, lt: startDate },
+      },
+    });
+
+    // Calculate percentage change
+    let periodChange = 0;
+    if (previousPeriodClicks > 0) {
+      periodChange = Math.round(
+        ((totalClicks - previousPeriodClicks) / previousPeriodClicks) * 100,
+      );
+    } else if (totalClicks > 0) {
+      periodChange = 100;
+    }
 
     // Get recent clicks across all links
     const recentClicks = await this.prisma.clickEvent.findMany({
@@ -333,6 +381,8 @@ export class AnalyticsService {
       totalLinks,
       totalClicks,
       allTimeClicks,
+      periodChange,
+      previousPeriodClicks,
       recentClicks,
       topLinks,
       clicksByDate: Object.entries(clicksByDate)

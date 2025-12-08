@@ -227,6 +227,7 @@ export default function LinkAnalyticsPage() {
 
   const weeklyChange = data.weeklyChange || 0;
   const clicksLast7Days = data.clicksLast7Days || 0;
+  const periodChange = data.periodChange ?? 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -328,13 +329,28 @@ export default function LinkAnalyticsPage() {
                   Total Engagements
                 </p>
                 <p className="text-4xl font-bold tracking-tight">
-                  {allTimeClicks.toLocaleString()}
+                  {totalClicks.toLocaleString()}
                 </p>
-                {dateRange !== "90d" && totalClicks !== allTimeClicks && (
-                  <p className="text-xs text-muted-foreground">
-                    {totalClicks.toLocaleString()} in last{" "}
-                    {dateRange === "7d" ? "7" : "30"} days
-                  </p>
+                {periodChange !== undefined && (
+                  <div className="flex items-center gap-1 text-sm">
+                    {periodChange > 0 ? (
+                      <TrendingUp className="h-4 w-4 text-emerald-500" />
+                    ) : periodChange < 0 ? (
+                      <TrendingDown className="h-4 w-4 text-red-500" />
+                    ) : null}
+                    <span
+                      className={
+                        periodChange > 0
+                          ? "text-emerald-500"
+                          : periodChange < 0
+                            ? "text-red-500"
+                            : "text-muted-foreground"
+                      }
+                    >
+                      {periodChange > 0 ? "+" : ""}
+                      {periodChange}% vs previous period
+                    </span>
+                  </div>
                 )}
               </div>
             </CardContent>

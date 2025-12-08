@@ -6,3 +6,4 @@ export { ReferrersChart } from "./ReferrersChart";
 export { BrowserChart } from "./BrowserChart";
 export { OSChart } from "./OSChart";
 export { DateRangePicker } from "./DateRangePicker";
+export { GeographicMap } from "./GeographicMap";
