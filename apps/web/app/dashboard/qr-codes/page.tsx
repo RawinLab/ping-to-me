@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 
 interface LinkWithQr {
   id: string;
@@ -64,6 +65,12 @@ export default function QrCodesPage() {
   const [selectedLinks, setSelectedLinks] = useState<string[]>([]);
   const [batchFormat, setBatchFormat] = useState<"png" | "svg" | "pdf">("png");
   const [batchDownloading, setBatchDownloading] = useState(false);
+  const [qrSummary, setQrSummary] = useState<{
+    totalClicks: number;
+    qrClicks: number;
+    directClicks: number;
+    qrPercentage: number;
+  } | null>(null);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -85,6 +92,14 @@ export default function QrCodesPage() {
           }),
         );
         setLinks(linksWithQr);
+      }
+
+      // Fetch QR summary stats
+      try {
+        const summaryResponse = await api.get('/analytics/qr-summary');
+        setQrSummary(summaryResponse.data);
+      } catch (error) {
+        console.error('Failed to fetch QR summary:', error);
       }
     } catch (error) {
       console.error("Failed to fetch links:", error);
@@ -407,6 +422,57 @@ export default function QrCodesPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* QR vs Direct Comparison */}
+        {qrSummary && qrSummary.totalClicks > 0 && (
+          <Card className="bg-white/70 border-slate-200/60">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                Traffic Source Breakdown
+              </h3>
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: 'QR Scans', value: qrSummary.qrClicks, color: '#8b5cf6' },
+                        { name: 'Direct', value: qrSummary.directClicks, color: '#3b82f6' },
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      <Cell fill="#8b5cf6" />
+                      <Cell fill="#3b82f6" />
+                    </Pie>
+                    <Tooltip
+                      formatter={(value: number) => [value, 'Clicks']}
+                      contentStyle={{
+                        backgroundColor: 'white',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex justify-center gap-8 mt-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-purple-500" />
+                  <span className="text-slate-600">QR: {qrSummary.qrPercentage}%</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-500" />
+                  <span className="text-slate-600">Direct: {100 - qrSummary.qrPercentage}%</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* QR Codes Grid/List */}
         {loading ? (

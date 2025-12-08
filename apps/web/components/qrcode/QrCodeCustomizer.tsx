@@ -27,6 +27,7 @@ import {
   FileText,
   Shield,
   Save,
+  Check,
 } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 
@@ -92,6 +93,8 @@ export function QrCodeCustomizer({
   const [errorCorrection, setErrorCorrection] = useState("M");
   const [borderSize, setBorderSize] = useState(2);
   const [configLoaded, setConfigLoaded] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [hasChanges, setHasChanges] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load saved config when dialog opens
@@ -119,6 +122,44 @@ export function QrCodeCustomizer({
       setConfigLoaded(true);
     }
   };
+
+  // Track changes
+  useEffect(() => {
+    if (configLoaded) {
+      setHasChanges(true);
+    }
+  }, [foregroundColor, backgroundColor, errorCorrection, borderSize, size, logoSize]);
+
+  // Debounced auto-save
+  useEffect(() => {
+    if (!linkId || !hasChanges || !configLoaded) return;
+
+    const timeoutId = setTimeout(async () => {
+      setAutoSaveStatus('saving');
+      try {
+        await apiRequest(`/links/${linkId}/qr`, {
+          method: "POST",
+          body: JSON.stringify({
+            foregroundColor,
+            backgroundColor,
+            errorCorrection,
+            borderSize,
+            size,
+            logoSizePercent: logoSize,
+          }),
+        });
+        setAutoSaveStatus('saved');
+        setHasChanges(false);
+        // Reset to idle after 2 seconds
+        setTimeout(() => setAutoSaveStatus('idle'), 2000);
+      } catch (error) {
+        console.error("Auto-save failed:", error);
+        setAutoSaveStatus('idle');
+      }
+    }, 1500); // 1.5 second debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [linkId, hasChanges, foregroundColor, backgroundColor, errorCorrection, borderSize, size, logoSize, configLoaded]);
 
   const saveConfig = async () => {
     if (!linkId) return;
@@ -298,9 +339,20 @@ export function QrCodeCustomizer({
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <QrCode className="h-5 w-5" />
-            Customize QR Code
+          <DialogTitle className="flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <QrCode className="h-5 w-5" />
+              Customize QR Code
+            </span>
+            {linkId && autoSaveStatus !== 'idle' && (
+              <span className={`text-xs font-normal px-2 py-1 rounded-full ${
+                autoSaveStatus === 'saving'
+                  ? 'bg-yellow-100 text-yellow-700'
+                  : 'bg-green-100 text-green-700'
+              }`}>
+                {autoSaveStatus === 'saving' ? 'Saving...' : '✓ Saved'}
+              </span>
+            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -340,11 +392,13 @@ export function QrCodeCustomizer({
                 <Button
                   variant="outline"
                   onClick={saveConfig}
-                  disabled={saving}
+                  disabled={saving || autoSaveStatus === 'saving'}
                   title="Save configuration"
                 >
                   {saving ? (
                     <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : autoSaveStatus === 'saved' ? (
+                    <Check className="h-4 w-4" />
                   ) : (
                     <Save className="h-4 w-4" />
                   )}

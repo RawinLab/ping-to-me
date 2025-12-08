@@ -46,6 +46,8 @@ import {
   ArchiveRestore,
   CheckCircle,
   XCircle,
+  Download,
+  FileArchive,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -127,6 +129,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
     const [inlineTagLinkId, setInlineTagLinkId] = useState<string | null>(null);
     const [inlineTagValue, setInlineTagValue] = useState<string>("");
     const [bulkActionLoading, setBulkActionLoading] = useState(false);
+    const [qrDownloading, setQrDownloading] = useState(false);
 
     // Permission and auth context
     const { user } = useAuth();
@@ -345,6 +348,40 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
         } else {
           toast.error("Failed to add tags");
         }
+      }
+    };
+
+    const handleBulkQrDownload = async () => {
+      if (selectedIds.size === 0) return;
+      if (selectedIds.size > 100) {
+        toast.error("Maximum 100 QR codes per batch download");
+        return;
+      }
+
+      setQrDownloading(true);
+      try {
+        const response = await api.post('/qr/batch-download', {
+          linkIds: Array.from(selectedIds),
+          format: 'png',
+          size: 500
+        }, { responseType: 'blob' });
+
+        // Download ZIP file
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `qr-codes-${new Date().toISOString().split('T')[0]}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        toast.success(`${selectedIds.size} QR codes downloaded`);
+      } catch (error) {
+        console.error('QR download failed:', error);
+        toast.error('Failed to download QR codes');
+      } finally {
+        setQrDownloading(false);
       }
     };
 
@@ -1107,6 +1144,19 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
               )}
             </div>
             <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleBulkQrDownload}
+                disabled={bulkActionLoading || qrDownloading || selectedIds.size > 100}
+                className="bg-white/10 hover:bg-white/20 text-white border-0 rounded-lg"
+              >
+                {qrDownloading ? (
+                  <><span className="animate-spin mr-2">⏳</span> Downloading...</>
+                ) : (
+                  <><QrCode className="mr-2 h-4 w-4" /> Download QR</>
+                )}
+              </Button>
               <Button
                 variant="secondary"
                 size="sm"
