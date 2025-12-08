@@ -1,11 +1,27 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { Request } from "express";
+import { parseUserAgent, formatUserAgent } from "./utils/user-agent-parser";
 
 export interface AccountLockStatus {
   locked: boolean;
   remainingMinutes?: number;
   lockedUntil?: Date;
+}
+
+export interface LoginAttemptWithParsedInfo {
+  id: string;
+  email: string;
+  success: boolean;
+  ipAddress?: string;
+  userAgent?: string;
+  location?: string;
+  reason?: string;
+  createdAt: Date;
+  deviceInfo?: string; // Parsed: "Chrome on macOS"
+  device?: string; // 'desktop' | 'mobile' | 'tablet'
+  browser?: string;
+  os?: string;
 }
 
 @Injectable()
@@ -189,8 +205,22 @@ export class LoginSecurityService {
       }),
     ]);
 
+    // Parse user agent for each attempt
+    const attemptsWithParsedInfo: LoginAttemptWithParsedInfo[] = attempts.map(
+      (attempt) => {
+        const parsed = parseUserAgent(attempt.userAgent ?? undefined);
+        return {
+          ...attempt,
+          deviceInfo: formatUserAgent(parsed),
+          device: parsed.device,
+          browser: parsed.browser,
+          os: parsed.os,
+        };
+      },
+    );
+
     return {
-      attempts,
+      attempts: attemptsWithParsedInfo,
       total,
       page,
       limit,
@@ -226,8 +256,22 @@ export class LoginSecurityService {
       }),
     ]);
 
+    // Parse user agent for each attempt
+    const attemptsWithParsedInfo: LoginAttemptWithParsedInfo[] = attempts.map(
+      (attempt) => {
+        const parsed = parseUserAgent(attempt.userAgent ?? undefined);
+        return {
+          ...attempt,
+          deviceInfo: formatUserAgent(parsed),
+          device: parsed.device,
+          browser: parsed.browser,
+          os: parsed.os,
+        };
+      },
+    );
+
     return {
-      attempts,
+      attempts: attemptsWithParsedInfo,
       total,
       page,
       limit,

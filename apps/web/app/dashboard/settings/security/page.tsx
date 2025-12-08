@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { apiRequest } from "@/lib/api";
+import { LinkedAccountsCard } from "@/components/settings/LinkedAccountsCard";
 import {
   Card,
   CardContent,
@@ -16,6 +18,8 @@ import {
   Input,
   Label,
   Separator,
+  Badge,
+  Skeleton,
 } from "@pingtome/ui";
 import {
   Lock,
@@ -29,6 +33,12 @@ import {
   Eye,
   EyeOff,
   ShieldCheck,
+  Monitor,
+  Smartphone,
+  Tablet,
+  MapPin,
+  Clock,
+  AlertTriangle,
 } from "lucide-react";
 
 const passwordSchema = z
@@ -43,6 +53,29 @@ const passwordSchema = z
   });
 
 type PasswordFormData = z.infer<typeof passwordSchema>;
+
+interface LoginAttempt {
+  id: string;
+  email: string;
+  success: boolean;
+  ipAddress?: string;
+  userAgent?: string;
+  location?: string;
+  reason?: string;
+  createdAt: string;
+  deviceInfo?: string;
+  device?: string;
+  browser?: string;
+  os?: string;
+}
+
+interface LoginActivityResponse {
+  attempts: LoginAttempt[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
 const settingsNavItems = [
   { title: "Profile", href: "/dashboard/settings/profile", icon: User },
@@ -60,7 +93,8 @@ const settingsNavItems = [
   { title: "Billing", href: "/dashboard/billing", icon: CreditCard },
 ];
 
-export default function SecuritySettingsPage() {
+function SecuritySettingsContent() {
+  const searchParams = useSearchParams();
   const [saving, setSaving] = useState(false);
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
@@ -69,6 +103,8 @@ export default function SecuritySettingsPage() {
     type: "success" | "error";
     text: string;
   } | null>(null);
+  const [loginActivity, setLoginActivity] = useState<LoginActivityResponse | null>(null);
+  const [loadingActivity, setLoadingActivity] = useState(true);
 
   const form = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
@@ -78,6 +114,40 @@ export default function SecuritySettingsPage() {
       confirmPassword: "",
     },
   });
+
+  // Check for OAuth linking result in URL params
+  useEffect(() => {
+    const oauthStatus = searchParams.get("oauth");
+    const provider = searchParams.get("provider");
+    const errorMessage = searchParams.get("message");
+
+    if (oauthStatus === "linked" && provider) {
+      setMessage({ type: "success", text: `${provider} account linked successfully!` });
+      // Clear URL params
+      window.history.replaceState({}, "", "/dashboard/settings/security");
+    } else if (oauthStatus === "error") {
+      setMessage({ type: "error", text: errorMessage || "Failed to link account" });
+      // Clear URL params
+      window.history.replaceState({}, "", "/dashboard/settings/security");
+    }
+  }, [searchParams]);
+
+  // Fetch login activity on mount
+  useEffect(() => {
+    fetchLoginActivity();
+  }, []);
+
+  const fetchLoginActivity = async () => {
+    setLoadingActivity(true);
+    try {
+      const response = await apiRequest("/auth/login-activity?limit=20&page=1") as LoginActivityResponse;
+      setLoginActivity(response);
+    } catch (error) {
+      console.error("Failed to fetch login activity:", error);
+    } finally {
+      setLoadingActivity(false);
+    }
+  };
 
   const onSubmit = async (data: PasswordFormData) => {
     setSaving(true);
@@ -121,6 +191,41 @@ export default function SecuritySettingsPage() {
   };
 
   const strength = getPasswordStrength(password);
+
+  // Helper function to get device icon
+  const getDeviceIcon = (device?: string) => {
+    switch (device) {
+      case "mobile":
+        return <Smartphone className="h-4 w-4" />;
+      case "tablet":
+        return <Tablet className="h-4 w-4" />;
+      case "desktop":
+        return <Monitor className="h-4 w-4" />;
+      default:
+        return <Monitor className="h-4 w-4" />;
+    }
+  };
+
+  // Helper function to format date
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? "s" : ""} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? "s" : ""} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? "s" : ""} ago`;
+
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
+    });
+  };
 
   return (
     <div className="p-6 lg:p-8">
@@ -350,6 +455,9 @@ export default function SecuritySettingsPage() {
               </CardContent>
             </Card>
 
+            {/* Linked Accounts Card */}
+            <LinkedAccountsCard showMessage={(type, text) => setMessage({ type, text })} />
+
             {/* 2FA Promo Card */}
             <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50">
               <CardContent className="p-6">
@@ -376,6 +484,140 @@ export default function SecuritySettingsPage() {
                     </Link>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Login Activity */}
+            <Card className="border-slate-200 shadow-sm overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                      <Clock className="h-4 w-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Login Activity</CardTitle>
+                      <CardDescription>
+                        Recent login attempts to your account (last 20)
+                      </CardDescription>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {loadingActivity ? (
+                  <div className="p-6 space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-center gap-4">
+                        <Skeleton className="h-10 w-10 rounded-lg" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-4 w-1/3" />
+                          <Skeleton className="h-3 w-1/2" />
+                        </div>
+                        <Skeleton className="h-6 w-16 rounded-full" />
+                      </div>
+                    ))}
+                  </div>
+                ) : loginActivity && loginActivity.attempts.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-slate-100 bg-slate-50/50">
+                          <th className="text-left p-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="text-left p-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                            Device & Browser
+                          </th>
+                          <th className="text-left p-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                            Location
+                          </th>
+                          <th className="text-left p-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                            IP Address
+                          </th>
+                          <th className="text-left p-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                            Time
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {loginActivity.attempts.map((attempt, index) => {
+                          const isSuspicious = !attempt.success;
+                          return (
+                            <tr
+                              key={attempt.id}
+                              className={`border-b border-slate-100 hover:bg-slate-50/50 transition-colors ${
+                                isSuspicious ? "bg-red-50/30" : ""
+                              }`}
+                            >
+                              <td className="p-4">
+                                {attempt.success ? (
+                                  <Badge
+                                    variant="default"
+                                    className="bg-emerald-100 text-emerald-700 border-emerald-200"
+                                  >
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Success
+                                  </Badge>
+                                ) : (
+                                  <Badge
+                                    variant="destructive"
+                                    className="bg-red-100 text-red-700 border-red-200"
+                                  >
+                                    <AlertTriangle className="h-3 w-3 mr-1" />
+                                    Failed
+                                  </Badge>
+                                )}
+                              </td>
+                              <td className="p-4">
+                                <div className="flex items-center gap-2">
+                                  <div className="h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600">
+                                    {getDeviceIcon(attempt.device)}
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium text-slate-900">
+                                      {attempt.deviceInfo || "Unknown device"}
+                                    </p>
+                                    {!attempt.success && attempt.reason && (
+                                      <p className="text-xs text-red-600">
+                                        {attempt.reason.replace(/_/g, " ")}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                <div className="flex items-center gap-1.5 text-sm text-slate-600">
+                                  <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                                  {attempt.location || "Unknown"}
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                <code className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded">
+                                  {attempt.ipAddress || "N/A"}
+                                </code>
+                              </td>
+                              <td className="p-4">
+                                <span className="text-sm text-slate-600">
+                                  {formatDate(attempt.createdAt)}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="p-8 text-center">
+                    <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3">
+                      <Clock className="h-6 w-6 text-slate-400" />
+                    </div>
+                    <p className="text-sm text-slate-500">
+                      No login activity found
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -433,5 +675,13 @@ export default function SecuritySettingsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SecuritySettingsPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Loading...</div>}>
+      <SecuritySettingsContent />
+    </Suspense>
   );
 }

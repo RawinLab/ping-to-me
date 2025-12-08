@@ -351,10 +351,107 @@ export class AuthService {
     };
   }
 
-  async refresh(user: any) {
+  async refresh(user: any, oldRefreshToken: string, request?: any): Promise<{ accessToken: string; refreshToken: string }> {
+    // 1. Find session by old refresh token hash
+    const tokenHash = this.sessionService.hashToken(oldRefreshToken);
+    const session = await this.sessionService.findSessionByTokenHash(tokenHash);
+
+    if (!session) {
+      // Audit log: Invalid refresh token
+      await this.auditService.logSecurityEvent(user.id, "auth.refresh_token_invalid", {
+        status: "failure",
+        details: { reason: "token_not_found" },
+      });
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    // 2. Check if session is expired
+    if (session.expires < new Date()) {
+      // Clean up expired session
+      await this.sessionService.invalidateSession(session.id);
+
+      // Audit log: Expired refresh token
+      await this.auditService.logSecurityEvent(user.id, "auth.refresh_token_expired", {
+        status: "failure",
+        details: { sessionId: session.id },
+      });
+      throw new UnauthorizedException('Refresh token expired');
+    }
+
+    // 3. Check if user ID matches (security check)
+    if (session.userId !== user.id) {
+      // Potential token theft - user ID mismatch
+      await this.sessionService.invalidateAllSessions(user.id);
+
+      // Audit log: User ID mismatch
+      await this.auditService.logSecurityEvent(user.id, "auth.refresh_token_user_mismatch", {
+        status: "failure",
+        details: { sessionUserId: session.userId, tokenUserId: user.id },
+      });
+      throw new UnauthorizedException('Token user mismatch. All sessions have been invalidated for security.');
+    }
+
+    // 4. TOKEN REUSE DETECTION: Check if token has already been used (rotated)
+    // If isRevoked is true, this token was already used - potential token theft!
+    if (session.isRevoked) {
+      const tokenFamily = session.tokenFamily;
+
+      // CRITICAL SECURITY EVENT: Token reuse detected!
+      await this.auditService.logSecurityEvent(user.id, "auth.token_reuse_detected", {
+        status: "failure",
+        details: {
+          sessionId: session.id,
+          tokenFamily,
+          revokedAt: session.revokedAt,
+          suspectedTheft: true,
+        },
+      });
+
+      // Invalidate ALL sessions in this token family (force re-login on all devices)
+      if (tokenFamily) {
+        await this.sessionService.invalidateTokenFamily(tokenFamily);
+      } else {
+        // Fallback: Invalidate all user sessions if no token family
+        await this.sessionService.invalidateAllSessions(user.id);
+      }
+
+      throw new UnauthorizedException(
+        'Token reuse detected. All sessions have been invalidated for security. Please login again.'
+      );
+    }
+
+    // 5. Generate new tokens
     const payload = { sub: user.id, email: user.email, role: user.role };
+    const accessToken = this.jwtService.sign(payload);
+    const newRefreshToken = this.jwtService.sign(payload, { expiresIn: "7d" });
+
+    // 6. Mark current session as revoked (token has now been used - one-time use)
+    await this.sessionService.revokeSession(session.id);
+
+    // 7. Create new session with new refresh token (inherit token family)
+    const tokenFamily = session.tokenFamily || randomUUID();
+    if (request) {
+      await this.sessionService.createSessionWithFamily(
+        user.id,
+        newRefreshToken,
+        request,
+        tokenFamily,
+      );
+    }
+
+    // 8. Audit log: Successful token refresh
+    await this.auditService.logSecurityEvent(user.id, "auth.token_refreshed", {
+      status: "success",
+      details: {
+        oldSessionId: session.id,
+        tokenFamily,
+        rotationCount: await this.sessionService.countSessionsInFamily(tokenFamily),
+      },
+    });
+
     return {
-      accessToken: this.jwtService.sign(payload),
+      accessToken,
+      refreshToken: newRefreshToken,
     };
   }
 
@@ -467,5 +564,157 @@ export class AuthService {
     });
 
     return { message: "Password changed successfully" };
+  }
+
+  async sendVerificationEmail(userId: string, email: string) {
+    // Generate Verification Token
+    const token = randomUUID();
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    // Delete any existing verification tokens for this email
+    await this.prisma.verificationToken.deleteMany({
+      where: { identifier: email },
+    });
+
+    await this.prisma.verificationToken.create({
+      data: {
+        identifier: email,
+        token,
+        expires,
+      },
+    });
+
+    // Send Email
+    await this.mailService.sendVerificationEmail(email, token);
+
+    // Audit log: Verification email sent
+    await this.auditService.logSecurityEvent(userId, "auth.verification_email_sent", {
+      status: "success",
+      details: { email },
+    });
+
+    return { message: "Verification email sent successfully" };
+  }
+
+  async getLinkedAccounts(userId: string) {
+    const accounts = await this.prisma.account.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        provider: true,
+        providerAccountId: true,
+        type: true,
+      },
+    });
+
+    return accounts;
+  }
+
+  async linkOAuthAccount(
+    userId: string,
+    provider: string,
+    profile: any,
+  ): Promise<{ message: string }> {
+    const { id: providerAccountId, emails } = profile;
+    const email = emails?.[0]?.value;
+
+    // Check if this OAuth account is already linked to another user
+    const existingAccount = await this.prisma.account.findUnique({
+      where: {
+        provider_providerAccountId: {
+          provider,
+          providerAccountId,
+        },
+      },
+      include: { user: true },
+    });
+
+    if (existingAccount && existingAccount.userId !== userId) {
+      throw new BadRequestException(
+        `This ${provider} account is already linked to another user`,
+      );
+    }
+
+    if (existingAccount && existingAccount.userId === userId) {
+      throw new BadRequestException(
+        `This ${provider} account is already linked to your account`,
+      );
+    }
+
+    // Create Account record linking provider to user
+    await this.prisma.account.create({
+      data: {
+        userId,
+        provider,
+        providerAccountId,
+        type: "oauth",
+      },
+    });
+
+    // Audit log: OAuth account linked
+    await this.auditService.logSecurityEvent(userId, "auth.oauth_linked", {
+      status: "success",
+      details: { provider, email },
+    });
+
+    return { message: `${provider} account linked successfully` };
+  }
+
+  async unlinkOAuthAccount(
+    userId: string,
+    provider: string,
+  ): Promise<{ message: string }> {
+    // Check if user has password or another OAuth provider
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { accounts: true },
+    });
+
+    if (!user) {
+      throw new BadRequestException("User not found");
+    }
+
+    // Check if this is the only auth method
+    const hasPassword = !!user.password;
+    const accountCount = user.accounts.length;
+
+    if (!hasPassword && accountCount <= 1) {
+      throw new BadRequestException(
+        "Cannot unlink the only authentication method. Please set a password first.",
+      );
+    }
+
+    // Find and delete the account
+    const account = await this.prisma.account.findFirst({
+      where: { userId, provider },
+    });
+
+    if (!account) {
+      throw new BadRequestException(`${provider} account is not linked`);
+    }
+
+    await this.prisma.account.delete({
+      where: { id: account.id },
+    });
+
+    // Audit log: OAuth account unlinked
+    await this.auditService.logSecurityEvent(userId, "auth.oauth_unlinked", {
+      status: "success",
+      details: { provider },
+    });
+
+    return { message: `${provider} account unlinked successfully` };
+  }
+
+  /**
+   * Verify and decode JWT token
+   * Used for OAuth account linking flow
+   */
+  verifyToken(token: string): any {
+    try {
+      return this.jwtService.verify(token);
+    } catch (error) {
+      throw new BadRequestException("Invalid or expired token");
+    }
   }
 }

@@ -74,10 +74,17 @@ model Session {
   lastActive DateTime @default(now())
   createdAt  DateTime @default(now())
 
+  // Token Rotation fields
+  tokenFamily String?            // Token family ID for tracking token lineage
+  isRevoked   Boolean  @default(false) // Mark token as revoked (for reuse detection)
+  revokedAt   DateTime?          // When token was revoked
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expires])
+  @@index([tokenFamily])
+  @@index([tokenHash])
 }
 
 model BackupCode {

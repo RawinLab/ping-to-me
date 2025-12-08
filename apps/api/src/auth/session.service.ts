@@ -272,7 +272,7 @@ export class SessionService {
   /**
    * Hash token using SHA256
    */
-  private hashToken(token: string): string {
+  hashToken(token: string): string {
     return createHash('sha256').update(token).digest('hex');
   }
 
@@ -283,5 +283,106 @@ export class SessionService {
     return createHash('sha256')
       .update(`${Date.now()}-${Math.random()}`)
       .digest('hex');
+  }
+
+  /**
+   * Create a new session with token family (for token rotation)
+   */
+  async createSessionWithFamily(
+    userId: string,
+    refreshToken: string,
+    request: any,
+    tokenFamily: string,
+  ): Promise<Session> {
+    // Extract IP address from request
+    const ipAddress = this.extractIpAddress(request);
+
+    // Parse user agent
+    const userAgent = request.headers?.['user-agent'] || '';
+    const deviceInfo = this.parseUserAgent(userAgent);
+
+    // Hash refresh token for secure storage
+    const tokenHash = this.hashToken(refreshToken);
+
+    // Generate session token
+    const sessionToken = this.generateSessionToken();
+
+    // Calculate expiration (7 days from now)
+    const expires = new Date();
+    expires.setDate(expires.getDate() + 7);
+
+    // Create session record with token family
+    const session = await this.prisma.session.create({
+      data: {
+        userId,
+        sessionToken,
+        expires,
+        tokenHash,
+        deviceInfo,
+        ipAddress,
+        location: null,
+        lastActive: new Date(),
+        tokenFamily, // NEW: Token family for rotation tracking
+        isRevoked: false, // NEW: Not revoked initially
+      },
+    });
+
+    this.logger.log(
+      `Session created for user ${userId}: ${session.id} (family: ${tokenFamily})`
+    );
+
+    return session;
+  }
+
+  /**
+   * Revoke a session (mark as used for token rotation)
+   */
+  async revokeSession(sessionId: string): Promise<void> {
+    await this.prisma.session.update({
+      where: { id: sessionId },
+      data: {
+        isRevoked: true,
+        revokedAt: new Date(),
+      },
+    });
+
+    this.logger.log(`Session revoked: ${sessionId}`);
+  }
+
+  /**
+   * Invalidate all sessions in a token family (for token reuse detection)
+   */
+  async invalidateTokenFamily(tokenFamily: string): Promise<number> {
+    const result = await this.prisma.session.deleteMany({
+      where: { tokenFamily },
+    });
+
+    this.logger.warn(
+      `Invalidated ${result.count} sessions in token family ${tokenFamily} due to token reuse detection`
+    );
+
+    return result.count;
+  }
+
+  /**
+   * Count active sessions in a token family
+   */
+  async countSessionsInFamily(tokenFamily: string): Promise<number> {
+    return this.prisma.session.count({
+      where: {
+        tokenFamily,
+        expires: { gt: new Date() },
+      },
+    });
+  }
+
+  /**
+   * Find all sessions in a token family (for debugging/admin)
+   */
+  async findSessionsByFamily(tokenFamily: string): Promise<Session[]> {
+    return this.prisma.session.findMany({
+      where: { tokenFamily },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 }

@@ -1,5 +1,6 @@
 import { Module, forwardRef } from "@nestjs/common";
 import { AuthController } from "./auth.controller";
+import { OAuthLinkController } from "./oauth-link.controller";
 import { AuthService } from "./auth.service";
 import { JwtStrategy } from "./jwt.strategy";
 import { PassportModule } from "@nestjs/passport";
@@ -44,7 +45,13 @@ import { TwoFactorController } from "./two-factor.controller";
     ScheduleModule.forRoot(),
     forwardRef(() => AuditModule),
   ],
-  controllers: [AuthController, SessionController, LoginActivityController, TwoFactorController],
+  controllers: [
+    AuthController,
+    OAuthLinkController,
+    SessionController,
+    LoginActivityController,
+    TwoFactorController,
+  ],
   providers: [
     AuthService,
     SessionService,

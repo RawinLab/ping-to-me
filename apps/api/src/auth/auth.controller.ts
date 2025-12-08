@@ -3,6 +3,8 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
+  Param,
   Query,
   Req,
   Res,
@@ -10,6 +12,7 @@ import {
   BadRequestException,
 } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
+import { Throttle } from "@nestjs/throttler";
 import { AuthService } from "./auth.service";
 import { SessionService } from "./session.service";
 import { LoginSecurityService } from "./login-security.service";
@@ -23,6 +26,7 @@ import {
   Login2faDto,
   ChangePasswordDto,
 } from "./dto";
+import { GetUser } from "./decorators";
 
 @Controller("auth")
 export class AuthController {
@@ -84,8 +88,29 @@ export class AuthController {
   @UseGuards(AuthGuard("jwt-refresh"))
   @Post("refresh")
   async refresh(@Req() req, @Res({ passthrough: true }) res: Response) {
-    const { accessToken } = await this.authService.refresh(req.user);
-    // Optionally rotate refresh token here
+    // Get old refresh token from cookie
+    const oldRefreshToken = req.cookies?.refresh_token;
+
+    if (!oldRefreshToken) {
+      throw new BadRequestException('Refresh token not found');
+    }
+
+    // Rotate refresh token
+    const { accessToken, refreshToken } = await this.authService.refresh(
+      req.user,
+      oldRefreshToken,
+      req,
+    );
+
+    // Set new refresh token cookie
+    res.cookie("refresh_token", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
     return { accessToken };
   }
 
@@ -220,5 +245,182 @@ export class AuthController {
       dto.newPassword,
       sessionId,
     );
+  }
+
+  @Post("resend-verification")
+  @UseGuards(AuthGuard("jwt"))
+  @Throttle({ default: { limit: 1, ttl: 120000 } }) // 1 request per 2 minutes
+  async resendVerification(@Req() req) {
+    if (req.user.emailVerified) {
+      throw new BadRequestException("Email already verified");
+    }
+    return this.authService.sendVerificationEmail(req.user.id, req.user.email);
+  }
+
+  @Get("linked-accounts")
+  @UseGuards(AuthGuard("jwt"))
+  async getLinkedAccounts(@GetUser() user: any) {
+    return this.authService.getLinkedAccounts(user.id);
+  }
+
+  @Get("oauth/link/:provider")
+  @UseGuards(AuthGuard("jwt"))
+  async initiateOAuthLink(
+    @Param("provider") provider: string,
+    @GetUser() user: any,
+    @Res() res: Response,
+  ) {
+    if (!["google", "github"].includes(provider)) {
+      throw new BadRequestException("Invalid OAuth provider");
+    }
+
+    // Store user ID in session state to link after callback
+    const state = Buffer.from(
+      JSON.stringify({ userId: user.id, action: "link" }),
+    ).toString("base64");
+
+    // Redirect to OAuth provider with state
+    const redirectUrl = `${process.env.NEXT_PUBLIC_API_URL}/auth/oauth/link/${provider}/callback`;
+    const callbackUrl =
+      provider === "google"
+        ? `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUrl)}&response_type=code&scope=email profile&state=${state}`
+        : `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_ID}&redirect_uri=${encodeURIComponent(redirectUrl)}&scope=user:email&state=${state}`;
+
+    res.redirect(callbackUrl);
+  }
+
+  @Get("oauth/link/:provider/callback")
+  async handleOAuthLinkCallback(
+    @Param("provider") provider: string,
+    @Query("code") code: string,
+    @Query("state") state: string,
+    @Res() res: Response,
+  ) {
+    if (!code || !state) {
+      return res.redirect(
+        `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings/profile?error=oauth_link_failed`,
+      );
+    }
+
+    try {
+      // Decode state to get user ID
+      const { userId, action } = JSON.parse(
+        Buffer.from(state, "base64").toString(),
+      );
+
+      if (action !== "link") {
+        throw new BadRequestException("Invalid OAuth action");
+      }
+
+      // Exchange code for token and get profile
+      // For Google
+      if (provider === "google") {
+        const tokenResponse = await fetch(
+          "https://oauth2.googleapis.com/token",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              code,
+              client_id: process.env.GOOGLE_CLIENT_ID!,
+              client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+              redirect_uri: `${process.env.NEXT_PUBLIC_API_URL}/auth/oauth/link/google/callback`,
+              grant_type: "authorization_code",
+            }),
+          },
+        );
+        const tokens = await tokenResponse.json();
+
+        const profileResponse = await fetch(
+          "https://www.googleapis.com/oauth2/v2/userinfo",
+          {
+            headers: { Authorization: `Bearer ${tokens.access_token}` },
+          },
+        );
+        const profile = await profileResponse.json();
+
+        // Convert Google profile to expected format
+        const formattedProfile = {
+          id: profile.id,
+          emails: [{ value: profile.email }],
+          displayName: profile.name,
+        };
+
+        await this.authService.linkOAuthAccount(
+          userId,
+          provider,
+          formattedProfile,
+        );
+      }
+      // For GitHub
+      else if (provider === "github") {
+        const tokenResponse = await fetch(
+          "https://github.com/login/oauth/access_token",
+          {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              code,
+              client_id: process.env.GITHUB_ID,
+              client_secret: process.env.GITHUB_SECRET,
+              redirect_uri: `${process.env.NEXT_PUBLIC_API_URL}/auth/oauth/link/github/callback`,
+            }),
+          },
+        );
+        const tokens = await tokenResponse.json();
+
+        const profileResponse = await fetch("https://api.github.com/user", {
+          headers: { Authorization: `Bearer ${tokens.access_token}` },
+        });
+        const profile = await profileResponse.json();
+
+        const emailsResponse = await fetch(
+          "https://api.github.com/user/emails",
+          {
+            headers: { Authorization: `Bearer ${tokens.access_token}` },
+          },
+        );
+        const emails = await emailsResponse.json();
+        const primaryEmail = emails.find((e: any) => e.primary);
+
+        // Convert GitHub profile to expected format
+        const formattedProfile = {
+          id: profile.id.toString(),
+          emails: [{ value: primaryEmail?.email || emails[0]?.email }],
+          displayName: profile.name || profile.login,
+        };
+
+        await this.authService.linkOAuthAccount(
+          userId,
+          provider,
+          formattedProfile,
+        );
+      }
+
+      res.redirect(
+        `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings/profile?success=oauth_linked`,
+      );
+    } catch (error) {
+      console.error("OAuth link error:", error);
+      res.redirect(
+        `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings/profile?error=oauth_link_failed`,
+      );
+    }
+  }
+
+  @Delete("oauth/unlink/:provider")
+  @UseGuards(AuthGuard("jwt"))
+  async unlinkOAuth(
+    @Param("provider") provider: string,
+    @GetUser() user: any,
+  ) {
+    if (!["google", "github"].includes(provider)) {
+      throw new BadRequestException("Invalid OAuth provider");
+    }
+
+    return this.authService.unlinkOAuthAccount(user.id, provider);
   }
 }
