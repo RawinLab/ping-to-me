@@ -54,7 +54,12 @@ export class FoldersService {
     return folder;
   }
 
-  async findAll(userId: string, organizationId?: string, parentId?: string | null) {
+  async findAll(
+    userId: string,
+    organizationId?: string,
+    parentId?: string | null,
+    includeArchived?: boolean
+  ) {
     const where: any = {};
 
     if (organizationId) {
@@ -68,6 +73,11 @@ export class FoldersService {
       where.parentId = null;
     } else if (parentId) {
       where.parentId = parentId;
+    }
+
+    // Filter out archived folders by default
+    if (!includeArchived) {
+      where.isArchived = false;
     }
 
     return this.prisma.folder.findMany({
@@ -356,10 +366,17 @@ export class FoldersService {
     return updated;
   }
 
-  async getTree(userId: string, organizationId: string) {
+  async getTree(userId: string, organizationId: string, includeArchived?: boolean) {
     // Get all folders for the organization
+    const where: any = { organizationId };
+
+    // Filter out archived folders by default
+    if (!includeArchived) {
+      where.isArchived = false;
+    }
+
     const allFolders = await this.prisma.folder.findMany({
-      where: { organizationId },
+      where,
       include: {
         _count: {
           select: { links: true },
@@ -400,6 +417,133 @@ export class FoldersService {
     }
 
     return this.isDescendant(target.parentId, ancestorId);
+  }
+
+  async archive(userId: string, folderId: string) {
+    // Get folder to archive
+    const folder = await this.prisma.folder.findUnique({
+      where: { id: folderId },
+      include: { children: true },
+    });
+
+    if (!folder) {
+      throw new NotFoundException('Folder not found');
+    }
+
+    // Verify access
+    await this.verifyFolderAccess(userId, folder);
+
+    // If folder is already archived, return it
+    if (folder.isArchived) {
+      return folder;
+    }
+
+    const now = new Date();
+
+    // Recursively archive all children
+    const childrenIds = await this.getAllDescendantIds(folderId);
+
+    if (childrenIds.length > 0) {
+      await this.prisma.folder.updateMany({
+        where: { id: { in: childrenIds } },
+        data: {
+          isArchived: true,
+          archivedAt: now
+        },
+      });
+    }
+
+    // Archive the folder itself
+    const archived = await this.prisma.folder.update({
+      where: { id: folderId },
+      data: {
+        isArchived: true,
+        archivedAt: now
+      },
+    });
+
+    // Audit log
+    this.auditService.logResourceEvent(
+      userId,
+      folder.organizationId,
+      'folder.archived',
+      'Folder',
+      folderId,
+      {
+        details: {
+          name: folder.name,
+          childrenCount: childrenIds.length,
+        },
+      }
+    ).catch(() => {});
+
+    return archived;
+  }
+
+  async restore(userId: string, folderId: string) {
+    // Get folder to restore
+    const folder = await this.prisma.folder.findUnique({
+      where: { id: folderId },
+    });
+
+    if (!folder) {
+      throw new NotFoundException('Folder not found');
+    }
+
+    // Verify access
+    await this.verifyFolderAccess(userId, folder);
+
+    // If folder is not archived, return it
+    if (!folder.isArchived) {
+      return folder;
+    }
+
+    // Restore the folder
+    const restored = await this.prisma.folder.update({
+      where: { id: folderId },
+      data: {
+        isArchived: false,
+        archivedAt: null
+      },
+    });
+
+    // Audit log
+    this.auditService.logResourceEvent(
+      userId,
+      folder.organizationId,
+      'folder.restored',
+      'Folder',
+      folderId,
+      {
+        details: {
+          name: folder.name,
+        },
+      }
+    ).catch(() => {});
+
+    return restored;
+  }
+
+  // Helper to get all descendant IDs recursively
+  private async getAllDescendantIds(folderId: string): Promise<string[]> {
+    const children = await this.prisma.folder.findMany({
+      where: { parentId: folderId },
+      select: { id: true },
+    });
+
+    if (children.length === 0) {
+      return [];
+    }
+
+    const childIds = children.map(c => c.id);
+    const descendantIds: string[] = [...childIds];
+
+    for (const childId of childIds) {
+      const descendants = await this.getAllDescendantIds(childId);
+      descendantIds.push(...descendants);
+    }
+
+    return descendantIds;
   }
 
   /**

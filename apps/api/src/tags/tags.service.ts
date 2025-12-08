@@ -246,4 +246,45 @@ export class TagsService {
       targetTag,
     };
   }
+
+  async autocomplete(userId: string, orgId: string, query: string, limit: number = 10) {
+    // Find tags where name contains query (case-insensitive)
+    const tags = await this.prisma.tag.findMany({
+      where: {
+        organizationId: orgId,
+        name: {
+          contains: query,
+          mode: 'insensitive',
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        color: true,
+      },
+    });
+
+    // Count links per tag and sort by usage
+    const tagStats = await Promise.all(
+      tags.map(async (tag) => {
+        const linkCount = await this.prisma.link.count({
+          where: {
+            organizationId: orgId,
+            tags: { has: tag.name },
+          },
+        });
+        return {
+          id: tag.id,
+          name: tag.name,
+          color: tag.color,
+          linkCount,
+        };
+      })
+    );
+
+    // Order by usage count (most used first), then take limit
+    return tagStats
+      .sort((a, b) => b.linkCount - a.linkCount)
+      .slice(0, limit);
+  }
 }

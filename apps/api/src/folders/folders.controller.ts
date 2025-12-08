@@ -61,6 +61,7 @@ export class FoldersController {
     @Request() req,
     @Query("orgId") orgId?: string,
     @Query("parentId") parentId?: string,
+    @Query("includeArchived") includeArchived?: string,
   ) {
     let organizationId = orgId;
     if (!orgId || orgId === "default") {
@@ -73,12 +74,17 @@ export class FoldersController {
       }
     }
 
-    return this.foldersService.findAll(req.user.id, organizationId, parentId);
+    const includeArchivedBool = includeArchived === 'true';
+    return this.foldersService.findAll(req.user.id, organizationId, parentId, includeArchivedBool);
   }
 
   @Get("tree")
   @Permission({ resource: "folder", action: "read" })
-  async getTree(@Request() req, @Query("orgId") orgId?: string) {
+  async getTree(
+    @Request() req,
+    @Query("orgId") orgId?: string,
+    @Query("includeArchived") includeArchived?: string,
+  ) {
     let organizationId = orgId;
     if (!orgId || orgId === "default") {
       const member = await this.prisma.organizationMember.findFirst({
@@ -88,7 +94,8 @@ export class FoldersController {
       organizationId = member.organizationId;
     }
 
-    return this.foldersService.getTree(req.user.id, organizationId);
+    const includeArchivedBool = includeArchived === 'true';
+    return this.foldersService.getTree(req.user.id, organizationId, includeArchivedBool);
   }
 
   @Get(":id")
@@ -141,5 +148,17 @@ export class FoldersController {
     @Body() body: { parentId: string | null },
   ) {
     return this.foldersService.move(req.user.id, id, body.parentId);
+  }
+
+  @Post(":id/archive")
+  @Permission({ resource: "folder", action: "update" })
+  async archive(@Request() req, @Param("id") id: string) {
+    return this.foldersService.archive(req.user.id, id);
+  }
+
+  @Post(":id/restore")
+  @Permission({ resource: "folder", action: "update" })
+  async restore(@Request() req, @Param("id") id: string) {
+    return this.foldersService.restore(req.user.id, id);
   }
 }

@@ -17,6 +17,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { PermissionGuard, Permission } from "../auth/rbac";
 import { CreateTagDto } from "./dto/create-tag.dto";
 import { UpdateTagDto } from "./dto/update-tag.dto";
+import { AutocompleteTagDto } from "./dto/autocomplete-tag.dto";
 
 @Controller("tags")
 @UseGuards(AuthGuard, PermissionGuard)
@@ -54,6 +55,21 @@ export class TagsController {
       orgId = member.organizationId;
     }
     return this.tagsService.findAll(req.user.id, orgId);
+  }
+
+  @Get('autocomplete')
+  @Permission({ resource: "tag", action: "read" })
+  async autocomplete(@Request() req, @Query() query: AutocompleteTagDto) {
+    let orgId = query.orgId;
+    if (!orgId || orgId === "default") {
+      const member = await this.prisma.organizationMember.findFirst({
+        where: { userId: req.user.id },
+      });
+      if (!member) return [];
+      orgId = member.organizationId;
+    }
+    const limit = query.limit || 10;
+    return this.tagsService.autocomplete(req.user.id, orgId, query.q, limit);
   }
 
   @Patch(":id")
