@@ -27,6 +27,14 @@ import { LoginActivityController } from "./login-activity.controller";
 // Two-Factor Authentication
 import { TwoFactorService } from "./two-factor.service";
 import { TwoFactorController } from "./two-factor.controller";
+// Passkey/WebAuthn
+import { PasskeyService } from "./passkey.service";
+import { PasskeyController } from "./passkey.controller";
+// Device Fingerprinting
+import { DeviceFingerprintService } from "./device-fingerprint.service";
+import { DeviceFingerprintController } from "./device-fingerprint.controller";
+// SSO
+import { SSOModule } from "./sso/sso.module";
 
 @Module({
   imports: [
@@ -44,6 +52,7 @@ import { TwoFactorController } from "./two-factor.controller";
     ConfigModule,
     ScheduleModule.forRoot(),
     forwardRef(() => AuditModule),
+    SSOModule,
   ],
   controllers: [
     AuthController,
@@ -51,12 +60,16 @@ import { TwoFactorController } from "./two-factor.controller";
     SessionController,
     LoginActivityController,
     TwoFactorController,
+    PasskeyController,
+    DeviceFingerprintController,
   ],
   providers: [
     AuthService,
     SessionService,
     LoginSecurityService,
     TwoFactorService,
+    PasskeyService,
+    DeviceFingerprintService,
     JwtStrategy,
     LocalStrategy,
     GoogleStrategy,

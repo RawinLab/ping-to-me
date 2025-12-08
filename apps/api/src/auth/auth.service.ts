@@ -7,6 +7,7 @@ import { AuditService } from "../audit/audit.service";
 import { LoginSecurityService } from "./login-security.service";
 import { SessionService } from "./session.service";
 import { TwoFactorService } from "./two-factor.service";
+import { DeviceFingerprintService } from "./device-fingerprint.service";
 import { randomUUID } from "crypto";
 import { Request } from "express";
 
@@ -24,6 +25,7 @@ export class AuthService {
     private loginSecurityService: LoginSecurityService,
     private sessionService: SessionService,
     private twoFactorService: TwoFactorService,
+    private deviceFingerprintService: DeviceFingerprintService,
   ) {
     // Cleanup expired sessions every 5 minutes
     setInterval(() => this.cleanupExpiredSessions(), 5 * 60 * 1000);
@@ -216,9 +218,83 @@ export class AuthService {
     return null;
   }
 
-  async login(user: any, request?: any) {
-    // Check if 2FA is enabled for this user
-    if (user.twoFactorEnabled) {
+  async validateUserById(userId: string): Promise<any> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    const { password, ...result } = user;
+    return result;
+  }
+
+  async login(user: any, request?: any, fingerprint?: string) {
+    // Extract IP and user agent
+    const ipAddress = request?.ip || request?.connection?.remoteAddress;
+    const userAgent = request?.headers?.['user-agent'];
+
+    // Perform risk assessment if fingerprint is provided
+    let riskAssessment: any = null;
+    if (fingerprint && request) {
+      riskAssessment = await this.deviceFingerprintService.calculateRiskScore({
+        userId: user.id,
+        email: user.email,
+        fingerprint,
+        request,
+        has2FAEnabled: user.twoFactorEnabled,
+      });
+
+      // Log risk assessment
+      await this.auditService.logSecurityEvent(user.id, "auth.risk_assessment", {
+        status: "success",
+        context: { ipAddress, userAgent },
+        details: {
+          email: user.email,
+          riskScore: riskAssessment.riskScore,
+          factors: riskAssessment.factors,
+        },
+      });
+    }
+
+    // High risk: require email verification
+    if (riskAssessment && riskAssessment.requiresEmailVerification) {
+      // Generate verification token
+      const verificationToken = randomUUID();
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+      // Store session token
+      this.pending2FASessions.set(verificationToken, {
+        userId: user.id,
+        expiresAt,
+      });
+
+      // Send verification email
+      await this.mailService.sendLoginVerificationEmail(user.email, verificationToken);
+
+      // Audit log: Email verification required
+      await this.auditService.logSecurityEvent(user.id, "auth.login_verification_required", {
+        status: "success",
+        context: { ipAddress, userAgent },
+        details: {
+          email: user.email,
+          reason: "high_risk_login",
+          riskScore: riskAssessment.riskScore,
+        },
+      });
+
+      return {
+        requiresVerification: true,
+        verificationType: "email",
+        verificationToken,
+        riskScore: riskAssessment.riskScore,
+      };
+    }
+
+    // Check if 2FA is enabled for this user (or required by risk assessment)
+    if (user.twoFactorEnabled || (riskAssessment && riskAssessment.requires2FA)) {
       // Generate temporary session token
       const sessionToken = randomUUID();
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
@@ -229,25 +305,25 @@ export class AuthService {
         expiresAt,
       });
 
-      // Extract IP and user agent for audit log
-      const ipAddress = request?.ip || request?.connection?.remoteAddress;
-      const userAgent = request?.headers?.['user-agent'];
-
       // Audit log: 2FA challenge initiated
       await this.auditService.logSecurityEvent(user.id, "auth.2fa_challenge", {
         status: "success",
         context: { ipAddress, userAgent },
-        details: { email: user.email },
+        details: {
+          email: user.email,
+          riskScore: riskAssessment?.riskScore,
+        },
       });
 
       // Return 2FA challenge response
       return {
         requires2FA: true,
         sessionToken,
+        riskScore: riskAssessment?.riskScore,
       };
     }
 
-    // Normal login flow (no 2FA)
+    // Normal login flow (low risk, no 2FA)
     const payload = { sub: user.id, email: user.email, role: user.role };
 
     // Generate tokens
@@ -259,24 +335,120 @@ export class AuthService {
       await this.sessionService.createSession(user.id, refreshToken, request);
     }
 
-    // Extract IP and user agent for audit log
-    const ipAddress = request?.ip || request?.connection?.remoteAddress;
-    const userAgent = request?.headers?.['user-agent'];
+    // Trust the device if fingerprint is provided
+    if (fingerprint && request) {
+      const deviceInfo = this.deviceFingerprintService.extractDeviceInfo(fingerprint, request);
+      await this.deviceFingerprintService.trustDevice(user.id, deviceInfo);
+    }
 
     // Audit log: Successful login
     await this.auditService.logSecurityEvent(user.id, "auth.login", {
       status: "success",
       context: { ipAddress, userAgent },
-      details: { email: user.email },
+      details: {
+        email: user.email,
+        riskScore: riskAssessment?.riskScore || 0,
+      },
     });
 
     return {
       accessToken,
       refreshToken,
+      riskScore: riskAssessment?.riskScore || 0,
     };
   }
 
-  async verify2FAAndLogin(sessionToken: string, code: string, request: Request) {
+  async verifyLoginEmail(verificationToken: string, request: Request, fingerprint?: string) {
+    // Lookup session token
+    const session = this.pending2FASessions.get(verificationToken);
+
+    if (!session || session.expiresAt < new Date()) {
+      // Audit log: Invalid/expired verification token
+      await this.auditService.logSecurityEvent(null, "auth.login_verification_failed", {
+        status: "failure",
+        details: { reason: "invalid_or_expired_token" },
+      });
+      throw new UnauthorizedException("Invalid or expired verification token");
+    }
+
+    // Get user from database
+    const user = await this.prisma.user.findUnique({
+      where: { id: session.userId },
+    });
+
+    if (!user) {
+      this.pending2FASessions.delete(verificationToken);
+      throw new UnauthorizedException("User not found");
+    }
+
+    // Delete session token (single use)
+    this.pending2FASessions.delete(verificationToken);
+
+    // Now check if 2FA is enabled
+    if (user.twoFactorEnabled) {
+      // Generate 2FA session token
+      const sessionToken = randomUUID();
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+      this.pending2FASessions.set(sessionToken, {
+        userId: user.id,
+        expiresAt,
+      });
+
+      // Audit log: 2FA challenge initiated
+      const ipAddress = request?.ip || request?.connection?.remoteAddress;
+      const userAgent = request?.headers?.['user-agent'];
+
+      await this.auditService.logSecurityEvent(user.id, "auth.2fa_challenge", {
+        status: "success",
+        context: { ipAddress, userAgent },
+        details: { email: user.email, afterEmailVerification: true },
+      });
+
+      return {
+        requires2FA: true,
+        sessionToken,
+      };
+    }
+
+    // Generate JWT tokens
+    const payload = { sub: user.id, email: user.email, role: user.role };
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: "7d" });
+
+    // Create session with device info, IP, etc.
+    if (request) {
+      await this.sessionService.createSession(user.id, refreshToken, request);
+    }
+
+    // Trust the device if fingerprint is provided
+    if (fingerprint && request) {
+      const deviceInfo = this.deviceFingerprintService.extractDeviceInfo(fingerprint, request);
+      await this.deviceFingerprintService.trustDevice(user.id, deviceInfo);
+    }
+
+    // Extract IP and user agent for audit log
+    const ipAddress = request?.ip || request?.connection?.remoteAddress;
+    const userAgent = request?.headers?.['user-agent'];
+
+    // Audit log: Successful login after email verification
+    await this.auditService.logSecurityEvent(user.id, "auth.login", {
+      status: "success",
+      context: { ipAddress, userAgent },
+      details: { email: user.email, method: "email_verification" },
+    });
+
+    // Return user object without password
+    const { password, twoFactorSecret, ...userWithoutSensitive } = user;
+
+    return {
+      accessToken,
+      refreshToken,
+      user: userWithoutSensitive,
+    };
+  }
+
+  async verify2FAAndLogin(sessionToken: string, code: string, request: Request, fingerprint?: string) {
     // Lookup session token
     const session = this.pending2FASessions.get(sessionToken);
 
@@ -328,6 +500,12 @@ export class AuthService {
     // Create session with device info, IP, etc.
     if (request) {
       await this.sessionService.createSession(user.id, refreshToken, request);
+    }
+
+    // Trust the device if fingerprint is provided
+    if (fingerprint && request) {
+      const deviceInfo = this.deviceFingerprintService.extractDeviceInfo(fingerprint, request);
+      await this.deviceFingerprintService.trustDevice(user.id, deviceInfo);
     }
 
     // Extract IP and user agent for audit log

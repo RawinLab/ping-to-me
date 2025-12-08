@@ -18,6 +18,7 @@ interface User {
   role: string;
   plan: string;
   avatarUrl?: string;
+  emailVerified: Date | null;
 }
 
 interface OrgMembership {

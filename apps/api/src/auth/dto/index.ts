@@ -11,3 +11,7 @@ export * from "./forgot-password.dto";
 export * from "./reset-password.dto";
 export * from "./verify-email.dto";
 export * from "./resend-verification.dto";
+export * from "./passkey-registration-options.dto";
+export * from "./passkey-registration-verify.dto";
+export * from "./passkey-authentication-verify.dto";
+export * from "./rename-passkey.dto";

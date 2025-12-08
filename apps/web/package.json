@@ -17,6 +17,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@pingtome/types": "workspace:*",
     "@pingtome/ui": "workspace:*",
+    "@simplewebauthn/browser": "^13.2.2",
     "axios": "^1.13.2",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.330.0",

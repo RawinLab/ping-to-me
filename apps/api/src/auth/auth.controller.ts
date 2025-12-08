@@ -44,8 +44,15 @@ export class AuthController {
 
   @UseGuards(AuthGuard("local"))
   @Post("login")
-  async login(@Req() req, @Res({ passthrough: true }) res: Response) {
-    const result = await this.authService.login(req.user, req);
+  async login(@Req() req, @Body() body: any, @Res({ passthrough: true }) res: Response) {
+    const fingerprint = body.fingerprint;
+    const result = await this.authService.login(req.user, req, fingerprint);
+
+    // Check if verification is required (high risk)
+    if ('requiresVerification' in result && result.requiresVerification) {
+      // Return verification challenge (no tokens or cookies yet)
+      return result;
+    }
 
     // Check if 2FA is required
     if ('requires2FA' in result && result.requires2FA) {
@@ -62,15 +69,17 @@ export class AuthController {
       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
-    return { accessToken, user: req.user };
+    return { accessToken, user: req.user, riskScore: result.riskScore };
   }
 
   @Post("login/2fa")
-  async login2fa(@Body() dto: Login2faDto, @Req() req, @Res({ passthrough: true }) res: Response) {
+  async login2fa(@Body() dto: any, @Req() req, @Res({ passthrough: true }) res: Response) {
+    const { sessionToken, code, fingerprint } = dto;
     const { accessToken, refreshToken, user } = await this.authService.verify2FAAndLogin(
-      dto.sessionToken,
-      dto.code,
+      sessionToken,
+      code,
       req,
+      fingerprint,
     );
 
     // Set refresh token cookie
@@ -83,6 +92,33 @@ export class AuthController {
     });
 
     return { accessToken, user };
+  }
+
+  @Post("login/verify-email")
+  async verifyLoginEmail(@Body() dto: any, @Req() req, @Res({ passthrough: true }) res: Response) {
+    const { verificationToken, fingerprint } = dto;
+    const result = await this.authService.verifyLoginEmail(
+      verificationToken,
+      req,
+      fingerprint,
+    );
+
+    // Check if 2FA is still required after email verification
+    if ('requires2FA' in result && result.requires2FA) {
+      return result;
+    }
+
+    // Set refresh token cookie
+    const { accessToken, refreshToken } = result;
+    res.cookie("refresh_token", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    return { accessToken, user: result.user };
   }
 
   @UseGuards(AuthGuard("jwt-refresh"))

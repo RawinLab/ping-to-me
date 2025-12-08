@@ -33,12 +33,14 @@ model User {
   accounts        Account[]
   sessions        Session[]
   backupCodes     BackupCode[]
+  passkeys        Passkey[]
   links           Link[]
   notifications   Notification[]
   folders         Folder[]
   sentInvitations OrganizationInvitation[] @relation("SentInvitations")
   invitedMembers  OrganizationMember[]     @relation("InvitedByUser")
   reportSchedules ReportSchedule[]
+  trustedDevices  TrustedDevice[]
 }
 
 model Account {
@@ -98,6 +100,29 @@ model BackupCode {
 
   @@index([userId])
 }
+
+model TrustedDevice {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String   @db.Uuid
+  fingerprint     String   // Device fingerprint hash
+  name            String?  // User-given name or auto-detected
+  browser         String?
+  os              String?
+  deviceType      String?  // 'desktop' | 'mobile' | 'tablet'
+  ipAddress       String?  // Last known IP
+  location        String?  // Last known location
+  trustScore      Int      @default(100) // 0-100 trust score
+  lastSeenAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+  isActive        Boolean  @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, fingerprint])
+  @@index([userId])
+  @@index([fingerprint])
+}
+
 
 model LoginAttempt {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -160,6 +185,7 @@ model Organization {
   usageTracking   UsageTracking[]
   folders         Folder[]
   reportSchedules ReportSchedule[]
+  ssoProvider     SSOProvider?
 }
 
 model OrganizationSettings {
@@ -768,4 +794,60 @@ enum ReportFrequency {
   DAILY
   WEEKLY
   MONTHLY
+}
+
+model SSOProvider {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String   @unique @db.Uuid
+  name            String   @default("SAML SSO")
+  type            String   @default("saml") // 'saml' | 'oidc' (future)
+
+  // SAML Configuration
+  entityId        String   // IdP Entity ID
+  ssoUrl          String   // IdP SSO URL (login)
+  sloUrl          String?  // IdP SLO URL (logout)
+  certificate     String   @db.Text // IdP X.509 certificate
+
+  // SP Configuration (generated)
+  spEntityId      String?  // Our SP Entity ID
+  spAcsUrl        String?  // Our Assertion Consumer Service URL
+
+  // Settings
+  signRequests    Boolean  @default(false)
+  signatureAlgorithm String @default("sha256")
+  nameIdFormat    String   @default("emailAddress")
+
+  // Attribute mapping
+  emailAttribute  String   @default("email")
+  nameAttribute   String?  @default("displayName")
+
+  isEnabled       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+// WebAuthn Passkeys & Hardware Security Keys (Task 1.1.13)
+model Passkey {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String   @db.Uuid
+  credentialId      String   @unique // Base64URL encoded credential ID
+  publicKey         Bytes    // Public key for verification
+  counter           Int      @default(0) // Signature counter for replay protection
+  authenticatorType String   @default("platform") // 'platform' (Touch ID, Windows Hello) | 'cross-platform' (YubiKey, security keys)
+  transports        String[] @default([]) // ['usb', 'ble', 'nfc', 'internal']
+  aaguid            String?  // Authenticator Attestation GUID for device identification
+  name              String?  // User-friendly device name (e.g., "YubiKey 5", "Touch ID - MacBook Pro")
+  lastUsedAt        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([authenticatorType])
+  @@index([credentialId])
 }

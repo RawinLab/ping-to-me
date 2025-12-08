@@ -8,6 +8,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import { LinkedAccountsCard } from "@/components/settings/LinkedAccountsCard";
+import { PasskeyManager } from "@/components/settings/PasskeyManager";
+import { SecurityKeyManager } from "@/components/settings/SecurityKeyManager";
 import {
   Card,
   CardContent,
@@ -457,6 +459,12 @@ function SecuritySettingsContent() {
 
             {/* Linked Accounts Card */}
             <LinkedAccountsCard showMessage={(type, text) => setMessage({ type, text })} />
+
+            {/* Passkey Manager */}
+            <PasskeyManager />
+
+            {/* Hardware Security Key Manager */}
+            <SecurityKeyManager />
 
             {/* 2FA Promo Card */}
             <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50">
