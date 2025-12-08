@@ -340,6 +340,13 @@ model Link {
   safetyCheckDate  DateTime?
   safetyThreats    String[]   @default([])
 
+  // UTM Parameters
+  utmSource     String?
+  utmMedium     String?
+  utmCampaign   String?
+  utmContent    String?
+  utmTerm       String?
+
   status           LinkStatus @default(ACTIVE)
   deletedAt        DateTime?
   createdAt        DateTime   @default(now())

@@ -5,6 +5,7 @@ import { QrCodeService } from "../qr/qr.service";
 import { AuditService } from "../audit/audit.service";
 import { QuotaService } from "../quota/quota.service";
 import { SafetyCheckService } from "./services/safety-check.service";
+import { MetadataService } from "./services/metadata.service";
 import { BadRequestException, ForbiddenException } from "@nestjs/common";
 import { LinkStatus } from "@pingtome/types";
 
@@ -25,6 +26,7 @@ describe("LinksService", () => {
           useValue: {
             link: {
               findUnique: jest.fn(),
+              findFirst: jest.fn().mockResolvedValue(null),
               create: jest.fn(),
               findMany: jest.fn(),
               count: jest.fn(),
@@ -68,6 +70,13 @@ describe("LinksService", () => {
           provide: SafetyCheckService,
           useValue: {
             checkAndUpdateLink: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: MetadataService,
+          useValue: {
+            scrape: jest.fn().mockResolvedValue({}),
+            scrapeAndUpdateLink: jest.fn().mockResolvedValue({}),
           },
         },
       ],

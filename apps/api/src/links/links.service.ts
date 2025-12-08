@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   ForbiddenException,
+  ConflictException,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateLinkDto, LinkResponse, LinkStatus } from "@pingtome/types";
@@ -11,6 +12,7 @@ import { QrCodeService } from "../qr/qr.service";
 import { AuditService } from "../audit/audit.service";
 import { QuotaService } from "../quota/quota.service";
 import { SafetyCheckService } from "./services/safety-check.service";
+import { MetadataService } from "./services/metadata.service";
 import { BulkEditDto } from "./dto/bulk-edit.dto";
 import * as bcrypt from "bcrypt";
 
@@ -29,7 +31,49 @@ export class LinksService {
     private auditService: AuditService,
     private quotaService: QuotaService,
     private safetyCheckService: SafetyCheckService,
+    private metadataService: MetadataService,
   ) {}
+
+  private parseUtmParams(url: string): { utmSource?: string; utmMedium?: string; utmCampaign?: string; utmContent?: string; utmTerm?: string } {
+    try {
+      const urlObj = new URL(url);
+      return {
+        utmSource: urlObj.searchParams.get('utm_source') || undefined,
+        utmMedium: urlObj.searchParams.get('utm_medium') || undefined,
+        utmCampaign: urlObj.searchParams.get('utm_campaign') || undefined,
+        utmContent: urlObj.searchParams.get('utm_content') || undefined,
+        utmTerm: urlObj.searchParams.get('utm_term') || undefined,
+      };
+    } catch {
+      return {};
+    }
+  }
+
+  async checkDuplicate(originalUrl: string, organizationId: string | null): Promise<any | null> {
+    const whereClause: any = {
+      originalUrl,
+      status: { in: ['ACTIVE', 'DISABLED'] },
+      deletedAt: null,
+    };
+
+    if (organizationId) {
+      whereClause.organizationId = organizationId;
+    }
+
+    return this.prisma.link.findFirst({
+      where: whereClause,
+      select: {
+        id: true,
+        slug: true,
+        originalUrl: true,
+        domain: {
+          select: {
+            hostname: true,
+          },
+        },
+      },
+    });
+  }
 
   async create(userId: string, dto: CreateLinkDto): Promise<LinkResponse> {
     // 1. Validate URL format (basic check, can be enhanced)
@@ -102,7 +146,27 @@ export class LinksService {
       throw new ForbiddenException("This domain is blocked");
     }
 
-    // 4. Generate or use custom slug
+    // 5. Check for duplicate URL
+    if (!dto.allowDuplicate) {
+      const existingLink = await this.checkDuplicate(dto.originalUrl, dto.organizationId || null);
+      if (existingLink) {
+        const shortUrl = existingLink.domain
+          ? `https://${existingLink.domain.hostname}/${existingLink.slug}`
+          : `https://pingto.me/${existingLink.slug}`;
+
+        throw new ConflictException({
+          code: 'DUPLICATE_URL',
+          message: 'This URL already has a short link',
+          existingLink: {
+            id: existingLink.id,
+            slug: existingLink.slug,
+            shortUrl,
+          },
+        });
+      }
+    }
+
+    // 6. Generate or use custom slug
     let slug = dto.slug;
     if (slug) {
       // Check for reserved slugs
@@ -143,7 +207,10 @@ export class LinksService {
       }
     }
 
-    // 5. Create Link
+    // 7. Parse UTM parameters from URL
+    const utmParams = this.parseUtmParams(dto.originalUrl);
+
+    // 8. Create Link
     const link = await this.prisma.link.create({
       data: {
         originalUrl: dto.originalUrl,
@@ -162,18 +229,19 @@ export class LinksService {
         domainId: domainId || null, // Store domain association (TASK-2.4.15)
         status: LinkStatus.ACTIVE,
         safetyStatus: 'pending', // Initialize safety status as pending
+        ...utmParams, // Spread UTM parameters
       },
     });
 
-    // 6. Increment usage tracking
+    // 9. Increment usage tracking
     if (dto.organizationId) {
       await this.quotaService.incrementUsage(dto.organizationId, 'links');
     }
 
-    // 7. Sync to Cloudflare KV
+    // 10. Sync to Cloudflare KV
     await this.syncToKv(link);
 
-    // 8. Audit log - link created (async, non-blocking)
+    // 11. Audit log - link created (async, non-blocking)
     this.auditService
       .logLinkEvent(
         userId,
@@ -194,12 +262,12 @@ export class LinksService {
       )
       .catch((err) => console.error("Audit log failed:", err));
 
-    // 9. Trigger safety check asynchronously (don't block)
+    // 12. Trigger safety check asynchronously (don't block)
     this.safetyCheckService
       .checkAndUpdateLink(link.id, dto.originalUrl)
       .catch((err) => console.error("Safety check failed:", err));
 
-    // 10. Return response with QR options
+    // 13. Return response with QR options
     return this.mapToResponse(link, {
       qrColor: dto.qrColor,
       qrLogo: dto.qrLogo,
@@ -256,14 +324,17 @@ export class LinksService {
       limit: number;
       tag?: string;
       campaignId?: string;
+      folderId?: string;
       search?: string;
       status?: string;
+      startDate?: string;
+      endDate?: string;
     },
   ): Promise<{
     data: LinkResponse[];
     meta: { total: number; page: number; limit: number; totalPages: number };
   }> {
-    const { page, limit, tag, campaignId, search, status } = params;
+    const { page, limit, tag, campaignId, folderId, search, status, startDate, endDate } = params;
     const skip = (page - 1) * limit;
 
     const where: any = {
@@ -289,12 +360,26 @@ export class LinksService {
       where.campaignId = campaignId;
     }
 
+    if (folderId) {
+      where.folderId = folderId;
+    }
+
     if (search) {
       where.OR = [
         { title: { contains: search, mode: "insensitive" } },
         { originalUrl: { contains: search, mode: "insensitive" } },
         { slug: { contains: search, mode: "insensitive" } },
       ];
+    }
+
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(endDate);
+      }
     }
 
     const [links, total] = await Promise.all([
@@ -459,6 +544,21 @@ export class LinksService {
       .catch((err) => console.error("Audit log failed:", err));
 
     return this.mapToResponse(restored);
+  }
+
+  async scrapeMetadata(userId: string, id: string) {
+    const link = await this.prisma.link.findUnique({ where: { id } });
+
+    if (!link || link.userId !== userId) {
+      throw new ForbiddenException("Access denied");
+    }
+
+    const metadata = await this.metadataService.scrapeAndUpdateLink(id, link.originalUrl);
+
+    return {
+      success: true,
+      metadata,
+    };
   }
 
   private async deleteFromKv(slug: string) {

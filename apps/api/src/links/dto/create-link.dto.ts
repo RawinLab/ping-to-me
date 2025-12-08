@@ -75,4 +75,8 @@ export class CreateLinkDto {
   @IsOptional()
   @IsBoolean()
   generateQrCode?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowDuplicate?: boolean;
 }

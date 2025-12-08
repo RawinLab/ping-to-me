@@ -14,6 +14,8 @@ export interface CreateLinkDto {
   qrColor?: string; // Hex color for QR code foreground
   qrLogo?: string; // Base64 encoded image for logo overlay
   generateQrCode?: boolean; // Whether to generate QR code (default: true)
+  // Duplicate URL handling
+  allowDuplicate?: boolean; // Whether to allow creating a duplicate short link for the same URL (default: false)
 }
 
 export interface LinkResponse {
@@ -28,6 +30,9 @@ export interface LinkResponse {
   createdAt: string;
   createdById?: string; // User ID who created the link
   clicks?: number; // Engagement count
+  // Safety check fields (Module 1.2 Phase 2)
+  safetyStatus?: "safe" | "unsafe" | "pending" | "unknown";
+  safetyThreats?: string[]; // List of detected threats (e.g., "MALWARE", "PHISHING")
 }
 
 export enum LinkStatus {

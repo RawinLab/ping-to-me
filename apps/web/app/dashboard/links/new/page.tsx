@@ -21,6 +21,9 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
+  Alert,
+  AlertTitle,
+  AlertDescription,
 } from "@pingtome/ui";
 import {
   ChevronUp,
@@ -37,6 +40,9 @@ import {
   Image as ImageIcon,
   X,
   Lock,
+  Loader2,
+  AlertTriangle,
+  AlertCircle,
 } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -110,17 +116,27 @@ export default function CreateLinkPage() {
   const [qrPreviewLoading, setQrPreviewLoading] = useState(false);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  // Slug availability state
+  const [slugStatus, setSlugStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'reserved' | 'invalid'>('idle');
+  const [slugSuggestions, setSlugSuggestions] = useState<string[]>([]);
+
+  const form = useForm<CreateLinkFormData>({
+    resolver: zodResolver(createLinkSchema),
+  });
+
   const {
     register,
     handleSubmit,
     control,
     formState: { errors },
-  } = useForm<CreateLinkFormData>({
-    resolver: zodResolver(createLinkSchema),
-  });
+    setValue,
+  } = form;
 
   // Watch the original URL for QR preview
   const watchedUrl = useWatch({ control, name: "originalUrl" });
+
+  // Watch the slug for availability checking
+  const watchedSlug = useWatch({ control, name: "slug" });
 
   // Helper function to check plan access
   const canAccess = (feature: string): boolean => {
@@ -132,6 +148,57 @@ export default function CreateLinkPage() {
   // Check if user has access to custom domains and bio pages
   const hasCustomDomains = canAccess("custom_domains");
   const hasBioPages = canAccess("bio_pages");
+
+  // Check slug availability with debouncing
+  const checkSlugAvailability = useCallback(async (slug: string) => {
+    if (!slug || slug.length < 3) {
+      setSlugStatus('idle');
+      setSlugSuggestions([]);
+      return;
+    }
+
+    // Check for invalid characters
+    if (!/^[a-zA-Z0-9-_]+$/.test(slug)) {
+      setSlugStatus('invalid');
+      setSlugSuggestions([]);
+      return;
+    }
+
+    setSlugStatus('checking');
+    try {
+      const response = await apiRequest('/links/check-slug', {
+        method: 'POST',
+        body: JSON.stringify({ slug, domain: selectedDomain }),
+      });
+
+      if (response.available) {
+        setSlugStatus('available');
+        setSlugSuggestions([]);
+      } else {
+        setSlugStatus(response.reserved ? 'reserved' : 'taken');
+        setSlugSuggestions(response.suggestions || []);
+      }
+    } catch (error) {
+      console.error('Failed to check slug availability:', error);
+      setSlugStatus('idle');
+      setSlugSuggestions([]);
+    }
+  }, [selectedDomain]);
+
+  // Debounced slug availability check
+  useEffect(() => {
+    if (!watchedSlug) {
+      setSlugStatus('idle');
+      setSlugSuggestions([]);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      checkSlugAvailability(watchedSlug);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [watchedSlug, checkSlugAvailability]);
 
   // Generate QR preview when URL, color, or logo changes
   const updateQrPreview = useCallback(async () => {
@@ -500,6 +567,30 @@ export default function CreateLinkPage() {
               )}
             </div>
 
+            {/* Safety Warnings */}
+            {createdLink.safetyStatus === 'unsafe' && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Safety Warning</AlertTitle>
+                <AlertDescription>
+                  This URL has been flagged as potentially unsafe.
+                  {createdLink.safetyThreats && createdLink.safetyThreats.length > 0 && (
+                    <> Threats detected: {createdLink.safetyThreats.join(', ')}</>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {createdLink.safetyStatus === 'pending' && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Safety Check Pending</AlertTitle>
+                <AlertDescription>
+                  This URL is being checked for safety. Results will be available shortly.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="flex gap-3 pt-2">
               <Button
                 variant="outline"
@@ -638,6 +729,61 @@ export default function CreateLinkPage() {
                         {...register("slug")}
                       />
                     </div>
+
+                    {/* Slug availability indicator */}
+                    {watchedSlug && (
+                      <div className="flex items-center gap-2">
+                        {slugStatus === 'checking' && (
+                          <span className="text-muted-foreground text-sm flex items-center gap-1">
+                            <Loader2 className="h-3 w-3 animate-spin" /> Checking availability...
+                          </span>
+                        )}
+                        {slugStatus === 'available' && (
+                          <span className="text-green-600 text-sm flex items-center gap-1">
+                            <Check className="h-3 w-3" /> Available
+                          </span>
+                        )}
+                        {slugStatus === 'taken' && (
+                          <span className="text-red-600 text-sm flex items-center gap-1">
+                            <X className="h-3 w-3" /> Already taken
+                          </span>
+                        )}
+                        {slugStatus === 'reserved' && (
+                          <span className="text-red-600 text-sm flex items-center gap-1">
+                            <X className="h-3 w-3" /> This slug is reserved
+                          </span>
+                        )}
+                        {slugStatus === 'invalid' && (
+                          <span className="text-red-600 text-sm flex items-center gap-1">
+                            <X className="h-3 w-3" /> Only letters, numbers, hyphens, and underscores allowed
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Slug suggestions */}
+                    {slugSuggestions.length > 0 && (
+                      <div className="bg-slate-50 rounded-lg p-3 space-y-2">
+                        <span className="text-sm text-muted-foreground">Available alternatives:</span>
+                        <div className="flex flex-wrap gap-2">
+                          {slugSuggestions.map((suggestion, idx) => (
+                            <Button
+                              key={idx}
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => {
+                                setValue('slug', suggestion);
+                              }}
+                            >
+                              {suggestion}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {domains.length === 0 ? (
                       <p className="text-xs text-muted-foreground">
                         <Link

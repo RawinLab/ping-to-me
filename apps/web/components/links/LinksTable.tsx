@@ -447,7 +447,15 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
           method: "POST",
           body: JSON.stringify({ status }),
         });
-        toast.success("Link status updated");
+
+        // Provide specific success messages based on the status change
+        const statusMessages: Record<string, string> = {
+          ACTIVE: "Link restored successfully",
+          DISABLED: "Link disabled successfully",
+          ARCHIVED: "Link archived successfully",
+        };
+
+        toast.success(statusMessages[status] || "Link status updated");
         fetchLinks();
       } catch (error: any) {
         console.error("Failed to update status", error);
@@ -490,6 +498,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
         : "pingto.me";
       const isExpired = link.status === "EXPIRED";
       const isDisabled = link.status === "DISABLED";
+      const isArchived = link.status === "ARCHIVED";
 
       return (
         <div
@@ -497,7 +506,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
             selectedIds.has(link.id)
               ? "ring-2 ring-blue-500 border-blue-300"
               : ""
-          } ${isExpired || isDisabled ? "opacity-75" : ""}`}
+          } ${isExpired || isDisabled || isArchived ? "opacity-75" : ""} ${isArchived ? "bg-slate-50/50" : ""}`}
         >
           <div className="flex items-start gap-4">
             {/* Checkbox */}
@@ -552,6 +561,11 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                   <span className="px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-600 rounded-full">
                     Disabled
                   </span>
+                )}
+                {isArchived && (
+                  <Badge variant="secondary" className="ml-0 bg-slate-200 text-slate-700">
+                    Archived
+                  </Badge>
                 )}
               </div>
 
@@ -820,6 +834,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
         : "pingto.me";
       const isExpired = link.status === "EXPIRED";
       const isDisabled = link.status === "DISABLED";
+      const isArchived = link.status === "ARCHIVED";
 
       return (
         <div
@@ -827,7 +842,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
             selectedIds.has(link.id)
               ? "ring-2 ring-blue-500 border-blue-300"
               : ""
-          } ${isExpired || isDisabled ? "opacity-75" : ""}`}
+          } ${isExpired || isDisabled || isArchived ? "opacity-75" : ""} ${isArchived ? "bg-slate-50/50" : ""}`}
         >
           {/* Header with favicon, checkbox and actions */}
           <div className="flex items-start justify-between mb-4">
@@ -975,6 +990,11 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
               <span className="px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-600 rounded-full flex-shrink-0">
                 Disabled
               </span>
+            )}
+            {isArchived && (
+              <Badge variant="secondary" className="ml-0 bg-slate-200 text-slate-700 flex-shrink-0">
+                Archived
+              </Badge>
             )}
           </div>
 

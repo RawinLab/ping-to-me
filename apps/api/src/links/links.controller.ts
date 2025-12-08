@@ -159,6 +159,34 @@ export class LinksController {
     return this.linksService.checkSlugAvailability(dto.slug, dto.domainId);
   }
 
+  @Post("check-duplicate")
+  @UseGuards(JwtAuthGuard)
+  async checkDuplicate(
+    @Body() body: { originalUrl: string; organizationId?: string },
+  ) {
+    const existing = await this.linksService.checkDuplicate(
+      body.originalUrl,
+      body.organizationId || null,
+    );
+
+    if (existing) {
+      const shortUrl = existing.domain
+        ? `https://${existing.domain.hostname}/${existing.slug}`
+        : `https://pingto.me/${existing.slug}`;
+
+      return {
+        duplicate: true,
+        existingLink: {
+          id: existing.id,
+          slug: existing.slug,
+          shortUrl,
+        },
+      };
+    }
+
+    return { duplicate: false };
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission({ resource: "link", action: "create" })
@@ -185,16 +213,22 @@ export class LinksController {
     @Query("limit") limit: number = 10,
     @Query("tag") tag?: string,
     @Query("campaignId") campaignId?: string,
+    @Query("folderId") folderId?: string,
     @Query("search") search?: string,
     @Query("status") status?: string,
+    @Query("startDate") startDate?: string,
+    @Query("endDate") endDate?: string,
   ) {
     return this.linksService.findAll(req.user.id, {
       page: Number(page),
       limit: Number(limit),
       tag,
       campaignId,
+      folderId,
       search,
       status,
+      startDate,
+      endDate,
     });
   }
   @Get(":id")
@@ -216,6 +250,14 @@ export class LinksController {
   @Permission({ resource: "link", action: "update", context: "own" })
   async restore(@Request() req, @Param("id") id: string) {
     return this.linksService.restore(req.user.id, id);
+  }
+
+  @Post(":id/scrape-metadata")
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: "link", action: "update", context: "own" })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  async scrapeMetadata(@Request() req, @Param("id") id: string) {
+    return this.linksService.scrapeMetadata(req.user.id, id);
   }
 
   @Get(":slug/lookup")
