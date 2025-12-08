@@ -1,6 +1,6 @@
 # Module 1.7: Link Analytics - Development Todolist
 
-> **Status**: ~95% Complete (Phase 1 & 2 Done)
+> **Status**: ~98% Complete (Phase 1, 2 & 3 Done)
 > **Priority**: Medium - Security issue FIXED
 > **Reference**: `requirements/1-7-link-analytics-plan.md`
 
@@ -135,41 +135,48 @@
 
 ---
 
-## Phase 3: Advanced Analytics
+## Phase 3: Advanced Analytics ✅ COMPLETE
 
-### Task 1.7.11: Hour-of-Day Heatmap
-- [ ] **Add hourly aggregation to backend**
-  - Group clicks by hour (0-23) and day (0-6)
-  - Return 7x24 grid data
+### Task 1.7.11: Hour-of-Day Heatmap ✅
+- [x] **Add hourly aggregation to backend**
+  - `getHourlyHeatmap()` method in analytics.service.ts
+  - GET /links/:id/analytics/hourly endpoint
+  - Returns 7x24 grid data (168 cells)
 
-- [ ] **Create HourlyHeatmap component**
+- [x] **Create HourlyHeatmap component**
   - File: `apps/web/components/dashboard/HourlyHeatmap.tsx`
   - Grid visualization (rows=days, cols=hours)
   - Color intensity = click count
   - Tooltips: "Monday 2PM: 45 clicks"
 
-### Task 1.7.12: Day-of-Week Analysis
-- [ ] **Add day-of-week aggregation**
-  - Group clicks by weekday
+### Task 1.7.12: Day-of-Week Analysis ✅
+- [x] **Add day-of-week aggregation**
+  - `getDayOfWeekStats()` method in analytics.service.ts
+  - GET /links/:id/analytics/daily-breakdown endpoint
 
-- [ ] **Create bar chart for day breakdown**
-  - Mon-Sun bars
-  - Show highest/lowest day
+- [x] **Create bar chart for day breakdown**
+  - File: `apps/web/components/dashboard/DayOfWeekChart.tsx`
+  - Mon-Sun bars with color coding
+  - Highlight best/worst performing days
 
 ### Task 1.7.13: City Geolocation (Optional)
 - [ ] MaxMind GeoIP database integration
 - [ ] Populate city field in ClickEvent
 - [ ] City filter in analytics
 
-### Task 1.7.14: Unique Visitors
-- [ ] Session tracking (hash of IP + UA + day)
-- [ ] Deduplicate clicks per session
-- [ ] Show unique vs total clicks
+### Task 1.7.14: Unique Visitors ✅
+- [x] Session tracking (SHA-256 hash of IP + UA + day)
+- [x] Added `sessionId` field to ClickEvent schema
+- [x] `getUniqueVisitors()` method with returning visitor tracking
+- [x] GET /links/:id/analytics/visitors endpoint
+- [x] Show unique vs total clicks in analytics response
 
-### Task 1.7.15: Analytics Caching
-- [ ] Redis/in-memory cache for analytics queries
-- [ ] 5-minute TTL for dashboard stats
-- [ ] Invalidate on new clicks
+### Task 1.7.15: Analytics Caching ✅
+- [x] In-memory cache service with TTL support
+  - File: `apps/api/src/analytics/cache/analytics-cache.service.ts`
+- [x] 5-minute TTL for dashboard stats, 2-minute for link analytics
+- [x] Pattern-based cache invalidation
+- [x] AnalyticsCacheModule for dependency injection
 
 ---
 
@@ -271,10 +278,12 @@ File: apps/web/e2e/link-analytics.spec.ts (extend)
 - [x] Period comparison shows % change
 - [x] Unit tests pass (84 tests)
 
-### Phase 3 Complete When:
-- [ ] Hourly heatmap displays
-- [ ] Day-of-week chart shows
-- [ ] Analytics cached for performance
+### Phase 3 Complete When: ✅ DONE
+- [x] Hourly heatmap displays (HourlyHeatmap component)
+- [x] Day-of-week chart shows (DayOfWeekChart component)
+- [x] Unique visitors tracked (sessionId + getUniqueVisitors)
+- [x] Analytics cached for performance (AnalyticsCacheService)
+- [x] Unit tests pass (137 tests)
 
 ---
 
