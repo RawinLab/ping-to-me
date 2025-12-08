@@ -895,4 +895,92 @@ describe("QrCodeService", () => {
       ).rejects.toThrow("Failed to upload logo");
     });
   });
+
+  describe("SSRF Protection", () => {
+    describe("isPrivateIP", () => {
+      it("should return true for localhost 127.0.0.1", () => {
+        // Access private method using type assertion
+        const result = (service as any).isPrivateIP("127.0.0.1");
+        expect(result).toBe(true);
+      });
+
+      it("should return true for localhost range 127.x.x.x", () => {
+        expect((service as any).isPrivateIP("127.0.0.2")).toBe(true);
+        expect((service as any).isPrivateIP("127.255.255.255")).toBe(true);
+      });
+
+      it("should return true for private Class A 10.x.x.x", () => {
+        expect((service as any).isPrivateIP("10.0.0.1")).toBe(true);
+        expect((service as any).isPrivateIP("10.255.255.255")).toBe(true);
+      });
+
+      it("should return true for private Class B 172.16-31.x.x", () => {
+        expect((service as any).isPrivateIP("172.16.0.1")).toBe(true);
+        expect((service as any).isPrivateIP("172.31.255.255")).toBe(true);
+      });
+
+      it("should return false for non-private 172.15.x.x", () => {
+        expect((service as any).isPrivateIP("172.15.0.1")).toBe(false);
+      });
+
+      it("should return false for non-private 172.32.x.x", () => {
+        expect((service as any).isPrivateIP("172.32.0.1")).toBe(false);
+      });
+
+      it("should return true for private Class C 192.168.x.x", () => {
+        expect((service as any).isPrivateIP("192.168.0.1")).toBe(true);
+        expect((service as any).isPrivateIP("192.168.255.255")).toBe(true);
+      });
+
+      it("should return true for link-local 169.254.x.x", () => {
+        expect((service as any).isPrivateIP("169.254.0.1")).toBe(true);
+        expect((service as any).isPrivateIP("169.254.169.254")).toBe(true); // AWS metadata IP
+      });
+
+      it("should return true for IPv6 localhost ::1", () => {
+        expect((service as any).isPrivateIP("::1")).toBe(true);
+      });
+
+      it("should return false for public IPs", () => {
+        expect((service as any).isPrivateIP("8.8.8.8")).toBe(false);
+        expect((service as any).isPrivateIP("1.1.1.1")).toBe(false);
+        expect((service as any).isPrivateIP("203.0.113.1")).toBe(false);
+      });
+    });
+
+    describe("validateLogoUrl", () => {
+      it("should reject HTTP URLs (only HTTPS allowed)", async () => {
+        await expect(
+          (service as any).validateLogoUrl("http://example.com/logo.png"),
+        ).rejects.toThrow("Only HTTPS URLs are allowed");
+      });
+
+      it("should reject localhost URLs", async () => {
+        await expect(
+          (service as any).validateLogoUrl("https://localhost/logo.png"),
+        ).rejects.toThrow();
+      });
+
+      it("should reject 127.0.0.1 URLs", async () => {
+        await expect(
+          (service as any).validateLogoUrl("https://127.0.0.1/logo.png"),
+        ).rejects.toThrow();
+      });
+    });
+  });
+
+  describe("Batch Size Validation", () => {
+    it("should reject batch size over 100", async () => {
+      const linkIds = Array.from({ length: 101 }, (_, i) => `id-${i}`);
+      await expect(
+        service.batchGenerateQr(linkIds, "png", 300),
+      ).rejects.toThrow("Maximum 100 QR codes per batch");
+    });
+
+    it("should reject empty batch", async () => {
+      await expect(
+        service.batchGenerateQr([], "png", 300),
+      ).rejects.toThrow("At least 1 link ID required");
+    });
+  });
 });
