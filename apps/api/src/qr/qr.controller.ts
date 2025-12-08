@@ -8,6 +8,7 @@ import {
   UseGuards,
   Request,
 } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
 import { Response } from "express";
 import { QrCodeService, QrCodeOptions } from "./qr.service";
 import { AuthGuard } from "../auth/auth.guard";
@@ -30,12 +31,14 @@ export class QrCodeController {
 
   @Post("generate")
   @UseGuards(AuthGuard)
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   async generate(@Request() req, @Body() body: { url: string; slug: string }) {
     return this.qrService.generateQrCode(body.url, body.slug);
   }
 
   @Post("custom")
   @UseGuards(AuthGuard)
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   async custom(
     @Body() body: { url: string; color?: string; bgcolor?: string },
   ) {
@@ -47,6 +50,7 @@ export class QrCodeController {
 
   @Post("advanced")
   @UseGuards(AuthGuard)
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   async advanced(@Body() dto: GenerateAdvancedQrDto) {
     return this.qrService.generateAdvancedQr(dto as QrCodeOptions);
   }
@@ -68,6 +72,7 @@ export class QrCodeController {
 
   @Get("download")
   @UseGuards(AuthGuard)
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   async download(
     @Query("url") url: string,
     @Query("fg") foregroundColor: string,
@@ -115,6 +120,7 @@ export class QrCodeController {
 
   @Post("batch-download")
   @UseGuards(AuthGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async batchDownload(@Body() dto: BatchDownloadDto, @Res() res: Response) {
     const zipBuffer = await this.qrService.batchGenerateQr(
       dto.linkIds,

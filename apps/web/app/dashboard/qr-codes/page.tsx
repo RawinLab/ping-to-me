@@ -24,6 +24,10 @@ import {
   Calendar,
   BarChart3,
   Loader2,
+  CheckSquare,
+  Square,
+  XCircle,
+  FileArchive,
 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -56,6 +60,10 @@ export default function QrCodesPage() {
   );
   const [selectedLink, setSelectedLink] = useState<LinkWithQr | null>(null);
   const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedLinks, setSelectedLinks] = useState<string[]>([]);
+  const [batchFormat, setBatchFormat] = useState<"png" | "svg" | "pdf">("png");
+  const [batchDownloading, setBatchDownloading] = useState(false);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -147,6 +155,57 @@ export default function QrCodesPage() {
     document.body.removeChild(a);
   };
 
+  const toggleSelectAll = () => {
+    if (selectedLinks.length === filteredLinks.length) {
+      setSelectedLinks([]);
+    } else {
+      setSelectedLinks(filteredLinks.map((l) => l.id));
+    }
+  };
+
+  const toggleLinkSelection = (linkId: string) => {
+    setSelectedLinks((prev) =>
+      prev.includes(linkId)
+        ? prev.filter((id) => id !== linkId)
+        : [...prev, linkId],
+    );
+  };
+
+  const handleBatchDownload = async () => {
+    if (selectedLinks.length === 0) return;
+
+    setBatchDownloading(true);
+    try {
+      const response = await api.post(
+        "/qr/batch-download",
+        {
+          linkIds: selectedLinks,
+          format: batchFormat,
+          size: 500,
+        },
+        { responseType: "blob" },
+      );
+
+      // Download ZIP file
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `qr-codes-${new Date().toISOString().split("T")[0]}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      // Reset selection after download
+      setSelectMode(false);
+      setSelectedLinks([]);
+    } catch (error) {
+      console.error("Batch download failed:", error);
+    } finally {
+      setBatchDownloading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100/50">
       <div className="container py-8 space-y-6 max-w-6xl">
@@ -220,7 +279,91 @@ export default function QrCodesPage() {
               <List className="h-4 w-4" />
             </Button>
           </div>
+
+          {/* Batch Select Toggle */}
+          <Button
+            variant={selectMode ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSelectMode(!selectMode)}
+            className={`rounded-xl ${selectMode ? "bg-purple-600 text-white" : ""}`}
+          >
+            <CheckSquare className="h-4 w-4 mr-2" />
+            {selectMode ? "Exit Select" : "Batch Select"}
+          </Button>
         </div>
+
+        {/* Batch Action Toolbar */}
+        {selectMode && (
+          <div className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-xl p-3">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleSelectAll}
+                className="text-purple-700 hover:text-purple-900"
+              >
+                {selectedLinks.length === filteredLinks.length ? (
+                  <>
+                    <CheckSquare className="h-4 w-4 mr-2" />
+                    Deselect All
+                  </>
+                ) : (
+                  <>
+                    <Square className="h-4 w-4 mr-2" />
+                    Select All
+                  </>
+                )}
+              </Button>
+              <span className="text-sm text-purple-600">
+                {selectedLinks.length} of {filteredLinks.length} selected
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Select
+                value={batchFormat}
+                onValueChange={(v: any) => setBatchFormat(v)}
+              >
+                <SelectTrigger className="h-9 w-[100px] bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="png">PNG</SelectItem>
+                  <SelectItem value="svg">SVG</SelectItem>
+                  <SelectItem value="pdf">PDF</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                size="sm"
+                onClick={handleBatchDownload}
+                disabled={selectedLinks.length === 0 || batchDownloading}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                {batchDownloading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <FileArchive className="h-4 w-4 mr-2" />
+                    Download ZIP
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectMode(false);
+                  setSelectedLinks([]);
+                }}
+                className="text-slate-500"
+              >
+                <XCircle className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Stats Summary */}
         <div className="grid grid-cols-3 gap-4">
@@ -299,6 +442,21 @@ export default function QrCodesPage() {
                 <CardContent className="p-0">
                   {/* QR Preview */}
                   <div className="aspect-square bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-8 relative">
+                    {selectMode && (
+                      <div
+                        className="absolute top-2 left-2 z-10 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleLinkSelection(link.id);
+                        }}
+                      >
+                        {selectedLinks.includes(link.id) ? (
+                          <CheckSquare className="h-6 w-6 text-purple-600 bg-white rounded" />
+                        ) : (
+                          <Square className="h-6 w-6 text-slate-400 bg-white rounded" />
+                        )}
+                      </div>
+                    )}
                     <div
                       className="w-full h-full rounded-xl flex items-center justify-center"
                       style={{
@@ -316,26 +474,28 @@ export default function QrCodesPage() {
                       />
                     </div>
                     {/* Hover Actions */}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="bg-white hover:bg-slate-100"
-                        onClick={() => handleCustomize(link)}
-                      >
-                        <Settings2 className="h-4 w-4 mr-1" />
-                        Customize
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="bg-white hover:bg-slate-100"
-                        onClick={() => handleDownload(link)}
-                      >
-                        <Download className="h-4 w-4 mr-1" />
-                        Download
-                      </Button>
-                    </div>
+                    {!selectMode && (
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="bg-white hover:bg-slate-100"
+                          onClick={() => handleCustomize(link)}
+                        >
+                          <Settings2 className="h-4 w-4 mr-1" />
+                          Customize
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="bg-white hover:bg-slate-100"
+                          onClick={() => handleDownload(link)}
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          Download
+                        </Button>
+                      </div>
+                    )}
                   </div>
                   {/* Info */}
                   <div className="p-4 border-t border-slate-100">
@@ -375,6 +535,22 @@ export default function QrCodesPage() {
                 className="bg-white/70 border-slate-200/60 hover:shadow-md transition-all"
               >
                 <CardContent className="p-4 flex items-center gap-4">
+                  {/* Checkbox for Select Mode */}
+                  {selectMode && (
+                    <div
+                      className="cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleLinkSelection(link.id);
+                      }}
+                    >
+                      {selectedLinks.includes(link.id) ? (
+                        <CheckSquare className="h-6 w-6 text-purple-600" />
+                      ) : (
+                        <Square className="h-6 w-6 text-slate-400" />
+                      )}
+                    </div>
+                  )}
                   {/* QR Preview */}
                   <div
                     className="h-20 w-20 rounded-xl flex-shrink-0 flex items-center justify-center"
@@ -416,34 +592,36 @@ export default function QrCodesPage() {
                     </div>
                   </div>
                   {/* Actions */}
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-lg"
-                      onClick={() => handleCustomize(link)}
-                    >
-                      <Settings2 className="h-4 w-4 mr-1" />
-                      Customize
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-lg"
-                      onClick={() => handleDownload(link)}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    <Link href={`/dashboard/links/${link.id}/analytics`}>
+                  {!selectMode && (
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
                         size="sm"
                         className="rounded-lg"
+                        onClick={() => handleCustomize(link)}
                       >
-                        <BarChart3 className="h-4 w-4" />
+                        <Settings2 className="h-4 w-4 mr-1" />
+                        Customize
                       </Button>
-                    </Link>
-                  </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-lg"
+                        onClick={() => handleDownload(link)}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <Link href={`/dashboard/links/${link.id}/analytics`}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-lg"
+                        >
+                          <BarChart3 className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

@@ -54,6 +54,13 @@ export class AnalyticsController {
   }
 
   @UseGuards(AuthGuard, PermissionGuard)
+  @Get("qr-summary")
+  @Permission({ resource: "analytics", action: "read" })
+  async getQrSummary(@Request() req) {
+    return this.analyticsService.getQrSummary(req.user.id);
+  }
+
+  @UseGuards(AuthGuard, PermissionGuard)
   @Get("export")
   @Permission({ resource: "analytics", action: "export" })
   async exportDashboard(

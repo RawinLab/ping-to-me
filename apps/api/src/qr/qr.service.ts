@@ -8,6 +8,7 @@ import sharp from "sharp";
 import PDFDocument from "pdfkit";
 import archiver from "archiver";
 import { Writable } from "stream";
+import * as dns from "dns";
 import { StorageService } from "../storage/storage.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateQrConfigDto } from "./dto/qr-config.dto";
@@ -44,6 +45,104 @@ export class QrCodeService {
     private readonly storageService: StorageService,
     private readonly prisma: PrismaService,
   ) {}
+
+  /**
+   * Checks if an IP address is private or internal
+   * @param ip - The IP address to check
+   * @returns true if the IP is private, false otherwise
+   */
+  private isPrivateIP(ip: string): boolean {
+    // IPv6 localhost
+    if (ip === "::1" || ip === "::ffff:127.0.0.1") {
+      return true;
+    }
+
+    // Parse IPv4
+    const parts = ip.split(".");
+    if (parts.length !== 4) {
+      // Not a valid IPv4, could be IPv6 - be conservative and block
+      return true;
+    }
+
+    const octets = parts.map((part) => parseInt(part, 10));
+
+    // Validate octets
+    if (octets.some((octet) => isNaN(octet) || octet < 0 || octet > 255)) {
+      return true; // Invalid IP, treat as private
+    }
+
+    // 127.0.0.0/8 - localhost
+    if (octets[0] === 127) {
+      return true;
+    }
+
+    // 10.0.0.0/8 - Private Class A
+    if (octets[0] === 10) {
+      return true;
+    }
+
+    // 172.16.0.0/12 - Private Class B (172.16.x.x - 172.31.x.x)
+    if (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) {
+      return true;
+    }
+
+    // 192.168.0.0/16 - Private Class C
+    if (octets[0] === 192 && octets[1] === 168) {
+      return true;
+    }
+
+    // 169.254.0.0/16 - Link-local
+    if (octets[0] === 169 && octets[1] === 254) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Validates external logo URLs to prevent SSRF attacks
+   * @param logoUrl - The URL to validate
+   * @throws BadRequestException if the URL is invalid or points to a private IP
+   */
+  private async validateLogoUrl(logoUrl: string): Promise<void> {
+    // Only allow HTTPS URLs for external resources
+    if (!logoUrl.startsWith("https://")) {
+      throw new BadRequestException(
+        "Only HTTPS URLs are allowed for external logos",
+      );
+    }
+
+    // Parse the URL
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(logoUrl);
+    } catch (error) {
+      throw new BadRequestException("Invalid logo URL format");
+    }
+
+    // Get the hostname
+    const hostname = parsedUrl.hostname;
+
+    // Resolve DNS to get IP address
+    try {
+      const { address } = await dns.promises.lookup(hostname);
+
+      // Check if the resolved IP is private
+      if (this.isPrivateIP(address)) {
+        throw new BadRequestException(
+          "Logo URL points to a private or internal IP address",
+        );
+      }
+    } catch (error) {
+      // DNS lookup failed or IP is private
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException(
+        `Failed to resolve logo URL hostname: ${hostname}`,
+      );
+    }
+  }
 
   async generateQrCode(url: string, slug: string) {
     try {
@@ -181,11 +280,14 @@ export class QrCodeService {
     // Get logo buffer
     let logoBuffer: Buffer;
     if (logo.startsWith("data:")) {
-      // Base64 encoded image
+      // Base64 encoded image - no validation needed
       const base64Data = logo.split(",")[1];
       logoBuffer = Buffer.from(base64Data, "base64");
     } else if (logo.startsWith("http://") || logo.startsWith("https://")) {
-      // URL - fetch the image
+      // URL - validate before fetching to prevent SSRF
+      await this.validateLogoUrl(logo);
+
+      // Fetch the image
       const response = await fetch(logo);
       if (!response.ok) {
         throw new Error("Failed to fetch logo from URL");
@@ -460,6 +562,14 @@ export class QrCodeService {
     format: "png" | "svg" | "pdf" = "png",
     size: number = 300,
   ): Promise<Buffer> {
+    // Validate batch size
+    if (linkIds.length > 100) {
+      throw new BadRequestException('Maximum 100 QR codes per batch');
+    }
+    if (linkIds.length === 0) {
+      throw new BadRequestException('At least 1 link ID required');
+    }
+
     // Get links with their QR configs
     const links = await this.prisma.link.findMany({
       where: { id: { in: linkIds } },

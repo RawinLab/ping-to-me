@@ -715,6 +715,82 @@ export class AnalyticsService {
     };
   }
 
+  async getQrSummary(userId: string) {
+    // Get all user's links
+    const links = await this.prisma.link.findMany({
+      where: { userId },
+      select: { id: true },
+    });
+
+    if (links.length === 0) {
+      return {
+        totalClicks: 0,
+        qrClicks: 0,
+        directClicks: 0,
+        apiClicks: 0,
+        qrPercentage: 0,
+        linksWithQrScans: 0,
+      };
+    }
+
+    const linkIds = links.map(l => l.id);
+
+    // Get total clicks across all links
+    const totalClicks = await this.prisma.clickEvent.count({
+      where: { linkId: { in: linkIds } },
+    });
+
+    // Count clicks by source
+    const sourceStats = await this.prisma.clickEvent.groupBy({
+      by: ['source'],
+      where: { linkId: { in: linkIds } },
+      _count: { id: true },
+    });
+
+    // Process grouped results
+    let qrClicks = 0;
+    let directClicks = 0;
+    let apiClicks = 0;
+
+    sourceStats.forEach(stat => {
+      const count = stat._count.id;
+      switch (stat.source) {
+        case 'QR':
+          qrClicks = count;
+          break;
+        case 'DIRECT':
+          directClicks = count;
+          break;
+        case 'API':
+          apiClicks = count;
+          break;
+      }
+    });
+
+    // Calculate QR percentage
+    const qrPercentage = totalClicks > 0
+      ? Math.round((qrClicks / totalClicks) * 100)
+      : 0;
+
+    // Count links that have at least one QR scan
+    const linksWithQrScans = await this.prisma.clickEvent.groupBy({
+      by: ['linkId'],
+      where: {
+        linkId: { in: linkIds },
+        source: 'QR',
+      },
+    });
+
+    return {
+      totalClicks,
+      qrClicks,
+      directClicks,
+      apiClicks,
+      qrPercentage,
+      linksWithQrScans: linksWithQrScans.length,
+    };
+  }
+
   async exportLinkAnalytics(
     linkId: string,
     userId: string,

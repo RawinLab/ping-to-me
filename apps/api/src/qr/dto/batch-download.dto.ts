@@ -6,11 +6,16 @@ import {
   IsNumber,
   Min,
   Max,
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsUUID,
 } from "class-validator";
 
 export class BatchDownloadDto {
   @IsArray()
-  @IsString({ each: true })
+  @ArrayMinSize(1, { message: 'At least 1 link ID required' })
+  @ArrayMaxSize(100, { message: 'Maximum 100 QR codes per batch' })
+  @IsUUID('4', { each: true, message: 'Each link ID must be a valid UUID' })
   linkIds: string[];
 
   @IsOptional()
