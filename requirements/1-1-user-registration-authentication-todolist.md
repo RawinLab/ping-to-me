@@ -1,72 +1,72 @@
 # Module 1.1: User Registration & Authentication - Development Todolist
 
-> **Status**: ~70-75% Complete
-> **Priority**: High - Critical security fixes required
+> **Status**: ~95% Complete (Phase 1 & 2 Done)
+> **Priority**: Medium - Only Phase 3 & 4 remaining
 > **Reference**: `requirements/1-1-user-registration-authentication-plan.md`
 
 ---
 
 ## Phase 1: Critical Fixes (MUST FIX BEFORE PRODUCTION)
 
-### Task 1.1.1: Register TwoFactorController
-- [ ] **Add TwoFactorController to auth.module.ts**
+### Task 1.1.1: Register TwoFactorController ✅
+- [x] **Add TwoFactorController to auth.module.ts**
   - File: `apps/api/src/auth/auth.module.ts`
   - Action: Add `TwoFactorController` to the `controllers` array
   - Effort: 5 minutes
   - Test: Verify 2FA endpoints respond (GET `/auth/2fa/status`)
 
-### Task 1.1.2: Create Auth DTOs with Validation
-- [ ] **Create RegisterDto**
+### Task 1.1.2: Create Auth DTOs with Validation ✅
+- [x] **Create RegisterDto**
   - File: `apps/api/src/auth/dto/register.dto.ts`
   - Fields: `email` (IsEmail, Transform lowercase), `password` (MinLength 8, regex for complexity), `name` (optional, MaxLength 100)
 
-- [ ] **Create LoginDto**
+- [x] **Create LoginDto**
   - File: `apps/api/src/auth/dto/login.dto.ts`
   - Fields: `email` (IsEmail, Transform lowercase), `password` (IsString)
 
-- [ ] **Create Login2faDto**
+- [x] **Create Login2faDto**
   - File: `apps/api/src/auth/dto/login-2fa.dto.ts`
   - Fields: `code` (Length 6), `sessionToken` (IsString)
 
-- [ ] **Create ChangePasswordDto**
+- [x] **Create ChangePasswordDto**
   - File: `apps/api/src/auth/dto/change-password.dto.ts`
   - Fields: `currentPassword`, `newPassword` (with complexity validation)
 
-- [ ] **Create ForgotPasswordDto**
+- [x] **Create ForgotPasswordDto**
   - File: `apps/api/src/auth/dto/forgot-password.dto.ts`
   - Fields: `email` (IsEmail, Transform lowercase)
 
-- [ ] **Create ResetPasswordDto**
+- [x] **Create ResetPasswordDto**
   - File: `apps/api/src/auth/dto/reset-password.dto.ts`
   - Fields: `token`, `password` (with complexity validation)
 
-- [ ] **Create VerifyEmailDto**
+- [x] **Create VerifyEmailDto**
   - File: `apps/api/src/auth/dto/verify-email.dto.ts`
   - Fields: `token` (IsString)
 
-- [ ] **Apply DTOs to AuthController**
+- [x] **Apply DTOs to AuthController**
   - File: `apps/api/src/auth/auth.controller.ts`
   - Action: Add `@Body()` decorators with proper DTOs to all endpoints
 
-### Task 1.1.3: Implement 2FA Login Challenge Flow
-- [ ] **Modify login endpoint to detect 2FA**
+### Task 1.1.3: Implement 2FA Login Challenge Flow ✅
+- [x] **Modify login endpoint to detect 2FA**
   - File: `apps/api/src/auth/auth.service.ts`
   - Action: Return `{ requires2FA: true, sessionToken: '...' }` if user has 2FA enabled
   - Do NOT issue JWT tokens until 2FA verified
 
-- [ ] **Create POST /auth/login/2fa endpoint**
+- [x] **Create POST /auth/login/2fa endpoint**
   - File: `apps/api/src/auth/auth.controller.ts`
   - Input: `Login2faDto` (code + sessionToken)
   - Action: Verify TOTP code, then issue JWT tokens
   - Store temporary session in cache/Redis with expiry
 
-- [ ] **Create /login/2fa frontend page**
+- [x] **Create /login/2fa frontend page**
   - File: `apps/web/app/(auth)/login/2fa/page.tsx`
   - UI: 6-digit code input with auto-focus
   - Include "Use backup code" option
   - Auto-submit when 6 digits entered
 
-- [ ] **Update login flow in AuthContext**
+- [x] **Update login flow in AuthContext**
   - File: `apps/web/contexts/AuthContext.tsx`
   - Action: Handle `requires2FA` response, redirect to `/login/2fa`
   - Store sessionToken temporarily
@@ -75,64 +75,64 @@
 
 ## Phase 2: High Priority Security Features
 
-### Task 1.1.4: Session Management Implementation
-- [ ] **Create SessionService**
+### Task 1.1.4: Session Management Implementation ✅ (Already Implemented)
+- [x] **Create SessionService**
   - File: `apps/api/src/auth/services/session.service.ts`
   - Methods: `getSessions(userId)`, `revokeSession(userId, sessionId)`, `revokeAllOtherSessions(userId, currentSessionId)`
 
-- [ ] **Add session endpoints to AuthController**
+- [x] **Add session endpoints to AuthController**
   - GET `/auth/sessions` - List active sessions with device info
   - DELETE `/auth/sessions/:id` - Revoke specific session
   - DELETE `/auth/sessions` - Revoke all other sessions
 
-- [ ] **Complete Security Settings UI for sessions**
+- [x] **Complete Security Settings UI for sessions**
   - File: `apps/web/app/dashboard/settings/security/page.tsx`
   - Display: Device name, IP, location, last active, "Current" badge
   - Actions: "Sign out" per session, "Sign out all other sessions"
 
-### Task 1.1.5: Backup Codes Implementation
-- [ ] **Add backup codes generation**
+### Task 1.1.5: Backup Codes Implementation ✅ (Already Implemented)
+- [x] **Add backup codes generation**
   - File: `apps/api/src/auth/two-factor.service.ts`
   - Method: `generateBackupCodes(userId)` - Generate 10 codes, hash before storing
 
-- [ ] **Add backup codes endpoints**
+- [x] **Add backup codes endpoints**
   - POST `/auth/2fa/backup-codes` - Generate new backup codes
   - POST `/auth/2fa/backup-codes/verify` - Verify backup code during login
   - GET `/auth/2fa/backup-codes/remaining` - Get remaining count
 
-- [ ] **Update 2FA setup UI to show backup codes**
+- [x] **Update 2FA setup UI to show backup codes**
   - File: `apps/web/app/dashboard/settings/two-factor/page.tsx`
   - Show codes after successful 2FA setup
   - Add "Download as text file" button
   - Show remaining codes count
 
-### Task 1.1.6: Change Password Endpoint
-- [ ] **Implement change password endpoint**
+### Task 1.1.6: Change Password Endpoint ✅
+- [x] **Implement change password endpoint**
   - File: `apps/api/src/auth/auth.controller.ts`
   - Endpoint: POST `/auth/change-password`
   - Validate current password before allowing change
   - Invalidate all other sessions after password change
 
-- [ ] **Connect Security Settings UI to endpoint**
+- [x] **Connect Security Settings UI to endpoint**
   - File: `apps/web/app/dashboard/settings/security/page.tsx`
   - Action: Wire up existing form to new endpoint
 
-### Task 1.1.7: Brute Force Protection
-- [ ] **Create BruteForceService**
+### Task 1.1.7: Brute Force Protection ✅
+- [x] **Create BruteForceService** (LoginSecurityService)
   - File: `apps/api/src/auth/services/brute-force.service.ts`
   - Use `LoginAttempt` model to track failed attempts
   - Lock after 5 failed attempts, 30 min cooldown
 
-- [ ] **Add account status endpoint**
+- [x] **Add account status endpoint**
   - Endpoint: GET `/auth/account-status?email=xxx`
   - Returns: `{ locked: boolean, remainingAttempts: number, unlockTime?: Date }`
 
-- [ ] **Integrate brute force check into login**
+- [x] **Integrate brute force check into login**
   - File: `apps/api/src/auth/auth.service.ts`
   - Check lockout before validating password
   - Record attempt (success/failure)
 
-- [ ] **Display lockout message in login UI**
+- [x] **Display lockout message in login UI**
   - File: `apps/web/app/(auth)/login/page.tsx`
   - Show countdown timer when locked
 
