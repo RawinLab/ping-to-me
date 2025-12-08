@@ -234,22 +234,25 @@
 
 ---
 
-## Phase 4: Future Enhancements
+## Phase 4: Advanced Features ✅ COMPLETED
 
-### Task 1.2.12: Smart Redirects (Geo/Device Targeting)
-- [ ] Create RedirectRule model
-- [ ] Implement conditional routing logic in redirector
-- [ ] UI for managing redirect rules
+### Task 1.2.12: Smart Redirects (Geo/Device Targeting) ✅
+- [x] Create RedirectRule model ✅
+- [x] Implement conditional routing logic in redirector ✅
+- [x] API endpoints for managing redirect rules ✅
+- [ ] UI for managing redirect rules (pending)
 
-### Task 1.2.13: Click-Based Expiration
-- [ ] Add maxClicks field to Link model
-- [ ] Update redirector to check click count
-- [ ] Disable link when max reached
+### Task 1.2.13: Click-Based Expiration ✅
+- [x] Add maxClicks field to Link model ✅
+- [x] Update redirector to check click count ✅
+- [x] Disable link when max reached ✅
+- [x] GET /links/:id/click-limit endpoint ✅
 
-### Task 1.2.14: A/B Testing / Link Rotation
-- [ ] Create LinkVariant model
-- [ ] Implement weighted random selection in redirector
-- [ ] UI for managing variants
+### Task 1.2.14: A/B Testing / Link Rotation ✅
+- [x] Create LinkVariant model ✅
+- [x] Implement weighted random selection in redirector ✅
+- [x] API endpoints for managing variants ✅
+- [ ] UI for managing variants (pending)
 
 ---
 
