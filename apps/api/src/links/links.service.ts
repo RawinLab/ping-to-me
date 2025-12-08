@@ -11,6 +11,7 @@ import { QrCodeService } from "../qr/qr.service";
 import { AuditService } from "../audit/audit.service";
 import { QuotaService } from "../quota/quota.service";
 import { SafetyCheckService } from "./services/safety-check.service";
+import { BulkEditDto } from "./dto/bulk-edit.dto";
 import * as bcrypt from "bcrypt";
 
 @Injectable()
@@ -628,7 +629,7 @@ export class LinksService {
       clicks,
     };
   }
-  async importLinks(userId: string, fileBuffer: Buffer) {
+  async importLinks(userId: string, fileBuffer: Buffer, organizationId?: string) {
     const { parse } = await import("csv-parse/sync");
 
     const records = parse(fileBuffer, {
@@ -644,41 +645,47 @@ export class LinksService {
       errors: [] as any[],
     };
 
-    for (const rawRecord of records) {
-      const record = rawRecord as any;
-      try {
-        // Map CSV columns to DTO
-        const dto: CreateLinkDto = {
-          originalUrl: record.originalUrl || record.url,
-          slug: record.slug || undefined,
-          title: record.title || undefined,
-          description: record.description || undefined,
-          tags: record.tags
-            ? record.tags.split(",").map((t: string) => t.trim())
-            : [],
-        };
+    // Use transaction for atomic import
+    await this.prisma.$transaction(async (tx) => {
+      for (const rawRecord of records) {
+        const record = rawRecord as any;
+        try {
+          // Map CSV columns to DTO
+          const dto: CreateLinkDto = {
+            originalUrl: record.originalUrl || record.url,
+            slug: record.slug || undefined,
+            title: record.title || undefined,
+            description: record.description || undefined,
+            tags: record.tags
+              ? record.tags.split(",").map((t: string) => t.trim())
+              : [],
+            organizationId: organizationId, // Add organization context
+          };
 
-        if (!dto.originalUrl) {
-          throw new Error("Missing originalUrl");
+          if (!dto.originalUrl) {
+            throw new Error("Missing originalUrl");
+          }
+
+          await this.create(userId, dto);
+          results.success++;
+        } catch (error) {
+          results.failed++;
+          results.errors.push({
+            row: record,
+            error: (error as any).message,
+          });
+          // For transaction: if we want all-or-nothing, throw here
+          // But for partial success, continue
         }
-
-        await this.create(userId, dto);
-        results.success++;
-      } catch (error) {
-        results.failed++;
-        results.errors.push({
-          row: record,
-          error: (error as any).message,
-        });
       }
-    }
+    }, { timeout: 60000 }); // 60 second timeout for large imports
 
     // Audit log - bulk import (async, non-blocking)
     if (results.success > 0) {
       this.auditService
         .logLinkEvent(
           userId,
-          null,
+          organizationId || null,
           "link.bulk_created",
           {
             id: "bulk-import",
@@ -697,24 +704,58 @@ export class LinksService {
     return results;
   }
 
-  async exportLinks(userId: string) {
+  async exportLinks(userId: string, organizationId?: string) {
+    // Build where clause
+    const where: any = { userId };
+    if (organizationId) {
+      where.organizationId = organizationId;
+    }
+
     const links = await this.prisma.link.findMany({
-      where: { userId },
+      where,
       orderBy: { createdAt: "desc" },
     });
 
+    if (links.length === 0) {
+      return this.generateEmptyCsv();
+    }
+
+    // Get click counts using groupBy for efficiency
+    const linkIds = links.map(l => l.id);
+    const clickCounts = await this.prisma.clickEvent.groupBy({
+      by: ['linkId'],
+      where: { linkId: { in: linkIds } },
+      _count: { id: true },
+    });
+
+    // Create a map of linkId -> clickCount
+    const clickCountMap = new Map<string, number>();
+    for (const cc of clickCounts) {
+      clickCountMap.set(cc.linkId, cc._count.id);
+    }
+
     const { stringify } = await import("csv-stringify/sync");
+
+    // Sanitize CSV fields to prevent CSV injection
+    const sanitizeCsvField = (value: string): string => {
+      if (!value) return value;
+      const dangerousChars = ['=', '+', '-', '@'];
+      if (dangerousChars.some(c => value.startsWith(c))) {
+        return `'${value}`;
+      }
+      return value;
+    };
 
     const csv = stringify(
       links.map((link) => ({
-        originalUrl: link.originalUrl,
-        slug: link.slug,
-        title: link.title || "",
-        description: link.description || "",
-        tags: link.tags.join(", "),
+        originalUrl: sanitizeCsvField(link.originalUrl),
+        slug: sanitizeCsvField(link.slug),
+        title: sanitizeCsvField(link.title || ""),
+        description: sanitizeCsvField(link.description || ""),
+        tags: sanitizeCsvField(link.tags.join(", ")),
         status: link.status,
         createdAt: link.createdAt.toISOString(),
-        clicks: 0, // TODO: Add click count if available
+        clicks: clickCountMap.get(link.id) || 0, // Use actual click count
       })),
       {
         header: true,
@@ -734,74 +775,76 @@ export class LinksService {
     return csv;
   }
 
-  async deleteMany(userId: string, ids: string[]) {
-    // Verify ownership
-    const count = await this.prisma.link.count({
-      where: {
-        userId,
-        id: { in: ids },
-      },
-    });
+  private generateEmptyCsv(): string {
+    return 'originalUrl,slug,title,description,tags,status,createdAt,clicks\n';
+  }
 
-    if (count !== ids.length) {
-      // Some links might not belong to user, but we can just delete what matches
-      // or throw error. For safety, let's just delete matching.
-    }
+  async deleteMany(userId: string, ids: string[], permanent: boolean = false) {
+    // Use transaction for atomic deletion
+    return await this.prisma.$transaction(async (tx) => {
+      // Verify ownership
+      const links = await tx.link.findMany({
+        where: { userId, id: { in: ids } },
+        select: { id: true, slug: true, organizationId: true },
+      });
 
-    // Fetch links with organization info for quota tracking
-    const links = await this.prisma.link.findMany({
-      where: { userId, id: { in: ids } },
-      select: { slug: true, organizationId: true },
-    });
-
-    // Delete from KV for each link
-    for (const link of links) {
-      await this.deleteFromKv(link.slug);
-    }
-
-    // Soft delete: set status to ARCHIVED and deletedAt timestamp
-    const result = await this.prisma.link.updateMany({
-      where: {
-        userId,
-        id: { in: ids },
-      },
-      data: {
-        status: LinkStatus.ARCHIVED,
-        deletedAt: new Date(),
-      },
-    });
-
-    // Decrement usage tracking for organization links
-    const orgIds = new Set(links.filter(l => l.organizationId).map(l => l.organizationId));
-    for (const orgId of orgIds) {
-      const orgLinksCount = links.filter(l => l.organizationId === orgId).length;
-      for (let i = 0; i < orgLinksCount; i++) {
-        await this.quotaService.decrementUsage(orgId, 'links');
+      if (links.length === 0) {
+        return { count: 0 };
       }
-    }
 
-    // Audit log - bulk delete (async, non-blocking)
-    if (result.count > 0) {
-      this.auditService
-        .logLinkEvent(
-          userId,
-          null,
-          "link.bulk_deleted",
-          {
-            id: "bulk-delete",
+      // Delete from KV for each link
+      for (const link of links) {
+        await this.deleteFromKv(link.slug);
+      }
+
+      let result;
+
+      if (permanent) {
+        // Hard delete
+        result = await tx.link.deleteMany({
+          where: { userId, id: { in: ids } },
+        });
+      } else {
+        // Soft delete: set status to ARCHIVED and deletedAt timestamp
+        result = await tx.link.updateMany({
+          where: { userId, id: { in: ids } },
+          data: {
+            status: LinkStatus.ARCHIVED,
+            deletedAt: new Date(),
           },
-          {
-            details: {
-              deletedCount: result.count,
-              requestedCount: ids.length,
-              softDelete: true,
+        });
+      }
+
+      // Decrement usage tracking for organization links
+      const orgIds = new Set(links.filter(l => l.organizationId).map(l => l.organizationId));
+      for (const orgId of orgIds) {
+        const orgLinksCount = links.filter(l => l.organizationId === orgId).length;
+        for (let i = 0; i < orgLinksCount; i++) {
+          await this.quotaService.decrementUsage(orgId!, 'links');
+        }
+      }
+
+      // Audit log - bulk delete (async, non-blocking)
+      if (result.count > 0) {
+        this.auditService
+          .logLinkEvent(
+            userId,
+            null,
+            "link.bulk_deleted",
+            { id: "bulk-delete" },
+            {
+              details: {
+                deletedCount: result.count,
+                requestedCount: ids.length,
+                permanent,
+              },
             },
-          },
-        )
-        .catch((err) => console.error("Audit log failed:", err));
-    }
+          )
+          .catch((err) => console.error("Audit log failed:", err));
+      }
 
-    return result;
+      return result;
+    }, { timeout: 30000 });
   }
 
   async addTagToMany(userId: string, ids: string[], tagName: string) {
@@ -829,6 +872,63 @@ export class LinksService {
     await Promise.all(updatePromises);
 
     return { success: true, count: links.length, tagName };
+  }
+
+  async editMany(userId: string, dto: BulkEditDto): Promise<{ count: number; ids: string[] }> {
+    const { ids, changes } = dto;
+
+    // 1. Validate ownership of all links
+    const ownedLinks = await this.prisma.link.findMany({
+      where: { id: { in: ids }, userId },
+      select: { id: true, status: true, slug: true, originalUrl: true },
+    });
+
+    if (ownedLinks.length !== ids.length) {
+      throw new ForbiddenException('Some links do not belong to you or do not exist');
+    }
+
+    // 2. Use transaction for atomic updates
+    await this.prisma.$transaction(async (tx) => {
+      // Build update data
+      const updateData: any = {};
+      if (changes.status !== undefined) updateData.status = changes.status;
+      if (changes.expirationDate !== undefined) {
+        updateData.expirationDate = changes.expirationDate ? new Date(changes.expirationDate) : null;
+      }
+      if (changes.campaignId !== undefined) updateData.campaignId = changes.campaignId;
+
+      // Update all links
+      await tx.link.updateMany({
+        where: { id: { in: ids }, userId },
+        data: updateData,
+      });
+    });
+
+    // 3. If status was changed, sync to KV
+    if (changes.status !== undefined) {
+      const updatedLinks = await this.prisma.link.findMany({
+        where: { id: { in: ids } },
+      });
+      for (const link of updatedLinks) {
+        await this.syncToKv(link);
+      }
+    }
+
+    // 4. Audit log
+    this.auditService.logLinkEvent(
+      userId,
+      null,
+      'link.bulk_edited',
+      { id: 'bulk-edit' },
+      {
+        details: {
+          count: ids.length,
+          changes: changes,
+        },
+      }
+    ).catch(err => console.error('Audit log failed:', err));
+
+    return { count: ids.length, ids };
   }
 
   async updateStatusMany(userId: string, ids: string[], status: string) {

@@ -4,6 +4,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { QrCodeService } from "../qr/qr.service";
 import { AuditService } from "../audit/audit.service";
 import { QuotaService } from "../quota/quota.service";
+import { SafetyCheckService } from "./services/safety-check.service";
 import { BadRequestException, ForbiddenException } from "@nestjs/common";
 import { LinkStatus } from "@pingtome/types";
 
@@ -34,6 +35,7 @@ describe("LinksService", () => {
             },
             clickEvent: {
               count: jest.fn().mockResolvedValue(0),
+              groupBy: jest.fn().mockResolvedValue([]),
             },
             domain: {
               findFirst: jest.fn(),
@@ -60,6 +62,12 @@ describe("LinksService", () => {
             checkQuota: jest.fn().mockResolvedValue({ allowed: true, currentUsage: 0, limit: 50, remaining: 50, percentUsed: 0 }),
             incrementUsage: jest.fn().mockResolvedValue(undefined),
             decrementUsage: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: SafetyCheckService,
+          useValue: {
+            checkAndUpdateLink: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],
@@ -766,12 +774,100 @@ describe("LinksService", () => {
         },
       ];
 
+      const mockClickCounts = [
+        {
+          linkId: "link-1",
+          _count: { id: 5 },
+        },
+      ];
+
       (prisma.link.findMany as jest.Mock).mockResolvedValue(mockLinks);
+      (prisma.clickEvent.groupBy as jest.Mock).mockResolvedValue(mockClickCounts);
 
       const csv = await service.exportLinks(userId);
 
       expect(csv).toContain("status");
       expect(csv).toContain(LinkStatus.ACTIVE);
+      expect(csv).toContain("5"); // Should contain the actual click count
+    });
+
+    it("should handle empty links", async () => {
+      const userId = "user-123";
+      (prisma.link.findMany as jest.Mock).mockResolvedValue([]);
+
+      const csv = await service.exportLinks(userId);
+
+      expect(csv).toBe('originalUrl,slug,title,description,tags,status,createdAt,clicks\n');
+    });
+
+    it("should filter by organizationId", async () => {
+      const userId = "user-123";
+      const organizationId = "org-456";
+      const mockLinks = [
+        {
+          id: "link-1",
+          slug: "test-slug",
+          originalUrl: "https://example.com",
+          status: LinkStatus.ACTIVE,
+          userId,
+          organizationId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          tags: [],
+          redirectType: 301,
+          title: "Test Link",
+          description: null,
+          expirationDate: null,
+          passwordHash: null,
+          deepLinkFallback: null,
+          domainId: null,
+        },
+      ];
+
+      (prisma.link.findMany as jest.Mock).mockResolvedValue(mockLinks);
+      (prisma.clickEvent.groupBy as jest.Mock).mockResolvedValue([]);
+
+      await service.exportLinks(userId, organizationId);
+
+      expect(prisma.link.findMany).toHaveBeenCalledWith({
+        where: { userId, organizationId },
+        orderBy: { createdAt: "desc" },
+      });
+    });
+
+    it("should sanitize CSV fields to prevent CSV injection", async () => {
+      const userId = "user-123";
+      const mockLinks = [
+        {
+          id: "link-1",
+          slug: "=test-slug",
+          originalUrl: "=https://example.com",
+          status: LinkStatus.ACTIVE,
+          userId,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          tags: [],
+          redirectType: 301,
+          title: "+Test Link",
+          description: "-Description",
+          expirationDate: null,
+          passwordHash: null,
+          deepLinkFallback: null,
+          organizationId: null,
+          domainId: null,
+        },
+      ];
+
+      (prisma.link.findMany as jest.Mock).mockResolvedValue(mockLinks);
+      (prisma.clickEvent.groupBy as jest.Mock).mockResolvedValue([]);
+
+      const csv = await service.exportLinks(userId);
+
+      // CSV injection characters should be escaped with single quote
+      expect(csv).toContain("'=https://example.com");
+      expect(csv).toContain("'=test-slug");
+      expect(csv).toContain("'+Test Link");
+      expect(csv).toContain("'-Description");
     });
   });
 });

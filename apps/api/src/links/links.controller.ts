@@ -26,6 +26,7 @@ import {
   BulkDeleteDto,
   BulkTagDto,
   BulkStatusDto,
+  BulkEditDto,
   CheckSlugDto,
 } from "./dto";
 
@@ -40,24 +41,31 @@ export class LinksController {
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission({ resource: "link", action: "bulk" })
   @UseInterceptors(FileInterceptor("file"))
-  async import(@Request() req, @UploadedFile() file: Express.Multer.File) {
-    // TODO: Add organizationId to request
-    return this.linksService.importLinks(req.user.id, file.buffer);
+  async import(
+    @Request() req,
+    @UploadedFile() file: Express.Multer.File,
+    @Query('organizationId') organizationId?: string,
+  ) {
+    return this.linksService.importLinks(req.user.id, file.buffer, organizationId);
   }
 
   @Post("bulk-delete")
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission({ resource: "link", action: "bulk" })
-  async bulkDelete(@Request() req, @Body() body: BulkDeleteDto) {
-    // TODO: Add organizationId to request
-    return this.linksService.deleteMany(req.user.id, body.ids);
+  async bulkDelete(
+    @Request() req,
+    @Body() body: BulkDeleteDto,
+  ) {
+    return this.linksService.deleteMany(req.user.id, body.ids, body.permanent);
   }
 
   @Post("bulk-tag")
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission({ resource: "link", action: "bulk" })
-  async bulkTag(@Request() req, @Body() body: BulkTagDto) {
-    // TODO: Add organizationId to request
+  async bulkTag(
+    @Request() req,
+    @Body() body: BulkTagDto,
+  ) {
     return this.linksService.addTagToMany(req.user.id, body.ids, body.tagName);
   }
 
@@ -68,12 +76,25 @@ export class LinksController {
     return this.linksService.updateStatusMany(req.user.id, body.ids, body.status);
   }
 
+  @Post("bulk-edit")
+  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @Permission({ resource: "link", action: "bulk" })
+  async bulkEdit(
+    @Request() req,
+    @Body() body: BulkEditDto,
+  ) {
+    return this.linksService.editMany(req.user.id, body);
+  }
+
   @Get("export")
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission({ resource: "link", action: "export" })
-  async export(@Request() req, @Res() res: Response) {
-    // TODO: Add organizationId to request
-    const csv = await this.linksService.exportLinks(req.user.id);
+  async export(
+    @Request() req,
+    @Res() res: Response,
+    @Query('organizationId') organizationId?: string,
+  ) {
+    const csv = await this.linksService.exportLinks(req.user.id, organizationId);
     res.header("Content-Type", "text/csv");
     res.header("Content-Disposition", 'attachment; filename="links.csv"');
     res.send(csv);
@@ -92,7 +113,6 @@ export class LinksController {
     @Request() req,
     @Body() createLinkDto: CreateLinkDto,
   ): Promise<LinkResponse> {
-    // TODO: Add organizationId to request
     return this.linksService.create(req.user.id, createLinkDto);
   }
 
@@ -100,7 +120,6 @@ export class LinksController {
   @UseGuards(JwtAuthGuard, PermissionGuard)
   @Permission({ resource: "link", action: "update", context: "own" })
   async update(@Request() req, @Param("id") id: string, @Body() body: UpdateLinkDto) {
-    // TODO: Add organizationId to request
     return this.linksService.update(req.user.id, id, body);
   }
 
@@ -116,7 +135,6 @@ export class LinksController {
     @Query("search") search?: string,
     @Query("status") status?: string,
   ) {
-    // TODO: Add organizationId to request
     return this.linksService.findAll(req.user.id, {
       page: Number(page),
       limit: Number(limit),

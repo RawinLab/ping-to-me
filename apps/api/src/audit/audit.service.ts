@@ -162,6 +162,7 @@ export class AuditService {
       | "link.restored"
       | "link.bulk_created"
       | "link.bulk_deleted"
+      | "link.bulk_edited"
       | "link.status_changed"
       | "link.bulk_status_changed",
     link: { id: string; slug?: string; targetUrl?: string },

@@ -25,6 +25,21 @@ class BulkChangesDto {
   @IsOptional()
   @IsString()
   campaignId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  folderId?: string | null;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
+
+  @IsOptional()
+  @IsEnum(['add', 'replace', 'remove'], {
+    message: 'Tags action must be one of: add, replace, remove',
+  })
+  tagsAction?: 'add' | 'replace' | 'remove';
 }
 
 export class BulkEditDto {

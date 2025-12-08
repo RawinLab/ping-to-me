@@ -5,3 +5,4 @@ export * from './bulk-edit.dto';
 export * from './bulk-delete.dto';
 export * from './bulk-tag.dto';
 export * from './bulk-status.dto';
+export * from './bulk-import.dto';
