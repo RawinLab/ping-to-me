@@ -7,12 +7,16 @@ export class StorageService {
   private bucketName: string;
 
   constructor() {
-    // In a real app, these would come from ConfigService
-    const accountId = process.env.R2_ACCOUNT_ID || "mock-account-id";
-    const accessKeyId = process.env.R2_ACCESS_KEY_ID || "mock-access-key";
-    const secretAccessKey =
-      process.env.R2_SECRET_ACCESS_KEY || "mock-secret-key";
-    this.bucketName = process.env.R2_BUCKET_NAME || "pingtome-assets";
+    const accountId = process.env.R2_ACCOUNT_ID;
+    const accessKeyId = process.env.R2_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+    this.bucketName = process.env.R2_BUCKET_NAME;
+
+    if (!accountId || !accessKeyId || !secretAccessKey || !this.bucketName) {
+      throw new Error(
+        "Missing R2 configuration. Please check R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, and R2_BUCKET_NAME environment variables.",
+      );
+    }
 
     this.s3Client = new S3Client({
       region: "auto",

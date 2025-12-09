@@ -48,7 +48,6 @@ export class DeveloperController {
     @Request() req,
     @Body(ValidationPipe) dto: CreateApiKeyDto,
   ) {
-    // TODO: Verify user has access to orgId
     return this.apiKeyService.createApiKey({
       orgId: dto.orgId,
       name: dto.name,

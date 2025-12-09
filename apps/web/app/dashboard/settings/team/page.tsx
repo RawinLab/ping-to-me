@@ -21,6 +21,7 @@ import { usePermission } from "@/hooks/usePermission";
 import { PermissionGate } from "@/components/PermissionGate";
 import { RoleBadge } from "@/components/RoleBadge";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import {
   Users,
   UserPlus,
@@ -58,7 +59,8 @@ export default function TeamSettingsPage() {
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
-  const orgId = "mock-org-id"; // In real app, get from context/params
+  const { currentOrg } = useOrganization();
+  const orgId = currentOrg?.id || "";
 
   // Permission hooks
   const {
@@ -72,10 +74,13 @@ export default function TeamSettingsPage() {
   const { user } = useAuth();
 
   useEffect(() => {
-    loadMembers();
-  }, []);
+    if (orgId) {
+      loadMembers();
+    }
+  }, [orgId]);
 
   const loadMembers = async () => {
+    if (!orgId) return;
     try {
       const res = await apiRequest(`/organizations/${orgId}/members`);
       setMembers(res);

@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@pingtome/ui";
 import { Trash2, Plus } from "lucide-react";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface Tag {
   id: string;
@@ -21,18 +22,22 @@ interface Tag {
 }
 
 export function TagsManager() {
+  const { currentOrg } = useOrganization();
   const [tags, setTags] = useState<Tag[]>([]);
   const [newTag, setNewTag] = useState("");
   const [newColor, setNewColor] = useState("#000000");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchTags();
-  }, []);
+    if (currentOrg) {
+      fetchTags();
+    }
+  }, [currentOrg]);
 
   const fetchTags = async () => {
+    if (!currentOrg) return;
     try {
-      const response = await apiRequest("/tags");
+      const response = await apiRequest(`/tags?orgId=${currentOrg.id}`);
       setTags(response);
     } catch (error) {
       console.error("Failed to fetch tags:", error);
@@ -42,15 +47,15 @@ export function TagsManager() {
   };
 
   const handleCreate = async () => {
-    if (!newTag.trim()) return;
+    if (!newTag.trim() || !currentOrg) return;
     try {
       await apiRequest("/tags", {
         method: "POST",
         body: JSON.stringify({
           name: newTag,
           color: newColor,
-          orgId: "default",
-        }), // TODO: Handle orgId
+          orgId: currentOrg.id,
+        }),
       });
       setNewTag("");
       fetchTags();

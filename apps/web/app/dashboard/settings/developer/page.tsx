@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@pingtome/ui";
 import { apiRequest } from "../../../../lib/api";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 export default function DeveloperSettingsPage() {
   const [apiKeys, setApiKeys] = useState<any[]>([]);
@@ -11,13 +12,17 @@ export default function DeveloperSettingsPage() {
   const [newKeyName, setNewKeyName] = useState("");
   const [createdKey, setCreatedKey] = useState<string | null>(null);
   const [webhookUrl, setWebhookUrl] = useState("");
-  const orgId = "mock-org-id"; // In real app, get from context
+  const { currentOrg } = useOrganization();
+  const orgId = currentOrg?.id || "";
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (orgId) {
+      loadData();
+    }
+  }, [orgId]);
 
   const loadData = async () => {
+    if (!orgId) return;
     try {
       const [keysRes, hooksRes] = await Promise.all([
         apiRequest(`/developer/api-keys?orgId=${orgId}`),
