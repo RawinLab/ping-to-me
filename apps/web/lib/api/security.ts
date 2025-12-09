@@ -79,7 +79,8 @@ export const securityApi = {
 
   // Sessions
   getSessions: async (): Promise<Session[]> => {
-    return apiRequest("/auth/sessions");
+    const response = await apiRequest("/auth/sessions");
+    return response.sessions || [];
   },
 
   logoutSession: async (sessionId: string): Promise<void> => {
@@ -89,8 +90,8 @@ export const securityApi = {
   },
 
   logoutAllSessions: async (): Promise<void> => {
-    return apiRequest("/auth/sessions/logout-all", {
-      method: "POST",
+    return apiRequest("/auth/sessions", {
+      method: "DELETE",
     });
   },
 
