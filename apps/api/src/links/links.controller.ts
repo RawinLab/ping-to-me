@@ -19,7 +19,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { Response } from "express";
 import { LinksService } from "./links.service";
 import { LinkResponse } from "@pingtome/types";
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { JwtAuthGuard, EmailVerifiedGuard } from "../auth/guards";
 import { QrCodeService } from "../qr/qr.service";
 import { CreateQrConfigDto } from "../qr/dto/qr-config.dto";
 import { PermissionGuard, Permission } from "../auth/rbac";
@@ -198,7 +198,7 @@ export class LinksController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @UseGuards(JwtAuthGuard, EmailVerifiedGuard, PermissionGuard)
   @Permission({ resource: "link", action: "create" })
   async create(
     @Request() req,
@@ -208,7 +208,7 @@ export class LinksController {
   }
 
   @Post(":id") // Using POST for update to avoid CORS preflight issues sometimes, but PATCH is better REST
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @UseGuards(JwtAuthGuard, EmailVerifiedGuard, PermissionGuard)
   @Permission({ resource: "link", action: "update", context: "own" })
   async update(@Request() req, @Param("id") id: string, @Body() body: UpdateLinkDto) {
     return this.linksService.update(req.user.id, id, body);

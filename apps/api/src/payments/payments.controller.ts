@@ -12,7 +12,7 @@ import {
   BadRequestException,
 } from "@nestjs/common";
 import { PaymentsService } from "./payments.service";
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { JwtAuthGuard, EmailVerifiedGuard } from "../auth/guards";
 import { Request as ExpressRequest } from "express";
 import { PermissionGuard, Permission } from "../auth/rbac";
 
@@ -33,7 +33,7 @@ export class PaymentsController {
   }
 
   @Post("checkout")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @UseGuards(JwtAuthGuard, EmailVerifiedGuard, PermissionGuard)
   @Permission({ resource: "billing", action: "manage" })
   async createCheckout(
     @Request() req,

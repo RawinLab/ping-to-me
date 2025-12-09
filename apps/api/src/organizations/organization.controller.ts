@@ -17,7 +17,7 @@ import {
 import { FileInterceptor } from "@nestjs/platform-express";
 import { OrganizationService } from "./organization.service";
 import { AuditService } from "../audit/audit.service";
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { JwtAuthGuard, EmailVerifiedGuard } from "../auth/guards";
 import { PermissionGuard, Permission } from "../auth/rbac";
 import { MemberRole } from "@pingtome/database";
 import { UpdateOrganizationDto } from "./dto/update-organization.dto";
@@ -26,7 +26,7 @@ import { TransferOwnershipDto } from "./dto/transfer-ownership.dto";
 import { Update2FAEnforcementDto } from "./dto/security-settings.dto";
 
 @Controller("organizations")
-@UseGuards(JwtAuthGuard, PermissionGuard)
+@UseGuards(JwtAuthGuard, EmailVerifiedGuard, PermissionGuard)
 export class OrganizationController {
   constructor(
     private readonly organizationService: OrganizationService,

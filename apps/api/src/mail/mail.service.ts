@@ -41,6 +41,28 @@ export class MailService {
     });
   }
 
+  async sendLoginVerificationEmail(email: string, token: string) {
+    const url = `${this.configService.get("NEXTAUTH_URL")}/verify-login?token=${token}`;
+
+    await this.transporter.sendMail({
+      from: this.configService.get("EMAIL_FROM"),
+      to: email,
+      subject: "Verify your login attempt - PingTO.Me",
+      text: `We detected a login attempt from an unusual location or device.\n\nIf this was you, please verify your login:\n${url}\n\nIf this wasn't you, please ignore this email and ensure your account is secure.`,
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px;">
+          <h2>Verify Your Login</h2>
+          <p>We detected a login attempt from an unusual location or device.</p>
+          <p>If this was you, please verify your login by clicking the button below:</p>
+          <p><a href="${url}" style="display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 6px;">Verify Login</a></p>
+          <p style="color: #666; font-size: 14px;">This link will expire in 15 minutes.</p>
+          <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
+          <p style="color: #666; font-size: 12px;">If this wasn't you, please ignore this email and ensure your account is secure.</p>
+        </div>
+      `,
+    });
+  }
+
   async sendInvitationEmail(params: {
     email: string;
     token: string;

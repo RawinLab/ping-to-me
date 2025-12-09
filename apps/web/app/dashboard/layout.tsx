@@ -50,6 +50,7 @@ import {
   Users,
 } from "lucide-react";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { apiRequest } from "@/lib/api";
 import { usePermission } from "@/hooks/usePermission";
 
@@ -517,7 +518,12 @@ export default function DashboardLayout({
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 overflow-y-auto">
+          <div className="p-4 md:p-6">
+            <EmailVerificationBanner />
+          </div>
+          {children}
+        </main>
       </div>
     </div>
   );
