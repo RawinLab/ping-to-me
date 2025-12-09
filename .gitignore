@@ -47,3 +47,6 @@ generated-docs/
 
 # Backup files
 *.bak
+
+# Migration/utility scripts
+**/apply-*.js
