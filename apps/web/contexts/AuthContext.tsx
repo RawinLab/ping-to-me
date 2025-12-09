@@ -164,6 +164,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     setUser(res.data.user);
+
+    // Fetch memberships after successful login
+    await refresh();
+
     router.push("/dashboard");
     return { requires2FA: false };
   };
