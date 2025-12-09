@@ -244,3 +244,107 @@ export function getButtonStyleClasses(buttonStyle: ButtonStyle): string {
 export function getButtonShadowClasses(hasShadow: boolean): string {
   return hasShadow ? "shadow-lg hover:shadow-xl" : "";
 }
+
+/**
+ * Font family options for bio page customization
+ */
+export type FontName =
+  | "inter"
+  | "poppins"
+  | "playfair"
+  | "jetbrains"
+  | "roboto"
+  | "opensans";
+
+export interface FontOption {
+  name: FontName;
+  label: string;
+  family: string;
+  description: string;
+  category: "sans-serif" | "serif" | "monospace";
+  googleFont?: string; // Google Fonts URL parameter
+}
+
+/**
+ * Available font presets
+ */
+export const FONT_PRESETS: Record<FontName, FontOption> = {
+  inter: {
+    name: "inter",
+    label: "Inter",
+    family: "Inter, system-ui, -apple-system, sans-serif",
+    description: "Clean and modern",
+    category: "sans-serif",
+    googleFont: "Inter:wght@400;500;600;700",
+  },
+  poppins: {
+    name: "poppins",
+    label: "Poppins",
+    family: "Poppins, system-ui, sans-serif",
+    description: "Friendly and approachable",
+    category: "sans-serif",
+    googleFont: "Poppins:wght@400;500;600;700",
+  },
+  playfair: {
+    name: "playfair",
+    label: "Playfair Display",
+    family: '"Playfair Display", Georgia, serif',
+    description: "Elegant and sophisticated",
+    category: "serif",
+    googleFont: "Playfair+Display:wght@400;500;600;700",
+  },
+  jetbrains: {
+    name: "jetbrains",
+    label: "JetBrains Mono",
+    family: '"JetBrains Mono", monospace',
+    description: "Technical and precise",
+    category: "monospace",
+    googleFont: "JetBrains+Mono:wght@400;500;600;700",
+  },
+  roboto: {
+    name: "roboto",
+    label: "Roboto",
+    family: "Roboto, system-ui, sans-serif",
+    description: "Simple and versatile",
+    category: "sans-serif",
+    googleFont: "Roboto:wght@400;500;700",
+  },
+  opensans: {
+    name: "opensans",
+    label: "Open Sans",
+    family: '"Open Sans", system-ui, sans-serif',
+    description: "Readable and neutral",
+    category: "sans-serif",
+    googleFont: "Open+Sans:wght@400;500;600;700",
+  },
+};
+
+/**
+ * Array of all font names for iteration
+ */
+export const FONT_NAMES: FontName[] = [
+  "inter",
+  "poppins",
+  "playfair",
+  "jetbrains",
+  "roboto",
+  "opensans",
+];
+
+/**
+ * Get font option by name
+ */
+export function getFontPreset(name: FontName): FontOption {
+  return FONT_PRESETS[name];
+}
+
+/**
+ * Get Google Fonts URL for loading fonts
+ */
+export function getGoogleFontsUrl(fonts: FontName[]): string {
+  const families = fonts
+    .map((name) => FONT_PRESETS[name].googleFont)
+    .filter(Boolean)
+    .join("&family=");
+  return `https://fonts.googleapis.com/css2?family=${families}&display=swap`;
+}

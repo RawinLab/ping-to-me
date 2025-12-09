@@ -14,6 +14,7 @@ export { BioPageRenderer } from "./BioPageRenderer";
 export { BackgroundPicker } from "./BackgroundPicker";
 export { ButtonStyleSelector } from "./ButtonStyleSelector";
 export { ColorPicker } from "./ColorPicker";
+export { FontSelector } from "./FontSelector";
 export { LayoutSelector } from "./LayoutSelector";
 export { LinkStyleEditor } from "./LinkStyleEditor";
 export { SocialLinksEditor } from "./SocialLinksEditor";
@@ -22,3 +23,6 @@ export { ThemeSelector } from "./ThemeSelector";
 
 // Utility components
 export { ShareModal } from "./ShareModal";
+
+// Analytics components
+export { BioAnalyticsDashboard } from "./BioAnalyticsDashboard";

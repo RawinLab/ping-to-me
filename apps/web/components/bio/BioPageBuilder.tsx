@@ -43,6 +43,7 @@ import {
   Settings,
   Smartphone,
   Save,
+  BarChart3,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeSelector } from "@/components/bio/ThemeSelector";
@@ -56,7 +57,9 @@ import {
 } from "@/components/bio/LinkStyleEditor";
 import { SocialLinksEditor } from "@/components/bio/SocialLinksEditor";
 import { LayoutSelector } from "@/components/bio/LayoutSelector";
+import { FontSelector } from "@/components/bio/FontSelector";
 import { BioPagePreview } from "@/components/bio/BioPagePreview";
+import { BioAnalyticsDashboard } from "@/components/bio/BioAnalyticsDashboard";
 import { useLinkReorder } from "@/hooks/useLinkReorder";
 import type { SocialLink } from "@pingtome/types";
 import {
@@ -459,7 +462,7 @@ export function BioPageBuilder({
           <Card className="shadow-sm">
             <CardContent className="pt-6">
               <Tabs defaultValue="links" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-6 bg-muted p-1">
+                <TabsList className="grid w-full grid-cols-4 mb-6 bg-muted p-1">
                   <TabsTrigger
                     value="links"
                     className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
@@ -480,6 +483,14 @@ export function BioPageBuilder({
                   >
                     <Settings className="h-4 w-4" />
                     <span className="hidden sm:inline">Settings</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="analytics"
+                    className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                    disabled={!existingPage?.id}
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Analytics</span>
                   </TabsTrigger>
                 </TabsList>
 
@@ -602,6 +613,18 @@ export function BioPageBuilder({
                             handleCustomThemeUpdate(updates)
                           }
                         />
+
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">
+                            Font Family
+                          </Label>
+                          <FontSelector
+                            value={customTheme.fontFamily}
+                            onChange={(fontFamily) =>
+                              handleCustomThemeUpdate({ fontFamily })
+                            }
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -648,6 +671,21 @@ export function BioPageBuilder({
                       />
                     </div>
                   </div>
+                </TabsContent>
+
+                {/* Analytics Tab */}
+                <TabsContent value="analytics" className="space-y-4 mt-0">
+                  {existingPage?.id ? (
+                    <BioAnalyticsDashboard bioPageId={existingPage.id} />
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg bg-muted/20">
+                      <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-40" />
+                      <p className="font-medium">Save the bio page first</p>
+                      <p className="text-sm mt-1">
+                        Analytics will be available after saving
+                      </p>
+                    </div>
+                  )}
                 </TabsContent>
               </Tabs>
             </CardContent>
