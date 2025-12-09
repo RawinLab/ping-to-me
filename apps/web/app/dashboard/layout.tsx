@@ -130,7 +130,7 @@ const manageItems: NavItem[] = [
   },
   {
     title: "Audit Logs",
-    href: "/dashboard/audit",
+    href: "/dashboard/settings/audit-logs",
     icon: History,
     description: "Security & activity logs",
     requirePermission: (p) => p.canAccessAudit(),
