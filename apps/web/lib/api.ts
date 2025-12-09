@@ -9,6 +9,12 @@ let accessToken: string | null = null;
 let currentOrganizationId: string | null = null;
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
+let onAuthFailure: (() => void) | null = null;
+
+// Set callback for auth failure (called when refresh token is invalid)
+export const setOnAuthFailure = (callback: () => void) => {
+  onAuthFailure = callback;
+};
 
 // Subscribe to token refresh
 const subscribeTokenRefresh = (callback: (token: string) => void) => {
@@ -94,6 +100,12 @@ api.interceptors.response.use(
         // Refresh failed - clear token and reject all queued requests
         setAccessToken(null);
         refreshSubscribers = [];
+
+        // Call auth failure callback to trigger logout and redirect
+        if (onAuthFailure) {
+          onAuthFailure();
+        }
+
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

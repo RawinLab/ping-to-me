@@ -9,7 +9,13 @@ import {
   ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { apiRequest, initializeAuth, api, setAccessToken } from "@/lib/api";
+import {
+  apiRequest,
+  initializeAuth,
+  api,
+  setAccessToken,
+  setOnAuthFailure,
+} from "@/lib/api";
 
 interface User {
   id: string;
@@ -54,7 +60,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const initRef = useRef(false);
   const router = useRouter();
 
+  // Handle auth failure (token expired/invalid) - force logout and redirect
+  const handleAuthFailure = () => {
+    setAccessToken(null);
+    setUser(null);
+    setMemberships([]);
+    setCurrentOrgId(null);
+    setSessionToken(null);
+    // Clear refresh token cookie
+    document.cookie =
+      "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    // Force redirect to login page
+    window.location.href = "/login";
+  };
+
   useEffect(() => {
+    // Register auth failure callback
+    setOnAuthFailure(handleAuthFailure);
+
     // Prevent double initialization in strict mode
     if (initRef.current) return;
     initRef.current = true;
