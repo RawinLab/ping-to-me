@@ -346,9 +346,9 @@ export default function AuditLogsPage() {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [page, setPage] = useState(0);
-  const [actionFilter, setActionFilter] = useState<string>("");
-  const [resourceFilter, setResourceFilter] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [actionFilter, setActionFilter] = useState<string>("all");
+  const [resourceFilter, setResourceFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [datePreset, setDatePreset] = useState<number>(7); // Default to last 7 days
   const [startDate, setStartDate] = useState<string>("");
@@ -360,9 +360,9 @@ export default function AuditLogsPage() {
     const params = new URLSearchParams();
     params.set("limit", String(limit));
     params.set("offset", String(page * limit));
-    if (actionFilter) params.set("action", actionFilter);
-    if (resourceFilter) params.set("resource", resourceFilter);
-    if (statusFilter) params.set("status", statusFilter);
+    if (actionFilter && actionFilter !== "all") params.set("action", actionFilter);
+    if (resourceFilter && resourceFilter !== "all") params.set("resource", resourceFilter);
+    if (statusFilter && statusFilter !== "all") params.set("status", statusFilter);
     if (searchQuery) params.set("search", searchQuery);
 
     // Handle date range
@@ -421,9 +421,9 @@ export default function AuditLogsPage() {
     try {
       const params = new URLSearchParams();
       params.set("format", format);
-      if (actionFilter) params.set("action", actionFilter);
-      if (resourceFilter) params.set("resource", resourceFilter);
-      if (statusFilter) params.set("status", statusFilter);
+      if (actionFilter && actionFilter !== "all") params.set("action", actionFilter);
+      if (resourceFilter && resourceFilter !== "all") params.set("resource", resourceFilter);
+      if (statusFilter && statusFilter !== "all") params.set("status", statusFilter);
       if (datePreset > 0) {
         params.set("startDate", subDays(new Date(), datePreset).toISOString());
         params.set("endDate", new Date().toISOString());
@@ -459,9 +459,9 @@ export default function AuditLogsPage() {
   };
 
   const clearFilters = () => {
-    setActionFilter("");
-    setResourceFilter("");
-    setStatusFilter("");
+    setActionFilter("all");
+    setResourceFilter("all");
+    setStatusFilter("all");
     setSearchQuery("");
     setDatePreset(7);
     setStartDate("");
@@ -471,9 +471,9 @@ export default function AuditLogsPage() {
 
   const totalPages = Math.ceil(total / limit);
   const hasFilters =
-    actionFilter ||
-    resourceFilter ||
-    statusFilter ||
+    (actionFilter && actionFilter !== "all") ||
+    (resourceFilter && resourceFilter !== "all") ||
+    (statusFilter && statusFilter !== "all") ||
     searchQuery ||
     datePreset !== 7;
 
@@ -584,7 +584,7 @@ export default function AuditLogsPage() {
                       <SelectValue placeholder="All Actions" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Actions</SelectItem>
+                      <SelectItem value="all">All Actions</SelectItem>
                       {Object.entries(ACTION_CONFIG)
                         .slice(0, 20)
                         .map(([key, config]) => {
@@ -612,7 +612,7 @@ export default function AuditLogsPage() {
                       <SelectValue placeholder="All Resources" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Resources</SelectItem>
+                      <SelectItem value="all">All Resources</SelectItem>
                       {Object.entries(RESOURCE_CONFIG).map(([key, config]) => {
                         const Icon = config.icon;
                         return (
@@ -635,7 +635,7 @@ export default function AuditLogsPage() {
                       <SelectValue placeholder="All Status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Status</SelectItem>
+                      <SelectItem value="all">All Status</SelectItem>
                       {Object.entries(STATUS_CONFIG).map(([key, config]) => {
                         const Icon = config.icon;
                         return (

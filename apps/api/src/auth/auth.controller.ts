@@ -156,15 +156,17 @@ export class AuthController {
     return req.user;
   }
 
-  @UseGuards(AuthGuard("jwt"))
   @Post("logout")
   async logout(@Req() req, @Res({ passthrough: true }) res: Response) {
     // Get current session from refresh token cookie
     const refreshToken = req.cookies?.refresh_token;
+    let userId: string | null = null;
+
     if (refreshToken) {
       try {
         const session = await this.sessionService.findSessionByToken(refreshToken);
         if (session) {
+          userId = session.userId;
           await this.sessionService.invalidateSession(session.id);
         }
       } catch (error) {
@@ -173,9 +175,10 @@ export class AuthController {
       }
     }
 
-    // Audit log: Logout
-    if (req.user?.id) {
-      await this.auditService.logSecurityEvent(req.user.id, "auth.logout", {
+    // Audit log: Logout (use userId from session if available)
+    const auditUserId = req.user?.id || userId;
+    if (auditUserId) {
+      await this.auditService.logSecurityEvent(auditUserId, "auth.logout", {
         status: "success",
       });
     }
