@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import {
   Card,
   CardContent,
@@ -40,18 +41,19 @@ import { domainsApi, Domain, DomainStatus, SslStatus } from "@/lib/api/domains";
 
 export default function DomainsPage() {
   const router = useRouter();
+  const { currentOrg, isLoading: orgLoading } = useOrganization();
   const [domains, setDomains] = useState<Domain[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<DomainStatus | 'all'>('all');
-  // Mock orgId for now, in real app get from context/auth
-  const orgId = "123e4567-e89b-12d3-a456-426614174000";
 
   useEffect(() => {
-    fetchDomains();
-  }, []);
+    if (!orgLoading && currentOrg) {
+      fetchDomains();
+    }
+  }, [orgLoading, currentOrg]);
 
   // Auto-refresh for pending domains every 30 seconds
   useEffect(() => {
@@ -69,8 +71,9 @@ export default function DomainsPage() {
   }, [domains, loading]);
 
   const fetchDomains = async () => {
+    if (!currentOrg?.id) return;
     try {
-      const res = await domainsApi.list(orgId);
+      const res = await domainsApi.list(currentOrg.id);
       setDomains(res);
     } catch (err) {
       console.error("Failed to load domains", err);
@@ -80,10 +83,11 @@ export default function DomainsPage() {
   };
 
   const handleDelete = async (id: string, hostname: string) => {
+    if (!currentOrg?.id) return;
     if (!confirm(`Are you sure you want to delete ${hostname}?`)) return;
     setActionLoading(id);
     try {
-      await domainsApi.delete(orgId, id);
+      await domainsApi.delete(currentOrg.id, id);
       fetchDomains();
     } catch (err) {
       alert("Failed to delete domain");
@@ -93,9 +97,10 @@ export default function DomainsPage() {
   };
 
   const handleVerify = async (id: string, verificationType?: "txt" | "cname") => {
+    if (!currentOrg?.id) return;
     setActionLoading(id);
     try {
-      await domainsApi.verify(orgId, id, verificationType);
+      await domainsApi.verify(currentOrg.id, id, verificationType);
       fetchDomains();
     } catch (err: any) {
       alert(err?.message || "Verification failed. Please check your DNS records.");
@@ -105,10 +110,11 @@ export default function DomainsPage() {
   };
 
   const handleSetDefault = async (id: string, hostname: string) => {
+    if (!currentOrg?.id) return;
     if (!confirm(`Set ${hostname} as your default domain?`)) return;
     setActionLoading(id);
     try {
-      await domainsApi.setDefault(orgId, id);
+      await domainsApi.setDefault(currentOrg.id, id);
       fetchDomains();
     } catch (err) {
       alert("Failed to set default domain");
@@ -118,9 +124,10 @@ export default function DomainsPage() {
   };
 
   const handleProvisionSsl = async (id: string) => {
+    if (!currentOrg?.id) return;
     setActionLoading(id);
     try {
-      await domainsApi.provisionSsl(orgId, id);
+      await domainsApi.provisionSsl(currentOrg.id, id);
       fetchDomains();
     } catch (err) {
       alert("Failed to provision SSL certificate");
@@ -130,9 +137,10 @@ export default function DomainsPage() {
   };
 
   const handleToggleAutoRenew = async (id: string, autoRenew: boolean) => {
+    if (!currentOrg?.id) return;
     setActionLoading(id);
     try {
-      await domainsApi.updateSsl(orgId, id, autoRenew);
+      await domainsApi.updateSsl(currentOrg.id, id, autoRenew);
       fetchDomains();
     } catch (err) {
       alert("Failed to update SSL settings");
@@ -187,7 +195,7 @@ export default function DomainsPage() {
     }
   };
 
-  if (loading) {
+  if (loading || orgLoading || !currentOrg) {
     return (
       <div className="p-6 lg:p-8">
         <div className="max-w-5xl mx-auto">
@@ -218,7 +226,7 @@ export default function DomainsPage() {
               Connect your own domains to brand your short links.
             </p>
           </div>
-          <AddDomainModal orgId={orgId} onSuccess={fetchDomains}>
+          <AddDomainModal orgId={currentOrg.id} onSuccess={fetchDomains}>
             <Button className="h-10 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
               <Plus className="mr-2 h-4 w-4" /> Add Domain
             </Button>
@@ -324,7 +332,7 @@ export default function DomainsPage() {
                   Add your own domain to create branded short links and improve
                   trust with your audience.
                 </p>
-                <AddDomainModal orgId={orgId} onSuccess={fetchDomains}>
+                <AddDomainModal orgId={currentOrg.id} onSuccess={fetchDomains}>
                   <Button className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
                     <Plus className="mr-2 h-4 w-4" /> Add Your First Domain
                   </Button>

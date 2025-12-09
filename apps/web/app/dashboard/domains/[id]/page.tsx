@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import {
   Card,
   CardContent,
@@ -58,21 +59,20 @@ export default function DomainDetailsPage() {
     topLinks: { id: string; slug: string; title: string | null; clicks: number }[];
   } | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
-
-  // Mock orgId for now, in real app get from context/auth
-  const orgId = "123e4567-e89b-12d3-a456-426614174000";
+  const { currentOrg, isLoading: orgLoading } = useOrganization();
 
   useEffect(() => {
-    if (domainId) {
+    if (domainId && !orgLoading && currentOrg) {
       fetchDomain();
       fetchLinks();
       fetchAnalytics();
     }
-  }, [domainId, currentPage]);
+  }, [domainId, currentPage, orgLoading, currentOrg]);
 
   const fetchDomain = async () => {
+    if (!currentOrg?.id) return;
     try {
-      const res = await domainsApi.get(orgId, domainId);
+      const res = await domainsApi.get(currentOrg.id, domainId);
       setDomain(res);
     } catch (err) {
       console.error("Failed to load domain", err);
@@ -84,9 +84,10 @@ export default function DomainDetailsPage() {
   };
 
   const fetchLinks = async () => {
+    if (!currentOrg?.id) return;
     setLinksLoading(true);
     try {
-      const res = await domainsApi.getLinks(orgId, domainId, {
+      const res = await domainsApi.getLinks(currentOrg.id, domainId, {
         page: currentPage,
         limit: 10,
       });
@@ -100,9 +101,10 @@ export default function DomainDetailsPage() {
   };
 
   const fetchAnalytics = async () => {
+    if (!currentOrg?.id) return;
     setAnalyticsLoading(true);
     try {
-      const res = await domainsApi.getAnalytics(orgId, domainId);
+      const res = await domainsApi.getAnalytics(currentOrg.id, domainId);
       setAnalytics(res);
     } catch (err) {
       console.error("Failed to load analytics", err);
@@ -112,10 +114,10 @@ export default function DomainDetailsPage() {
   };
 
   const handleVerify = async () => {
-    if (!domain) return;
+    if (!domain || !currentOrg?.id) return;
     setActionLoading(true);
     try {
-      await domainsApi.verify(orgId, domainId, domain.verificationType);
+      await domainsApi.verify(currentOrg.id, domainId, domain.verificationType);
       fetchDomain();
     } catch (err: any) {
       alert(err?.message || "Verification failed. Please check your DNS records.");
@@ -125,9 +127,10 @@ export default function DomainDetailsPage() {
   };
 
   const handleProvisionSsl = async () => {
+    if (!currentOrg?.id) return;
     setActionLoading(true);
     try {
-      await domainsApi.provisionSsl(orgId, domainId);
+      await domainsApi.provisionSsl(currentOrg.id, domainId);
       fetchDomain();
     } catch (err) {
       alert("Failed to provision SSL certificate");
@@ -137,9 +140,10 @@ export default function DomainDetailsPage() {
   };
 
   const handleToggleAutoRenew = async (autoRenew: boolean) => {
+    if (!currentOrg?.id) return;
     setActionLoading(true);
     try {
-      await domainsApi.updateSsl(orgId, domainId, autoRenew);
+      await domainsApi.updateSsl(currentOrg.id, domainId, autoRenew);
       fetchDomain();
     } catch (err) {
       alert("Failed to update SSL settings");
@@ -149,11 +153,11 @@ export default function DomainDetailsPage() {
   };
 
   const handleSetDefault = async () => {
-    if (!domain) return;
+    if (!domain || !currentOrg?.id) return;
     if (!confirm(`Set ${domain.hostname} as your default domain?`)) return;
     setActionLoading(true);
     try {
-      await domainsApi.setDefault(orgId, domainId);
+      await domainsApi.setDefault(currentOrg.id, domainId);
       fetchDomain();
     } catch (err) {
       alert("Failed to set default domain");
@@ -163,7 +167,7 @@ export default function DomainDetailsPage() {
   };
 
   const handleDelete = async () => {
-    if (!domain) return;
+    if (!domain || !currentOrg?.id) return;
     if (
       !confirm(
         `Are you sure you want to delete ${domain.hostname}? This cannot be undone.`
@@ -172,7 +176,7 @@ export default function DomainDetailsPage() {
       return;
     setActionLoading(true);
     try {
-      await domainsApi.delete(orgId, domainId);
+      await domainsApi.delete(currentOrg.id, domainId);
       router.push("/dashboard/domains");
     } catch (err) {
       alert("Failed to delete domain");
@@ -216,7 +220,7 @@ export default function DomainDetailsPage() {
     }
   };
 
-  if (loading) {
+  if (loading || orgLoading) {
     return (
       <div className="p-6 lg:p-8">
         <div className="max-w-5xl mx-auto">
