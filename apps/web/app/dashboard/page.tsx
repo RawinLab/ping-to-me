@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { subDays, startOfDay, endOfDay } from "date-fns";
 import {
   Button,
   Card,
@@ -23,7 +24,6 @@ import {
   TrendingDown,
   ArrowUpRight,
   Plus,
-  BarChart3,
   QrCode,
   FileText,
   Globe,
@@ -34,22 +34,47 @@ import {
   ChevronRight,
   ExternalLink,
 } from "lucide-react";
-import { EngagementsChart } from "@/components/dashboard";
+import {
+  EngagementsChart,
+  DateRangePicker,
+  TopBrowsersWidget,
+  TopOSWidget,
+  DashboardSkeleton,
+} from "@/components/dashboard";
 import { LiveClickCounter } from "@/components/dashboard/LiveClickCounter";
+
+interface DateRange {
+  start: Date;
+  end: Date;
+}
+
+// Default date range: last 30 days
+const getDefaultDateRange = (): DateRange => ({
+  start: startOfDay(subDays(new Date(), 29)),
+  end: endOfDay(new Date()),
+});
 
 export default function DashboardPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange);
+
+  // Calculate days from date range for API call
+  const days = useMemo(() => {
+    const diffTime = Math.abs(dateRange.end.getTime() - dateRange.start.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays || 30;
+  }, [dateRange]);
 
   useEffect(() => {
     fetchMetrics();
-  }, [refreshKey]);
+  }, [refreshKey, days]);
 
   const fetchMetrics = async () => {
     try {
       setLoading(true);
-      const res = await apiRequest("/analytics/dashboard");
+      const res = await apiRequest(`/analytics/dashboard?days=${days}`);
       setMetrics(res);
     } catch (err) {
       console.error("Failed to fetch dashboard metrics");
@@ -99,6 +124,11 @@ export default function DashboardPage() {
         )
       : 0;
 
+  // Show skeleton loading state
+  if (loading && !metrics) {
+    return <DashboardSkeleton />;
+  }
+
   return (
     <div className="p-6 lg:p-8 space-y-8">
       {/* Welcome Section */}
@@ -120,7 +150,13 @@ export default function DashboardPage() {
             Here&apos;s what&apos;s happening with your links today.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Date Range Picker */}
+          <DateRangePicker
+            value={dateRange}
+            onChange={setDateRange}
+            className="h-9"
+          />
           <ImportLinksModal onSuccess={() => setRefreshKey((prev) => prev + 1)}>
             <Button
               variant="outline"
@@ -376,6 +412,20 @@ export default function DashboardPage() {
           <LiveClickCounter dashboard={true} showFeed={true} />
         </div>
       </div>
+
+      {/* Browser & OS Summary */}
+      {metrics && (metrics.browsers || metrics.os) && (
+        <div className="grid gap-4 md:grid-cols-2">
+          <TopBrowsersWidget
+            browsers={metrics.browsers || {}}
+            loading={loading}
+          />
+          <TopOSWidget
+            os={metrics.os || {}}
+            loading={loading}
+          />
+        </div>
+      )}
 
       {/* Recent Links */}
       <Card className="border-slate-200 shadow-sm">
