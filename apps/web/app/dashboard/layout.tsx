@@ -18,6 +18,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
+  Skeleton,
 } from "@pingtome/ui";
 import {
   LayoutDashboard,
@@ -57,6 +58,7 @@ import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { apiRequest, setAccessToken, setCurrentOrganizationId } from "@/lib/api";
 import { usePermission } from "@/hooks/usePermission";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NavItem {
   title: string;
@@ -556,11 +558,74 @@ function DashboardLayoutInner({
   );
 }
 
+// Loading skeleton for dashboard
+function DashboardLoadingSkeleton() {
+  return (
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+      {/* Sidebar Skeleton */}
+      <aside className="hidden md:flex sticky top-0 left-0 h-screen w-72 bg-white border-r border-slate-200/80 flex-col">
+        <div className="p-5 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <Skeleton className="w-10 h-10 rounded-xl" />
+            <Skeleton className="h-6 w-24" />
+          </div>
+        </div>
+        <div className="p-4">
+          <Skeleton className="w-full h-11 rounded-xl" />
+        </div>
+        <nav className="flex-1 px-3 py-2 space-y-2">
+          {[...Array(8)].map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full rounded-xl" />
+          ))}
+        </nav>
+      </aside>
+
+      {/* Main Content Skeleton */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="sticky top-0 z-30 h-16 bg-white/80 backdrop-blur-xl border-b border-slate-200/80 flex items-center justify-between px-4 md:px-6">
+          <Skeleton className="h-10 w-64 rounded-xl" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-9 w-9 rounded-lg" />
+            <Skeleton className="h-9 w-9 rounded-lg" />
+            <Skeleton className="h-8 w-8 rounded-full" />
+          </div>
+        </header>
+        <main className="flex-1 p-4 md:p-6">
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-48" />
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton key={i} className="h-32 rounded-xl" />
+              ))}
+            </div>
+            <Skeleton className="h-64 rounded-xl" />
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { loading, user } = useAuth();
+  const router = useRouter();
+
+  // Redirect to login if not authenticated (after loading completes)
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [loading, user, router]);
+
+  // Show loading skeleton while auth is initializing or redirecting
+  if (loading || !user) {
+    return <DashboardLoadingSkeleton />;
+  }
+
   return (
     <OrganizationProvider>
       <DashboardLayoutInner>{children}</DashboardLayoutInner>
