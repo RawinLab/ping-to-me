@@ -201,27 +201,42 @@ pnpm --filter web test
 
 ### E2E Tests (Playwright)
 
-The project supports two E2E testing modes:
+All E2E tests use real API calls against a seeded test database.
 
-#### Mode 1: Mocked API (Default)
-Tests run with mocked API responses - fast and isolated.
-
-```bash
-cd apps/web
-npx playwright test
-npx playwright test --ui       # Interactive UI mode
-```
-
-#### Mode 2: Real Database
-Tests run against a real database with seeded test data.
+#### Prerequisites
 
 ```bash
-# 1. Seed the database
+# 1. Ensure database is running
+docker-compose up -d
+
+# 2. Seed the test data
 pnpm --filter @pingtome/database db:seed
 
-# 2. Run tests with real database
+# 3. Start development servers
+pnpm dev
+```
+
+#### Run Tests
+
+```bash
 cd apps/web
-E2E_USE_REAL_DB=true npx playwright test --project=real-db
+
+# Run all tests (uses existing seeded data)
+npx playwright test
+
+# Run with fresh seed before tests
+E2E_SEED_DB=true npx playwright test
+
+# Interactive UI mode
+npx playwright test --ui
+
+# Run specific test file
+npx playwright test e2e/dashboard.spec.ts
+
+# Run with specific browser
+npx playwright test --project=chromium
+npx playwright test --project=firefox
+npx playwright test --project=webkit
 ```
 
 #### View Test Report
