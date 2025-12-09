@@ -8,12 +8,18 @@ export const api = axios.create({
 let accessToken: string | null = null;
 let currentOrganizationId: string | null = null;
 let isRefreshing = false;
+let isAuthFailed = false; // Flag to prevent API calls after auth failure
 let refreshSubscribers: ((token: string) => void)[] = [];
 let onAuthFailure: (() => void) | null = null;
 
 // Set callback for auth failure (called when refresh token is invalid)
 export const setOnAuthFailure = (callback: () => void) => {
   onAuthFailure = callback;
+};
+
+// Reset auth failed state (called after successful login)
+export const resetAuthFailedState = () => {
+  isAuthFailed = false;
 };
 
 // Subscribe to token refresh
@@ -30,6 +36,11 @@ const onRefreshed = (token: string) => {
 // Request interceptor to attach access token and organization ID
 api.interceptors.request.use(
   (config: any) => {
+    // If auth has failed, reject immediately to prevent infinite loops
+    if (isAuthFailed) {
+      return Promise.reject(new Error("Auth failed - redirecting to login"));
+    }
+
     const token = getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -101,7 +112,10 @@ api.interceptors.response.use(
         setAccessToken(null);
         refreshSubscribers = [];
 
-        // Call auth failure callback to trigger logout and redirect
+        // Set auth failed flag to prevent further API calls
+        isAuthFailed = true;
+
+        // Call auth failure callback to trigger logout and redirect (only once)
         if (onAuthFailure) {
           onAuthFailure();
         }

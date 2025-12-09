@@ -15,6 +15,7 @@ import {
   api,
   setAccessToken,
   setOnAuthFailure,
+  resetAuthFailedState,
 } from "@/lib/api";
 
 interface User {
@@ -179,6 +180,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = async (data: { email: string; password: string }) => {
+    // Reset auth failed state in case user is logging in again after session expired
+    resetAuthFailedState();
+
     const res = await api.post("/auth/login", data);
 
     if (res.data.requires2FA) {
@@ -199,6 +203,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!sessionToken) {
       throw new Error("No session token available");
     }
+
+    // Reset auth failed state
+    resetAuthFailedState();
 
     const res = await api.post("/auth/login/2fa", {
       sessionToken,
