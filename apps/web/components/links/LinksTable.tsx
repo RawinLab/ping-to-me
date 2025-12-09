@@ -58,6 +58,7 @@ import { EditLinkModal } from "./EditLinkModal";
 import { FilterValues } from "./FiltersModal";
 import { usePermission } from "@/hooks/usePermission";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface LinksTableProps {
   limit?: number;
@@ -140,6 +141,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
       isEditor,
       isAdminOrAbove,
     } = usePermission();
+    const { currentOrg, isLoading: orgLoading } = useOrganization();
 
     // Helper to check if user can modify a specific link
     const canModifyLink = (link: LinkResponse): boolean => {
@@ -154,13 +156,17 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
     };
 
     useEffect(() => {
-      fetchFilters();
-      fetchLinks();
-    }, []);
+      if (!orgLoading && currentOrg) {
+        fetchFilters();
+        fetchLinks();
+      }
+    }, [orgLoading, currentOrg]);
 
     useEffect(() => {
-      fetchLinks();
-    }, [searchQuery, statusFilter, dateRange, tagFilters]);
+      if (!orgLoading && currentOrg) {
+        fetchLinks();
+      }
+    }, [searchQuery, statusFilter, dateRange, tagFilters, orgLoading, currentOrg]);
 
     // Notify parent when selection changes
     useEffect(() => {
@@ -168,6 +174,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
     }, [selectedIds, onSelectionChange]);
 
     const fetchFilters = async () => {
+      if (!currentOrg) return;
       try {
         const tagsRes = await apiRequest("/tags");
         setTags(tagsRes);
@@ -177,6 +184,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
     };
 
     const fetchLinks = async () => {
+      if (!currentOrg) return;
       setLoading(true);
       try {
         const query = new URLSearchParams();

@@ -53,6 +53,7 @@ import { NotificationCenter } from "@/components/notifications/NotificationCente
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { apiRequest } from "@/lib/api";
 import { usePermission } from "@/hooks/usePermission";
+import { OrganizationProvider } from "@/contexts/OrganizationContext";
 
 interface NavItem {
   title: string;
@@ -154,7 +155,7 @@ const developerItems: NavItem[] = [
   },
 ];
 
-export default function DashboardLayout({
+function DashboardLayoutInner({
   children,
 }: {
   children: React.ReactNode;
@@ -526,5 +527,17 @@ export default function DashboardLayout({
         </main>
       </div>
     </div>
+  );
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <OrganizationProvider>
+      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+    </OrganizationProvider>
   );
 }

@@ -13,6 +13,7 @@ import {
   Progress,
 } from "@pingtome/ui";
 import { apiRequest } from "../../lib/api";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { LinksTable } from "../../components/links/LinksTable";
 import { ImportLinksModal } from "../../components/links/ImportLinksModal";
 import {
@@ -59,6 +60,7 @@ export default function DashboardPage() {
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange);
+  const { currentOrg, isLoading: orgLoading } = useOrganization();
 
   // Calculate days from date range for API call
   const days = useMemo(() => {
@@ -68,10 +70,14 @@ export default function DashboardPage() {
   }, [dateRange]);
 
   useEffect(() => {
-    fetchMetrics();
-  }, [refreshKey, days]);
+    // Wait for organization to be loaded before fetching
+    if (!orgLoading && currentOrg) {
+      fetchMetrics();
+    }
+  }, [refreshKey, days, orgLoading, currentOrg]);
 
   const fetchMetrics = async () => {
+    if (!currentOrg) return;
     try {
       setLoading(true);
       const res = await apiRequest(`/analytics/dashboard?days=${days}`);

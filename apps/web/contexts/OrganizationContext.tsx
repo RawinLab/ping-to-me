@@ -8,7 +8,7 @@ import {
   useCallback,
   ReactNode,
 } from "react";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, setCurrentOrganizationId } from "@/lib/api";
 import { useAuth } from "./AuthContext";
 
 export interface Organization {
@@ -83,6 +83,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     if (!user) {
       setOrganizations([]);
       setCurrentOrgState(null);
+      setCurrentOrganizationId(null);
       setIsLoading(false);
       return;
     }
@@ -98,8 +99,10 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
       if (savedOrg) {
         setCurrentOrgState(savedOrg);
+        setCurrentOrganizationId(savedOrg.id);
       } else if (orgs.length > 0) {
         setCurrentOrgState(orgs[0]);
+        setCurrentOrganizationId(orgs[0].id);
         localStorage.setItem(STORAGE_KEY, orgs[0].id);
       }
     } catch (err: any) {
@@ -130,6 +133,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   // Set current organization
   const setCurrentOrg = useCallback((org: Organization) => {
     setCurrentOrgState(org);
+    setCurrentOrganizationId(org.id);
     localStorage.setItem(STORAGE_KEY, org.id);
   }, []);
 

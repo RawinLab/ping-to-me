@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import {
   Card,
   CardContent,
@@ -54,8 +55,10 @@ export default function AnalyticsPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState<"7d" | "30d" | "90d">("30d");
+  const { currentOrg, isLoading: orgLoading } = useOrganization();
 
   const fetchAnalytics = useCallback(async () => {
+    if (!currentOrg) return;
     try {
       setLoading(true);
       const days = dateRange === "7d" ? 7 : dateRange === "30d" ? 30 : 90;
@@ -66,11 +69,13 @@ export default function AnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  }, [dateRange]);
+  }, [dateRange, currentOrg]);
 
   useEffect(() => {
-    fetchAnalytics();
-  }, [fetchAnalytics]);
+    if (!orgLoading && currentOrg) {
+      fetchAnalytics();
+    }
+  }, [fetchAnalytics, orgLoading, currentOrg]);
 
   const handleExport = async (format: 'csv' | 'pdf' = 'csv') => {
     try {

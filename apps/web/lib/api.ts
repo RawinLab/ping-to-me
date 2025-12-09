@@ -6,6 +6,7 @@ export const api = axios.create({
 });
 
 let accessToken: string | null = null;
+let currentOrganizationId: string | null = null;
 let isRefreshing = false;
 let refreshSubscribers: ((token: string) => void)[] = [];
 
@@ -20,13 +21,20 @@ const onRefreshed = (token: string) => {
   refreshSubscribers = [];
 };
 
-// Request interceptor to attach access token
+// Request interceptor to attach access token and organization ID
 api.interceptors.request.use(
   (config: any) => {
     const token = getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Attach organization ID header for RBAC
+    const orgId = getCurrentOrganizationId();
+    if (orgId) {
+      config.headers["X-Organization-Id"] = orgId;
+    }
+
     return config;
   },
   (error: any) => Promise.reject(error),
@@ -100,6 +108,12 @@ export const setAccessToken = (token: string | null) => {
 };
 
 export const getAccessToken = () => accessToken;
+
+export const setCurrentOrganizationId = (orgId: string | null) => {
+  currentOrganizationId = orgId;
+};
+
+export const getCurrentOrganizationId = () => currentOrganizationId;
 
 // Initialize auth - call this before any API requests
 export const initializeAuth = async (): Promise<boolean> => {

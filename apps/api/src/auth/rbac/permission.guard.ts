@@ -258,6 +258,14 @@ export class PermissionGuard implements CanActivate {
    * 3. Query params: organizationId, orgId
    */
   private extractOrganizationId(request: any): string | undefined {
+    // Try X-Organization-Id header first (preferred method from frontend)
+    const headerOrgId =
+      request.headers?.["x-organization-id"] ||
+      request.headers?.["X-Organization-Id"];
+    if (headerOrgId) {
+      return headerOrgId;
+    }
+
     // Try route params
     const orgId =
       request.params?.orgId ||
