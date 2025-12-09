@@ -251,6 +251,20 @@ export function MyComponent() {
 - API uses NestJS guards for auth and RBAC
 - Frontend uses axios with token refresh interceptor
 
+## Architecture Rules
+
+> **IMPORTANT: Strict Backend Separation**
+
+- **DO NOT** use Next.js API routes, Server Actions, or any Next.js backend features for database access or business logic
+- **DO NOT** import `@pingtome/database` or Prisma client in `apps/web`
+- **ALL** database operations and backend logic MUST go through the NestJS API (`apps/api`)
+- `apps/web` is a **frontend-only** application - it communicates with `apps/api` via HTTP requests using axios
+- This separation ensures:
+  - Clear API contracts between frontend and backend
+  - Consistent authentication/authorization via NestJS guards
+  - Proper audit logging and RBAC enforcement
+  - Easier testing and maintenance
+
 ---
 
 ## Reference Documents
