@@ -34,3 +34,16 @@ yarn-error.log*
 
 # Cloudflare
 .wrangler
+
+# Test Results & Coverage
+coverage/
+apps/api/coverage/
+apps/web/playwright-report/
+apps/web/test-results/
+*.tsbuildinfo
+
+# Generated Documentation
+generated-docs/
+
+# Backup files
+*.bak
