@@ -79,7 +79,17 @@ api.interceptors.response.use(
     return response;
   },
   async (error: any) => {
+    // If auth has already failed, just reject immediately without any processing
+    if (isAuthFailed) {
+      return Promise.reject(error);
+    }
+
     const originalRequest = error.config;
+
+    // If no config (e.g., from request interceptor rejection), just reject
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
 
     // If 401 and not already retrying
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -90,6 +100,11 @@ api.interceptors.response.use(
 
       originalRequest._retry = true;
 
+      // If auth already failed while we were waiting, don't try to refresh
+      if (isAuthFailed) {
+        return Promise.reject(error);
+      }
+
       // If already refreshing, queue the request
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -98,8 +113,8 @@ api.interceptors.response.use(
               originalRequest.headers.Authorization = `Bearer ${token}`;
               resolve(api(originalRequest));
             },
-            (error: any) => {
-              reject(error);
+            (err: any) => {
+              reject(err);
             },
           );
         });
@@ -161,6 +176,7 @@ export const setCurrentOrganizationId = (orgId: string | null) => {
 export const getCurrentOrganizationId = () => currentOrganizationId;
 
 // Initialize auth - call this before any API requests
+// Note: This uses axios directly (not api instance) to avoid triggering interceptors
 export const initializeAuth = async (): Promise<boolean> => {
   if (accessToken) return true;
 
@@ -173,9 +189,13 @@ export const initializeAuth = async (): Promise<boolean> => {
     setAccessToken(res.data.accessToken);
     return true;
   } catch {
+    // Don't set isAuthFailed here - user may just not be logged in yet
     return false;
   }
 };
+
+// Check if auth has failed (for components to check before making API calls)
+export const hasAuthFailed = () => isAuthFailed;
 
 export const apiRequest = async (
   endpoint: string,
