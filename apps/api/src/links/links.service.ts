@@ -342,7 +342,10 @@ export class LinksService {
     data: LinkResponse[];
     meta: { total: number; page: number; limit: number; totalPages: number };
   }> {
-    const { page, limit, tag, campaignId, folderId, search, status, startDate, endDate } = params;
+    const { tag, campaignId, folderId, search, status, startDate, endDate } = params;
+    // Ensure page and limit are valid numbers with defaults
+    const page = Number.isFinite(params.page) && params.page > 0 ? params.page : 1;
+    const limit = Number.isFinite(params.limit) && params.limit > 0 ? Math.min(params.limit, 100) : 10;
     const skip = (page - 1) * limit;
 
     const where: any = {
