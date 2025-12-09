@@ -509,7 +509,7 @@ async function main() {
 
   // Clean usage events
   await prisma.usageEvent.deleteMany({
-    where: { organization: { slug: { startsWith: "e2e-" } } },
+    where: { organizationId: { in: Object.values(TEST_IDS.organizations) } },
   });
 
   // Clean audit logs
