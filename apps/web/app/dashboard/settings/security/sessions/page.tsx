@@ -30,8 +30,8 @@ import {
   Clock,
 } from "lucide-react";
 
-const getDeviceIcon = (deviceType: string) => {
-  const type = deviceType.toLowerCase();
+const getDeviceIcon = (deviceType?: string) => {
+  const type = (deviceType || "").toLowerCase();
   if (type.includes("mobile") || type.includes("phone")) {
     return Smartphone;
   }
@@ -41,7 +41,8 @@ const getDeviceIcon = (deviceType: string) => {
   return Monitor;
 };
 
-const maskIpAddress = (ip: string): string => {
+const maskIpAddress = (ip?: string): string => {
+  if (!ip) return "Unknown";
   const parts = ip.split(".");
   if (parts.length === 4) {
     return `${parts[0]}.${parts[1]}.xxx.xxx`;
@@ -54,7 +55,8 @@ const maskIpAddress = (ip: string): string => {
   return ip;
 };
 
-const formatRelativeTime = (dateString: string): string => {
+const formatRelativeTime = (dateString?: string): string => {
+  if (!dateString) return "Unknown";
   const date = new Date(dateString);
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
