@@ -59,10 +59,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
   const initRef = useRef(false);
+  const isRedirectingRef = useRef(false); // Prevent multiple redirects
   const router = useRouter();
 
   // Handle auth failure (token expired/invalid) - force logout and redirect
   const handleAuthFailure = () => {
+    // Prevent multiple redirects
+    if (isRedirectingRef.current) {
+      return;
+    }
+    isRedirectingRef.current = true;
+
     setAccessToken(null);
     setUser(null);
     setMemberships([]);
@@ -182,6 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (data: { email: string; password: string }) => {
     // Reset auth failed state in case user is logging in again after session expired
     resetAuthFailedState();
+    isRedirectingRef.current = false;
 
     const res = await api.post("/auth/login", data);
 
@@ -206,6 +214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Reset auth failed state
     resetAuthFailedState();
+    isRedirectingRef.current = false;
 
     const res = await api.post("/auth/login/2fa", {
       sessionToken,

@@ -9,7 +9,10 @@ let accessToken: string | null = null;
 let currentOrganizationId: string | null = null;
 let isRefreshing = false;
 let isAuthFailed = false; // Flag to prevent API calls after auth failure
-let refreshSubscribers: ((token: string) => void)[] = [];
+let refreshSubscribers: {
+  resolve: (token: string) => void;
+  reject: (error: any) => void;
+}[] = [];
 let onAuthFailure: (() => void) | null = null;
 
 // Set callback for auth failure (called when refresh token is invalid)
@@ -23,13 +26,22 @@ export const resetAuthFailedState = () => {
 };
 
 // Subscribe to token refresh
-const subscribeTokenRefresh = (callback: (token: string) => void) => {
-  refreshSubscribers.push(callback);
+const subscribeTokenRefresh = (
+  resolve: (token: string) => void,
+  reject: (error: any) => void,
+) => {
+  refreshSubscribers.push({ resolve, reject });
 };
 
-// Notify all subscribers when refresh completes
+// Notify all subscribers when refresh completes successfully
 const onRefreshed = (token: string) => {
-  refreshSubscribers.forEach((callback) => callback(token));
+  refreshSubscribers.forEach(({ resolve }) => resolve(token));
+  refreshSubscribers = [];
+};
+
+// Notify all subscribers when refresh fails
+const onRefreshFailed = (error: any) => {
+  refreshSubscribers.forEach(({ reject }) => reject(error));
   refreshSubscribers = [];
 };
 
@@ -80,11 +92,16 @@ api.interceptors.response.use(
 
       // If already refreshing, queue the request
       if (isRefreshing) {
-        return new Promise((resolve) => {
-          subscribeTokenRefresh((token: string) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            resolve(api(originalRequest));
-          });
+        return new Promise((resolve, reject) => {
+          subscribeTokenRefresh(
+            (token: string) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              resolve(api(originalRequest));
+            },
+            (error: any) => {
+              reject(error);
+            },
+          );
         });
       }
 
@@ -108,12 +125,14 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh failed - clear token and reject all queued requests
+        // Refresh failed - clear token
         setAccessToken(null);
-        refreshSubscribers = [];
 
         // Set auth failed flag to prevent further API calls
         isAuthFailed = true;
+
+        // Reject all queued requests
+        onRefreshFailed(refreshError);
 
         // Call auth failure callback to trigger logout and redirect (only once)
         if (onAuthFailure) {
