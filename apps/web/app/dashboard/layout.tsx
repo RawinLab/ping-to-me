@@ -50,7 +50,6 @@ import {
   Users,
   Smartphone,
   Activity,
-  Code,
   Building2,
 } from "lucide-react";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
@@ -189,20 +188,6 @@ const settingsItems: NavItem[] = [
     href: "/dashboard/settings/two-factor",
     icon: Lock,
     description: "Setup 2FA authentication",
-  },
-  {
-    title: "Team Members",
-    href: "/dashboard/settings/team",
-    icon: Users,
-    description: "Manage team access",
-    requirePermission: (p) => p.isAdminOrAbove,
-  },
-  {
-    title: "Developer",
-    href: "/dashboard/settings/developer",
-    icon: Code,
-    description: "Developer settings",
-    requirePermission: (p) => p.isAdminOrAbove,
   },
 ];
 
@@ -520,7 +505,7 @@ function DashboardLayoutInner({
                     href="/dashboard/settings/security"
                     className="flex items-center"
                   >
-                    <Lock className="mr-2 h-4 w-4 text-slate-500" />
+                    <Shield className="mr-2 h-4 w-4 text-slate-500" />
                     Security
                   </Link>
                 </DropdownMenuItem>
