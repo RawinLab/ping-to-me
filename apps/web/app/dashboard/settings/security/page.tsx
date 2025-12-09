@@ -1,10 +1,10 @@
 "use client";
 
 import { Suspense, useState, useEffect } from "react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import { LinkedAccountsCard } from "@/components/settings/LinkedAccountsCard";
@@ -26,10 +26,6 @@ import {
 import {
   Lock,
   Shield,
-  User,
-  Key,
-  CreditCard,
-  ChevronRight,
   CheckCircle,
   AlertCircle,
   Eye,
@@ -41,6 +37,7 @@ import {
   MapPin,
   Clock,
   AlertTriangle,
+  Key,
 } from "lucide-react";
 
 const passwordSchema = z
@@ -79,21 +76,6 @@ interface LoginActivityResponse {
   totalPages: number;
 }
 
-const settingsNavItems = [
-  { title: "Profile", href: "/dashboard/settings/profile", icon: User },
-  {
-    title: "Security",
-    href: "/dashboard/settings/security",
-    icon: Shield,
-    active: true,
-  },
-  {
-    title: "Two-Factor Auth",
-    href: "/dashboard/settings/two-factor",
-    icon: Key,
-  },
-  { title: "Billing", href: "/dashboard/billing", icon: CreditCard },
-];
 
 function SecuritySettingsContent() {
   const searchParams = useSearchParams();
@@ -231,44 +213,18 @@ function SecuritySettingsContent() {
 
   return (
     <div className="p-6 lg:p-8">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl lg:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
-            Settings
+            Security Settings
           </h1>
           <p className="text-slate-500 mt-1">
-            Manage your account settings and preferences.
+            Manage your password and account security options.
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-[240px_1fr] gap-8">
-          {/* Settings Navigation */}
-          <nav className="space-y-1">
-            {settingsNavItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                    item.active
-                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25"
-                      : "text-slate-600 hover:bg-slate-100"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.title}
-                  {!item.active && (
-                    <ChevronRight className="h-4 w-4 ml-auto text-slate-400" />
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Main Content */}
-          <div className="space-y-6">
+        <div className="space-y-6">
             {/* Password Card */}
             <Card className="border-slate-200 shadow-sm overflow-hidden">
               <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
@@ -679,7 +635,6 @@ function SecuritySettingsContent() {
                 </Button>
               </CardContent>
             </Card>
-          </div>
         </div>
       </div>
     </div>

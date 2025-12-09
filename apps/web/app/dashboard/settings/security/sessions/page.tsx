@@ -21,10 +21,6 @@ import {
 } from "@pingtome/ui";
 import {
   Shield,
-  User,
-  Key,
-  CreditCard,
-  ChevronRight,
   Monitor,
   Smartphone,
   Tablet,
@@ -33,21 +29,6 @@ import {
   MapPin,
   Clock,
 } from "lucide-react";
-
-const settingsNavItems = [
-  { title: "Profile", href: "/dashboard/settings/profile", icon: User },
-  {
-    title: "Security",
-    href: "/dashboard/settings/security",
-    icon: Shield,
-  },
-  {
-    title: "Two-Factor Auth",
-    href: "/dashboard/settings/two-factor",
-    icon: Key,
-  },
-  { title: "Billing", href: "/dashboard/billing", icon: CreditCard },
-];
 
 const getDeviceIcon = (deviceType: string) => {
   const type = deviceType.toLowerCase();
@@ -153,47 +134,7 @@ export default function ActiveSessionsPage() {
 
   return (
     <div className="p-6 lg:p-8">
-      <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
-            Settings
-          </h1>
-          <p className="text-slate-500 mt-1">
-            Manage your account settings and preferences.
-          </p>
-        </div>
-
-        <div className="grid lg:grid-cols-[240px_1fr] gap-8">
-          {/* Settings Navigation */}
-          <nav className="space-y-1">
-            {settingsNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive =
-                item.href === "/dashboard/settings/security" ||
-                item.href === "/dashboard/settings/security/sessions";
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                    isActive
-                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25"
-                      : "text-slate-600 hover:bg-slate-100"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.title}
-                  {!isActive && (
-                    <ChevronRight className="h-4 w-4 ml-auto text-slate-400" />
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Main Content */}
-          <div className="space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6">
             {/* Header Card */}
             <Card className="border-slate-200 shadow-sm">
               <CardHeader>
@@ -392,9 +333,6 @@ export default function ActiveSessionsPage() {
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
-      </div>
 
       {/* Logout Session Confirmation Dialog */}
       <Dialog
@@ -483,6 +421,7 @@ export default function ActiveSessionsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }
