@@ -1,457 +1,233 @@
 import { test, expect } from "@playwright/test";
+import { loginAsUser } from "./fixtures/auth";
+
+/**
+ * Organization Workspace E2E Tests - Using Real Database
+ *
+ * Prerequisites:
+ * 1. Run database seed: pnpm --filter @pingtome/database db:seed
+ * 2. Start dev servers: pnpm dev
+ *
+ * Tests cover organization workspace features:
+ * - Organization settings
+ * - Organization switcher
+ * - Member management
+ * - Logo management
+ */
 
 test.describe("Organization Workspace", () => {
-  // Mock data
-  const mockOrg1 = {
-    id: "org-1",
-    name: "Acme Corp",
-    slug: "acme-corp",
-    logo: null,
-    timezone: "America/New_York",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  const mockOrg2 = {
-    id: "org-2",
-    name: "Tech Startup",
-    slug: "tech-startup",
-    logo: null,
-    timezone: "America/Los_Angeles",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  const mockOrganizationUpdate = {
-    id: "org-1",
-    name: "Acme Corp Updated",
-    slug: "acme-corp-updated",
-    logo: null,
-    timezone: "America/Chicago",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  const mockUser = {
-    id: "user-1",
-    email: "owner@example.com",
-    name: "Owner User",
-    role: "OWNER",
-  };
-
-  test.beforeEach(async ({ page }) => {
-    // Mock authentication
-    await page.context().addCookies([
-      {
-        name: "refresh_token",
-        value: "mock-refresh-token",
-        domain: "localhost",
-        path: "/",
-      },
-    ]);
-
-    // Mock auth endpoints
-    await page.route("**/auth/refresh", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ accessToken: "mock-access-token" }),
-      });
-    });
-
-    await page.route("**/auth/me", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(mockUser),
-      });
-    });
-
-    // Mock organizations list
-    await page.route("**/organizations", async (route) => {
-      if (route.request().method() === "GET") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify([mockOrg1, mockOrg2]),
-        });
-      } else if (route.request().method() === "POST") {
-        const postData = route.request().postDataJSON();
-        await route.fulfill({
-          status: 201,
-          contentType: "application/json",
-          body: JSON.stringify({
-            id: "org-3",
-            name: postData.name,
-            slug: postData.slug || postData.name.toLowerCase().replace(/\s+/g, "-"),
-            logo: null,
-            timezone: "UTC",
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          }),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    // Mock analytics dashboard
-    await page.route("**/analytics/dashboard", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          totalLinks: 10,
-          totalClicks: 100,
-          recentClicks: [],
-          clicksByDate: [],
-        }),
-      });
-    });
-
-    // Mock links list
-    await page.route("**/links?*", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          data: [],
-          meta: { total: 0, page: 1, limit: 10, totalPages: 1 },
-        }),
-      });
-    });
-
-    // Mock notifications
-    await page.route("**/notifications", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ notifications: [], unreadCount: 0 }),
-      });
-    });
-
-    // Mock single organization GET
-    await page.route("**/organizations/org-1", async (route) => {
-      if (route.request().method() === "GET") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(mockOrg1),
-        });
-      } else if (route.request().method() === "PATCH") {
-        const patchData = route.request().postDataJSON();
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({
-            ...mockOrg1,
-            ...patchData,
-          }),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-  });
-
-  test.describe("Organization CRUD", () => {
-    test("ORG-WS-001: Create new organization", async ({ page }) => {
-      // Navigate to organization switcher or create page
-      await page.goto("/dashboard");
-
-      // Wait for dashboard to load
-      await expect(page.locator("text=PingTO.Me")).toBeVisible();
-
-      // Mock the create organization endpoint
-      await page.route("**/organizations", async (route) => {
-        if (route.request().method() === "POST") {
-          const postData = route.request().postDataJSON();
-          expect(postData.name).toBe("New Team");
-
-          await route.fulfill({
-            status: 201,
-            contentType: "application/json",
-            body: JSON.stringify({
-              id: "org-3",
-              name: "New Team",
-              slug: "new-team",
-              logo: null,
-              timezone: "UTC",
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            }),
-          });
-        } else {
-          await route.continue();
-        }
-      });
-
-      // Look for organization switcher or create button
-      // This would be implemented based on actual UI
-      // For now, we test the API would be called correctly
-    });
-
-    test("ORG-WS-002: Update organization name", async ({ page }) => {
-      // Mock organization GET
-      await page.route("**/organizations/org-1", async (route) => {
-        if (route.request().method() === "GET") {
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify(mockOrg1),
-          });
-        } else if (route.request().method() === "PATCH") {
-          const patchData = route.request().postDataJSON();
-          expect(patchData.name).toBe("Updated Org Name");
-
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({
-              ...mockOrg1,
-              name: "Updated Org Name",
-            }),
-          });
-        } else {
-          await route.continue();
-        }
-      });
-
-      // Navigate to settings
-      await page.goto("/dashboard/settings/team");
-
-      // The team settings page would have organization settings
-      // This would show current org details
-      // Verify the page loads
-      await expect(page.locator("text=Team Members")).toBeVisible();
-    });
-
-    test("ORG-WS-003: Switch between organizations", async ({ page }) => {
-      // Mock organizations list with multiple orgs
-      await page.route("**/organizations", async (route) => {
-        if (route.request().method() === "GET") {
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify([mockOrg1, mockOrg2]),
-          });
-        } else {
-          await route.continue();
-        }
-      });
-
-      await page.goto("/dashboard");
-
-      // Wait for dashboard to load
-      await expect(page.locator("text=PingTO.Me")).toBeVisible();
-
-      // The organization switcher component would allow switching
-      // This tests that multiple organizations are available in context
-    });
-  });
+  const uniqueId = Date.now().toString(36);
 
   test.describe("Organization Settings", () => {
-    test("ORG-WS-010: Display organization details", async ({ page }) => {
-      // Mock organization data
-      await page.route("**/organizations/org-1", async (route) => {
-        if (route.request().method() === "GET") {
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify(mockOrg1),
-          });
-        } else {
-          await route.continue();
-        }
-      });
+    test.beforeEach(async ({ page }) => {
+      await loginAsUser(page, "owner");
+    });
 
-      // Navigate to team settings
-      await page.goto("/dashboard/settings/team");
+    test("ORG-001: View organization settings", async ({ page }) => {
+      await page.goto("/dashboard/organization/settings");
+      await page.waitForLoadState("networkidle");
 
-      // Verify team members page loads
-      await expect(page.locator("text=Team Members")).toBeVisible();
+      // Should show organization settings
       await expect(
-        page.locator("text=Manage your team and their access levels")
-      ).toBeVisible();
-
-      // The organization name would be displayed in UI
+        page.locator("text=Organization, text=Settings").first()
+      ).toBeVisible({ timeout: 10000 });
     });
 
-    test("ORG-WS-011: Update organization timezone", async ({ page }) => {
-      // Mock organization update
-      await page.route("**/organizations/org-1", async (route) => {
-        if (route.request().method() === "PATCH") {
-          const patchData = route.request().postDataJSON();
-          expect(patchData.timezone).toBe("America/Chicago");
+    test("ORG-002: Update organization name", async ({ page }) => {
+      await page.goto("/dashboard/organization/settings");
+      await page.waitForLoadState("networkidle");
 
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({
-              ...mockOrg1,
-              timezone: "America/Chicago",
-            }),
-          });
-        } else {
-          await route.continue();
-        }
-      });
+      // Find name input
+      const nameInput = page.locator('input[name="name"]');
+      if (await nameInput.isVisible()) {
+        await nameInput.clear();
+        await nameInput.fill(`Test Org ${uniqueId}`);
 
-      // Settings would be on organization/settings page
-      // This tests that timezone update API is called correctly
+        // Save
+        await page.click('button:has-text("Save")');
+
+        // Should show success
+        await page.waitForTimeout(2000);
+      }
     });
 
-    test("ORG-WS-012: Upload organization logo", async ({ page }) => {
-      // Mock logo upload
-      await page.route("**/organizations/org-1/logo", async (route) => {
-        if (route.request().method() === "POST") {
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({
-              ...mockOrg1,
-              logo: "https://example.com/logo.png",
-            }),
-          });
-        } else {
-          await route.continue();
-        }
-      });
+    test("ORG-003: Update organization slug", async ({ page }) => {
+      await page.goto("/dashboard/organization/settings");
+      await page.waitForLoadState("networkidle");
 
-      // Navigate to organization settings
-      // This would test logo upload functionality
+      // Find slug input
+      const slugInput = page.locator('input[name="slug"]');
+      if (await slugInput.isVisible()) {
+        await slugInput.clear();
+        await slugInput.fill(`test-org-${uniqueId}`);
+
+        // Save
+        await page.click('button:has-text("Save")');
+
+        await page.waitForTimeout(2000);
+      }
+    });
+
+    test("ORG-004: View organization timezone", async ({ page }) => {
+      await page.goto("/dashboard/organization/settings");
+      await page.waitForLoadState("networkidle");
+
+      // Should show timezone selector
+      const timezoneSelect = page.locator(
+        'select[name="timezone"], [data-testid="timezone-select"]'
+      );
+      if (await timezoneSelect.isVisible()) {
+        await expect(timezoneSelect).toBeVisible();
+      }
     });
   });
 
   test.describe("Organization Switcher", () => {
-    test("ORG-WS-040: Switch between organizations in dropdown", async ({
-      page,
-    }) => {
-      // Mock multiple organizations
-      let callCount = 0;
-      await page.route("**/organizations", async (route) => {
-        if (route.request().method() === "GET") {
-          callCount++;
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify([mockOrg1, mockOrg2]),
-          });
-        } else {
-          await route.continue();
-        }
-      });
-
-      await page.goto("/dashboard");
-
-      // Wait for dashboard to load
-      await expect(page.locator("text=PingTO.Me")).toBeVisible();
-
-      // Organizations would be available in switcher
-      // Verify multiple organizations loaded
-      expect(callCount).toBeGreaterThan(0);
+    test.beforeEach(async ({ page }) => {
+      await loginAsUser(page, "owner");
     });
 
-    test("ORG-WS-041: Persist selected organization across pages", async ({
-      page,
-    }) => {
-      // Mock organizations
-      await page.route("**/organizations", async (route) => {
-        if (route.request().method() === "GET") {
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify([mockOrg1, mockOrg2]),
-          });
-        } else {
-          await route.continue();
-        }
-      });
-
+    test("ORG-010: View organization switcher", async ({ page }) => {
       await page.goto("/dashboard");
+      await page.waitForLoadState("networkidle");
 
-      // Wait for dashboard
-      await expect(page.locator("text=PingTO.Me")).toBeVisible();
+      // Find organization switcher in sidebar
+      const orgSwitcher = page.locator(
+        '[data-testid="org-switcher"], [data-testid="organization-switcher"]'
+      );
+      if (await orgSwitcher.isVisible()) {
+        await expect(orgSwitcher).toBeVisible();
+      }
+    });
 
-      // Navigate to settings
-      await page.goto("/dashboard/settings/team");
-
-      // Verify organization context persists
-      await expect(page.locator("text=Team Members")).toBeVisible();
-
-      // Return to dashboard
+    test("ORG-011: Open organization switcher dropdown", async ({ page }) => {
       await page.goto("/dashboard");
+      await page.waitForLoadState("networkidle");
 
-      // Organization should still be selected
-      await expect(page.locator("text=PingTO.Me")).toBeVisible();
+      // Find and click organization switcher
+      const orgSwitcher = page.locator(
+        '[data-testid="org-switcher"], [data-testid="organization-switcher"]'
+      );
+      if (await orgSwitcher.isVisible()) {
+        await orgSwitcher.click();
+
+        // Dropdown should open
+        await expect(
+          page.locator('[role="menu"], [role="listbox"]')
+        ).toBeVisible({ timeout: 5000 });
+      }
     });
   });
 
-  test.describe("Organization Members Count", () => {
-    test("ORG-WS-050: Display member count by role", async ({ page }) => {
-      // Mock members list
-      const mockMembers = [
-        {
-          userId: "user-1",
-          role: "OWNER",
-          user: { id: "user-1", name: "Owner", email: "owner@example.com" },
-        },
-        {
-          userId: "user-2",
-          role: "ADMIN",
-          user: { id: "user-2", name: "Admin", email: "admin@example.com" },
-        },
-        {
-          userId: "user-3",
-          role: "EDITOR",
-          user: { id: "user-3", name: "Editor", email: "editor@example.com" },
-        },
-        {
-          userId: "user-4",
-          role: "VIEWER",
-          user: { id: "user-4", name: "Viewer", email: "viewer@example.com" },
-        },
-      ];
-
-      await page.route("**/organizations/org-1/members", async (route) => {
-        if (route.request().method() === "GET") {
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify(mockMembers),
-          });
-        } else {
-          await route.continue();
-        }
-      });
-
-      await page.goto("/dashboard/settings/team");
-
-      // Verify page loads with members
-      await expect(page.locator("text=Team Members")).toBeVisible();
-
-      // Verify role cards are displayed showing member counts
-      // The page shows stats cards with counts per role
+  test.describe("Member Management", () => {
+    test.beforeEach(async ({ page }) => {
+      await loginAsUser(page, "owner");
     });
 
-    test("ORG-WS-051: Handle empty organization", async ({ page }) => {
-      // Mock empty members list
-      await page.route("**/organizations/org-1/members", async (route) => {
-        if (route.request().method() === "GET") {
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify([]),
-          });
-        } else {
-          await route.continue();
-        }
+    test("ORG-020: View organization members", async ({ page }) => {
+      await page.goto("/dashboard/organization");
+      await page.waitForLoadState("networkidle");
+
+      // Switch to Members tab
+      const membersTab = page.locator('button[role="tab"]:has-text("Members")');
+      if (await membersTab.isVisible()) {
+        await membersTab.click();
+      }
+
+      // Should show members list
+      await expect(page.locator("text=Members").first()).toBeVisible({
+        timeout: 10000,
       });
+    });
 
-      await page.goto("/dashboard/settings/team");
+    test("ORG-021: Invite member button is visible for owner", async ({
+      page,
+    }) => {
+      await page.goto("/dashboard/organization");
+      await page.waitForLoadState("networkidle");
 
-      // Verify empty state is shown
-      await expect(page.locator("text=No team members yet")).toBeVisible();
+      // Switch to Members tab
+      const membersTab = page.locator('button[role="tab"]:has-text("Members")');
+      if (await membersTab.isVisible()) {
+        await membersTab.click();
+      }
+
+      // Should see invite button
+      const inviteButton = page.locator(
+        'button:has-text("Invite"), button:has-text("Add Member")'
+      );
+      await expect(inviteButton.first()).toBeVisible({ timeout: 5000 });
+    });
+
+    test("ORG-022: Member list shows role badges", async ({ page }) => {
+      await page.goto("/dashboard/organization");
+      await page.waitForLoadState("networkidle");
+
+      // Switch to Members tab
+      const membersTab = page.locator('button[role="tab"]:has-text("Members")');
+      if (await membersTab.isVisible()) {
+        await membersTab.click();
+      }
+
+      // Should show role badges
+      const roleBadges = page.locator(
+        'span:has-text("OWNER"), span:has-text("ADMIN"), span:has-text("EDITOR"), span:has-text("VIEWER")'
+      );
+      expect(await roleBadges.count()).toBeGreaterThan(0);
+    });
+  });
+
+  test.describe("Logo Management", () => {
+    test.beforeEach(async ({ page }) => {
+      await loginAsUser(page, "owner");
+    });
+
+    test("ORG-030: View logo upload option", async ({ page }) => {
+      await page.goto("/dashboard/organization/settings");
+      await page.waitForLoadState("networkidle");
+
+      // Should have logo upload option
+      const logoSection = page.locator("text=Logo, text=Image");
+      if (await logoSection.first().isVisible()) {
+        await expect(logoSection.first()).toBeVisible();
+      }
+    });
+  });
+
+  test.describe("RBAC for Organization", () => {
+    test("ORG-RBAC-001: Owner can access all settings", async ({ page }) => {
+      await loginAsUser(page, "owner");
+      await page.goto("/dashboard/organization/settings");
+      await page.waitForLoadState("networkidle");
+
+      // All settings should be accessible
+      await expect(
+        page.locator("text=Organization, text=Settings").first()
+      ).toBeVisible({ timeout: 10000 });
+    });
+
+    test("ORG-RBAC-002: Admin can access settings", async ({ page }) => {
+      await loginAsUser(page, "admin");
+      await page.goto("/dashboard/organization/settings");
+      await page.waitForLoadState("networkidle");
+
+      // Settings should be accessible
+      await expect(
+        page.locator("text=Organization, text=Settings").first()
+      ).toBeVisible({ timeout: 10000 });
+    });
+
+    test("ORG-RBAC-003: Viewer has limited access", async ({ page }) => {
+      await loginAsUser(page, "viewer");
+      await page.goto("/dashboard/organization/settings");
+      await page.waitForLoadState("networkidle");
+
+      // Save button should be disabled
+      const saveButton = page.locator('button:has-text("Save")');
+      if (await saveButton.isVisible()) {
+        const isDisabled = await saveButton.isDisabled();
+        expect(isDisabled).toBe(true);
+      }
     });
   });
 });

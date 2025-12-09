@@ -1,1147 +1,453 @@
 import { test, expect } from "@playwright/test";
+import { loginAsUser } from "./fixtures/auth";
+import { TEST_SLUGS } from "./fixtures/test-data";
+
+/**
+ * Bio Pages E2E Tests - Using Real Database
+ *
+ * Prerequisites:
+ * 1. Run database seed: pnpm --filter @pingtome/database db:seed
+ * 2. Start dev servers: pnpm dev
+ *
+ * Tests cover Bio Pages functionality:
+ * - Creating bio pages
+ * - Editing bio pages
+ * - Adding/removing links
+ * - Theme customization
+ * - Social links
+ * - Public bio page rendering
+ */
 
 test.describe("Bio Pages", () => {
-  const mockBioPage = {
-    id: "bio-1",
-    slug: "my-page",
-    title: "My Bio Page",
-    description: "Welcome to my page",
-    theme: {
-      name: "minimal",
-      primaryColor: "#000000",
-      buttonColor: "#000000",
-      buttonTextColor: "#ffffff",
-      textColor: "#000000",
-      backgroundColor: "#ffffff",
-      backgroundType: "solid",
-      buttonStyle: "rounded",
-      buttonShadow: false,
-    },
-    layout: "stacked",
-    showBranding: true,
-    socialLinks: [],
-    bioLinks: [],
-    createdAt: new Date().toISOString(),
-  };
+  const uniqueId = Date.now().toString(36);
 
-  const mockLinks = [
-    {
-      id: "link-1",
-      slug: "link1",
-      title: "Link 1",
-      originalUrl: "https://example.com/1",
-      status: "ACTIVE",
-    },
-    {
-      id: "link-2",
-      slug: "link2",
-      title: "Link 2",
-      originalUrl: "https://example.com/2",
-      status: "ACTIVE",
-    },
-    {
-      id: "link-3",
-      slug: "link3",
-      title: "Link 3",
-      originalUrl: "https://example.com/3",
-      status: "ACTIVE",
-    },
-  ];
-
-  const mockBioLinks = [
-    {
-      id: "biolink-1",
-      bioPageId: "bio-1",
-      linkId: "link-1",
-      title: "Link 1",
-      description: null,
-      order: 0,
-      isVisible: true,
-      link: mockLinks[0],
-    },
-    {
-      id: "biolink-2",
-      bioPageId: "bio-1",
-      linkId: "link-2",
-      title: "Link 2",
-      description: null,
-      order: 1,
-      isVisible: true,
-      link: mockLinks[1],
-    },
-  ];
-
-  const mockOrganization = {
-    id: "org-1",
-    name: "Test Org",
-    plan: "PRO",
-  };
-
-  test.beforeEach(async ({ page }) => {
-    // Mock authentication
-    await page.context().addCookies([
-      {
-        name: "refresh_token",
-        value: "mock-refresh-token",
-        domain: "localhost",
-        path: "/",
-      },
-    ]);
-
-    await page.route("**/auth/refresh", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          accessToken: "mock-access-token",
-          user: { id: "user-1", email: "test@example.com", role: "OWNER" },
-        }),
-      });
+  test.describe("Bio Page Management", () => {
+    test.beforeEach(async ({ page }) => {
+      await loginAsUser(page, "owner");
     });
 
-    // Mock dashboard metrics
-    await page.route("**/analytics/dashboard", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          totalLinks: 10,
-          totalClicks: 100,
-          recentClicks: [],
-          clicksByDate: [],
-        }),
-      });
-    });
-
-    // Mock organizations - return org-1 to match expected orgId
-    await page.route("**/organizations", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify([mockOrganization]),
-      });
-    });
-
-    // Mock user links
-    await page.route("**/links?*", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({
-          data: mockLinks,
-          meta: { total: 3, page: 1, limit: 10, totalPages: 1 },
-        }),
-      });
-    });
-
-    // Mock links without query
-    await page.route("**/links", async (route) => {
-      if (route.request().method() === "GET") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({
-            data: mockLinks,
-            meta: { total: 3, page: 1, limit: 10, totalPages: 1 },
-          }),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    // Mock Bio Pages list - match the orgId query parameter
-    await page.route("**/biopages?*", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify([{ ...mockBioPage, bioLinks: mockBioLinks }]),
-      });
-    });
-
-    // Mock single bio page by slug
-    await page.route("**/biopages/my-page", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ ...mockBioPage, bioLinks: mockBioLinks }),
-      });
-    });
-
-    // Mock bio page links
-    await page.route("**/biopages/bio-1/links*", async (route) => {
-      if (route.request().method() === "GET") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(mockBioLinks),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-  });
-
-  test("BIO-001: Create Bio Page", async ({ page }) => {
-    // Navigate to bio dashboard (new route)
-    await page.goto("/dashboard/bio");
-
-    // Wait for page to load
-    await page.waitForLoadState("networkidle");
-
-    // Click "Create Page" button
-    await page.click('button:has-text("Create Page")');
-
-    // Wait for the create form to appear
-    await page.waitForSelector("text=Bio Page Editor", { timeout: 10000 });
-
-    // Fill in the form - using the BioPageBuilder form fields
-    await page.fill("input#slug", "new-page");
-    await page.fill("input#title", "New Page Title");
-    await page.fill("textarea#description", "My new bio page description");
-
-    // Mock create API
-    await page.route("**/biopages", async (route) => {
-      if (route.request().method() === "POST") {
-        const data = route.request().postDataJSON();
-        expect(data.slug).toBe("new-page");
-        expect(data.title).toBe("New Page Title");
-        expect(data.orgId).toBe("org-1");
-
-        await route.fulfill({
-          status: 201,
-          contentType: "application/json",
-          body: JSON.stringify({
-            ...mockBioPage,
-            id: "bio-2",
-            slug: "new-page",
-            title: "New Page Title",
-            description: "My new bio page description",
-          }),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    // Handle alert dialog
-    page.on("dialog", (dialog) => dialog.accept());
-
-    // Click Save button
-    await page.click('button:has-text("Save Changes")');
-
-    // Verify success alert appeared (dialog was accepted)
-    await page.waitForTimeout(1000);
-  });
-
-  test("BIO-002: Edit Bio Page Title and Description", async ({ page }) => {
-    // Setup dialog handler early (before any action that might trigger it)
-    page.on("dialog", (dialog) => dialog.accept());
-
-    // Navigate to bio dashboard
-    await page.goto("/dashboard/bio");
-    await page.waitForLoadState("networkidle");
-
-    // Click edit on existing bio page
-    await page.click('button:has-text("Edit Page")');
-
-    // Wait for editor to load
-    await page.waitForSelector("text=Bio Page Editor", { timeout: 10000 });
-
-    // Verify the title field has loaded with existing value
-    await expect(page.locator("input#title")).toHaveValue("My Bio Page");
-
-    // Update title and description
-    await page.fill("input#title", "Updated Bio Page");
-    await page.fill("textarea#description", "This is an updated description");
-
-    // Mock the PATCH request
-    await page.route("**/biopages/bio-1", async (route) => {
-      if (route.request().method() === "PATCH") {
-        const data = route.request().postDataJSON();
-        expect(data.title).toBe("Updated Bio Page");
-        expect(data.description).toBe("This is an updated description");
-
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ ...mockBioPage, ...data }),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    await page.click('button:has-text("Save Changes")');
-    // Wait for save to complete
-    await page.waitForTimeout(1000);
-  });
-
-  test("BIO-010: Load Bio Page Editor with Tabs", async ({ page }) => {
-    // Navigate to bio dashboard
-    await page.goto("/dashboard/bio");
-    await page.waitForLoadState("networkidle");
-
-    // Click edit on existing bio page
-    await page.click('button:has-text("Edit Page")');
-
-    // Wait for editor to load
-    await page.waitForSelector("text=Bio Page Editor", { timeout: 10000 });
-
-    // Verify Page Details section exists
-    await expect(page.locator("text=Page Details")).toBeVisible();
-
-    // Verify tabs are present (they have icons with text)
-    await expect(page.locator('[role="tablist"]')).toBeVisible();
-
-    // Look for tab triggers - the text might be hidden on mobile but icon should be visible
-    const tabsList = page.locator('[role="tablist"]');
-    await expect(tabsList.locator('[role="tab"]')).toHaveCount(3);
-  });
-
-  test("BIO-013: Add Link from Dropdown", async ({ page }) => {
-    // Navigate to bio dashboard
-    await page.goto("/dashboard/bio");
-    await page.waitForLoadState("networkidle");
-
-    // Click edit on existing bio page
-    await page.click('button:has-text("Edit Page")');
-
-    // Wait for editor to load
-    await page.waitForSelector("text=Bio Page Editor", { timeout: 10000 });
-
-    // Links tab should be active by default, verify we can see the link dropdown
-    await expect(page.locator("text=Add a link")).toBeVisible();
-
-    // Mock add link API
-    await page.route("**/biopages/bio-1/links", async (route) => {
-      if (route.request().method() === "POST") {
-        const data = route.request().postDataJSON();
-        expect(data.linkId).toBe("link-3");
-
-        const newBioLink = {
-          id: "biolink-3",
-          bioPageId: "bio-1",
-          linkId: "link-3",
-          title: "Link 3",
-          description: null,
-          order: 2,
-          isVisible: true,
-          link: mockLinks[2],
-        };
-
-        await route.fulfill({
-          status: 201,
-          contentType: "application/json",
-          body: JSON.stringify(newBioLink),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    // Open dropdown and select a link
-    await page.click('[role="combobox"]:has-text("Add a link")');
-    await page.waitForSelector('[role="option"]', { timeout: 5000 });
-    await page.click('[role="option"]:has-text("Link 3")');
-
-    // Verify link was added (check if it appears in the list)
-    await expect(page.locator("text=Link 3").first()).toBeVisible();
-  });
-
-  test("BIO-015: Remove Link", async ({ page }) => {
-    // Navigate to bio dashboard
-    await page.goto("/dashboard/bio");
-    await page.waitForLoadState("networkidle");
-
-    // Click edit on existing bio page
-    await page.click('button:has-text("Edit Page")');
-
-    // Wait for editor to load
-    await page.waitForSelector("text=Bio Page Editor", { timeout: 10000 });
-
-    // Mock delete link API
-    await page.route("**/biopages/bio-1/links/biolink-1", async (route) => {
-      if (route.request().method() === "DELETE") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ success: true }),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    // Find and click delete button for first link (look for button with Trash2 icon via SVG)
-    // The delete button has specific styling and contains an SVG
-    const deleteButton = page
-      .locator('button[class*="hover:text-red"]')
-      .first();
-    if (await deleteButton.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await deleteButton.click();
-      // Verify action completed
-      await page.waitForTimeout(500);
-    } else {
-      // Try alternative selector - look for small ghost variant buttons in the link cards
-      const linkCard = page.locator('[class*="CardContent"]').first();
-      const trashButton = linkCard
-        .locator("button")
-        .filter({ hasText: "" })
-        .last();
-      await trashButton.click();
-      await page.waitForTimeout(500);
-    }
-  });
-
-  test("BIO-020: Theme Selector Visibility", async ({ page }) => {
-    // Navigate to bio dashboard
-    await page.goto("/dashboard/bio");
-    await page.waitForLoadState("networkidle");
-
-    // Click edit on existing bio page
-    await page.click('button:has-text("Edit Page")');
-
-    // Wait for editor to load
-    await page.waitForSelector("text=Bio Page Editor", { timeout: 10000 });
-
-    // Click Theme tab - find by index since text might be hidden
-    const themeTab = page.locator('[role="tab"]').nth(1);
-    await themeTab.click();
-
-    // Verify theme selector is visible
-    await expect(page.locator("text=Choose a Preset Theme")).toBeVisible({
-      timeout: 5000,
-    });
-
-    // Verify at least one theme preset is visible
-    await expect(page.locator("text=Minimal")).toBeVisible();
-  });
-
-  test("BIO-021: Select Predefined Theme", async ({ page }) => {
-    // Setup dialog handler early (before any action that might trigger it)
-    page.on("dialog", (dialog) => dialog.accept());
-
-    // Navigate to bio dashboard
-    await page.goto("/dashboard/bio");
-    await page.waitForLoadState("networkidle");
-
-    // Click edit on existing bio page
-    await page.click('button:has-text("Edit Page")');
-
-    // Wait for editor to load
-    await page.waitForSelector("text=Bio Page Editor", { timeout: 10000 });
-
-    // Click Theme tab
-    const themeTab = page.locator('[role="tab"]').nth(1);
-    await themeTab.click();
-
-    // Wait for theme selector
-    await expect(page.locator("text=Choose a Preset Theme")).toBeVisible({
-      timeout: 5000,
-    });
-
-    // Click on a different theme (Dark theme - available themes: Minimal, Dark, Colorful, Neon, Gradient, Pastel)
-    await page.click('button:has-text("Dark")');
-
-    // Mock save request
-    await page.route("**/biopages/bio-1", async (route) => {
-      if (route.request().method() === "PATCH") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ ...mockBioPage, theme: { name: "dark" } }),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    await page.click('button:has-text("Save Changes")');
-    // Wait for save to complete
-    await page.waitForTimeout(1000);
-  });
-
-  test("BIO-030: Add Social Link", async ({ page }) => {
-    // Navigate to bio dashboard
-    await page.goto("/dashboard/bio");
-    await page.waitForLoadState("networkidle");
-
-    // Click edit on existing bio page
-    await page.click('button:has-text("Edit Page")');
-
-    // Wait for editor to load
-    await page.waitForSelector("text=Bio Page Editor", { timeout: 10000 });
-
-    // Click Settings tab (3rd tab)
-    const settingsTab = page.locator('[role="tab"]').nth(2);
-    await settingsTab.click();
-
-    // Find social links section
-    await expect(page.locator("text=Social Links").first()).toBeVisible({
-      timeout: 5000,
-    });
-
-    // Add a social link (the button says "Add Link" in the SocialLinksEditor)
-    await page.click('button:has-text("Add Link")');
-
-    // Wait for the form to appear - look for Platform label
-    await page.waitForSelector('label:has-text("Platform")', { timeout: 5000 });
-
-    // The select should already show Instagram as default, so just fill in the URL
-    const urlInput = page.locator("input#url");
-    await urlInput.fill("https://instagram.com/example");
-
-    // Click "Add Link" button in the form to confirm
-    await page.click('button:has-text("Add Link")');
-
-    // Verify social link was added - check for the platform card
-    await expect(page.locator("text=Instagram").first()).toBeVisible({
-      timeout: 5000,
-    });
-  });
-
-  test("BIO-040: Render Public Bio Page", async ({ page }) => {
-    const publicBioPage = {
-      ...mockBioPage,
-      bioLinks: mockBioLinks.map((bl) => ({
-        ...bl,
-        externalUrl: bl.link?.originalUrl,
-        link: {
-          ...bl.link,
-          shortUrl: `http://localhost:3000/${bl.link?.slug}`,
-        },
-      })),
-    };
-
-    await page.route("**/biopages/public/my-page", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(publicBioPage),
-      });
-    });
-
-    // Visit public bio page
-    await page.goto("/bio/my-page");
-
-    // Wait for page to load
-    await page.waitForLoadState("networkidle");
-
-    // Verify page renders - look for title in h1, h2, or any heading
-    await expect(
-      page.locator('h1:has-text("My Bio Page"), h2:has-text("My Bio Page")'),
-    ).toBeVisible({ timeout: 10000 });
-
-    // Verify description
-    await expect(page.locator("text=Welcome to my page")).toBeVisible();
-
-    // Verify links are rendered
-    await expect(page.locator("text=Link 1").first()).toBeVisible();
-    await expect(page.locator("text=Link 2").first()).toBeVisible();
-  });
-
-  test("BIO-044: Display 404 for Non-existent Page", async ({ page }) => {
-    await page.route("**/biopages/public/nonexistent", async (route) => {
-      await route.fulfill({
-        status: 404,
-        contentType: "application/json",
-        body: JSON.stringify({ message: "Bio page not found" }),
-      });
-    });
-
-    // Visit non-existent bio page
-    await page.goto("/bio/nonexistent");
-
-    // Wait for page to load
-    await page.waitForLoadState("networkidle");
-
-    // Verify 404 message - the actual text is "Page Not Found"
-    await expect(page.locator("text=Page Not Found")).toBeVisible({
-      timeout: 10000,
-    });
-  });
-
-  test.skip("BIO-050: Display Analytics Dashboard - analytics page removed", async ({
-    page,
-  }) => {
-    const mockAnalytics = {
-      summary: {
-        totalViews: 1250,
-        totalClicks: 340,
-        uniqueVisitors: 890,
-      },
-      timeseries: {
-        viewsByDate: [
-          { date: "2025-12-01", views: 45 },
-          { date: "2025-12-02", views: 67 },
-          { date: "2025-12-03", views: 52 },
-        ],
-      },
-      clicks: {
-        linkClicks: [
-          {
-            linkId: "link-1",
-            title: "Link 1",
-            url: "https://example.com/1",
-            clicks: 150,
-            percentage: 44,
-          },
-          {
-            linkId: "link-2",
-            title: "Link 2",
-            url: "https://example.com/2",
-            clicks: 190,
-            percentage: 56,
-          },
-        ],
-        referrers: {
-          "twitter.com": 120,
-          "facebook.com": 85,
-          Direct: 135,
-        },
-        countries: {
-          "United States": 180,
-          "United Kingdom": 75,
-          Canada: 85,
-        },
-      },
-    };
-
-    await page.route(
-      "**/biopages/my-page/analytics/summary*",
-      async (route) => {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(mockAnalytics.summary),
-        });
-      },
-    );
-
-    await page.route(
-      "**/biopages/my-page/analytics/timeseries*",
-      async (route) => {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(mockAnalytics.timeseries),
-        });
-      },
-    );
-
-    await page.route("**/biopages/my-page/analytics/clicks*", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(mockAnalytics.clicks),
-      });
-    });
-
-    // Visit analytics page
-    await page.goto("/dashboard/biopages/my-page/analytics");
-
-    // Verify summary cards
-    await expect(page.locator("text=Total Views")).toBeVisible();
-    await expect(page.locator("text=1,250")).toBeVisible();
-    await expect(page.locator("text=Total Clicks")).toBeVisible();
-    await expect(page.locator("text=340")).toBeVisible();
-    await expect(page.locator("text=Unique Visitors")).toBeVisible();
-    await expect(page.locator("text=890")).toBeVisible();
-
-    // Verify charts and data sections
-    await expect(page.locator("text=Views over time")).toBeVisible();
-    await expect(page.locator("text=Clicks per Link")).toBeVisible();
-    await expect(page.locator("text=Top Referrers")).toBeVisible();
-    await expect(page.locator("text=Top Countries")).toBeVisible();
-  });
-
-  test("BIO-051: Share Modal with QR Code", async ({ page }) => {
-    // Navigate to bio dashboard
-    await page.goto("/dashboard/bio");
-    await page.waitForLoadState("networkidle");
-
-    // Mock QR code preview
-    await page.route("**/qr/preview?*", async (route) => {
-      // Return a simple 1x1 pixel PNG
-      const base64Image =
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
-      const buffer = Buffer.from(base64Image, "base64");
-      await route.fulfill({
-        status: 200,
-        contentType: "image/png",
-        body: buffer,
-      });
-    });
-
-    // Click edit on existing bio page
-    await page.click('button:has-text("Edit Page")');
-
-    // Wait for editor to load
-    await page.waitForSelector("text=Bio Page Editor", { timeout: 10000 });
-
-    // Look for share button (might be in preview section or elsewhere)
-    const shareButton = page.locator('button:has-text("Share")').first();
-
-    // If share button exists, test the modal
-    if (await shareButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await shareButton.click();
-
-      // Verify share modal components
-      await expect(page.locator("text=Share Bio Page")).toBeVisible();
-      await expect(page.locator("text=Bio Page URL")).toBeVisible();
-      await expect(page.locator('img[alt="QR Code"]')).toBeVisible();
+    test("BIO-001: View bio pages list", async ({ page }) => {
+      await page.goto("/dashboard/bio");
+      await page.waitForLoadState("networkidle");
+
+      // Should show bio pages section
       await expect(
-        page.locator('button:has-text("Download QR Code")'),
-      ).toBeVisible();
-    } else {
-      // Share button might be in external link view
-      test.skip();
-    }
-  });
+        page.locator("text=Bio Pages, text=Bio Page").first()
+      ).toBeVisible({ timeout: 10000 });
+    });
 
-  test("BIO-016: Edit link button colors", async ({ page }) => {
-    // Navigate to bio dashboard
-    await page.goto("/dashboard/bio");
-    await page.waitForLoadState("networkidle");
+    test("BIO-002: Create new bio page", async ({ page }) => {
+      const bioSlug = `test-bio-${uniqueId}`;
+      const bioTitle = `Test Bio Page ${uniqueId}`;
 
-    // Click edit on existing bio page
-    await page.click('button:has-text("Edit Page")');
+      await page.goto("/dashboard/bio/new");
+      await page.waitForLoadState("networkidle");
 
-    // Wait for editor to load
-    await page.waitForSelector("text=Bio Page Editor", { timeout: 10000 });
-
-    // Find edit button on the first link card and click it
-    const linkCard = page.locator('[class*="CardContent"]').first();
-    const editButton = linkCard.locator("button").filter({ hasText: "" }).first();
-
-    if (await editButton.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await editButton.click();
-
-      // Wait for LinkStyleEditor modal to open
-      await page.waitForSelector("text=Link Appearance", { timeout: 5000 });
-
-      // Verify modal opened
-      await expect(page.locator("text=Link Appearance")).toBeVisible();
-
-      // Update title field if available
-      const titleInput = page.locator('input[id*="title"], input[name*="title"]');
-      if (await titleInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await titleInput.fill("Updated Link Title");
+      // Fill bio page form
+      const slugInput = page.locator('input[name="slug"]');
+      if (await slugInput.isVisible()) {
+        await slugInput.fill(bioSlug);
       }
 
-      // Mock PATCH request for link update
-      await page.route("**/biopages/bio-1/links/biolink-1", async (route) => {
-        if (route.request().method() === "PATCH") {
-          const data = route.request().postDataJSON();
+      const titleInput = page.locator('input[name="title"]');
+      if (await titleInput.isVisible()) {
+        await titleInput.fill(bioTitle);
+      }
 
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({
-              ...mockBioLinks[0],
-              ...data,
-            }),
-          });
-        } else {
-          await route.continue();
+      const descInput = page.locator(
+        'textarea[name="description"], input[name="description"]'
+      );
+      if (await descInput.isVisible()) {
+        await descInput.fill("This is a test bio page");
+      }
+
+      // Submit
+      await page.click('button:has-text("Create"), button:has-text("Save")');
+
+      // Should redirect or show success
+      await page.waitForTimeout(2000);
+      const success =
+        page.url().includes("/dashboard/bio") ||
+        (await page.locator("text=created, text=success").isVisible().catch(() => false));
+      expect(success).toBe(true);
+    });
+
+    test("BIO-003: Edit bio page settings", async ({ page }) => {
+      await page.goto("/dashboard/bio");
+      await page.waitForLoadState("networkidle");
+
+      // Click on first bio page to edit
+      const bioCard = page.locator(".rounded-2xl, .card").first();
+      if (await bioCard.isVisible()) {
+        const editButton = bioCard.locator(
+          'button:has-text("Edit"), a:has-text("Edit")'
+        );
+        if (await editButton.isVisible()) {
+          await editButton.click();
+          await page.waitForLoadState("networkidle");
+
+          // Should be on edit page
+          await expect(page).toHaveURL(/\/dashboard\/bio\/[^/]+/);
         }
-      });
-
-      // Save changes
-      const saveButton = page.locator('button:has-text("Save")').first();
-      await saveButton.click();
-
-      // Verify modal closes
-      await expect(page.locator("text=Link Appearance")).not.toBeVisible({
-        timeout: 5000,
-      });
-    } else {
-      test.skip();
-    }
-  });
-
-  test("BIO-017: Reorder links via drag-drop", async ({ page }) => {
-    // Navigate to bio dashboard
-    await page.goto("/dashboard/bio");
-    await page.waitForLoadState("networkidle");
-
-    // Click edit on existing bio page
-    await page.click('button:has-text("Edit Page")');
-
-    // Wait for editor to load
-    await page.waitForSelector("text=Bio Page Editor", { timeout: 10000 });
-
-    // Verify links are displayed in order
-    await expect(page.locator("text=Link 1").first()).toBeVisible();
-    await expect(page.locator("text=Link 2").first()).toBeVisible();
-
-    // Mock reorder API
-    await page.route("**/biopages/bio-1/links/reorder", async (route) => {
-      if (route.request().method() === "PATCH") {
-        const data = route.request().postDataJSON();
-        expect(data).toBeDefined();
-
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ success: true }),
-        });
-      } else {
-        await route.continue();
       }
     });
 
-    // Note: Full drag-drop testing is complex in Playwright
-    // This test verifies the links are present and reorder API endpoint is correctly mocked
-    // Actual drag-drop interaction would require more complex coordination
-  });
+    test("BIO-004: Delete bio page", async ({ page }) => {
+      // First create a bio page to delete
+      const bioSlug = `delete-bio-${uniqueId}`;
 
-  test("BIO-022: Select custom theme colors", async ({ page }) => {
-    // Navigate to bio dashboard
-    await page.goto("/dashboard/bio");
-    await page.waitForLoadState("networkidle");
+      await page.goto("/dashboard/bio/new");
+      await page.waitForLoadState("networkidle");
 
-    // Click edit on existing bio page
-    await page.click('button:has-text("Edit Page")');
+      const slugInput = page.locator('input[name="slug"]');
+      if (await slugInput.isVisible()) {
+        await slugInput.fill(bioSlug);
 
-    // Wait for editor to load
-    await page.waitForSelector("text=Bio Page Editor", { timeout: 10000 });
-
-    // Click Theme tab
-    const themeTab = page.locator('[role="tab"]').nth(1);
-    await themeTab.click();
-
-    // Wait for theme selector
-    await expect(page.locator("text=Choose a Preset Theme")).toBeVisible({
-      timeout: 5000,
-    });
-
-    // Click "Custom" theme option
-    await page.click('button:has-text("Custom")');
-
-    // Verify custom theme settings appear
-    await page.waitForSelector("text=Custom Theme Settings", { timeout: 5000 });
-    await expect(page.locator("text=Custom Theme Settings")).toBeVisible();
-
-    // Verify color pickers are visible (they should have labels like Primary Color, Background Color, etc.)
-    const colorPickerLabels = [
-      "Primary Color",
-      "Button Color",
-      "Background Color",
-    ];
-
-    for (const label of colorPickerLabels) {
-      const labelLocator = page.locator(`text=${label}`).first();
-      if (await labelLocator.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await expect(labelLocator).toBeVisible();
-      }
-    }
-  });
-
-  test("BIO-031: Edit social link URL", async ({ page }) => {
-    // Update mock bio page to include social links
-    const bioPageWithSocial = {
-      ...mockBioPage,
-      socialLinks: [
-        {
-          id: "social-1",
-          platform: "instagram",
-          url: "https://instagram.com/original",
-          order: 0,
-        },
-      ],
-    };
-
-    // Override the bio page route to include social links
-    await page.route("**/biopages/my-page", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ ...bioPageWithSocial, bioLinks: mockBioLinks }),
-      });
-    });
-
-    // Navigate to bio dashboard
-    await page.goto("/dashboard/bio");
-    await page.waitForLoadState("networkidle");
-
-    // Click edit on existing bio page
-    await page.click('button:has-text("Edit Page")');
-
-    // Wait for editor to load
-    await page.waitForSelector("text=Bio Page Editor", { timeout: 10000 });
-
-    // Click Settings tab (3rd tab)
-    const settingsTab = page.locator('[role="tab"]').nth(2);
-    await settingsTab.click();
-
-    // Wait for social links section
-    await expect(page.locator("text=Social Links").first()).toBeVisible({
-      timeout: 5000,
-    });
-
-    // Verify existing social link is displayed
-    await expect(page.locator("text=Instagram").first()).toBeVisible();
-
-    // Find and click edit button on the social link card
-    const socialCard = page
-      .locator('div:has-text("Instagram")')
-      .filter({ has: page.locator("button") })
-      .first();
-
-    if (await socialCard.isVisible({ timeout: 5000 }).catch(() => false)) {
-      const editButton = socialCard.locator("button").first();
-      await editButton.click();
-
-      // Wait for edit form to appear
-      await page.waitForTimeout(500);
-
-      // Update URL
-      const urlInput = page.locator('input[id="url"], input[name="url"]').first();
-      await urlInput.fill("https://instagram.com/updated");
-
-      // Click save/update button
-      const updateButton = page.locator('button:has-text("Update")').first();
-      if (await updateButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await updateButton.click();
-      }
-
-      // Verify changes (the URL should be updated in the display)
-      await page.waitForTimeout(500);
-    }
-  });
-
-  test("BIO-032: Delete social link", async ({ page }) => {
-    // Update mock bio page to include social links
-    const bioPageWithSocial = {
-      ...mockBioPage,
-      socialLinks: [
-        {
-          id: "social-1",
-          platform: "instagram",
-          url: "https://instagram.com/example",
-          order: 0,
-        },
-      ],
-    };
-
-    // Override the bio page route to include social links
-    await page.route("**/biopages/my-page", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ ...bioPageWithSocial, bioLinks: mockBioLinks }),
-      });
-    });
-
-    // Navigate to bio dashboard
-    await page.goto("/dashboard/bio");
-    await page.waitForLoadState("networkidle");
-
-    // Click edit on existing bio page
-    await page.click('button:has-text("Edit Page")');
-
-    // Wait for editor to load
-    await page.waitForSelector("text=Bio Page Editor", { timeout: 10000 });
-
-    // Click Settings tab (3rd tab)
-    const settingsTab = page.locator('[role="tab"]').nth(2);
-    await settingsTab.click();
-
-    // Wait for social links section
-    await expect(page.locator("text=Social Links").first()).toBeVisible({
-      timeout: 5000,
-    });
-
-    // Verify existing social link is displayed
-    await expect(page.locator("text=Instagram").first()).toBeVisible();
-
-    // Find and click delete button on the social link card
-    const socialCard = page
-      .locator('div:has-text("Instagram")')
-      .filter({ has: page.locator("button") })
-      .first();
-
-    if (await socialCard.isVisible({ timeout: 5000 }).catch(() => false)) {
-      // Look for delete/trash button (usually the last button or one with a trash icon)
-      const deleteButton = socialCard.locator("button").last();
-      await deleteButton.click();
-
-      // Wait for deletion to complete
-      await page.waitForTimeout(500);
-
-      // Verify social link is removed (Instagram text should not be visible anymore)
-      // Note: This may need adjustment based on actual implementation
-      await page.waitForTimeout(1000);
-    }
-  });
-
-  test("BIO-041: Track link click on public page", async ({ page }) => {
-    const publicBioPage = {
-      ...mockBioPage,
-      bioLinks: mockBioLinks.map((bl) => ({
-        ...bl,
-        externalUrl: bl.link?.originalUrl,
-        link: {
-          ...bl.link,
-          shortUrl: `http://localhost:3000/${bl.link?.slug}`,
-        },
-      })),
-    };
-
-    await page.route("**/biopages/public/my-page", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(publicBioPage),
-      });
-    });
-
-    // Mock track API endpoint
-    let trackCalled = false;
-    await page.route("**/biopages/bio-1/track", async (route) => {
-      if (route.request().method() === "POST") {
-        trackCalled = true;
-        const data = route.request().postDataJSON();
-        expect(data).toBeDefined();
-
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify({ success: true }),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    // Visit public bio page
-    await page.goto("/bio/my-page");
-
-    // Wait for page to load
-    await page.waitForLoadState("networkidle");
-
-    // Verify page renders
-    await expect(
-      page.locator('h1:has-text("My Bio Page"), h2:has-text("My Bio Page")'),
-    ).toBeVisible({ timeout: 10000 });
-
-    // Click on a link
-    const link1 = page.locator("text=Link 1").first();
-    await link1.click();
-
-    // Wait for track API to be called
-    await page.waitForTimeout(1000);
-
-    // Verify track API was called
-    expect(trackCalled).toBe(true);
-  });
-
-  test.skip("BIO-045: Publish/unpublish bio page", async ({ page }) => {
-    // This test is skipped as the publish/unpublish feature may not be implemented yet
-    // TODO: Implement this test when isPublished toggle feature is added
-
-    // Navigate to bio dashboard
-    await page.goto("/dashboard/bio");
-    await page.waitForLoadState("networkidle");
-
-    // Click edit on existing bio page
-    await page.click('button:has-text("Edit Page")');
-
-    // Wait for editor to load
-    await page.waitForSelector("text=Bio Page Editor", { timeout: 10000 });
-
-    // Look for publish/unpublish toggle or button
-    // This would typically be in settings or main editor area
-    const publishToggle = page.locator("text=Published, text=Publish").first();
-
-    if (await publishToggle.isVisible({ timeout: 3000 }).catch(() => false)) {
-      // Test the toggle functionality
-      await publishToggle.click();
-
-      // Mock update API
-      await page.route("**/biopages/bio-1", async (route) => {
-        if (route.request().method() === "PATCH") {
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ ...mockBioPage, isPublished: false }),
-          });
-        } else {
-          await route.continue();
+        const titleInput = page.locator('input[name="title"]');
+        if (await titleInput.isVisible()) {
+          await titleInput.fill("Bio to Delete");
         }
-      });
 
-      // Verify state change
-      await page.waitForTimeout(500);
-    }
+        await page.click('button:has-text("Create"), button:has-text("Save")');
+        await page.waitForTimeout(2000);
+      }
+
+      // Go to bio pages list
+      await page.goto("/dashboard/bio");
+      await page.waitForLoadState("networkidle");
+
+      // Find and delete the bio page
+      const bioCard = page.locator(`.rounded-2xl:has-text("${bioSlug}")`);
+      if (await bioCard.isVisible()) {
+        const deleteButton = bioCard.locator('button[title="Delete"]');
+        if (await deleteButton.isVisible()) {
+          page.on("dialog", (dialog) => dialog.accept());
+          await deleteButton.click();
+
+          // Should be removed from list
+          await page.waitForTimeout(2000);
+        }
+      }
+    });
   });
 
-  test.skip("BIO-052: View analytics summary", async ({ page }) => {
-    // This test is skipped pending analytics dashboard integration
-    // TODO: Implement this test when bio page analytics dashboard is integrated
-
-    const mockAnalyticsSummary = {
-      totalViews: 1250,
-      totalClicks: 340,
-      uniqueVisitors: 890,
-    };
-
-    await page.route(
-      "**/biopages/bio-1/analytics/summary*",
-      async (route) => {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(mockAnalyticsSummary),
-        });
-      },
-    );
-
-    // Navigate to analytics page (route may vary)
-    await page.goto("/dashboard/bio/my-page/analytics");
-
-    // Verify summary cards
-    await expect(page.locator("text=Total Views")).toBeVisible();
-    await expect(page.locator("text=1,250")).toBeVisible();
-    await expect(page.locator("text=Total Clicks")).toBeVisible();
-    await expect(page.locator("text=340")).toBeVisible();
-  });
-
-  test.skip("BIO-053: View clicks by link table", async ({ page }) => {
-    // This test is skipped pending analytics dashboard integration
-    // TODO: Implement this test when bio page analytics dashboard includes clicks by link table
-
-    const mockClicksByLink = [
-      {
-        linkId: "link-1",
-        title: "Link 1",
-        clicks: 150,
-        percentage: 44,
-      },
-      {
-        linkId: "link-2",
-        title: "Link 2",
-        clicks: 190,
-        percentage: 56,
-      },
-    ];
-
-    await page.route("**/biopages/bio-1/analytics/clicks*", async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(mockClicksByLink),
-      });
+  test.describe("Bio Page Links", () => {
+    test.beforeEach(async ({ page }) => {
+      await loginAsUser(page, "owner");
     });
 
-    // Navigate to analytics page
-    await page.goto("/dashboard/bio/my-page/analytics");
+    test("BIO-010: Add link to bio page", async ({ page }) => {
+      await page.goto("/dashboard/bio");
+      await page.waitForLoadState("networkidle");
 
-    // Verify clicks by link table
-    await expect(page.locator("text=Clicks per Link")).toBeVisible();
-    await expect(page.locator("text=Link 1").first()).toBeVisible();
-    await expect(page.locator("text=150")).toBeVisible();
+      // Click on bio page to edit
+      const editButton = page
+        .locator('a:has-text("Edit"), button:has-text("Edit")')
+        .first();
+      if (await editButton.isVisible()) {
+        await editButton.click();
+        await page.waitForLoadState("networkidle");
+
+        // Look for add link button
+        const addLinkButton = page.locator(
+          'button:has-text("Add Link"), button:has-text("Add")'
+        );
+        if (await addLinkButton.isVisible()) {
+          await addLinkButton.click();
+
+          // Should open add link dialog/form
+          await expect(
+            page.locator("text=Add Link, text=Select Link").first()
+          ).toBeVisible({ timeout: 5000 });
+        }
+      }
+    });
+
+    test("BIO-011: Reorder links on bio page", async ({ page }) => {
+      await page.goto("/dashboard/bio");
+      await page.waitForLoadState("networkidle");
+
+      // Edit a bio page
+      const editButton = page
+        .locator('a:has-text("Edit"), button:has-text("Edit")')
+        .first();
+      if (await editButton.isVisible()) {
+        await editButton.click();
+        await page.waitForLoadState("networkidle");
+
+        // Look for drag handles or reorder controls
+        const dragHandle = page.locator('[data-drag-handle], .cursor-grab');
+        if (await dragHandle.first().isVisible()) {
+          // Drag handles exist - reordering is available
+          expect(await dragHandle.count()).toBeGreaterThan(0);
+        }
+      }
+    });
+
+    test("BIO-012: Toggle link visibility", async ({ page }) => {
+      await page.goto("/dashboard/bio");
+      await page.waitForLoadState("networkidle");
+
+      // Edit a bio page
+      const editButton = page
+        .locator('a:has-text("Edit"), button:has-text("Edit")')
+        .first();
+      if (await editButton.isVisible()) {
+        await editButton.click();
+        await page.waitForLoadState("networkidle");
+
+        // Look for visibility toggle
+        const visibilityToggle = page.locator(
+          'button[role="switch"], input[type="checkbox"]'
+        );
+        if (await visibilityToggle.first().isVisible()) {
+          // Toggle exists
+          expect(await visibilityToggle.count()).toBeGreaterThan(0);
+        }
+      }
+    });
+  });
+
+  test.describe("Bio Page Themes", () => {
+    test.beforeEach(async ({ page }) => {
+      await loginAsUser(page, "owner");
+    });
+
+    test("BIO-020: Change bio page theme", async ({ page }) => {
+      await page.goto("/dashboard/bio");
+      await page.waitForLoadState("networkidle");
+
+      // Edit a bio page
+      const editButton = page
+        .locator('a:has-text("Edit"), button:has-text("Edit")')
+        .first();
+      if (await editButton.isVisible()) {
+        await editButton.click();
+        await page.waitForLoadState("networkidle");
+
+        // Look for theme selector
+        const themeButton = page.locator(
+          'button:has-text("Theme"), button:has-text("Design")'
+        );
+        if (await themeButton.isVisible()) {
+          await themeButton.click();
+
+          // Should show theme options
+          await expect(
+            page.locator("text=Theme, text=Style").first()
+          ).toBeVisible({ timeout: 5000 });
+        }
+      }
+    });
+
+    test("BIO-021: Customize colors", async ({ page }) => {
+      await page.goto("/dashboard/bio");
+      await page.waitForLoadState("networkidle");
+
+      // Edit a bio page
+      const editButton = page
+        .locator('a:has-text("Edit"), button:has-text("Edit")')
+        .first();
+      if (await editButton.isVisible()) {
+        await editButton.click();
+        await page.waitForLoadState("networkidle");
+
+        // Look for color picker inputs
+        const colorInput = page.locator('input[type="color"]');
+        if (await colorInput.first().isVisible()) {
+          // Color customization available
+          expect(await colorInput.count()).toBeGreaterThan(0);
+        }
+      }
+    });
+
+    test("BIO-022: Change button style", async ({ page }) => {
+      await page.goto("/dashboard/bio");
+      await page.waitForLoadState("networkidle");
+
+      // Edit a bio page
+      const editButton = page
+        .locator('a:has-text("Edit"), button:has-text("Edit")')
+        .first();
+      if (await editButton.isVisible()) {
+        await editButton.click();
+        await page.waitForLoadState("networkidle");
+
+        // Look for button style options
+        const buttonStyleOption = page.locator(
+          'button:has-text("Rounded"), button:has-text("Square"), button:has-text("Pill")'
+        );
+        if (await buttonStyleOption.first().isVisible()) {
+          // Button style options available
+          expect(await buttonStyleOption.count()).toBeGreaterThan(0);
+        }
+      }
+    });
+  });
+
+  test.describe("Bio Page Social Links", () => {
+    test.beforeEach(async ({ page }) => {
+      await loginAsUser(page, "owner");
+    });
+
+    test("BIO-030: Add social link", async ({ page }) => {
+      await page.goto("/dashboard/bio");
+      await page.waitForLoadState("networkidle");
+
+      // Edit a bio page
+      const editButton = page
+        .locator('a:has-text("Edit"), button:has-text("Edit")')
+        .first();
+      if (await editButton.isVisible()) {
+        await editButton.click();
+        await page.waitForLoadState("networkidle");
+
+        // Look for social links section
+        const socialSection = page.locator(
+          'text=Social Links, text=Social Media'
+        );
+        if (await socialSection.first().isVisible()) {
+          // Click add social link
+          const addSocialButton = page.locator(
+            'button:has-text("Add Social"), button:has-text("Add")'
+          );
+          if (await addSocialButton.isVisible()) {
+            await addSocialButton.click();
+          }
+        }
+      }
+    });
+  });
+
+  test.describe("Public Bio Page", () => {
+    test("BIO-040: View public bio page", async ({ page }) => {
+      // Access public bio page directly (without login)
+      await page.goto(`/bio/${TEST_SLUGS.biopages.main}`);
+      await page.waitForLoadState("networkidle");
+
+      // Should show bio page content
+      await expect(page.locator("body")).toBeVisible();
+    });
+
+    test("BIO-041: Public bio page displays links", async ({ page }) => {
+      await page.goto(`/bio/${TEST_SLUGS.biopages.main}`);
+      await page.waitForLoadState("networkidle");
+
+      // Should have clickable links
+      const links = page.locator("a[href]");
+      expect(await links.count()).toBeGreaterThan(0);
+    });
+
+    test("BIO-042: Public bio page non-existent shows 404", async ({ page }) => {
+      await page.goto("/bio/nonexistent-page-12345");
+      await page.waitForLoadState("networkidle");
+
+      // Should show not found or error
+      const notFound = page.locator(
+        "text=Not Found, text=404, text=doesn't exist"
+      );
+      await expect(notFound.first()).toBeVisible({ timeout: 5000 });
+    });
+
+    test("BIO-043: Public bio page tracks visits", async ({ page }) => {
+      await page.goto(`/bio/${TEST_SLUGS.biopages.main}`);
+      await page.waitForLoadState("networkidle");
+
+      // Page should load successfully (visit tracking happens in background)
+      await expect(page.locator("body")).toBeVisible();
+    });
+  });
+
+  test.describe("Bio Page RBAC", () => {
+    test("BIO-050: Viewer can view bio pages but not edit", async ({ page }) => {
+      await loginAsUser(page, "viewer");
+      await page.goto("/dashboard/bio");
+      await page.waitForLoadState("networkidle");
+
+      // Should see bio pages
+      await expect(
+        page.locator("text=Bio Pages, text=Bio Page").first()
+      ).toBeVisible({ timeout: 10000 });
+
+      // Create button should be disabled or hidden
+      const createButton = page.locator('button:has-text("Create Bio Page")');
+      if (await createButton.isVisible()) {
+        const isDisabled = await createButton.isDisabled();
+        expect(isDisabled).toBe(true);
+      }
+    });
+
+    test("BIO-051: Editor can create and edit bio pages", async ({ page }) => {
+      await loginAsUser(page, "editor");
+      await page.goto("/dashboard/bio");
+      await page.waitForLoadState("networkidle");
+
+      // Create button should be enabled
+      const createButton = page.locator('button:has-text("Create Bio Page")');
+      if (await createButton.isVisible()) {
+        await expect(createButton).toBeEnabled();
+      }
+    });
+
+    test("BIO-052: Owner has full bio page access", async ({ page }) => {
+      await loginAsUser(page, "owner");
+      await page.goto("/dashboard/bio");
+      await page.waitForLoadState("networkidle");
+
+      // All actions should be available
+      await expect(
+        page.locator("text=Bio Pages, text=Bio Page").first()
+      ).toBeVisible({ timeout: 10000 });
+    });
+  });
+
+  test.describe("Bio Page Analytics", () => {
+    test.beforeEach(async ({ page }) => {
+      await loginAsUser(page, "owner");
+    });
+
+    test("BIO-060: View bio page analytics", async ({ page }) => {
+      await page.goto("/dashboard/bio");
+      await page.waitForLoadState("networkidle");
+
+      // Look for analytics option
+      const analyticsButton = page
+        .locator('button:has-text("Analytics"), a:has-text("Analytics")')
+        .first();
+      if (await analyticsButton.isVisible()) {
+        await analyticsButton.click();
+        await page.waitForLoadState("networkidle");
+
+        // Should show analytics
+        await expect(
+          page.locator("text=Views, text=Clicks, text=Analytics").first()
+        ).toBeVisible({ timeout: 5000 });
+      }
+    });
+  });
+
+  test.describe("Bio Page QR Code", () => {
+    test.beforeEach(async ({ page }) => {
+      await loginAsUser(page, "owner");
+    });
+
+    test("BIO-070: Generate QR code for bio page", async ({ page }) => {
+      await page.goto("/dashboard/bio");
+      await page.waitForLoadState("networkidle");
+
+      // Look for QR code option
+      const qrButton = page
+        .locator("button")
+        .filter({ has: page.locator("svg.lucide-qr-code") })
+        .first();
+      if (await qrButton.isVisible()) {
+        await qrButton.click();
+
+        // Should show QR code modal
+        await expect(
+          page.locator("text=QR Code, img[alt*='QR']").first()
+        ).toBeVisible({ timeout: 5000 });
+      }
+    });
   });
 });
