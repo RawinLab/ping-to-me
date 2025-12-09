@@ -91,9 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const membershipData = orgsRes.map((org: any) => ({
           orgId: org.id,
           orgName: org.name,
-          role:
-            org.members?.find((m: any) => m.userId === userRes?.id)?.role ||
-            "MEMBER",
+          role: org.currentUserRole || "VIEWER",
         }));
         setMemberships(membershipData);
 
@@ -188,12 +186,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await api.post("/auth/logout");
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      // Ignore errors - logout should always succeed on client side
+    }
     setAccessToken(null);
     setUser(null);
     setMemberships([]);
     setCurrentOrgId(null);
     setSessionToken(null);
+    // Clear refresh token cookie
+    document.cookie =
+      "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     router.push("/login");
   };
 

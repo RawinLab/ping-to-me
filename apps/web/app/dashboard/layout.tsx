@@ -48,10 +48,14 @@ import {
   Sun,
   Command,
   Users,
+  Smartphone,
+  Activity,
+  Code,
+  Building2,
 } from "lucide-react";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, setAccessToken, setCurrentOrganizationId } from "@/lib/api";
 import { usePermission } from "@/hooks/usePermission";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
 
@@ -155,6 +159,53 @@ const developerItems: NavItem[] = [
   },
 ];
 
+const settingsItems: NavItem[] = [
+  {
+    title: "Profile",
+    href: "/dashboard/settings/profile",
+    icon: User,
+    description: "Your personal profile",
+  },
+  {
+    title: "Security",
+    href: "/dashboard/settings/security",
+    icon: Shield,
+    description: "Password & 2FA settings",
+  },
+  {
+    title: "Sessions",
+    href: "/dashboard/settings/security/sessions",
+    icon: Smartphone,
+    description: "Active login sessions",
+  },
+  {
+    title: "Login Activity",
+    href: "/dashboard/settings/security/activity",
+    icon: Activity,
+    description: "Recent login history",
+  },
+  {
+    title: "Two-Factor Auth",
+    href: "/dashboard/settings/two-factor",
+    icon: Lock,
+    description: "Setup 2FA authentication",
+  },
+  {
+    title: "Team Members",
+    href: "/dashboard/settings/team",
+    icon: Users,
+    description: "Manage team access",
+    requirePermission: (p) => p.isAdminOrAbove,
+  },
+  {
+    title: "Developer",
+    href: "/dashboard/settings/developer",
+    icon: Code,
+    description: "Developer settings",
+    requirePermission: (p) => p.isAdminOrAbove,
+  },
+];
+
 function DashboardLayoutInner({
   children,
 }: {
@@ -182,6 +233,7 @@ function DashboardLayoutInner({
   const filteredMainNavItems = filterNavItems(mainNavItems);
   const filteredManageItems = filterNavItems(manageItems);
   const filteredDeveloperItems = filterNavItems(developerItems);
+  const filteredSettingsItems = filterNavItems(settingsItems);
 
   // Determine if an item should show a "View only" badge
   const getItemBadge = (item: NavItem): string | undefined => {
@@ -203,9 +255,12 @@ function DashboardLayoutInner({
   const handleLogout = async () => {
     try {
       await apiRequest("/auth/logout", { method: "POST" });
-    } catch (e) {
-      // Ignore errors
+    } catch {
+      // Ignore errors - logout should always succeed on client side
     }
+    // Clear all auth state
+    setAccessToken(null);
+    setCurrentOrganizationId(null);
     document.cookie =
       "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     router.push("/login");
@@ -342,6 +397,7 @@ function DashboardLayoutInner({
           <NavSection items={filteredMainNavItems} />
           <NavSection items={filteredManageItems} title="Manage" />
           <NavSection items={filteredDeveloperItems} title="Developer" />
+          <NavSection items={filteredSettingsItems} title="Settings" />
         </nav>
 
         {/* Upgrade Banner */}
@@ -366,21 +422,6 @@ function DashboardLayoutInner({
           </Link>
         </div>
 
-        {/* Settings at bottom */}
-        <div className="p-3 border-t border-slate-100">
-          <Link
-            href="/dashboard/settings/profile"
-            className={cn(
-              "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200",
-              pathname.includes("/settings")
-                ? "bg-slate-100 text-slate-900"
-                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-            )}
-          >
-            <Settings className="h-[18px] w-[18px] text-slate-400" />
-            Settings
-          </Link>
-        </div>
       </aside>
 
       {/* Main Content */}

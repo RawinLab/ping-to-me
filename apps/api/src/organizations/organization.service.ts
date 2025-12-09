@@ -52,7 +52,7 @@ export class OrganizationService {
 
   async findAll(userId: string) {
     // Get all organizations the user is a member of
-    return this.prisma.organization.findMany({
+    const orgs = await this.prisma.organization.findMany({
       where: {
         members: {
           some: { userId },
@@ -62,8 +62,19 @@ export class OrganizationService {
         _count: {
           select: { members: true },
         },
+        members: {
+          where: { userId },
+          select: { role: true },
+        },
       },
     });
+
+    // Transform to include currentUserRole for easier frontend consumption
+    return orgs.map((org) => ({
+      ...org,
+      currentUserRole: org.members[0]?.role || 'VIEWER',
+      members: undefined, // Remove members array from response
+    }));
   }
 
   async findOne(orgId: string, userId: string) {
