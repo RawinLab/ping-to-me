@@ -18,6 +18,7 @@ A high-performance link management platform designed for speed, scalability, and
 ## 🚀 Features
 
 ### Core Features
+
 - **🔗 Link Management** - Shorten URLs, manage tags, folders, and campaigns
 - **⚡ High-Performance Redirects** - Powered by Cloudflare Workers for <100ms global latency
 - **📊 Real-Time Analytics** - Track clicks with geographic, device, and referrer data
@@ -26,12 +27,14 @@ A high-performance link management platform designed for speed, scalability, and
 - **👤 Bio Pages** - Create "Link-in-Bio" pages to showcase multiple links
 
 ### Team & Enterprise
+
 - **👥 Team Management** - Collaborate with Role-Based Access Control (RBAC)
 - **🏢 Multi-Tenancy** - Support for multiple organizations per user
 - **🔐 Enterprise Security** - 2FA, SSO/SAML, Passkeys, Session Management
 - **📝 Audit Logs** - Complete activity tracking for compliance
 
 ### Developer Platform
+
 - **🔑 API Keys** - Create and manage API keys with scopes
 - **🪝 Webhooks** - Real-time event notifications
 - **📚 RESTful API** - Comprehensive API with Swagger documentation
@@ -40,16 +43,16 @@ A high-performance link management platform designed for speed, scalability, and
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| **Monorepo** | [Turborepo](https://turbo.build/) + pnpm |
+| Layer        | Technology                                                                                                                    |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| **Monorepo** | [Turborepo](https://turbo.build/) + pnpm                                                                                      |
 | **Frontend** | [Next.js 14](https://nextjs.org/) (App Router), [Tailwind CSS](https://tailwindcss.com/), [shadcn/ui](https://ui.shadcn.com/) |
-| **Backend** | [NestJS 10](https://nestjs.com/), TypeScript 5.x |
-| **Database** | [PostgreSQL](https://www.postgresql.org/) + [Prisma](https://www.prisma.io/) |
-| **Edge** | [Cloudflare Workers](https://workers.cloudflare.com/) + [Hono](https://hono.dev/) |
-| **Storage** | [Cloudflare R2](https://www.cloudflare.com/developer-platform/r2/) |
-| **Payments** | [Stripe](https://stripe.com/) |
-| **Testing** | [Jest](https://jestjs.io/) (unit), [Playwright](https://playwright.dev/) (E2E) |
+| **Backend**  | [NestJS 10](https://nestjs.com/), TypeScript 5.x                                                                              |
+| **Database** | [PostgreSQL](https://www.postgresql.org/) + [Prisma](https://www.prisma.io/)                                                  |
+| **Edge**     | [Cloudflare Workers](https://workers.cloudflare.com/) + [Hono](https://hono.dev/)                                             |
+| **Storage**  | [Cloudflare R2](https://www.cloudflare.com/developer-platform/r2/)                                                            |
+| **Payments** | [Stripe](https://stripe.com/)                                                                                                 |
+| **Testing**  | [Jest](https://jestjs.io/) (unit), [Playwright](https://playwright.dev/) (E2E)                                                |
 
 ---
 
@@ -107,7 +110,7 @@ pingtome/
    # Copy example env files
    cp apps/api/.env.example apps/api/.env
    cp apps/web/.env.example apps/web/.env
-   
+
    # Edit with your credentials
    ```
 
@@ -116,10 +119,10 @@ pingtome/
    ```bash
    # Generate Prisma client
    pnpm --filter @pingtome/database db:generate
-   
+
    # Push schema to database
    pnpm --filter @pingtome/database db:push
-   
+
    # Seed test data (optional)
    pnpm --filter @pingtome/database db:seed
    ```
@@ -129,7 +132,7 @@ pingtome/
    ```bash
    pnpm dev
    ```
-   
+
    This starts:
    - **API**: http://localhost:3001
    - **Web**: http://localhost:3010
@@ -250,13 +253,13 @@ npx playwright show-report
 
 After seeding, use these test accounts:
 
-| Role | Email | Password |
-|------|-------|----------|
-| Owner | `e2e-owner@pingtome.test` | `TestPassword123!` |
-| Admin | `e2e-admin@pingtome.test` | `TestPassword123!` |
-| Editor | `e2e-editor@pingtome.test` | `TestPassword123!` |
-| Viewer | `e2e-viewer@pingtome.test` | `TestPassword123!` |
-| New User | `e2e-new@pingtome.test` | `TestPassword123!` |
+| Role     | Email                      | Password           |
+| -------- | -------------------------- | ------------------ |
+| Owner    | `e2e-owner@pingtome.test`  | `TestPassword123!` |
+| Admin    | `e2e-admin@pingtome.test`  | `TestPassword123!` |
+| Editor   | `e2e-editor@pingtome.test` | `TestPassword123!` |
+| Viewer   | `e2e-viewer@pingtome.test` | `TestPassword123!` |
+| New User | `e2e-new@pingtome.test`    | `TestPassword123!` |
 
 ### Seeded Test Data Includes
 
@@ -344,47 +347,47 @@ id = "your-kv-namespace-id"
 
 ### API Modules (`apps/api/src/`)
 
-| Module | Purpose |
-|--------|---------|
-| `auth/` | Authentication, OAuth, 2FA, Sessions, Passkeys, SSO |
-| `links/` | Link CRUD, bulk operations, status management |
-| `analytics/` | Click tracking, reports, exports, real-time |
-| `qr/` | QR code generation with customization |
-| `organizations/` | Workspaces, members, settings |
-| `invitations/` | Team invitations |
-| `domains/` | Custom domains, DNS verification, SSL |
-| `campaigns/` | Campaign management with UTM |
-| `tags/` | Tag CRUD |
-| `folders/` | Folder hierarchy |
-| `biopages/` | Link-in-bio pages |
-| `payments/` | Stripe integration |
-| `notifications/` | User notifications |
-| `developer/` | API keys, webhooks |
-| `audit/` | Audit logging |
-| `quota/` | Usage tracking and limits |
-| `plans/` | Subscription plans |
-| `tasks/` | Scheduled tasks (analytics, reports) |
+| Module           | Purpose                                             |
+| ---------------- | --------------------------------------------------- |
+| `auth/`          | Authentication, OAuth, 2FA, Sessions, Passkeys, SSO |
+| `links/`         | Link CRUD, bulk operations, status management       |
+| `analytics/`     | Click tracking, reports, exports, real-time         |
+| `qr/`            | QR code generation with customization               |
+| `organizations/` | Workspaces, members, settings                       |
+| `invitations/`   | Team invitations                                    |
+| `domains/`       | Custom domains, DNS verification, SSL               |
+| `campaigns/`     | Campaign management with UTM                        |
+| `tags/`          | Tag CRUD                                            |
+| `folders/`       | Folder hierarchy                                    |
+| `biopages/`      | Link-in-bio pages                                   |
+| `payments/`      | Stripe integration                                  |
+| `notifications/` | User notifications                                  |
+| `developer/`     | API keys, webhooks                                  |
+| `audit/`         | Audit logging                                       |
+| `quota/`         | Usage tracking and limits                           |
+| `plans/`         | Subscription plans                                  |
+| `tasks/`         | Scheduled tasks (analytics, reports)                |
 
 ### Web Routes (`apps/web/app/`)
 
-| Route | Description |
-|-------|-------------|
-| `/` | Landing page |
-| `/login`, `/register` | Authentication |
-| `/forgot-password`, `/reset-password` | Password recovery |
-| `/verify-email` | Email verification |
-| `/dashboard` | Main dashboard |
-| `/dashboard/links` | Link management |
-| `/dashboard/links/create` | Create new link |
-| `/dashboard/links/[id]/edit` | Edit link |
-| `/dashboard/analytics/[id]` | Link analytics |
-| `/dashboard/qr/[id]` | QR code editor |
-| `/dashboard/bio` | Bio page manager |
-| `/dashboard/settings/*` | User/org settings |
-| `/dashboard/developer/*` | API keys, webhooks |
-| `/dashboard/billing` | Subscription management |
-| `/bio/[slug]` | Public bio pages |
-| `/pricing` | Pricing page |
+| Route                                 | Description             |
+| ------------------------------------- | ----------------------- |
+| `/`                                   | Landing page            |
+| `/login`, `/register`                 | Authentication          |
+| `/forgot-password`, `/reset-password` | Password recovery       |
+| `/verify-email`                       | Email verification      |
+| `/dashboard`                          | Main dashboard          |
+| `/dashboard/links`                    | Link management         |
+| `/dashboard/links/create`             | Create new link         |
+| `/dashboard/links/[id]/edit`          | Edit link               |
+| `/dashboard/analytics/[id]`           | Link analytics          |
+| `/dashboard/qr/[id]`                  | QR code editor          |
+| `/dashboard/bio`                      | Bio page manager        |
+| `/dashboard/settings/*`               | User/org settings       |
+| `/dashboard/developer/*`              | API keys, webhooks      |
+| `/dashboard/billing`                  | Subscription management |
+| `/bio/[slug]`                         | Public bio pages        |
+| `/pricing`                            | Pricing page            |
 
 ---
 
@@ -410,16 +413,17 @@ docker run -p 3001:3001 --env-file .env pingtome-api
 
 ### Reference Documents
 
-| Document | Location | Description |
-|----------|----------|-------------|
-| **RBAC Guide** | `refs/rbac.md` | Role-based access control system |
-| **Audit Logging** | `refs/auditlog.md` | Audit logging implementation |
-| **Database README** | `packages/database/README.md` | Seed data and database commands |
-| **E2E Test Guide** | `apps/web/e2e/INDEX.md` | E2E testing documentation |
+| Document            | Location                      | Description                      |
+| ------------------- | ----------------------------- | -------------------------------- |
+| **RBAC Guide**      | `refs/rbac.md`                | Role-based access control system |
+| **Audit Logging**   | `refs/auditlog.md`            | Audit logging implementation     |
+| **Database README** | `packages/database/README.md` | Seed data and database commands  |
+| **E2E Test Guide**  | `apps/web/e2e/INDEX.md`       | E2E testing documentation        |
 
 ### API Documentation
 
 When running the API, Swagger documentation is available at:
+
 ```
 http://localhost:3001/api/docs
 ```
