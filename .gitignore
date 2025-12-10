@@ -40,6 +40,7 @@ coverage/
 apps/api/coverage/
 apps/web/playwright-report/
 apps/web/test-results/
+apps/web/screenshots/
 *.tsbuildinfo
 
 # Generated Documentation
