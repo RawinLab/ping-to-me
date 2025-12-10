@@ -132,10 +132,12 @@ export default function LoginActivityPage() {
       if (filter === "failed") params.success = false;
 
       const response = await securityApi.getLoginActivity(params);
-      setActivities(response.activities);
-      setTotal(response.total);
+      setActivities(response.activities || []);
+      setTotal(response.total || 0);
     } catch (error) {
       console.error("Failed to fetch login activity", error);
+      setActivities([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
@@ -235,9 +237,9 @@ export default function LoginActivityPage() {
                 ) : activities.length > 0 ? (
                   <div className="space-y-3">
                     {activities.map((activity) => {
-                      const { browser, os, device } = parseUserAgent(
-                        activity.userAgent,
-                      );
+                      // Use parsed info from backend if available, otherwise parse locally
+                      const browser = activity.browser || parseUserAgent(activity.userAgent || "").browser;
+                      const os = activity.os || parseUserAgent(activity.userAgent || "").os;
                       const suspicious = isSuspiciousActivity(
                         activity,
                         activities,
@@ -299,19 +301,19 @@ export default function LoginActivityPage() {
                               </div>
                               <div className="flex items-center gap-2 text-sm text-slate-600">
                                 <MapPin className="h-3.5 w-3.5" />
-                                <span>{activity.location}</span>
+                                <span>{activity.location || "Unknown location"}</span>
                               </div>
                               <div className="flex items-center gap-2 text-sm text-slate-600">
                                 <Shield className="h-3.5 w-3.5" />
-                                <span>IP: {activity.ipAddress}</span>
+                                <span>IP: {activity.ipAddress || "Unknown"}</span>
                               </div>
                             </div>
-                            {!activity.success && activity.failureReason && (
+                            {!activity.success && activity.reason && (
                               <div className="mt-2 flex items-start gap-2 p-2 bg-red-100 rounded-lg">
                                 <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5" />
                                 <p className="text-sm text-red-700">
                                   <span className="font-medium">Reason:</span>{" "}
-                                  {activity.failureReason}
+                                  {activity.reason}
                                 </p>
                               </div>
                             )}

@@ -11,6 +11,7 @@ export class LoginActivityController {
   /**
    * GET /auth/login-activity
    * View recent login history for current user (both successful and failed)
+   * Supports filtering by success status via query param
    */
   @Get()
   async getLoginActivity(
@@ -20,8 +21,9 @@ export class LoginActivityController {
     const email = req.user.email;
     const limit = query.limit ?? 20;
     const page = query.page ?? 1;
+    const success = query.success;
 
-    return this.loginSecurityService.getLoginActivity(email, page, limit);
+    return this.loginSecurityService.getLoginActivity(email, page, limit, success);
   }
 
   /**

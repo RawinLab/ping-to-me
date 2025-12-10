@@ -45,6 +45,11 @@ export class LoginActivityQueryDto {
   @Min(1)
   @Type(() => Number)
   page?: number = 1;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  success?: boolean;
 }
 
 export class LoginActivityResponseDto {

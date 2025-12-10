@@ -185,23 +185,31 @@ export class LoginSecurityService {
 
   /**
    * Get login activity for a user (paginated)
+   * Supports optional filtering by success status
    */
   async getLoginActivity(
     email: string,
     page: number = 1,
     limit: number = 20,
+    success?: boolean,
   ) {
     const skip = (page - 1) * limit;
 
+    // Build where clause with optional success filter
+    const where: { email: string; success?: boolean } = { email };
+    if (success !== undefined) {
+      where.success = success;
+    }
+
     const [attempts, total] = await Promise.all([
       this.prisma.loginAttempt.findMany({
-        where: { email },
+        where,
         orderBy: { createdAt: "desc" },
         take: limit,
         skip,
       }),
       this.prisma.loginAttempt.count({
-        where: { email },
+        where,
       }),
     ]);
 

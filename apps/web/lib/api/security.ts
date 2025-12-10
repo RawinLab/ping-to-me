@@ -26,13 +26,18 @@ export interface Session {
 
 export interface LoginActivity {
   id: string;
-  userId: string;
+  email: string;
   success: boolean;
-  ipAddress: string;
-  userAgent: string;
-  location: string;
-  failureReason?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  location?: string;
+  reason?: string; // failure reason
   createdAt: string;
+  // Parsed fields from backend
+  deviceInfo?: string;
+  device?: string;
+  browser?: string;
+  os?: string;
 }
 
 export interface LoginActivityParams {
@@ -111,7 +116,15 @@ export const securityApi = {
       queryParams.append("success", params.success.toString());
 
     const query = queryParams.toString();
-    return apiRequest(`/auth/login-activity${query ? `?${query}` : ""}`);
+    const response = await apiRequest(`/auth/login-activity${query ? `?${query}` : ""}`);
+
+    // Map backend response (attempts) to frontend interface (activities)
+    return {
+      activities: response.attempts || [],
+      total: response.total || 0,
+      page: response.page || 1,
+      limit: response.limit || 20,
+    };
   },
 
   // API Keys
