@@ -57,6 +57,7 @@ import { apiRequest, setAccessToken, setCurrentOrganizationId } from "@/lib/api"
 import { usePermission } from "@/hooks/usePermission";
 import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { OrganizationSwitcher } from "@/components/organization/OrganizationSwitcher";
 
 interface NavItem {
   title: string;
@@ -116,6 +117,20 @@ const manageItems: NavItem[] = [
     href: "/dashboard/folders",
     icon: FolderOpen,
     description: "Organize your links",
+    requirePermission: (p) => p.isEditorOrAbove,
+  },
+  {
+    title: "Tags",
+    href: "/dashboard/tags",
+    icon: Tags,
+    description: "Manage link tags",
+    requirePermission: (p) => p.isEditorOrAbove,
+  },
+  {
+    title: "Campaigns",
+    href: "/dashboard/campaigns",
+    icon: Sparkles,
+    description: "Campaign management",
     requirePermission: (p) => p.isEditorOrAbove,
   },
   {
@@ -414,6 +429,11 @@ function DashboardLayoutInner({
               <Menu className="h-5 w-5" />
             )}
           </Button>
+
+          {/* Organization Switcher */}
+          <div className="hidden md:block mr-4">
+            <OrganizationSwitcher />
+          </div>
 
           {/* Search */}
           <div className="flex items-center gap-4 flex-1 max-w-xl">
