@@ -347,27 +347,27 @@
 | ORG-004 | Organization Switcher | **PASS** | ✅ OrganizationSwitcher integrated into dashboard layout header |
 | FLD-001 | Create Folder | **PASS** | "New Folder" button works, color picker with 10 colors, folder appears in list |
 | FLD-002 | View Links in Folder | **PASS** | "View Links" button navigates to `/dashboard/links?folder=[id]` |
-| FLD-003 | Move Link to Folder | **NOT_IMPL** | Backend API exists (`POST /folders/:id/links/:linkId`) but no UI |
+| FLD-003 | Move Link to Folder | **PASS** | ✅ MoveLinkToFolderDialog added to LinksTable with folder selection dropdown |
 | FLD-004 | Delete Folder | **PASS** | Trash icon, confirmation dialog, links preserved (moved to root) |
 | FLD-005 | Create Nested Folder | **NOT_IMPL** | Backend supports hierarchy (`parentId`, `/folders/tree`) but no UI |
 | TAG-001 | Create Tag | **PASS** | ✅ `/dashboard/tags` page with full CRUD, color picker (10 colors) |
 | TAG-002 | Tag Usage Statistics | **PASS** | ✅ Tags page shows link count per tag, statistics from backend API |
-| TAG-003 | Filter by Tag | **PARTIAL** | ✅ "View Links" button on Tags page; No tag filter dropdown in Links page |
+| TAG-003 | Filter by Tag | **PASS** | ✅ FiltersModal now has Tag, Campaign, and Folder filters |
 | TAG-004 | Delete Tag | **PASS** | ✅ Delete button with confirmation dialog on Tags page |
 | TAG-005 | Merge Duplicate Tags | **PASS** | ✅ Merge feature with source/target tag selection on Tags page |
 | CMP-001 | Create Campaign | **PASS** | ✅ `/dashboard/campaigns` page with full CRUD, dates, UTM params, goals |
 | CMP-002 | Campaign Analytics | **PARTIAL** | ✅ Campaigns list shows link count; Full analytics view not implemented |
-| CMP-003 | Assign Link to Campaign | **NOT_IMPL** | No campaign selector in link forms; Backend has `campaignId` on Link |
+| CMP-003 | Assign Link to Campaign | **PASS** | ✅ Campaign selector dropdown added to Link creation form |
 
 ---
 
 ## 📊 Summary
 
 **Total Tests:** 17
-**Passed:** 11 (9 full + 2 partial)
-**Not Implemented:** 6
+**Passed:** 14 (13 full + 1 partial)
+**Not Implemented:** 3
 **Failed:** 0
-**Pass Rate:** 65% → **Improved from 24%**
+**Pass Rate:** 82% → **Improved from 65% → 24%**
 
 ### Key Findings - Updated 2025-12-11
 
@@ -376,27 +376,31 @@
 2. ✅ **Tags Management Page** (`/dashboard/tags`) - Full CRUD with colors, merge, statistics
 3. ✅ **Campaigns Management Page** (`/dashboard/campaigns`) - Full CRUD with dates, UTM, goals
 4. ✅ **Sidebar Navigation** - Tags and Campaigns added to dashboard sidebar
+5. ✅ **Campaign/Folder Selectors** - Added to Link creation form
+6. ✅ **Move Link to Folder** - MoveLinkToFolderDialog with folder color indicators
+7. ✅ **Enhanced Filters** - Campaign and Folder filters added to FiltersModal
 
 ### What Works Now
 1. ✅ Create Folder (with colors)
 2. ✅ View Links in Folder (URL-based filter)
 3. ✅ Delete Folder (with confirmation)
-4. ✅ Create Organization (via OrganizationSwitcher + /dashboard/organization)
-5. ✅ **Organization Switcher** - Switch between orgs, create new org
-6. ✅ **Create/Edit/Delete Tags** - Full tag management with colors
-7. ✅ **Tag Statistics** - View link count per tag
-8. ✅ **Merge Tags** - Merge duplicate tags
-9. ✅ **Create/Edit/Delete Campaigns** - Full campaign management
-10. ✅ **Campaign Status** - Draft/Active/Paused/Completed with badges
-11. ✅ **UTM Parameters** - Campaign-level UTM configuration
+4. ✅ **Move Link to Folder** - Dialog from link menu
+5. ✅ Create Organization (via OrganizationSwitcher + /dashboard/organization)
+6. ✅ **Organization Switcher** - Switch between orgs, create new org
+7. ✅ **Create/Edit/Delete Tags** - Full tag management with colors
+8. ✅ **Tag Statistics** - View link count per tag
+9. ✅ **Merge Tags** - Merge duplicate tags
+10. ✅ **Filter by Tag/Campaign/Folder** - FiltersModal with all filters
+11. ✅ **Create/Edit/Delete Campaigns** - Full campaign management
+12. ✅ **Campaign Status** - Draft/Active/Paused/Completed with badges
+13. ✅ **UTM Parameters** - Campaign-level UTM configuration
+14. ✅ **Assign Link to Campaign** - Campaign selector in link form
+15. ✅ **Assign Link to Folder** - Folder selector in link form
 
 ### What's Still Missing
 1. ❌ Edit Organization details (name/logo/timezone)
-2. ❌ Move Link to Folder UI
-3. ❌ Nested Folders UI
-4. ❌ Tag filter in Links page
-5. ❌ Campaign selector in Link form
-6. ❌ Full Campaign Analytics view
+2. ❌ Nested Folders UI
+3. ❌ Full Campaign Analytics view
 
 ### Screenshots
 Located at `/apps/web/screenshots/`:
