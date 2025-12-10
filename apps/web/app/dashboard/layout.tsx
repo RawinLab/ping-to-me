@@ -49,8 +49,6 @@ import {
   Sun,
   Command,
   Users,
-  Smartphone,
-  Activity,
   Building2,
 } from "lucide-react";
 import { NotificationCenter } from "@/components/notifications/NotificationCenter";
@@ -171,19 +169,7 @@ const settingsItems: NavItem[] = [
     title: "Security",
     href: "/dashboard/settings/security",
     icon: Shield,
-    description: "Password & 2FA settings",
-  },
-  {
-    title: "Sessions",
-    href: "/dashboard/settings/security/sessions",
-    icon: Smartphone,
-    description: "Active login sessions",
-  },
-  {
-    title: "Login Activity",
-    href: "/dashboard/settings/security/activity",
-    icon: Activity,
-    description: "Recent login history",
+    description: "Password, sessions & login activity",
   },
   {
     title: "Two-Factor Auth",
