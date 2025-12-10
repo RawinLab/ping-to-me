@@ -132,6 +132,8 @@ export default function LoginActivityPage() {
       if (filter === "failed") params.success = false;
 
       const response = await securityApi.getLoginActivity(params);
+      console.log("Frontend received:", response);
+      console.log("Activities:", response.activities);
       setActivities(response.activities || []);
       setTotal(response.total || 0);
     } catch (error) {

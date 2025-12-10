@@ -118,6 +118,8 @@ export const securityApi = {
     const query = queryParams.toString();
     const response = await apiRequest(`/auth/login-activity${query ? `?${query}` : ""}`);
 
+    console.log("Login activity API response:", response);
+
     // Map backend response (attempts) to frontend interface (activities)
     return {
       activities: response.attempts || [],
