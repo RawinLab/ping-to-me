@@ -20,7 +20,7 @@
 2. คลิก Analytics icon หรือปุ่ม ข้าง Link ที่ต้องการ
 
 **Expected Results:**
-- ✅ Redirect ไปหน้า `/dashboard/analytics/{linkId}`
+- ✅ Redirect ไปหน้า `/dashboard/links/{linkId}/analytics`
 - ✅ แสดงข้อมูล Analytics ของ Link นั้น
 
 ---
@@ -32,7 +32,7 @@
 | **Role** | ทุก Role |
 
 **ขั้นตอนการทดสอบ:**
-1. เข้าหน้า `/dashboard/analytics/{linkId}`
+1. เข้าหน้า `/dashboard/links/{linkId}/analytics`
 2. ดู Header Card ด้านบน
 
 **Expected Results:**
@@ -51,7 +51,7 @@
 | **Role** | ทุก Role |
 
 **ขั้นตอนการทดสอบ:**
-1. เข้าหน้า `/dashboard/analytics/{linkId}`
+1. เข้าหน้า `/dashboard/links/{linkId}/analytics`
 2. ดู Stats Cards
 
 **Expected Results:**
@@ -285,20 +285,61 @@
 
 ## ✅ Test Result
 
+**Test Date:** 2025-12-11
+**Tester:** UAT Automation
+**Environment:** localhost:3010 (Web), localhost:3011 (API)
+**Test Account:** e2e-owner@pingtome.test
+
 | Test ID | Test Name | PASS/FAIL | Notes |
 |---------|-----------|-----------|-------|
-| ANA-001 | Access Analytics Page | | |
-| ANA-002 | Link Header Card | | |
-| ANA-003 | Stats Cards | | |
-| ANA-010 | Change Date Range | | |
-| ANA-020 | Engagements Chart | | |
-| ANA-030 | Top Countries | | |
-| ANA-031 | Cities | | |
-| ANA-040 | Devices Chart | | |
-| ANA-041 | Browsers Chart | | |
-| ANA-042 | Operating Systems | | |
-| ANA-050 | Top Referrers | | |
-| ANA-060 | Recent Activity Table | | |
-| ANA-070 | Export Data | | |
-| ANA-080 | Empty Analytics | | |
+| ANA-001 | Access Analytics Page | **PASS** | Analytics icon on link card → `/dashboard/links/{linkId}/analytics` |
+| ANA-002 | Link Header Card | **PASS** | Shows Short URL (pingto.me/xxx), Destination URL, Created Date, Copy button |
+| ANA-003 | Stats Cards | **PASS** | 3 cards: Total Engagements, Last 7 days, Weekly change with % and trend |
+| ANA-010 | Change Date Range | **PASS** | 7d/30d/90d buttons work, charts & stats update correctly |
+| ANA-020 | Engagements Chart | **PASS** | Bar chart shows time-series data, updates with date range |
+| ANA-030 | Top Countries | **PASS** | Countries with bar charts, counts (US: 263, TH: 252, JP: 121, etc.) |
+| ANA-031 | Cities | **PASS** | Cities tab exists, shows "No location data" when empty (proper empty state) |
+| ANA-040 | Devices Chart | **PASS** | Donut chart: Mobile 59%, Desktop 35%, Tablet 6% |
+| ANA-041 | Browsers Chart | **PASS** | Donut chart: Chrome 663, Safari 223, WebKit 109, Edge 83, Opera 32 |
+| ANA-042 | Operating Systems | **PASS** | Donut chart: iOS 707, Unknown 283, Android 102, Linux 18 |
+| ANA-050 | Top Referrers | **PASS** | Pie chart with sources, "Show 5 more" option |
+| ANA-060 | Recent Activity Table | **PASS** | Table: Time, Link, Country, Referrer columns, sorted newest first |
+| ANA-070 | Export Data | **PASS** | Export dropdown: CSV and PDF options, download works |
+| ANA-080 | Empty Analytics | **PASS** | Stats show 0, charts render properly with empty data |
+
+---
+
+## 📊 Summary
+
+**Total Tests:** 14
+**Passed:** 14
+**Failed:** 0
+**Pass Rate:** 100%
+
+### Key Findings
+
+1. **Analytics URL Structure:** `/dashboard/links/{linkId}/analytics` (NOT `/dashboard/analytics/{linkId}`)
+2. **Date Range:** 3 options (7d, 30d, 90d) - no custom range in current implementation
+3. **Charts:** Mix of bar charts (engagements), donut charts (devices, browsers, OS, referrers)
+4. **Export:** Supports CSV and PDF formats
+5. **Empty State:** Properly handled with 0 values and appropriate messaging
+6. **Recent Activity:** Shows Time, Link, Country, Referrer (no Browser/Device columns)
+
+### Screenshots
+
+Located at `/apps/web/screenshots/`:
+- `uat-ana-001-*.png` - Access analytics
+- `uat-ana-002-*.png` - Header card
+- `uat-ana-003-*.png` - Stats cards
+- `uat-ana-010-*.png` - Date range (7d/30d/90d)
+- `uat-ana-020-*.png` - Engagements chart
+- `uat-ana-030-*.png` - Countries
+- `uat-ana-031-*.png` - Cities
+- `uat-ana-040-*.png` - Devices
+- `uat-ana-041-*.png` - Browsers
+- `uat-ana-042-*.png` - Operating Systems
+- `uat-ana-050-*.png` - Referrers
+- `uat-ana-060-*.png` - Recent Activity
+- `uat-ana-070-*.png` - Export
+- `uat-ana-080-*.png` - Empty state
 
