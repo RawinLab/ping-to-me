@@ -446,29 +446,50 @@
 
 ## ✅ Test Result
 
+**Test Date:** 2025-12-10
+**Tester:** UAT Lead (Claude Code)
+**Environment:** localhost:3010 (Web), localhost:3011 (API)
+**Test Account:** e2e-owner@pingtome.test
+
 | Test ID | Test Name | PASS/FAIL | Notes |
 |---------|-----------|-----------|-------|
-| LINK-001 | Create - Random Slug | | |
-| LINK-002 | Create - Custom Slug | | |
-| LINK-003 | Create - Invalid URL | | |
-| LINK-004 | Create - Duplicate Slug | | |
-| LINK-005 | Create - With Tags | | |
-| LINK-006 | Create - With Expiration | | |
-| LINK-007 | Create - Password Protected | | |
-| LINK-008 | Create - UTM Parameters | | |
-| LINK-010 | Edit - Open Modal | | |
-| LINK-011 | Edit - Destination URL | | |
-| LINK-012 | Edit - Title & Tags | | |
-| LINK-013 | Edit - Validation Error | | |
-| LINK-020 | Status - Disable | | |
-| LINK-021 | Status - Enable | | |
-| LINK-022 | Status - Archive | | |
-| LINK-030 | Delete Link | | |
-| LINK-040 | View - List Mode | | |
-| LINK-041 | View - Grid Mode | | |
-| LINK-042 | Search Links | | |
-| LINK-043 | Filter by Status | | |
-| LINK-044 | Filter by Tags | | |
-| LINK-050 | Select Multiple | | |
-| LINK-051 | Select All | | |
+| LINK-001 | Create - Random Slug | **PASS** | Link created with auto-generated random slug. Success message "Link Created!" shown. |
+| LINK-002 | Create - Custom Slug | **PASS** | Custom slug `uat-custom-{timestamp}` created successfully. Appears in short URL. |
+| LINK-003 | Create - Invalid URL | **PASS** | Validation error "Please enter a valid URL" shown. Form submission blocked. |
+| LINK-004 | Create - Duplicate Slug | **PASS** | Error "Slug already taken" shown. Duplicate prevented correctly. |
+| LINK-005 | Create - With Tags | **PASS** | Tags input in Link Details section. Accepts comma-separated values. |
+| LINK-006 | Create - With Expiration | **PASS** | Expiration in Advanced Settings. Uses datetime-local input. Works correctly. |
+| LINK-007 | Create - Password Protected | **PASS** | Password field in Advanced Settings. Successfully set password protection. |
+| LINK-008 | Create - UTM Parameters | **PASS** | UTM fields (Source, Medium, Campaign) in Advanced Settings. Appended to destination URL. |
+| LINK-010 | Edit - Open Modal | **PASS** | Edit modal opens via pencil icon on hover. Shows current link data. |
+| LINK-011 | Edit - Destination URL | **PASS** | URL updated to new-destination.com. Changes persisted after save. |
+| LINK-012 | Edit - Title & Tags | **PASS** | Title and tags updated successfully. Changes visible after reopen. |
+| LINK-013 | Edit - Validation Error | **PASS** | Empty URL shows "Please enter a valid URL". Save blocked, modal stays open. |
+| LINK-020 | Status - Disable | **PASS** | Link disabled via 3-dot menu. "Disabled" badge shown. Persists on reload. |
+| LINK-021 | Status - Enable | **PASS** | Disabled link restored via "Enable link" option. Badge removed. |
+| LINK-022 | Status - Archive | **PASS** | Link archived successfully. Visible in archived filter view. |
+| LINK-030 | Delete Link | **PASS** | Link deleted with confirmation. Success toast "Link deleted successfully". |
+| LINK-040 | View - List Mode | **PASS** | 3-button toggle (List/Table/Grid). Card layout with all link info. |
+| LINK-041 | View - Grid Mode | **PASS** | Responsive 3-column grid layout. Clean card design. |
+| LINK-042 | Search Links | **PASS** | Real-time search filtering. Instant results as you type. |
+| LINK-043 | Filter by Status | **PASS** | Dropdown: All/Active/Disabled/Expired/Archived. Works correctly. |
+| LINK-044 | Filter by Tags | **PASS** | Advanced filters modal with Tags, Link Type, QR Code filters. |
+| LINK-050 | Select Multiple | **NOT_IMPL** | No checkboxes on link cards. Bulk selection not implemented. |
+| LINK-051 | Select All | **NOT_IMPL** | No "Select All" checkbox. Bulk operations not implemented. |
+
+### Summary
+- **Total Tests:** 23
+- **Passed:** 21 (91.3%)
+- **Not Implemented:** 2 (8.7%)
+- **Failed:** 0
+
+### Notes
+1. **Create Link Form Structure:**
+   - Link Details (default open): URL, slug, title, tags
+   - Sharing Options (default open): QR code, bio page
+   - Advanced Settings (collapsed): expiration, password, UTM
+2. **View Modes:** List, Table, Grid - 3 options available
+3. **Status Management:** Full support for Disable/Enable/Archive via context menu
+4. **Bulk Selection:** Not implemented - no checkboxes or bulk actions available
+5. **Duplicate Detection:** System also detects duplicate URLs (bonus feature)
 

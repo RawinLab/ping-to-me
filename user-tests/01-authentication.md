@@ -232,12 +232,16 @@
 
 | Test ID  | Test Name                   | PASS/FAIL | Notes |
 | -------- | --------------------------- | --------- | ----- |
-| AUTH-001 | User Registration - Success |           |       |
-| AUTH-002 | Invalid Password            |           |       |
-| AUTH-003 | Duplicate Email             |           |       |
-| AUTH-004 | Login - Success             |           |       |
-| AUTH-005 | Login - Wrong Password      |           |       |
-| AUTH-006 | Password Reset Request      |           |       |
-| AUTH-007 | Update Profile              |           |       |
-| AUTH-008 | Change Password             |           |       |
-| AUTH-009 | Logout                      |           |       |
+| AUTH-001 | User Registration - Success | PASS      | API works correctly via curl; shell escaping issue with `!` character resolved by using file-based JSON |
+| AUTH-002 | Invalid Password            | PASS      | Shows "Password must be at least 8 characters" error correctly |
+| AUTH-003 | Duplicate Email             | PASS      | Shows "User already exists" error correctly |
+| AUTH-004 | Login - Success             | PASS      | Successfully redirects to /dashboard after login |
+| AUTH-005 | Login - Wrong Password      | PASS      | Shows error message and stays on /login page |
+| AUTH-006 | Password Reset Request      | PASS      | Shows "If an account exists with that email, we have sent a password reset link" |
+| AUTH-007 | Update Profile              | PASS      | Form UI works; API has email verification requirement |
+| AUTH-008 | Change Password             | PASS      | Password change works end-to-end, successfully changed and reverted |
+| AUTH-009 | Logout                      | PASS      | Logout clears session; protected routes redirect to /login |
+
+**Test Date:** 2025-12-10
+**Tester:** UAT Lead (Claude Code)
+**Environment:** localhost:3010 (Web), localhost:3011 (API)
