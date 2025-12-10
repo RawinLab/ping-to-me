@@ -342,21 +342,21 @@
 | Test ID | Test Name | PASS/FAIL | Notes |
 |---------|-----------|-----------|-------|
 | ORG-001 | Create Organization | **PASS** | ✅ Now works via OrganizationSwitcher in header + `/dashboard/organization` page |
-| ORG-002 | Edit Organization Details | **NOT_IMPL** | No UI to edit org name/logo; `/dashboard/settings/organization` returns 404 |
-| ORG-003 | Edit Timezone | **NOT_IMPL** | No timezone configuration UI; DB field exists but no frontend |
+| ORG-002 | Edit Organization Details | **PASS** | ✅ `/dashboard/settings/organization` with name, logo upload |
+| ORG-003 | Edit Timezone | **PASS** | ✅ Timezone dropdown in Organization Settings page |
 | ORG-004 | Organization Switcher | **PASS** | ✅ OrganizationSwitcher integrated into dashboard layout header |
 | FLD-001 | Create Folder | **PASS** | "New Folder" button works, color picker with 10 colors, folder appears in list |
 | FLD-002 | View Links in Folder | **PASS** | "View Links" button navigates to `/dashboard/links?folder=[id]` |
 | FLD-003 | Move Link to Folder | **PASS** | ✅ MoveLinkToFolderDialog added to LinksTable with folder selection dropdown |
 | FLD-004 | Delete Folder | **PASS** | Trash icon, confirmation dialog, links preserved (moved to root) |
-| FLD-005 | Create Nested Folder | **NOT_IMPL** | Backend supports hierarchy (`parentId`, `/folders/tree`) but no UI |
+| FLD-005 | Create Nested Folder | **PASS** | ✅ Tree hierarchy with expand/collapse, create sub-folder in folder menu |
 | TAG-001 | Create Tag | **PASS** | ✅ `/dashboard/tags` page with full CRUD, color picker (10 colors) |
 | TAG-002 | Tag Usage Statistics | **PASS** | ✅ Tags page shows link count per tag, statistics from backend API |
 | TAG-003 | Filter by Tag | **PASS** | ✅ FiltersModal now has Tag, Campaign, and Folder filters |
 | TAG-004 | Delete Tag | **PASS** | ✅ Delete button with confirmation dialog on Tags page |
 | TAG-005 | Merge Duplicate Tags | **PASS** | ✅ Merge feature with source/target tag selection on Tags page |
 | CMP-001 | Create Campaign | **PASS** | ✅ `/dashboard/campaigns` page with full CRUD, dates, UTM params, goals |
-| CMP-002 | Campaign Analytics | **PARTIAL** | ✅ Campaigns list shows link count; Full analytics view not implemented |
+| CMP-002 | Campaign Analytics | **PASS** | ✅ `/dashboard/campaigns/[id]/analytics` with charts, tables, export |
 | CMP-003 | Assign Link to Campaign | **PASS** | ✅ Campaign selector dropdown added to Link creation form |
 
 ---
@@ -364,10 +364,10 @@
 ## 📊 Summary
 
 **Total Tests:** 17
-**Passed:** 14 (13 full + 1 partial)
-**Not Implemented:** 3
+**Passed:** 17 (100%)
+**Not Implemented:** 0
 **Failed:** 0
-**Pass Rate:** 82% → **Improved from 65% → 24%**
+**Pass Rate:** 100% → **Improved from 82% → 65% → 24%**
 
 ### Key Findings - Updated 2025-12-11
 
@@ -379,28 +379,32 @@
 5. ✅ **Campaign/Folder Selectors** - Added to Link creation form
 6. ✅ **Move Link to Folder** - MoveLinkToFolderDialog with folder color indicators
 7. ✅ **Enhanced Filters** - Campaign and Folder filters added to FiltersModal
+8. ✅ **Organization Settings** - Edit name, logo, timezone at `/dashboard/settings/organization`
+9. ✅ **Nested Folders** - Tree hierarchy with expand/collapse, create sub-folders
+10. ✅ **Campaign Analytics** - Full analytics page with charts and export
 
 ### What Works Now
 1. ✅ Create Folder (with colors)
 2. ✅ View Links in Folder (URL-based filter)
 3. ✅ Delete Folder (with confirmation)
 4. ✅ **Move Link to Folder** - Dialog from link menu
-5. ✅ Create Organization (via OrganizationSwitcher + /dashboard/organization)
-6. ✅ **Organization Switcher** - Switch between orgs, create new org
-7. ✅ **Create/Edit/Delete Tags** - Full tag management with colors
-8. ✅ **Tag Statistics** - View link count per tag
-9. ✅ **Merge Tags** - Merge duplicate tags
-10. ✅ **Filter by Tag/Campaign/Folder** - FiltersModal with all filters
-11. ✅ **Create/Edit/Delete Campaigns** - Full campaign management
-12. ✅ **Campaign Status** - Draft/Active/Paused/Completed with badges
-13. ✅ **UTM Parameters** - Campaign-level UTM configuration
-14. ✅ **Assign Link to Campaign** - Campaign selector in link form
-15. ✅ **Assign Link to Folder** - Folder selector in link form
+5. ✅ **Nested Folders** - Tree view with sub-folders
+6. ✅ Create Organization (via OrganizationSwitcher + /dashboard/organization)
+7. ✅ **Organization Switcher** - Switch between orgs, create new org
+8. ✅ **Edit Organization** - Name, logo, timezone settings
+9. ✅ **Create/Edit/Delete Tags** - Full tag management with colors
+10. ✅ **Tag Statistics** - View link count per tag
+11. ✅ **Merge Tags** - Merge duplicate tags
+12. ✅ **Filter by Tag/Campaign/Folder** - FiltersModal with all filters
+13. ✅ **Create/Edit/Delete Campaigns** - Full campaign management
+14. ✅ **Campaign Status** - Draft/Active/Paused/Completed with badges
+15. ✅ **UTM Parameters** - Campaign-level UTM configuration
+16. ✅ **Assign Link to Campaign** - Campaign selector in link form
+17. ✅ **Assign Link to Folder** - Folder selector in link form
+18. ✅ **Campaign Analytics** - Full analytics with charts, tables, export
 
-### What's Still Missing
-1. ❌ Edit Organization details (name/logo/timezone)
-2. ❌ Nested Folders UI
-3. ❌ Full Campaign Analytics view
+### All Features Complete!
+Module 05 Organization Testing is now 100% complete.
 
 ### Screenshots
 Located at `/apps/web/screenshots/`:
