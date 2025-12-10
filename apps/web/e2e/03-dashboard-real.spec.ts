@@ -27,21 +27,21 @@ test.describe("Dashboard with Real Data", () => {
     await expect(page).toHaveURL(/\/dashboard/);
 
     // Check Total Links card - should have at least 10 links from seed
-    await expect(page.locator("text=Total Links")).toBeVisible();
+    await expect(page.getByText("Total Links", { exact: true })).toBeVisible();
 
-    // Check Total Clicks card - should have clicks from seed data
-    await expect(page.locator("text=Total Clicks")).toBeVisible();
+    // Check Total Engagements card - should have clicks from seed data
+    await expect(page.getByText("Total Engagements", { exact: true })).toBeVisible();
 
-    // Check Recent Clicks or Active Links
+    // Check Engagements Overview or Welcome back message
     await expect(
-      page.locator("text=Recent Clicks").or(page.locator("text=Active Links")),
+      page.getByText("Engagements Overview").or(page.getByText("Welcome back")),
     ).toBeVisible();
   });
 
   test("DASH-R002: View recent links in dashboard", async ({ page }) => {
     // Check for recent links section
     await expect(
-      page.locator("text=Your Links").or(page.locator("text=Recent Links")),
+      page.getByText("Your Links").or(page.getByText("Recent Links")),
     ).toBeVisible();
 
     // Should show some of our seeded links
@@ -50,9 +50,9 @@ test.describe("Dashboard with Real Data", () => {
       // Check for at least one E2E test link
       await expect(
         page
-          .locator(`text=${TEST_SLUGS.links.recent1}`)
-          .or(page.locator(`text=${TEST_SLUGS.links.popular}`))
-          .or(page.locator("text=e2e-")),
+          .getByText(TEST_SLUGS.links.recent1)
+          .or(page.getByText(TEST_SLUGS.links.popular))
+          .or(page.getByText(/e2e-/, { exact: false })),
       ).toBeVisible();
     }
   });
@@ -60,21 +60,21 @@ test.describe("Dashboard with Real Data", () => {
   test("DASH-R003: View top performing links", async ({ page }) => {
     // Check for top performing links section
     const topLinksSection = page
-      .locator("text=Top Performing Links")
-      .or(page.locator("text=Top Links"));
+      .getByText("Top Performing Links")
+      .or(page.getByText("Top Links"));
 
     if (await topLinksSection.isVisible()) {
       // Popular link should appear in top performing
       await expect(
-        page.locator(`text=${TEST_SLUGS.links.popular}`),
+        page.getByText(TEST_SLUGS.links.popular),
       ).toBeVisible({ timeout: 5000 });
     }
   });
 
   test("DASH-R004: Date range filter works", async ({ page }) => {
     // Look for date range buttons
-    const last7Days = page.locator('button:has-text("Last 7 Days")');
-    const last30Days = page.locator('button:has-text("Last 30 Days")');
+    const last7Days = page.getByRole("button", { name: /Last 7 Days/ });
+    const last30Days = page.getByRole("button", { name: /Last 30 Days/ });
 
     if (await last7Days.isVisible()) {
       // Click and verify it changes selection
@@ -112,7 +112,7 @@ test.describe("Analytics with Real Data", () => {
     await page.goto(`/dashboard/analytics/${TEST_IDS.links.popular}`);
 
     // Check for devices chart/section
-    await expect(page.locator("text=Devices")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Devices")).toBeVisible({ timeout: 10000 });
 
     // Should show device types from seed data
     const devicesSection = page
@@ -129,7 +129,7 @@ test.describe("Analytics with Real Data", () => {
 
     // Check for countries section
     await expect(
-      page.locator("text=Top Countries").or(page.locator("text=Countries")),
+      page.getByText("Top Countries").or(page.getByText("Countries")),
     ).toBeVisible({ timeout: 10000 });
 
     // Should show at least one of the seeded countries
@@ -138,7 +138,7 @@ test.describe("Analytics with Real Data", () => {
     for (const country of countryLabels) {
       if (
         await page
-          .locator(`text=${country}`)
+          .getByText(country)
           .isVisible()
           .catch(() => false)
       ) {
@@ -154,16 +154,16 @@ test.describe("Analytics with Real Data", () => {
 
     // Check for referrers section
     const referrersSection = page
-      .locator("text=Top Referrers")
-      .or(page.locator("text=Referrers"));
+      .getByText("Top Referrers")
+      .or(page.getByText("Referrers"));
 
     if (await referrersSection.isVisible()) {
       // Should show at least one referrer
       await expect(
         page
-          .locator("text=google.com")
-          .or(page.locator("text=facebook.com"))
-          .or(page.locator("text=direct")),
+          .getByText("google.com")
+          .or(page.getByText("facebook.com"))
+          .or(page.getByText("direct")),
       ).toBeVisible();
     }
   });
@@ -174,8 +174,8 @@ test.describe("Analytics with Real Data", () => {
     // Check for time series chart
     await expect(
       page
-        .locator("text=Clicks Over Time")
-        .or(page.locator("text=Click Trends")),
+        .getByText("Clicks Over Time")
+        .or(page.getByText("Click Trends")),
     ).toBeVisible({ timeout: 10000 });
 
     // Chart should be rendered
@@ -187,13 +187,11 @@ test.describe("Analytics with Real Data", () => {
     await page.goto(`/dashboard/analytics/${TEST_IDS.links.popular}`);
 
     // Look for date range selector
-    const dateSelector = page.locator(
-      'button:has-text("7d"), button:has-text("30d"), button:has-text("90d")',
-    );
+    const dateSelector = page.getByRole("button", { name: /7d|30d|90d/ });
 
     if (await dateSelector.first().isVisible()) {
       // Click 30 days
-      await page.locator('button:has-text("30d")').click();
+      await page.getByRole("button", { name: "30d" }).click();
 
       // Should update chart/data
       await page.waitForTimeout(500); // Wait for data refresh
@@ -215,7 +213,7 @@ test.describe("Links Management with Real Data", () => {
     });
 
     // Should show our seeded links
-    await expect(page.locator("text=e2e-")).toBeVisible();
+    await expect(page.getByText(/e2e-/, { exact: false })).toBeVisible();
   });
 
   test("LINK-R002: Search for specific link", async ({ page }) => {
@@ -233,7 +231,7 @@ test.describe("Links Management with Real Data", () => {
 
       // Should filter results
       await expect(
-        page.locator(`text=${TEST_SLUGS.links.popular}`),
+        page.getByText(TEST_SLUGS.links.popular),
       ).toBeVisible();
     }
   });
@@ -242,16 +240,14 @@ test.describe("Links Management with Real Data", () => {
     await page.goto("/dashboard/links");
 
     // Look for tag filter
-    const tagFilter = page.locator(
-      'button:has-text("marketing"), [data-testid="tag-filter"]',
-    );
+    const tagFilter = page.getByRole("button", { name: /marketing/ }).or(page.locator('[data-testid="tag-filter"]'));
 
     if (await tagFilter.first().isVisible()) {
       await tagFilter.first().click();
 
       // Should show only marketing tagged links
       await expect(
-        page.locator(`text=${TEST_SLUGS.links.marketing}`),
+        page.getByText(TEST_SLUGS.links.marketing),
       ).toBeVisible();
     }
   });
@@ -268,7 +264,7 @@ test.describe("Links Management with Real Data", () => {
       // Should show expired status indicator
       await expect(
         expiredRow.locator(
-          'text=Expired, .text-red-500, [data-status="expired"]',
+          'button:has-text("Expired"), .text-red-500, [data-status="expired"]',
         ),
       ).toBeVisible();
     }
@@ -304,8 +300,8 @@ test.describe("Organization Features with Real Data", () => {
   test("ORG-R001: View organization in switcher", async ({ page }) => {
     // Look for organization switcher
     const orgSwitcher = page.locator(
-      '[data-testid="org-switcher"], button:has-text("Organization")',
-    );
+      '[data-testid="org-switcher"]',
+    ).or(page.getByRole("button", { name: /Organization/ }));
 
     if (await orgSwitcher.isVisible()) {
       await orgSwitcher.click();
@@ -313,8 +309,8 @@ test.describe("Organization Features with Real Data", () => {
       // Should show our test organization
       await expect(
         page
-          .locator(`text=${TEST_SLUGS.organizations.main}`)
-          .or(page.locator("text=E2E Test Organization")),
+          .getByText(TEST_SLUGS.organizations.main)
+          .or(page.getByText("E2E Test Organization")),
       ).toBeVisible();
     }
   });
@@ -324,7 +320,7 @@ test.describe("Organization Features with Real Data", () => {
 
     // Should show our verified domain
     await expect(
-      page.locator(`text=${TEST_SLUGS.domains.verified}`),
+      page.getByText(TEST_SLUGS.domains.verified),
     ).toBeVisible({ timeout: 10000 });
 
     // Should show verified status
@@ -334,7 +330,7 @@ test.describe("Organization Features with Real Data", () => {
     if (await verifiedRow.isVisible()) {
       await expect(
         verifiedRow.locator(
-          'text=Verified, .text-green-500, [data-verified="true"]',
+          'button:has-text("Verified"), .text-green-500, [data-verified="true"]',
         ),
       ).toBeVisible();
     }
@@ -348,9 +344,8 @@ test.describe("Notifications with Real Data", () => {
 
   test("NOTIF-R001: View notifications", async ({ page }) => {
     // Look for notification bell/icon
-    const notificationBell = page.locator(
-      '[aria-label*="notification"], button:has(svg.lucide-bell)',
-    );
+    const notificationBell = page.locator('[aria-label*="notification"]')
+      .or(page.locator('button:has(svg.lucide-bell)'));
 
     if (await notificationBell.isVisible()) {
       await notificationBell.click();
@@ -358,9 +353,9 @@ test.describe("Notifications with Real Data", () => {
       // Should show notifications dropdown/panel
       await expect(
         page
-          .locator("text=Welcome to PingTO.Me")
-          .or(page.locator("text=Link expiring soon"))
-          .or(page.locator("text=New team member")),
+          .getByText("Welcome to PingTO.Me")
+          .or(page.getByText("Link expiring soon"))
+          .or(page.getByText("New team member")),
       ).toBeVisible({ timeout: 5000 });
     }
   });

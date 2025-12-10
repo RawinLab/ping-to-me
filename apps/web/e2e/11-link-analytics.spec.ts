@@ -62,7 +62,8 @@ test.describe("Link Analytics - Navigation & Layout", () => {
     await moreButton.click();
 
     // Click View analytics
-    await page.locator('[role="menuitem"]:has-text("View analytics")').click();
+    const viewAnalyticsMenuItem = page.locator('[role="menuitem"]').filter({ hasText: "View analytics" }).first();
+    await viewAnalyticsMenuItem.click();
 
     // Should navigate to analytics page
     await expect(page).toHaveURL(/\/dashboard\/links\/[^/]+\/analytics/);
@@ -75,10 +76,10 @@ test.describe("Link Analytics - Navigation & Layout", () => {
     await page.goto(`/dashboard/links/${TEST_IDS.links.popular}/analytics`);
 
     // Should show loading or content
-    const loadingOrContent = page
-      .locator("text=Loading analytics, text=Total Engagements")
-      .first();
-    await expect(loadingOrContent).toBeVisible({ timeout: 10000 });
+    const loading = page.locator("text=Loading analytics");
+    const content = page.locator("text=Total Engagements");
+
+    await expect(loading.or(content)).toBeVisible({ timeout: 10000 });
   });
 
   test("LA-004: Back button navigates to links page", async ({ page }) => {
@@ -86,7 +87,8 @@ test.describe("Link Analytics - Navigation & Layout", () => {
     await page.waitForLoadState("networkidle");
 
     // Click back button
-    await page.locator('button:has-text("Back to Links")').click();
+    const backButton = page.locator("button").filter({ hasText: "Back to Links" }).first();
+    await backButton.click();
 
     // Should navigate to links page
     await expect(page).toHaveURL(/\/dashboard\/links$/);
@@ -113,7 +115,7 @@ test.describe("Link Analytics - Link Header Card", () => {
   test("LA-011: Link header shows short URL", async ({ page }) => {
     // Should display short URL link
     const shortUrlLink = page
-      .locator('a[href*="pingto.me"], a:has-text("pingto.me")')
+      .locator('a[href*="pingto.me"]')
       .first();
     await expect(shortUrlLink).toBeVisible();
   });
@@ -222,30 +224,30 @@ test.describe("Link Analytics - Date Range Selector", () => {
   });
 
   test("LA-030: Date range selector is visible", async ({ page }) => {
-    await expect(page.locator('button:has-text("7 Days")')).toBeVisible();
-    await expect(page.locator('button:has-text("30 Days")')).toBeVisible();
-    await expect(page.locator('button:has-text("90 Days")')).toBeVisible();
+    await expect(page.locator("button").filter({ hasText: "7 Days" }).first()).toBeVisible();
+    await expect(page.locator("button").filter({ hasText: "30 Days" }).first()).toBeVisible();
+    await expect(page.locator("button").filter({ hasText: "90 Days" }).first()).toBeVisible();
   });
 
   test("LA-031: Default date range is 30 days", async ({ page }) => {
     // 30 Days button should have active state (bg-white)
-    const thirtyDaysButton = page.locator('button:has-text("30 Days")');
+    const thirtyDaysButton = page.locator("button").filter({ hasText: "30 Days" }).first();
     await expect(thirtyDaysButton).toHaveClass(/bg-white/);
   });
 
   test("LA-032: Can switch to 7 days", async ({ page }) => {
-    await page.locator('button:has-text("7 Days")').click();
+    const sevenDaysButton = page.locator("button").filter({ hasText: "7 Days" }).first();
+    await sevenDaysButton.click();
 
     // 7 Days button should now be active
-    const sevenDaysButton = page.locator('button:has-text("7 Days")');
     await expect(sevenDaysButton).toHaveClass(/bg-white/);
   });
 
   test("LA-033: Can switch to 90 days", async ({ page }) => {
-    await page.locator('button:has-text("90 Days")').click();
+    const ninetyDaysButton = page.locator("button").filter({ hasText: "90 Days" }).first();
+    await ninetyDaysButton.click();
 
     // 90 Days button should now be active
-    const ninetyDaysButton = page.locator('button:has-text("90 Days")');
     await expect(ninetyDaysButton).toHaveClass(/bg-white/);
   });
 
@@ -259,7 +261,8 @@ test.describe("Link Analytics - Date Range Selector", () => {
     const initialText = await dateDisplay.textContent();
 
     // Switch to 7 days
-    await page.locator('button:has-text("7 Days")').click();
+    const sevenDaysButton = page.locator("button").filter({ hasText: "7 Days" }).first();
+    await sevenDaysButton.click();
 
     // Wait for update
     await page.waitForTimeout(500);
@@ -278,11 +281,12 @@ test.describe("Link Analytics - Date Range Selector", () => {
     await page.waitForSelector("text=Total Engagements");
 
     // Switch date range
-    await page.locator('button:has-text("7 Days")').click();
+    const sevenDaysButton = page.locator("button").filter({ hasText: "7 Days" }).first();
+    await sevenDaysButton.click();
 
     // Should show loading state or update data
-    // The button should become disabled briefly during load
-    await expect(page.locator('button:has-text("7 Days")')).toBeEnabled();
+    // The button should become enabled after loading
+    await expect(sevenDaysButton).toBeEnabled();
   });
 });
 
@@ -323,21 +327,21 @@ test.describe("Link Analytics - Locations Chart", () => {
   });
 
   test("LA-051: Countries tab is available", async ({ page }) => {
-    await expect(page.locator('button:has-text("Countries")')).toBeVisible();
+    await expect(page.locator("button").filter({ hasText: "Countries" }).first()).toBeVisible();
   });
 
   test("LA-052: Cities tab is available", async ({ page }) => {
-    await expect(page.locator('button:has-text("Cities")')).toBeVisible();
+    await expect(page.locator("button").filter({ hasText: "Cities" }).first()).toBeVisible();
   });
 
   test("LA-053: Can switch between Countries and Cities tabs", async ({
     page,
   }) => {
     // Click Cities tab
-    await page.locator('button:has-text("Cities")').click();
+    const citiesTab = page.locator("button").filter({ hasText: "Cities" }).first();
+    await citiesTab.click();
 
     // Cities tab should be active
-    const citiesTab = page.locator('button:has-text("Cities")');
     await expect(citiesTab).toHaveClass(/bg-white|text-primary/);
   });
 
@@ -363,8 +367,11 @@ test.describe("Link Analytics - Devices Chart", () => {
 
   test("LA-061: Device types are displayed", async ({ page }) => {
     // Should show at least one device type (Desktop, Mobile, Tablet)
-    const deviceTypes = page.locator("text=Desktop, text=Mobile, text=Tablet");
-    // At least one should be visible if there's data
+    const desktop = page.locator("text=Desktop");
+    const mobile = page.locator("text=Mobile");
+    const tablet = page.locator("text=Tablet");
+
+    // At least one device type or the section should be visible
     const devicesSection = page.locator("text=Devices").first();
     await expect(devicesSection).toBeVisible();
   });
@@ -420,11 +427,11 @@ test.describe("Link Analytics - Recent Activity Table", () => {
   });
 
   test("LA-081: Table has correct headers", async ({ page }) => {
-    await expect(page.locator('th:has-text("Time")')).toBeVisible();
-    await expect(page.locator('th:has-text("Country")')).toBeVisible();
-    await expect(page.locator('th:has-text("City")')).toBeVisible();
-    await expect(page.locator('th:has-text("Device")')).toBeVisible();
-    await expect(page.locator('th:has-text("Referrer")')).toBeVisible();
+    await expect(page.locator("th").filter({ hasText: "Time" }).first()).toBeVisible();
+    await expect(page.locator("th").filter({ hasText: "Country" }).first()).toBeVisible();
+    await expect(page.locator("th").filter({ hasText: "City" }).first()).toBeVisible();
+    await expect(page.locator("th").filter({ hasText: "Device" }).first()).toBeVisible();
+    await expect(page.locator("th").filter({ hasText: "Referrer" }).first()).toBeVisible();
   });
 
   test("LA-082: Table shows activity rows or empty state", async ({ page }) => {
@@ -465,22 +472,22 @@ test.describe("Link Analytics - QR Code & Bio Page Cards", () => {
   });
 
   test("LA-090: QR Code card is visible", async ({ page }) => {
-    await expect(page.locator('h3:has-text("QR Code")')).toBeVisible();
+    await expect(page.locator("h3").filter({ hasText: "QR Code" }).first()).toBeVisible();
   });
 
   test("LA-091: QR Code card has Create button", async ({ page }) => {
     await expect(
-      page.locator('button:has-text("Create QR Code")'),
+      page.locator("button").filter({ hasText: "Create QR Code" }).first(),
     ).toBeVisible();
   });
 
   test("LA-092: Bio Page card is visible", async ({ page }) => {
-    await expect(page.locator('h3:has-text("Bio Page")')).toBeVisible();
+    await expect(page.locator("h3").filter({ hasText: "Bio Page" }).first()).toBeVisible();
   });
 
   test("LA-093: Bio Page card has Create button", async ({ page }) => {
     await expect(
-      page.locator('button:has-text("Create Bio Page")'),
+      page.locator("button").filter({ hasText: "Create Bio Page" }).first(),
     ).toBeVisible();
   });
 });
@@ -500,9 +507,8 @@ test.describe("Link Analytics - Responsive & Loading States", () => {
     const content = page.locator("text=Total Engagements");
 
     // One of these should be visible
-    await expect(noData.or(loading).or(content)).toBeVisible({
-      timeout: 10000,
-    });
+    const visible = await noData.or(loading).or(content).isVisible().catch(() => false);
+    expect(visible).toBeTruthy();
   });
 
   test("LA-101: Charts section is scrollable on mobile", async ({ page }) => {
@@ -541,8 +547,8 @@ test.describe("Link Analytics - Navigation from Different Sources", () => {
     await page.waitForLoadState("networkidle");
 
     // Click on a link in top performing links table
-    const viewButton = page.locator('button:has-text("View")').first();
-    if (await viewButton.isVisible()) {
+    const viewButton = page.locator("button").filter({ hasText: "View" }).first();
+    if (await viewButton.isVisible().catch(() => false)) {
       await viewButton.click();
       await expect(page).toHaveURL(/\/dashboard\/links\/[^/]+\/analytics/);
     }

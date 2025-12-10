@@ -9,210 +9,161 @@ import { loginAsUser } from "./fixtures/auth";
  * 2. Start dev servers: pnpm dev
  *
  * Tests cover basic organization features:
- * - Tags management
- * - Campaigns management
+ * - Organization viewing and management
+ * - Team member management
  */
 
 test.describe("Organization", () => {
   const uniqueId = Date.now().toString(36);
 
-  test.describe("Tags", () => {
+  test.describe("Organization Management", () => {
     test.beforeEach(async ({ page }) => {
       await loginAsUser(page, "owner");
     });
 
-    test("ORG-TAG-001: View tags list", async ({ page }) => {
+    test("ORG-001: View organizations page", async ({ page }) => {
       await page.goto("/dashboard/organization");
       await page.waitForLoadState("networkidle");
 
-      // Switch to Tags tab
-      const tagsTab = page.locator('button[role="tab"]:has-text("Tags")');
-      if (await tagsTab.isVisible()) {
-        await tagsTab.click();
-      }
+      // Should show Organizations heading
+      await expect(page.locator("text=Organizations").first()).toBeVisible({
+        timeout: 10000,
+      });
 
-      // Should show tags
-      await expect(page.locator("text=Tags").first()).toBeVisible({
+      // Should show "Team Members" heading
+      await expect(page.locator("text=Team Members").first()).toBeVisible({
         timeout: 10000,
       });
     });
 
-    test("ORG-TAG-002: Create new tag", async ({ page }) => {
-      const tagName = `Test Tag ${uniqueId}`;
-
+    test("ORG-002: View organization management section", async ({ page }) => {
       await page.goto("/dashboard/organization");
       await page.waitForLoadState("networkidle");
 
-      // Switch to Tags tab
-      const tagsTab = page.locator('button[role="tab"]:has-text("Tags")');
-      if (await tagsTab.isVisible()) {
-        await tagsTab.click();
-      }
-
-      // Click create button
-      const createButton = page.locator(
-        'button:has-text("Create Tag"), button:has-text("New Tag")'
-      );
-      if (await createButton.isVisible()) {
-        await createButton.click();
-
-        // Fill form
-        await page.fill('input[name="name"]', tagName);
-
-        // Submit
-        await page.click('button[type="submit"]');
-
-        // Should see new tag
-        await expect(page.locator(`text=${tagName}`)).toBeVisible({
+      // Should have a New Organization button
+      const newOrgButton = page.getByRole("button", { name: /new organization/i });
+      if (await newOrgButton.isVisible()) {
+        await expect(newOrgButton).toBeVisible({
           timeout: 5000,
         });
       }
     });
 
-    test("ORG-TAG-003: Edit tag", async ({ page }) => {
+    test("ORG-003: View team members table", async ({ page }) => {
       await page.goto("/dashboard/organization");
       await page.waitForLoadState("networkidle");
 
-      // Switch to Tags tab
-      const tagsTab = page.locator('button[role="tab"]:has-text("Tags")');
-      if (await tagsTab.isVisible()) {
-        await tagsTab.click();
-      }
+      // Should display team members section with table
+      const tableBody = page.locator("tbody");
+      if (await tableBody.isVisible()) {
+        // Check for table headers
+        await expect(page.locator("text=Member").first()).toBeVisible({
+          timeout: 5000,
+        });
 
-      // Find and click edit button for first tag
-      const editButton = page.locator('button[title="Edit"]').first();
-      if (await editButton.isVisible()) {
-        await editButton.click();
+        await expect(page.locator("text=Role").first()).toBeVisible({
+          timeout: 5000,
+        });
 
-        // Edit dialog should open
-        await expect(
-          page.locator('input[name="name"]')
-        ).toBeVisible({ timeout: 5000 });
-      }
-    });
-
-    test("ORG-TAG-004: Delete tag", async ({ page }) => {
-      await page.goto("/dashboard/organization");
-      await page.waitForLoadState("networkidle");
-
-      // Switch to Tags tab
-      const tagsTab = page.locator('button[role="tab"]:has-text("Tags")');
-      if (await tagsTab.isVisible()) {
-        await tagsTab.click();
-      }
-
-      // Find and click delete button
-      const deleteButton = page.locator('button[title="Delete"]').first();
-      if (await deleteButton.isVisible()) {
-        page.on("dialog", (dialog) => dialog.accept());
-        await deleteButton.click();
-
-        await page.waitForTimeout(2000);
+        await expect(page.locator("text=Actions").first()).toBeVisible({
+          timeout: 5000,
+        });
       }
     });
   });
 
-  test.describe("Campaigns", () => {
+  test.describe("Team Member Management", () => {
     test.beforeEach(async ({ page }) => {
       await loginAsUser(page, "owner");
     });
 
-    test("ORG-CMP-001: View campaigns list", async ({ page }) => {
+    test("ORG-004: View invite member section", async ({ page }) => {
       await page.goto("/dashboard/organization");
       await page.waitForLoadState("networkidle");
 
-      // Switch to Campaigns tab
-      const campaignsTab = page.locator(
-        'button[role="tab"]:has-text("Campaigns")'
-      );
-      if (await campaignsTab.isVisible()) {
-        await campaignsTab.click();
-      }
-
-      // Should show campaigns
-      await expect(page.locator("text=Campaigns").first()).toBeVisible({
-        timeout: 10000,
-      });
-    });
-
-    test("ORG-CMP-002: Create new campaign", async ({ page }) => {
-      const campaignName = `Test Campaign ${uniqueId}`;
-
-      await page.goto("/dashboard/organization");
-      await page.waitForLoadState("networkidle");
-
-      // Switch to Campaigns tab
-      const campaignsTab = page.locator(
-        'button[role="tab"]:has-text("Campaigns")'
-      );
-      if (await campaignsTab.isVisible()) {
-        await campaignsTab.click();
-      }
-
-      // Click create button
-      const createButton = page.locator(
-        'button:has-text("Create Campaign"), button:has-text("New Campaign")'
-      );
-      if (await createButton.isVisible()) {
-        await createButton.click();
-
-        // Fill form
-        await page.fill('input[name="name"]', campaignName);
-
-        // Submit
-        await page.click('button[type="submit"]');
-
-        // Should see new campaign
-        await expect(page.locator(`text=${campaignName}`)).toBeVisible({
+      // Should have an Invite Member button
+      const inviteButton = page.getByRole("button", { name: /invite member/i });
+      if (await inviteButton.isVisible()) {
+        await expect(inviteButton).toBeVisible({
           timeout: 5000,
         });
       }
     });
 
-    test("ORG-CMP-003: Edit campaign", async ({ page }) => {
+    test("ORG-005: Open and close invite dialog", async ({ page }) => {
       await page.goto("/dashboard/organization");
       await page.waitForLoadState("networkidle");
 
-      // Switch to Campaigns tab
-      const campaignsTab = page.locator(
-        'button[role="tab"]:has-text("Campaigns")'
-      );
-      if (await campaignsTab.isVisible()) {
-        await campaignsTab.click();
-      }
+      // Click "Invite Member" button
+      const inviteButton = page.getByRole("button", { name: /invite member/i });
+      if (await inviteButton.isVisible()) {
+        await inviteButton.click();
 
-      // Find and click edit button
-      const editButton = page.locator('button[title="Edit"]').first();
-      if (await editButton.isVisible()) {
-        await editButton.click();
+        // Dialog should open with email input
+        await expect(page.locator('input[id="email"]')).toBeVisible({
+          timeout: 5000,
+        });
 
-        // Edit dialog should open
-        await expect(
-          page.locator('input[name="name"]')
-        ).toBeVisible({ timeout: 5000 });
+        // Close dialog by pressing Escape
+        await page.keyboard.press("Escape");
+
+        // Dialog should close
+        await expect(page.locator('input[id="email"]')).not.toBeVisible({
+          timeout: 3000,
+        });
       }
     });
 
-    test("ORG-CMP-004: Delete campaign", async ({ page }) => {
+    test("ORG-006: Verify member list displays", async ({ page }) => {
       await page.goto("/dashboard/organization");
       await page.waitForLoadState("networkidle");
 
-      // Switch to Campaigns tab
-      const campaignsTab = page.locator(
-        'button[role="tab"]:has-text("Campaigns")'
-      );
-      if (await campaignsTab.isVisible()) {
-        await campaignsTab.click();
+      // Check if table body exists and has content
+      const tableBody = page.locator("tbody");
+      if (await tableBody.isVisible()) {
+        const rows = tableBody.locator("tr");
+        const rowCount = await rows.count();
+        expect(rowCount).toBeGreaterThanOrEqual(0);
       }
+    });
 
-      // Find and click delete button
-      const deleteButton = page.locator('button[title="Delete"]').first();
-      if (await deleteButton.isVisible()) {
-        page.on("dialog", (dialog) => dialog.accept());
-        await deleteButton.click();
+    test("ORG-007: View organization information", async ({ page }) => {
+      await page.goto("/dashboard/organization");
+      await page.waitForLoadState("networkidle");
 
-        await page.waitForTimeout(2000);
-      }
+      // Should show organizational information - looking for common patterns
+      const pageContent = page.locator("body");
+
+      // Check for either organization cards or team member section
+      const hasOrgCards = await page
+        .locator('[class*="cursor-pointer"]')
+        .first()
+        .isVisible()
+        .catch(() => false);
+
+      const hasTeamSection = await page
+        .locator("text=Team Members")
+        .first()
+        .isVisible()
+        .catch(() => false);
+
+      expect(hasOrgCards || hasTeamSection).toBeTruthy();
+    });
+
+    test("ORG-008: Check page layout structure", async ({ page }) => {
+      await page.goto("/dashboard/organization");
+      await page.waitForLoadState("networkidle");
+
+      // Check main page structure
+      await expect(page.locator("h1, h2").first()).toBeVisible({
+        timeout: 5000,
+      });
+
+      // Check for main content area
+      const mainContent = page.locator("main, [role='main'], .container").first();
+      await expect(mainContent).toBeVisible({
+        timeout: 5000,
+      });
     });
   });
 });

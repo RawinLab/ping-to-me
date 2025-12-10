@@ -29,9 +29,9 @@ test.describe("Custom Domains", () => {
       await page.goto("/dashboard/domains");
       await page.waitForLoadState("networkidle");
 
-      // Should show domains page
+      // Should show domains page with title
       await expect(
-        page.locator("text=Domains, text=Custom Domain").first()
+        page.locator("h1", { hasText: "Custom Domains" })
       ).toBeVisible({ timeout: 10000 });
     });
 
@@ -65,11 +65,11 @@ test.describe("Custom Domains", () => {
       await page.waitForLoadState("networkidle");
 
       // Look for pending domain with verify button
-      const verifyButton = page.locator('button:has-text("Verify")').first();
+      const verifyButton = page.locator('button:has-text("Verify Now")').first();
       if (await verifyButton.isVisible()) {
-        // Should show verification instructions
+        // Should show verification instructions with DNS configuration
         await expect(
-          page.locator("text=DNS, text=TXT, text=CNAME").first()
+          page.locator("text=DNS Configuration Required")
         ).toBeVisible({ timeout: 5000 });
       }
     });
@@ -79,7 +79,7 @@ test.describe("Custom Domains", () => {
       await page.waitForLoadState("networkidle");
 
       // Find pending domain and click Verify
-      const verifyButton = page.locator('button:has-text("Verify")').first();
+      const verifyButton = page.locator('button:has-text("Verify Now")').first();
       if (await verifyButton.isVisible()) {
         // Handle possible alert
         page.on("dialog", (dialog) => dialog.accept());
@@ -89,10 +89,6 @@ test.describe("Custom Domains", () => {
         // Wait for verification attempt
         await page.waitForTimeout(2000);
 
-        // Should show result (success or failure)
-        const result = page.locator(
-          "text=Verified, text=Success, text=failed, text=not found"
-        );
         // Result may or may not be visible depending on DNS status
       }
     });
@@ -191,11 +187,11 @@ test.describe("Custom Domains", () => {
       await page.goto("/dashboard/domains");
       await page.waitForLoadState("networkidle");
 
-      // Look for SSL status indicators
-      const sslStatus = page.locator(
-        "text=SSL, text=HTTPS, text=Certificate"
-      );
-      // SSL status may or may not be visible
+      // Domains page should load successfully
+      await expect(
+        page.locator("h1", { hasText: "Custom Domains" })
+      ).toBeVisible({ timeout: 5000 });
+      // SSL status badges may or may not be visible depending on domain data
     });
 
     test("DOM-021: Provision SSL certificate", async ({ page }) => {

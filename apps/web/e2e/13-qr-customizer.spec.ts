@@ -46,7 +46,7 @@ test.describe("QR Code Customizer", () => {
 
         // QR customizer modal should open
         await expect(
-          page.locator("text=QR Code, text=Customize").first()
+          page.getByRole("heading", { name: /Customize QR Code/i })
         ).toBeVisible({ timeout: 5000 });
       }
     });
@@ -72,13 +72,13 @@ test.describe("QR Code Customizer", () => {
 
         // Wait for modal
         await expect(
-          page.locator("text=QR Code, text=Customize").first()
+          page.getByRole("heading", { name: /Customize QR Code/i })
         ).toBeVisible({ timeout: 5000 });
 
-        // Find foreground color input
-        const colorInputs = page.locator('input[type="color"]');
-        if ((await colorInputs.count()) > 0) {
-          await colorInputs.first().fill("#ff0000");
+        // Find foreground color input by ID
+        const colorInput = page.locator('input[id="fg-color"]');
+        if (await colorInput.isVisible()) {
+          await colorInput.fill("#ff0000");
 
           // Wait for preview update
           await page.waitForTimeout(1000);
@@ -111,13 +111,13 @@ test.describe("QR Code Customizer", () => {
         await qrButton.click();
 
         await expect(
-          page.locator("text=QR Code, text=Customize").first()
+          page.getByRole("heading", { name: /Customize QR Code/i })
         ).toBeVisible({ timeout: 5000 });
 
-        // Find background color input (usually second color input)
-        const colorInputs = page.locator('input[type="color"]');
-        if ((await colorInputs.count()) > 1) {
-          await colorInputs.nth(1).fill("#ffff00");
+        // Find background color input by ID
+        const bgColorInput = page.locator('input[id="bg-color"]');
+        if (await bgColorInput.isVisible()) {
+          await bgColorInput.fill("#ffff00");
 
           await page.waitForTimeout(1000);
         }
@@ -144,13 +144,11 @@ test.describe("QR Code Customizer", () => {
         await qrButton.click();
 
         await expect(
-          page.locator("text=QR Code, text=Customize").first()
+          page.getByRole("heading", { name: /Customize QR Code/i })
         ).toBeVisible({ timeout: 5000 });
 
         // Find error correction selector
-        const eccSelector = page.locator(
-          'select[name="errorCorrection"], [role="combobox"]'
-        );
+        const eccSelector = page.locator('[role="combobox"]').first();
         if (await eccSelector.isVisible()) {
           await eccSelector.click();
 
@@ -184,11 +182,11 @@ test.describe("QR Code Customizer", () => {
         await qrButton.click();
 
         await expect(
-          page.locator("text=QR Code, text=Customize").first()
+          page.getByRole("heading", { name: /Customize QR Code/i })
         ).toBeVisible({ timeout: 5000 });
 
         // Find margin/size slider or input
-        const slider = page.locator('input[type="range"]');
+        const slider = page.locator('input[type="range"]').first();
         if (await slider.isVisible()) {
           await slider.fill("10");
 
@@ -219,13 +217,11 @@ test.describe("QR Code Customizer", () => {
         await qrButton.click();
 
         await expect(
-          page.locator("text=QR Code, text=Customize").first()
+          page.getByRole("heading", { name: /Customize QR Code/i })
         ).toBeVisible({ timeout: 5000 });
 
         // Look for logo/image upload option
-        const logoOption = page.locator(
-          'button:has-text("Logo"), button:has-text("Image")'
-        );
+        const logoOption = page.getByRole("button", { name: /Upload Logo/i });
         if (await logoOption.isVisible()) {
           await logoOption.click();
         }
@@ -259,7 +255,7 @@ test.describe("QR Code Customizer", () => {
 
         // Download PNG
         const downloadPromise = page.waitForEvent("download", { timeout: 5000 });
-        const pngButton = page.locator('button:has-text("PNG")');
+        const pngButton = page.getByRole("button", { name: /PNG/i });
         if (await pngButton.isVisible()) {
           await pngButton.click();
 
@@ -297,7 +293,7 @@ test.describe("QR Code Customizer", () => {
         ).toBeVisible({ timeout: 5000 });
 
         // Download SVG
-        const svgButton = page.locator('button:has-text("SVG")');
+        const svgButton = page.getByRole("button", { name: /^SVG$/i });
         if (await svgButton.isVisible()) {
           const downloadPromise = page.waitForEvent("download", {
             timeout: 5000,
@@ -363,15 +359,10 @@ test.describe("QR Code Customizer", () => {
       await page.goto(`/dashboard/links/${TEST_IDS.links.popular}/analytics`);
       await page.waitForLoadState("networkidle");
 
-      // Look for QR Code card
-      await expect(page.locator('h3:has-text("QR Code")')).toBeVisible({
-        timeout: 10000,
-      });
-
-      // Click Create QR Code button
-      const createQrButton = page.locator('button:has-text("Create QR Code")');
-      if (await createQrButton.isVisible()) {
-        await createQrButton.click();
+      // Look for QR Code related button on analytics page
+      const qrButton = page.getByRole("button").filter({ hasText: /QR|qr/i }).first();
+      if (await qrButton.isVisible()) {
+        await qrButton.click();
 
         // QR customizer should open
         await page.waitForTimeout(1000);
