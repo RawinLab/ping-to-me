@@ -37,6 +37,8 @@ import {
   Folder,
   Save,
   AlertCircle,
+  Sparkles,
+  FolderIcon,
 } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 import { RedirectRulesManager } from "@/components/links/RedirectRulesManager";
@@ -61,6 +63,18 @@ interface Link {
   updatedAt: string;
 }
 
+interface Campaign {
+  id: string;
+  name: string;
+  status: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'COMPLETED';
+}
+
+interface FolderItem {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export default function LinkSettingsPage() {
   const params = useParams();
   const router = useRouter();
@@ -71,6 +85,9 @@ export default function LinkSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
   const [error, setError] = useState<string | null>(null);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [folders, setFolders] = useState<FolderItem[]>([]);
+  const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
 
   // Form state for general settings
   const [formData, setFormData] = useState({
@@ -81,7 +98,30 @@ export default function LinkSettingsPage() {
     expirationDate: "",
     password: "",
     status: "ACTIVE",
+    campaignId: "",
+    folderId: "",
   });
+
+  useEffect(() => {
+    const fetchOrg = async () => {
+      try {
+        const orgs = await apiRequest("/organizations");
+        if (orgs && orgs.length > 0) {
+          setCurrentOrgId(orgs[0].id);
+        }
+      } catch (err) {
+        console.error("Failed to fetch organizations");
+      }
+    };
+    fetchOrg();
+  }, []);
+
+  useEffect(() => {
+    if (currentOrgId) {
+      fetchCampaigns();
+      fetchFolders();
+    }
+  }, [currentOrgId]);
 
   useEffect(() => {
     if (id) {
@@ -105,12 +145,34 @@ export default function LinkSettingsPage() {
           : "",
         password: res.password || "",
         status: res.status,
+        campaignId: res.campaignId || "",
+        folderId: res.folderId || "",
       });
     } catch (err: any) {
       setError(err.message || "Failed to load link");
       toast.error("Failed to load link");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCampaigns = async () => {
+    if (!currentOrgId) return;
+    try {
+      const res = await apiRequest(`/campaigns?orgId=${currentOrgId}`);
+      setCampaigns(res || []);
+    } catch (err) {
+      console.error("Failed to fetch campaigns");
+    }
+  };
+
+  const fetchFolders = async () => {
+    if (!currentOrgId) return;
+    try {
+      const res = await apiRequest(`/folders?orgId=${currentOrgId}`);
+      setFolders(res || []);
+    } catch (err) {
+      console.error("Failed to fetch folders");
     }
   };
 
@@ -317,6 +379,116 @@ export default function LinkSettingsPage() {
                     <SelectItem value="ARCHIVED">Archived</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="flex justify-end pt-4 border-t">
+                <Button onClick={handleSaveGeneral} disabled={saving}>
+                  {saving ? (
+                    <>Saving...</>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Changes
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Organization Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Tag className="h-5 w-5" />
+                Organization
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Campaign */}
+              <div className="space-y-2">
+                <Label htmlFor="campaign">
+                  Campaign <span className="text-muted-foreground">(Optional)</span>
+                </Label>
+                <Select
+                  value={formData.campaignId || "none"}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, campaignId: value === "none" ? "" : value })
+                  }
+                >
+                  <SelectTrigger id="campaign">
+                    <SelectValue placeholder="Select a campaign" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">
+                      <div className="flex items-center gap-2">
+                        <span>None</span>
+                      </div>
+                    </SelectItem>
+                    {campaigns.map((campaign) => (
+                      <SelectItem key={campaign.id} value={campaign.id}>
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+                          <span>{campaign.name}</span>
+                          <span
+                            className={`text-xs px-1.5 py-0.5 rounded-full ${
+                              campaign.status === "ACTIVE"
+                                ? "bg-green-100 text-green-700"
+                                : campaign.status === "DRAFT"
+                                ? "bg-gray-100 text-gray-700"
+                                : campaign.status === "PAUSED"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : "bg-blue-100 text-blue-700"
+                            }`}
+                          >
+                            {campaign.status}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Organize your link under a campaign for better tracking
+                </p>
+              </div>
+
+              {/* Folder */}
+              <div className="space-y-2">
+                <Label htmlFor="folder">
+                  Folder <span className="text-muted-foreground">(Optional)</span>
+                </Label>
+                <Select
+                  value={formData.folderId || "none"}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, folderId: value === "none" ? "" : value })
+                  }
+                >
+                  <SelectTrigger id="folder">
+                    <SelectValue placeholder="Select a folder" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">
+                      <div className="flex items-center gap-2">
+                        <span>None</span>
+                      </div>
+                    </SelectItem>
+                    {folders.map((folder) => (
+                      <SelectItem key={folder.id} value={folder.id}>
+                        <div className="flex items-center gap-2">
+                          <FolderIcon
+                            className="h-3.5 w-3.5"
+                            style={{ color: folder.color }}
+                          />
+                          <span>{folder.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Group your link in a folder for better organization
+                </p>
               </div>
 
               <div className="flex justify-end pt-4 border-t">

@@ -228,6 +228,14 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
         if (tagFilters.hasQrCode && tagFilters.hasQrCode !== "all") {
           query.append("hasQrCode", tagFilters.hasQrCode);
         }
+        // Campaign filter
+        if (tagFilters.campaignId && tagFilters.campaignId !== "all") {
+          query.append("campaignId", tagFilters.campaignId);
+        }
+        // Folder filter
+        if (tagFilters.folderId && tagFilters.folderId !== "all") {
+          query.append("folderId", tagFilters.folderId);
+        }
 
         const response = await apiRequest(`/links?${query.toString()}`);
         const linksData = response.data || response;
@@ -638,6 +646,12 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                   <Calendar className="h-4 w-4 text-slate-400" />
                   {format(new Date(link.createdAt), "MMM d, yyyy")}
                 </span>
+                {(link as any).campaign && (
+                  <span className="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span className="text-xs font-medium">{(link as any).campaign.name}</span>
+                  </span>
+                )}
                 {link.tags && link.tags.length > 0 ? (
                   <div className="flex items-center gap-1.5">
                     <Tags className="h-4 w-4 text-slate-400" />
@@ -1065,8 +1079,14 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
             <span className="truncate">{link.originalUrl}</span>
           </div>
 
-          {/* Tags */}
+          {/* Tags and Campaign */}
           <div className="flex items-center flex-wrap gap-1.5 mb-4">
+            {(link as any).campaign && (
+              <span className="flex items-center gap-1 bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full">
+                <Sparkles className="h-3 w-3" />
+                <span className="text-xs font-medium">{(link as any).campaign.name}</span>
+              </span>
+            )}
             {link.tags && link.tags.length > 0 ? (
               <>
                 {link.tags.slice(0, 2).map((tag, i) => (

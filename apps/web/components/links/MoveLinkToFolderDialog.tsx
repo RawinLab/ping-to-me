@@ -23,6 +23,8 @@ interface FolderData {
   id: string;
   name: string;
   color?: string;
+  parentId?: string | null;
+  children?: FolderData[];
 }
 
 interface MoveLinkToFolderDialogProps {
@@ -57,14 +59,33 @@ export function MoveLinkToFolderDialog({
   const fetchFolders = async () => {
     setFetchingFolders(true);
     try {
-      const response = await apiRequest("/folders");
-      setFolders(response);
+      const response = await apiRequest("/folders/tree");
+      // Flatten the tree structure for the select dropdown
+      const flattenedFolders = flattenFolderTree(response);
+      setFolders(flattenedFolders);
     } catch (error) {
       console.error("Failed to fetch folders:", error);
       toast.error("Failed to load folders");
     } finally {
       setFetchingFolders(false);
     }
+  };
+
+  // Helper function to flatten folder tree into a list with depth information
+  const flattenFolderTree = (
+    folders: FolderData[],
+    depth = 0
+  ): Array<FolderData & { depth: number }> => {
+    const result: Array<FolderData & { depth: number }> = [];
+
+    folders.forEach((folder) => {
+      result.push({ ...folder, depth });
+      if (folder.children && folder.children.length > 0) {
+        result.push(...flattenFolderTree(folder.children, depth + 1));
+      }
+    });
+
+    return result;
   };
 
   const handleMove = async () => {
@@ -140,9 +161,12 @@ export function MoveLinkToFolderDialog({
                     <span>No Folder</span>
                   </div>
                 </SelectItem>
-                {folders.map((folder) => (
+                {folders.map((folder: any) => (
                   <SelectItem key={folder.id} value={folder.id}>
-                    <div className="flex items-center gap-2">
+                    <div
+                      className="flex items-center gap-2"
+                      style={{ paddingLeft: `${(folder.depth || 0) * 16}px` }}
+                    >
                       <div
                         className="w-3 h-3 rounded-full flex-shrink-0"
                         style={{ backgroundColor: folder.color || "#3b82f6" }}
