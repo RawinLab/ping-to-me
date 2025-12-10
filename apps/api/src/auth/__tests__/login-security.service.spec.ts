@@ -250,7 +250,26 @@ describe("LoginSecurityService", () => {
 
       const result = await service.getLoginActivity("test@example.com", 1, 20);
 
-      expect(result.attempts).toEqual(mockAttempts);
+      // Check that results have the expected structure with device fields
+      expect(result.attempts).toHaveLength(2);
+      expect(result.attempts[0]).toEqual(
+        expect.objectContaining({
+          id: "attempt-1",
+          email: "test@example.com",
+          success: true,
+          ipAddress: "192.168.1.1",
+          userAgent: "Mozilla/5.0",
+          location: null,
+          reason: null,
+          createdAt: expect.any(Date),
+        })
+      );
+      // Verify device fields are present (parsed from user agent)
+      expect(result.attempts[0]).toHaveProperty("deviceInfo");
+      expect(result.attempts[0]).toHaveProperty("device");
+      expect(result.attempts[0]).toHaveProperty("browser");
+      expect(result.attempts[0]).toHaveProperty("os");
+
       expect(result.total).toBe(42);
       expect(result.page).toBe(1);
       expect(result.limit).toBe(20);
@@ -296,7 +315,26 @@ describe("LoginSecurityService", () => {
         20
       );
 
-      expect(result.attempts).toEqual(mockAttempts);
+      // Check that results have the expected structure with device fields
+      expect(result.attempts).toHaveLength(1);
+      expect(result.attempts[0]).toEqual(
+        expect.objectContaining({
+          id: "attempt-1",
+          email: "test@example.com",
+          success: false,
+          ipAddress: "192.168.1.1",
+          userAgent: "Mozilla/5.0",
+          location: null,
+          reason: "invalid_password",
+          createdAt: expect.any(Date),
+        })
+      );
+      // Verify device fields are present (parsed from user agent)
+      expect(result.attempts[0]).toHaveProperty("deviceInfo");
+      expect(result.attempts[0]).toHaveProperty("device");
+      expect(result.attempts[0]).toHaveProperty("browser");
+      expect(result.attempts[0]).toHaveProperty("os");
+
       expect(result.total).toBe(5);
       expect(mockPrismaService.loginAttempt.findMany).toHaveBeenCalledWith({
         where: {

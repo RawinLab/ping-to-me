@@ -8,6 +8,7 @@ import { AuditService } from '../audit/audit.service';
 import { LoginSecurityService } from './login-security.service';
 import { SessionService } from './session.service';
 import { TwoFactorService } from './two-factor.service';
+import { DeviceFingerprintService } from './device-fingerprint.service';
 import { randomUUID } from 'crypto';
 
 describe('AuthService - Token Rotation', () => {
@@ -107,6 +108,20 @@ describe('AuthService - Token Rotation', () => {
             verify: jest.fn(),
           },
         },
+        {
+          provide: DeviceFingerprintService,
+          useValue: {
+            calculateRiskScore: jest.fn(),
+            extractDeviceInfo: jest.fn(),
+            verifyDevice: jest.fn(),
+            trustDevice: jest.fn(),
+            getTrustedDevices: jest.fn(),
+            removeTrustedDevice: jest.fn(),
+            revokeAllDevices: jest.fn(),
+            updateDeviceName: jest.fn(),
+            getDeviceByFingerprint: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -196,8 +211,8 @@ describe('AuthService - Token Rotation', () => {
       );
     });
 
-    it('should create new token family on login', async () => {
-      jest.spyOn(sessionService, 'createSessionWithFamily').mockResolvedValue({
+    it('should create session on login', async () => {
+      jest.spyOn(sessionService, 'createSession').mockResolvedValue({
         id: randomUUID(),
         userId: mockUser.id,
       } as any);
@@ -206,11 +221,10 @@ describe('AuthService - Token Rotation', () => {
 
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
-      expect(sessionService.createSessionWithFamily).toHaveBeenCalledWith(
+      expect(sessionService.createSession).toHaveBeenCalledWith(
         mockUser.id,
         expect.any(String),
         mockRequest,
-        expect.any(String), // tokenFamily UUID
       );
     });
 

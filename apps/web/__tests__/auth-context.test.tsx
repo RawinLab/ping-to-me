@@ -11,6 +11,12 @@ jest.mock("../lib/api", () => ({
   initializeAuth: jest.fn(),
   apiRequest: jest.fn(),
   setAccessToken: jest.fn(),
+  setOnAuthFailure: jest.fn(),
+  resetAuthFailedState: jest.fn(),
+  getAccessToken: jest.fn(),
+  setCurrentOrganizationId: jest.fn(),
+  getCurrentOrganizationId: jest.fn(),
+  hasAuthFailed: jest.fn(),
 }));
 
 const TestComponent = () => {

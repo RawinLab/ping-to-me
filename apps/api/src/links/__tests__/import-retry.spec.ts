@@ -5,6 +5,7 @@ import { QrCodeService } from '../../qr/qr.service';
 import { AuditService } from '../../audit/audit.service';
 import { QuotaService } from '../../quota/quota.service';
 import { SafetyCheckService } from '../services/safety-check.service';
+import { MetadataService } from '../services/metadata.service';
 
 describe('LinksService - Import with Failed Rows CSV', () => {
   let service: LinksService;
@@ -58,6 +59,12 @@ describe('LinksService - Import with Failed Rows CSV', () => {
           provide: SafetyCheckService,
           useValue: {
             checkAndUpdateLink: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: MetadataService,
+          useValue: {
+            scrapeAndUpdateLink: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],

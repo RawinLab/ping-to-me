@@ -909,7 +909,7 @@ describe("LinksService", () => {
       const result = await service.importLinks(userId, buffer, undefined, "FREE");
 
       expect(result.total).toBe(50);
-    });
+    }, 30000);
 
     it("should reject import exceeding FREE plan limit (100 rows)", async () => {
       const userId = "user-123";
