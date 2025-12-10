@@ -11,6 +11,8 @@ export interface CreateLinkDto {
   deepLinkFallback?: string;
   organizationId?: string; // Organization this link belongs to
   domainId?: string; // Custom domain for this link (TASK-2.4.15)
+  campaignId?: string; // Campaign this link belongs to (TASK-5.4)
+  folderId?: string; // Folder this link belongs to (TASK-5.2)
   // QR Code customization
   qrColor?: string; // Hex color for QR code foreground
   qrLogo?: string; // Base64 encoded image for logo overlay

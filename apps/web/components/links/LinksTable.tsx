@@ -48,6 +48,7 @@ import {
   XCircle,
   Download,
   FileArchive,
+  Folder,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -55,6 +56,7 @@ import { toast } from "sonner";
 
 import { QrCodeModal } from "./QrCodeModal";
 import { EditLinkModal } from "./EditLinkModal";
+import { MoveLinkToFolderDialog } from "./MoveLinkToFolderDialog";
 import { FilterValues } from "./FiltersModal";
 import { usePermission } from "@/hooks/usePermission";
 import { useAuth } from "@/contexts/AuthContext";
@@ -100,6 +102,8 @@ const defaultTagFilters: FilterValues = {
   tags: [],
   linkType: "all",
   hasQrCode: "all",
+  campaignId: "all",
+  folderId: "all",
 };
 
 export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
@@ -131,6 +135,9 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
     const [inlineTagValue, setInlineTagValue] = useState<string>("");
     const [bulkActionLoading, setBulkActionLoading] = useState(false);
     const [qrDownloading, setQrDownloading] = useState(false);
+    const [moveFolderDialogOpen, setMoveFolderDialogOpen] = useState(false);
+    const [moveFolderLinkId, setMoveFolderLinkId] = useState<string | null>(null);
+    const [moveFolderCurrentId, setMoveFolderCurrentId] = useState<string | null>(null);
 
     // Permission and auth context
     const { user } = useAuth();
@@ -440,6 +447,18 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
       } catch (error) {
         console.error("Failed to add tag:", error);
       }
+    };
+
+    const handleOpenMoveFolder = (linkId: string, currentFolderId?: string | null) => {
+      setMoveFolderLinkId(linkId);
+      setMoveFolderCurrentId(currentFolderId || null);
+      setMoveFolderDialogOpen(true);
+    };
+
+    const handleMoveFolderClose = () => {
+      setMoveFolderDialogOpen(false);
+      setMoveFolderLinkId(null);
+      setMoveFolderCurrentId(null);
     };
 
     // Expose methods to parent via ref
@@ -774,6 +793,12 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                   {canEditLink() && canModifyLink(link) && (
                     <>
                       <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => handleOpenMoveFolder(link.id, (link as any).folderId)}
+                      >
+                        <Folder className="mr-2 h-4 w-4" />
+                        Move to folder
+                      </DropdownMenuItem>
                       {link.status === "ARCHIVED" ? (
                         <DropdownMenuItem
                           onClick={() => handleStatusChange(link.id, "ACTIVE")}
@@ -928,6 +953,12 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                   {canEditLink() && canModifyLink(link) && (
                     <>
                       <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => handleOpenMoveFolder(link.id, (link as any).folderId)}
+                      >
+                        <Folder className="mr-2 h-4 w-4" />
+                        Move to folder
+                      </DropdownMenuItem>
                       {link.status === "ARCHIVED" ? (
                         <DropdownMenuItem
                           onClick={() => handleStatusChange(link.id, "ACTIVE")}
@@ -1305,6 +1336,17 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
             isOpen={!!qrModalLink}
             onClose={() => setQrModalLink(null)}
             link={qrModalLink}
+          />
+        )}
+
+        {/* Move to Folder Dialog */}
+        {moveFolderLinkId && (
+          <MoveLinkToFolderDialog
+            isOpen={moveFolderDialogOpen}
+            onClose={handleMoveFolderClose}
+            linkId={moveFolderLinkId}
+            currentFolderId={moveFolderCurrentId}
+            onMoved={fetchLinks}
           />
         )}
       </div>

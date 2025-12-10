@@ -43,6 +43,8 @@ import {
   Loader2,
   AlertTriangle,
   AlertCircle,
+  FolderIcon,
+  Sparkles,
 } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -91,13 +93,29 @@ interface BioPage {
   title: string;
 }
 
+interface Campaign {
+  id: string;
+  name: string;
+  status: 'DRAFT' | 'ACTIVE' | 'PAUSED' | 'COMPLETED';
+}
+
+interface Folder {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export default function CreateLinkPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [domains, setDomains] = useState<Domain[]>([]);
   const [bioPages, setBioPages] = useState<BioPage[]>([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedDomain, setSelectedDomain] = useState<string>("pingto.me");
   const [selectedBioPage, setSelectedBioPage] = useState<string>("");
+  const [selectedCampaign, setSelectedCampaign] = useState<string>("");
+  const [selectedFolder, setSelectedFolder] = useState<string>("");
   const [linkDetailsOpen, setLinkDetailsOpen] = useState(true);
   const [sharingOptionsOpen, setSharingOptionsOpen] = useState(true);
   const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(false);
@@ -353,6 +371,8 @@ export default function CreateLinkPage() {
   useEffect(() => {
     if (currentOrgId) {
       fetchDomains();
+      fetchCampaigns();
+      fetchFolders();
       if (hasBioPages) {
         fetchBioPages();
       }
@@ -386,6 +406,26 @@ export default function CreateLinkPage() {
     }
   };
 
+  const fetchCampaigns = async () => {
+    if (!currentOrgId) return;
+    try {
+      const res = await apiRequest(`/campaigns?orgId=${currentOrgId}`);
+      setCampaigns(res || []);
+    } catch (err) {
+      console.error("Failed to fetch campaigns");
+    }
+  };
+
+  const fetchFolders = async () => {
+    if (!currentOrgId) return;
+    try {
+      const res = await apiRequest(`/folders?orgId=${currentOrgId}`);
+      setFolders(res || []);
+    } catch (err) {
+      console.error("Failed to fetch folders");
+    }
+  };
+
   const onSubmit = async (data: CreateLinkFormData) => {
     setLoading(true);
     setError(null);
@@ -413,6 +453,8 @@ export default function CreateLinkPage() {
               .map((t) => t.trim())
               .filter(Boolean)
           : undefined,
+        campaignId: selectedCampaign || undefined,
+        folderId: selectedFolder || undefined,
         expirationDate: data.expirationDate || undefined,
         password: data.password || undefined,
         deepLinkFallback: data.deepLinkFallback || undefined,
@@ -837,6 +879,90 @@ export default function CreateLinkPage() {
                     />
                     <p className="text-xs text-muted-foreground">
                       Separate multiple tags with commas
+                    </p>
+                  </div>
+
+                  {/* Campaign */}
+                  <div className="space-y-2">
+                    <Label htmlFor="campaign">
+                      Campaign{" "}
+                      <span className="text-muted-foreground">(optional)</span>
+                    </Label>
+                    <Select
+                      value={selectedCampaign}
+                      onValueChange={setSelectedCampaign}
+                    >
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Select a campaign" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">
+                          <div className="flex items-center gap-2">
+                            <span>None</span>
+                          </div>
+                        </SelectItem>
+                        {campaigns.map((campaign) => (
+                          <SelectItem key={campaign.id} value={campaign.id}>
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+                              <span>{campaign.name}</span>
+                              <span
+                                className={`text-xs px-1.5 py-0.5 rounded-full ${
+                                  campaign.status === "ACTIVE"
+                                    ? "bg-green-100 text-green-700"
+                                    : campaign.status === "DRAFT"
+                                    ? "bg-gray-100 text-gray-700"
+                                    : campaign.status === "PAUSED"
+                                    ? "bg-yellow-100 text-yellow-700"
+                                    : "bg-blue-100 text-blue-700"
+                                }`}
+                              >
+                                {campaign.status}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Organize your link under a campaign
+                    </p>
+                  </div>
+
+                  {/* Folder */}
+                  <div className="space-y-2">
+                    <Label htmlFor="folder">
+                      Folder{" "}
+                      <span className="text-muted-foreground">(optional)</span>
+                    </Label>
+                    <Select
+                      value={selectedFolder}
+                      onValueChange={setSelectedFolder}
+                    >
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Select a folder" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">
+                          <div className="flex items-center gap-2">
+                            <span>None</span>
+                          </div>
+                        </SelectItem>
+                        {folders.map((folder) => (
+                          <SelectItem key={folder.id} value={folder.id}>
+                            <div className="flex items-center gap-2">
+                              <FolderIcon
+                                className="h-3.5 w-3.5"
+                                style={{ color: folder.color }}
+                              />
+                              <span>{folder.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Group your link in a folder for better organization
                     </p>
                   </div>
                 </div>

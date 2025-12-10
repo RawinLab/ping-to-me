@@ -12,8 +12,9 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Badge,
 } from "@pingtome/ui";
-import { X, ChevronDown } from "lucide-react";
+import { X, ChevronDown, Folder } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 
 interface FiltersModalProps {
@@ -27,6 +28,8 @@ export interface FilterValues {
   tags: string[];
   linkType: string;
   hasQrCode: string;
+  campaignId: string;
+  folderId: string;
 }
 
 const LINK_TYPES = [
@@ -41,6 +44,18 @@ const QR_CODE_OPTIONS = [
   { value: "without", label: "Links without attached QR Codes" },
 ];
 
+interface Campaign {
+  id: string;
+  name: string;
+  status: string;
+}
+
+interface FolderItem {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export function FiltersModal({
   isOpen,
   onClose,
@@ -48,6 +63,8 @@ export function FiltersModal({
   initialFilters,
 }: FiltersModalProps) {
   const [tags, setTags] = useState<{ id: string; name: string }[]>([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [folders, setFolders] = useState<FolderItem[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>(
     initialFilters?.tags || [],
   );
@@ -55,11 +72,17 @@ export function FiltersModal({
   const [hasQrCode, setHasQrCode] = useState(
     initialFilters?.hasQrCode || "all",
   );
+  const [campaignId, setCampaignId] = useState(
+    initialFilters?.campaignId || "all",
+  );
+  const [folderId, setFolderId] = useState(initialFilters?.folderId || "all");
   const [tagsDropdownOpen, setTagsDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       fetchTags();
+      fetchCampaigns();
+      fetchFolders();
     }
   }, [isOpen]);
 
@@ -72,10 +95,30 @@ export function FiltersModal({
     }
   };
 
+  const fetchCampaigns = async () => {
+    try {
+      const res = await apiRequest("/campaigns");
+      setCampaigns(res || []);
+    } catch (error) {
+      console.error("Failed to fetch campaigns");
+    }
+  };
+
+  const fetchFolders = async () => {
+    try {
+      const res = await apiRequest("/folders");
+      setFolders(res || []);
+    } catch (error) {
+      console.error("Failed to fetch folders");
+    }
+  };
+
   const handleClearAll = () => {
     setSelectedTags([]);
     setLinkType("all");
     setHasQrCode("all");
+    setCampaignId("all");
+    setFolderId("all");
   };
 
   const handleApply = () => {
@@ -83,6 +126,8 @@ export function FiltersModal({
       tags: selectedTags,
       linkType,
       hasQrCode,
+      campaignId,
+      folderId,
     });
     onClose();
   };
@@ -164,6 +209,64 @@ export function FiltersModal({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Campaign filter */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">
+              Campaign
+            </label>
+            <Select value={campaignId} onValueChange={setCampaignId}>
+              <SelectTrigger>
+                <SelectValue placeholder="All campaigns" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All campaigns</SelectItem>
+                {campaigns.map((campaign) => (
+                  <SelectItem key={campaign.id} value={campaign.id}>
+                    <div className="flex items-center gap-2">
+                      <span>{campaign.name}</span>
+                      <Badge
+                        variant={
+                          campaign.status === "ACTIVE"
+                            ? "default"
+                            : campaign.status === "PAUSED"
+                              ? "secondary"
+                              : "outline"
+                        }
+                        className="text-xs"
+                      >
+                        {campaign.status}
+                      </Badge>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Folder filter */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-slate-700">Folder</label>
+            <Select value={folderId} onValueChange={setFolderId}>
+              <SelectTrigger>
+                <SelectValue placeholder="All folders" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All folders</SelectItem>
+                {folders.map((folder) => (
+                  <SelectItem key={folder.id} value={folder.id}>
+                    <div className="flex items-center gap-2">
+                      <Folder
+                        className="h-4 w-4"
+                        style={{ color: folder.color }}
+                      />
+                      <span>{folder.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Link type filter */}

@@ -55,17 +55,23 @@ export default function LinksPage() {
     tags: [],
     linkType: "all",
     hasQrCode: "all",
+    campaignId: "all",
+    folderId: "all",
   });
 
   const hasDateFilter = dateRange.start !== null || dateRange.end !== null;
   const hasActiveFilters =
     tagFilters.tags.length > 0 ||
     tagFilters.linkType !== "all" ||
-    tagFilters.hasQrCode !== "all";
+    tagFilters.hasQrCode !== "all" ||
+    tagFilters.campaignId !== "all" ||
+    tagFilters.folderId !== "all";
   const activeFilterCount =
     (tagFilters.tags.length > 0 ? 1 : 0) +
     (tagFilters.linkType !== "all" ? 1 : 0) +
-    (tagFilters.hasQrCode !== "all" ? 1 : 0);
+    (tagFilters.hasQrCode !== "all" ? 1 : 0) +
+    (tagFilters.campaignId !== "all" ? 1 : 0) +
+    (tagFilters.folderId !== "all" ? 1 : 0);
 
   const handleDateFilterApply = (start: Date | null, end: Date | null) => {
     setDateRange({ start, end });
@@ -80,7 +86,7 @@ export default function LinksPage() {
   };
 
   const clearAllFilters = () => {
-    setTagFilters({ tags: [], linkType: "all", hasQrCode: "all" });
+    setTagFilters({ tags: [], linkType: "all", hasQrCode: "all", campaignId: "all", folderId: "all" });
   };
 
   return (
