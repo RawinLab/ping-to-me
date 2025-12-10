@@ -1,0 +1,323 @@
+# 📱 07 - QR Codes Testing
+
+## ภาพรวม
+ทดสอบการสร้างและ Customize QR Codes รวมถึงการ Download และบันทึก Configuration
+
+---
+
+## 📝 Test Cases
+
+### 7.1 QR Code Generation
+
+#### QRC-001: เปิด QR Customizer จาก Links Page
+| รายละเอียด | ค่า |
+|------------|-----|
+| **Pre-conditions** | มี Link อยู่ |
+| **Role** | ทุก Role |
+
+**ขั้นตอนการทดสอบ:**
+1. ไปที่หน้า `/dashboard/links`
+2. คลิก QR Code icon บน Link Card
+
+**Expected Results:**
+- ✅ QR Customizer Dialog เปิดขึ้น
+- ✅ แสดง QR Code Preview
+- ✅ แสดง Customization Options
+
+---
+
+#### QRC-002: สร้าง QR Code พื้นฐาน
+| รายละเอียด | ค่า |
+|------------|-----|
+| **Pre-conditions** | อยู่ใน QR Customizer |
+| **Role** | ทุก Role |
+
+**ขั้นตอนการทดสอบ:**
+1. เปิด QR Customizer
+2. ดู Default QR Code
+
+**Expected Results:**
+- ✅ แสดง QR Code พร้อม Default Colors
+- ✅ QR Code สามารถ Scan ได้
+- ✅ Redirect ไปยัง Link ที่ถูกต้อง
+
+---
+
+### 7.2 Color Customization
+
+#### QRC-010: เปลี่ยน Foreground Color
+| รายละเอียด | ค่า |
+|------------|-----|
+| **Pre-conditions** | อยู่ใน QR Customizer |
+| **Role** | ทุก Role |
+
+**ขั้นตอนการทดสอบ:**
+1. คลิก Foreground Color Picker
+2. เลือกสี: `#3B82F6` (Blue)
+3. ดู Preview
+
+**Expected Results:**
+- ✅ QR Code เปลี่ยนสี Foreground
+- ✅ Preview อัพเดตทันที
+- ✅ QR Code ยังคง Scan ได้
+
+---
+
+#### QRC-011: เปลี่ยน Background Color
+| รายละเอียด | ค่า |
+|------------|-----|
+| **Pre-conditions** | อยู่ใน QR Customizer |
+| **Role** | ทุก Role |
+
+**ขั้นตอนการทดสอบ:**
+1. คลิก Background Color Picker
+2. เลือกสี: `#EFF6FF` (Light Blue)
+3. ดู Preview
+
+**Expected Results:**
+- ✅ QR Code เปลี่ยน Background
+- ✅ Preview อัพเดตทันที
+
+---
+
+#### QRC-012: ใช้ Color Presets
+| รายละเอียด | ค่า |
+|------------|-----|
+| **Pre-conditions** | อยู่ใน QR Customizer |
+| **Role** | ทุก Role |
+
+**ขั้นตอนการทดสอบ:**
+1. ดู Color Preset Buttons
+2. คลิก Preset (เช่น "Brand Blue")
+
+**Expected Results:**
+- ✅ QR Code เปลี่ยนสีตาม Preset
+- ✅ Color Pickers อัพเดตค่า
+
+---
+
+### 7.3 QR Code Settings
+
+#### QRC-020: ปรับ Error Correction Level
+| รายละเอียด | ค่า |
+|------------|-----|
+| **Pre-conditions** | อยู่ใน QR Customizer |
+| **Role** | ทุก Role |
+
+**ขั้นตอนการทดสอบ:**
+1. หา Error Correction Dropdown/Selector
+2. เปลี่ยนจาก "M" เป็น "H"
+
+**Expected Results:**
+- ✅ QR Code Pattern เปลี่ยน
+- ✅ สามารถ Scan ได้แม้มี Logo ขนาดใหญ่
+
+**Error Correction Levels:**
+- L (Low ~7%)
+- M (Medium ~15%)
+- Q (Quartile ~25%)
+- H (High ~30%)
+
+---
+
+#### QRC-021: ปรับ Border Size
+| รายละเอียด | ค่า |
+|------------|-----|
+| **Pre-conditions** | อยู่ใน QR Customizer |
+| **Role** | ทุก Role |
+
+**ขั้นตอนการทดสอบ:**
+1. หา Border Size Slider
+2. ปรับค่า
+
+**Expected Results:**
+- ✅ Border รอบ QR Code เปลี่ยนขนาด
+- ✅ Preview อัพเดตทันที
+
+---
+
+#### QRC-022: ปรับ QR Code Size
+| รายละเอียด | ค่า |
+|------------|-----|
+| **Pre-conditions** | อยู่ใน QR Customizer |
+| **Role** | ทุก Role |
+
+**ขั้นตอนการทดสอบ:**
+1. หา Size Input หรือ Slider
+2. เปลี่ยนเป็น 500px
+
+**Expected Results:**
+- ✅ Download จะได้ไฟล์ขนาดที่เลือก
+- ✅ Preview อาจยังขนาดเดิม (เพราะ fit container)
+
+---
+
+### 7.4 Logo Customization
+
+#### QRC-030: เพิ่ม Logo
+| รายละเอียด | ค่า |
+|------------|-----|
+| **Pre-conditions** | อยู่ใน QR Customizer |
+| **Role** | ทุก Role |
+
+**ขั้นตอนการทดสอบ:**
+1. คลิก "Add Logo" หรือ Upload button
+2. เลือกไฟล์รูปภาพ (PNG/JPG)
+3. ดู Preview
+
+**Expected Results:**
+- ✅ Logo แสดงตรงกลาง QR Code
+- ✅ QR Code ยังคง Scan ได้
+- ✅ (ถ้า Error Correction ต่ำ อาจ Scan ไม่ได้)
+
+---
+
+#### QRC-031: ปรับขนาด Logo
+| รายละเอียด | ค่า |
+|------------|-----|
+| **Pre-conditions** | มี Logo แล้ว |
+| **Role** | ทุก Role |
+
+**ขั้นตอนการทดสอบ:**
+1. หา Logo Size Slider
+2. ปรับขนาด (เช่น 25%)
+
+**Expected Results:**
+- ✅ Logo เปลี่ยนขนาด
+- ✅ Preview อัพเดตทันที
+
+---
+
+#### QRC-032: ลบ Logo
+| รายละเอียด | ค่า |
+|------------|-----|
+| **Pre-conditions** | มี Logo แล้ว |
+| **Role** | ทุก Role |
+
+**ขั้นตอนการทดสอบ:**
+1. คลิกปุ่ม "Remove Logo"
+
+**Expected Results:**
+- ✅ Logo หายไป
+- ✅ QR Code แสดงแบบไม่มี Logo
+
+---
+
+### 7.5 Download QR Code
+
+#### QRC-040: Download เป็น PNG
+| รายละเอียด | ค่า |
+|------------|-----|
+| **Pre-conditions** | อยู่ใน QR Customizer |
+| **Role** | ทุก Role |
+
+**ขั้นตอนการทดสอบ:**
+1. คลิกปุ่ม "Download PNG"
+
+**Expected Results:**
+- ✅ Download ไฟล์ PNG
+- ✅ ไฟล์มีขนาดตามที่กำหนด
+- ✅ สีและ Logo ตรงกับ Preview
+
+---
+
+#### QRC-041: Download เป็น SVG
+| รายละเอียด | ค่า |
+|------------|-----|
+| **Pre-conditions** | อยู่ใน QR Customizer |
+| **Role** | ทุก Role |
+
+**ขั้นตอนการทดสอบ:**
+1. คลิกปุ่ม "Download SVG"
+
+**Expected Results:**
+- ✅ Download ไฟล์ SVG
+- ✅ ไฟล์เป็น Vector (Scalable)
+- ✅ สามารถเปิดในโปรแกรม Vector ได้
+
+---
+
+#### QRC-042: Download เป็น PDF
+| รายละเอียด | ค่า |
+|------------|-----|
+| **Pre-conditions** | อยู่ใน QR Customizer |
+| **Role** | ทุก Role |
+
+**ขั้นตอนการทดสอบ:**
+1. คลิกปุ่ม "Download PDF"
+
+**Expected Results:**
+- ✅ Download ไฟล์ PDF
+- ✅ QR Code อยู่ใน PDF
+- ✅ เหมาะสำหรับพิมพ์
+
+---
+
+### 7.6 Save Configuration
+
+#### QRC-050: บันทึก QR Configuration
+| รายละเอียด | ค่า |
+|------------|-----|
+| **Pre-conditions** | Customize QR แล้ว |
+| **Role** | OWNER, ADMIN, EDITOR |
+
+**ขั้นตอนการทดสอบ:**
+1. ปรับแต่ง QR Code
+2. คลิกปุ่ม "Save"
+
+**Expected Results:**
+- ✅ Configuration ถูกบันทึก
+- ✅ ครั้งต่อไปเปิด QR จะใช้ค่าที่บันทึก
+
+---
+
+### 7.7 QR Code Validation
+
+#### QRC-060: Scan QR Code
+| รายละเอียด | ค่า |
+|------------|-----|
+| **Pre-conditions** | มี QR Code |
+| **Role** | N/A (External test) |
+
+**ขั้นตอนการทดสอบ:**
+1. Download QR Code
+2. ใช้แอป QR Scanner บนมือถือ Scan
+
+**Expected Results:**
+- ✅ Scan สำเร็จ
+- ✅ Redirect ไปยัง Destination URL
+
+---
+
+## 🔄 RBAC Testing Matrix
+
+| Test Case | OWNER | ADMIN | EDITOR | VIEWER |
+|-----------|-------|-------|--------|--------|
+| View QR Code | ✅ | ✅ | ✅ | ✅ |
+| Customize QR | ✅ | ✅ | ✅ | ✅ |
+| Download QR | ✅ | ✅ | ✅ | ✅ |
+| Save Configuration | ✅ | ✅ | ✅ | ❌ |
+
+---
+
+## ✅ Test Result
+
+| Test ID | Test Name | PASS/FAIL | Notes |
+|---------|-----------|-----------|-------|
+| QRC-001 | Open QR Customizer | | |
+| QRC-002 | Basic QR Code | | |
+| QRC-010 | Foreground Color | | |
+| QRC-011 | Background Color | | |
+| QRC-012 | Color Presets | | |
+| QRC-020 | Error Correction Level | | |
+| QRC-021 | Border Size | | |
+| QRC-022 | QR Code Size | | |
+| QRC-030 | Add Logo | | |
+| QRC-031 | Adjust Logo Size | | |
+| QRC-032 | Remove Logo | | |
+| QRC-040 | Download PNG | | |
+| QRC-041 | Download SVG | | |
+| QRC-042 | Download PDF | | |
+| QRC-050 | Save Configuration | | |
+| QRC-060 | Scan QR Code | | |
+
