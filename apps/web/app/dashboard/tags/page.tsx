@@ -118,7 +118,12 @@ export default function TagsPage() {
       setTags(res);
     } catch (error: any) {
       console.error("Failed to fetch tags", error);
-      setError("Failed to load tags");
+      // Handle permission errors specifically
+      if (error?.status === 403 || error?.message?.includes("permission")) {
+        setError("You don't have permission to view tags in this organization");
+      } else {
+        setError(error?.message || "Failed to load tags");
+      }
     } finally {
       setLoading(false);
     }
@@ -291,6 +296,43 @@ export default function TagsPage() {
               ))}
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if there's an error and no tags
+  if (error && tags.length === 0) {
+    return (
+      <div className="p-6 lg:p-8">
+        <div className="max-w-5xl mx-auto">
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="py-12">
+              <div className="text-center">
+                <div className="mx-auto h-16 w-16 rounded-2xl bg-red-100 flex items-center justify-center mb-4">
+                  <AlertTriangle className="h-8 w-8 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-red-900 mb-2">
+                  Unable to Load Tags
+                </h3>
+                <p className="text-red-700 mb-6 max-w-sm mx-auto">
+                  {error}
+                </p>
+                <Button
+                  onClick={() => {
+                    setLoading(true);
+                    setError("");
+                    fetchTags();
+                    fetchStatistics();
+                  }}
+                  variant="outline"
+                  className="border-red-300 text-red-700 hover:bg-red-100"
+                >
+                  Try Again
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

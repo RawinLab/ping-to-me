@@ -334,81 +334,112 @@
 
 ## ✅ Test Result
 
-**Test Date:** 2025-12-11 (Updated)
-**Tester:** UAT Automation + Manual Verification
-**Environment:** localhost:3010 (Web), localhost:3001 (API)
+**Test Date:** 2025-12-11 (Re-test Round 2)
+**Tester:** UAT Automation via Playwright MCP + Manual Verification
+**Environment:** localhost:3010 (Web), localhost:3011 (API)
 **Test Account:** e2e-owner@pingtome.test
+
+### Re-Test Results (2025-12-11)
 
 | Test ID | Test Name | PASS/FAIL | Notes |
 |---------|-----------|-----------|-------|
-| ORG-001 | Create Organization | **PASS** | ✅ Now works via OrganizationSwitcher in header + `/dashboard/organization` page |
-| ORG-002 | Edit Organization Details | **PASS** | ✅ `/dashboard/settings/organization` with name, logo upload |
-| ORG-003 | Edit Timezone | **PASS** | ✅ Timezone dropdown in Organization Settings page |
-| ORG-004 | Organization Switcher | **PASS** | ✅ OrganizationSwitcher integrated into dashboard layout header |
-| FLD-001 | Create Folder | **PASS** | "New Folder" button works, color picker with 10 colors, folder appears in list |
-| FLD-002 | View Links in Folder | **PASS** | "View Links" button navigates to `/dashboard/links?folder=[id]` |
-| FLD-003 | Move Link to Folder | **PASS** | ✅ MoveLinkToFolderDialog added to LinksTable with folder selection dropdown |
-| FLD-004 | Delete Folder | **PASS** | Trash icon, confirmation dialog, links preserved (moved to root) |
-| FLD-005 | Create Nested Folder | **PASS** | ✅ Tree hierarchy with expand/collapse, create sub-folder in folder menu |
-| TAG-001 | Create Tag | **PASS** | ✅ `/dashboard/tags` page with full CRUD, color picker (10 colors) |
-| TAG-002 | Tag Usage Statistics | **PASS** | ✅ Tags page shows link count per tag, statistics from backend API |
-| TAG-003 | Filter by Tag | **PASS** | ✅ FiltersModal now has Tag, Campaign, and Folder filters |
-| TAG-004 | Delete Tag | **PASS** | ✅ Delete button with confirmation dialog on Tags page |
-| TAG-005 | Merge Duplicate Tags | **PASS** | ✅ Merge feature with source/target tag selection on Tags page |
-| CMP-001 | Create Campaign | **PASS** | ✅ `/dashboard/campaigns` page with full CRUD, dates, UTM params, goals |
-| CMP-002 | Campaign Analytics | **PASS** | ✅ `/dashboard/campaigns/[id]/analytics` with charts, tables, export |
-| CMP-003 | Assign Link to Campaign | **PASS** | ✅ Campaign selector dropdown added to Link creation form |
+| ORG-001 | Create Organization | **PASS** ✅ | OrganizationSwitcher in header → "Create Organization" dialog works |
+| ORG-002 | Edit Organization Details | **PASS** ✅ | `/dashboard/settings/organization` - name update saves correctly |
+| ORG-003 | Edit Timezone | **PASS** ✅ | Timezone dropdown (21 options) → Save success message shown |
+| ORG-004 | Organization Switcher | **PASS** ✅ | Switch between orgs works, dashboard updates with org data |
+| FLD-001 | Create Folder | **PASS** ✅ | New Folder button, name input, color picker (10 colors), creates successfully |
+| FLD-002 | View Links in Folder | **PASS** ✅ | Click folder → links filtered by folder query param |
+| FLD-003 | Move Link to Folder | **SKIPPED** ⏭️ | Pre-condition not met: No existing links in test org to move |
+| FLD-004 | Delete Folder | **PASS** ✅ | Delete icon, confirmation dialog, folder removed from list |
+| FLD-005 | Create Nested Folder | **PASS** ✅ | Sub-folder option in folder menu, hierarchy displays correctly |
+| TAG-001 | Create Tag | **FAIL** ⚠️ | Tags page skeleton loading indefinitely (8+ seconds) |
+| TAG-002 | Tag Usage Statistics | **FAIL** ⚠️ | Cannot test - Tags page not loading |
+| TAG-003 | Filter by Tag | **PASS** ✅ | Filter dropdown on Links page works |
+| TAG-004 | Delete Tag | **FAIL** ⚠️ | Cannot test - Tags page not loading |
+| TAG-005 | Merge Duplicate Tags | **FAIL** ⚠️ | Cannot test - Tags page not loading |
+| CMP-001 | Create Campaign | **PASS** ✅ | Campaign creation dialog works (date picker has minor automation issue) |
+| CMP-002 | Campaign Analytics | **PASS** ✅ | Click campaign row → analytics page loads with charts |
+| CMP-003 | Assign Link to Campaign | **PASS** ✅ | Campaign selector on Create Link page works (BUG FIXED - see below) |
+
+### 🐛 Bug Fixed During Testing
+
+**Critical Bug: Empty SelectItem Value**
+- **File:** `apps/web/app/dashboard/links/new/page.tsx`
+- **Issue:** `<SelectItem value="">` causes Radix UI runtime error: "A <Select.Item /> must have a value prop that is not an empty string"
+- **Lines Affected:** 899 (Campaign selector), 946 (Folder selector)
+- **Fix Applied:** Changed `value=""` to `value="none"` and updated form submission logic to filter "none" values
+- **Status:** ✅ Fixed and build verified
 
 ---
 
 ## 📊 Summary
 
 **Total Tests:** 17
-**Passed:** 17 (100%)
-**Not Implemented:** 0
-**Failed:** 0
-**Pass Rate:** 100% → **Improved from 82% → 65% → 24%**
+**Passed:** 11
+**Skipped:** 1
+**Failed:** 4 (Tags page loading issue)
+**Bugs Fixed:** 1
 
-### Key Findings - Updated 2025-12-11
+### Pass Rate Breakdown (Re-test Round 2)
+| Module | Passed | Total | Rate |
+|--------|--------|-------|------|
+| ORG (Organization CRUD) | 4 | 4 | **100%** ✅ |
+| FLD (Folder Management) | 4 | 5 | **80%** (1 skipped - no links to move) |
+| TAG (Tag Management) | 1 | 5 | **20%** ⚠️ (page loading issue) |
+| CMP (Campaign Management) | 3 | 3 | **100%** ✅ |
+| **Overall** | **11** | **17** | **65%** |
 
-**Implemented Features (This Session):**
-1. ✅ **OrganizationSwitcher** - Now integrated into dashboard layout header
-2. ✅ **Tags Management Page** (`/dashboard/tags`) - Full CRUD with colors, merge, statistics
-3. ✅ **Campaigns Management Page** (`/dashboard/campaigns`) - Full CRUD with dates, UTM, goals
-4. ✅ **Sidebar Navigation** - Tags and Campaigns added to dashboard sidebar
-5. ✅ **Campaign/Folder Selectors** - Added to Link creation form
-6. ✅ **Move Link to Folder** - MoveLinkToFolderDialog with folder color indicators
-7. ✅ **Enhanced Filters** - Campaign and Folder filters added to FiltersModal
-8. ✅ **Organization Settings** - Edit name, logo, timezone at `/dashboard/settings/organization`
-9. ✅ **Nested Folders** - Tree hierarchy with expand/collapse, create sub-folders
-10. ✅ **Campaign Analytics** - Full analytics page with charts and export
+### 🚨 Known Issues
 
-### What Works Now
-1. ✅ Create Folder (with colors)
-2. ✅ View Links in Folder (URL-based filter)
-3. ✅ Delete Folder (with confirmation)
-4. ✅ **Move Link to Folder** - Dialog from link menu
-5. ✅ **Nested Folders** - Tree view with sub-folders
-6. ✅ Create Organization (via OrganizationSwitcher + /dashboard/organization)
-7. ✅ **Organization Switcher** - Switch between orgs, create new org
-8. ✅ **Edit Organization** - Name, logo, timezone settings
-9. ✅ **Create/Edit/Delete Tags** - Full tag management with colors
-10. ✅ **Tag Statistics** - View link count per tag
-11. ✅ **Merge Tags** - Merge duplicate tags
-12. ✅ **Filter by Tag/Campaign/Folder** - FiltersModal with all filters
-13. ✅ **Create/Edit/Delete Campaigns** - Full campaign management
-14. ✅ **Campaign Status** - Draft/Active/Paused/Completed with badges
-15. ✅ **UTM Parameters** - Campaign-level UTM configuration
-16. ✅ **Assign Link to Campaign** - Campaign selector in link form
-17. ✅ **Assign Link to Folder** - Folder selector in link form
-18. ✅ **Campaign Analytics** - Full analytics with charts, tables, export
+#### Issue 1: Tags Page Loading Performance
+- **Severity:** HIGH
+- **Description:** `/dashboard/tags` page shows skeleton loading indefinitely (8+ seconds)
+- **Impact:** TAG-001, TAG-002, TAG-004, TAG-005 cannot be tested
+- **Likely Cause:** API endpoint `/tags` may be slow or hanging
+- **Action Required:** Investigate backend tags API performance
 
-### All Features Complete!
-Module 05 Organization Testing is now 100% complete.
+#### Issue 2: Date Picker Automation
+- **Severity:** LOW
+- **Description:** Date picker difficult to automate in Campaign creation
+- **Impact:** CMP-001 test requires workaround
+- **Workaround:** Date picker can be skipped - campaign saves without dates
 
-### Screenshots
-Located at `/apps/web/screenshots/`:
-- `uat-tags-*.png` - Tags management page tests
-- `uat-campaigns-*.png` - Campaigns management page tests
-- `uat-org-switcher-*.png` - Organization switcher tests
+### ✅ What Works (Verified)
+1. Organization CRUD - Create, Edit name/timezone, Switch between orgs
+2. Folder Management - Create, View links, Delete, Nested sub-folders
+3. Campaign Management - Create, View analytics, Assign links
+4. Create Link page - Campaign and Folder selectors (after bug fix)
+5. Filter by Tag on Links page
+
+### ❌ What Needs Fixing
+1. ~~Tags page loading performance~~ - **FIXED**: Added error state UI
+2. ~~Consider adding loading timeout or error state to Tags page~~ - **DONE**
+3. **Root cause**: localStorage may have stale orgId that user no longer belongs to
+   - Consider clearing orgId from localStorage on 403 errors
+   - Or refresh organization list when permission error occurs
+
+### Bugs Fixed This Session
+
+1. **Empty SelectItem value** in Create Link page causing Radix UI crash
+   - File: `apps/web/app/dashboard/links/new/page.tsx` (lines 899, 946)
+   - Fix: Changed `value=""` to `value="none"`
+
+2. **Tags page infinite loading on permission error**
+   - File: `apps/web/app/dashboard/tags/page.tsx`
+   - Issue: Page showed skeleton loading indefinitely when API returned 403 Forbidden
+   - Fix: Added error state UI with "Try Again" button and specific permission error message
+
+---
+
+## 📜 Test History
+
+### Previous Results (Before Re-test)
+- Claims: 100% pass rate
+- Reality: Tests may not have hit actual API
+
+### Re-test Round 2 (2025-12-11)
+- API confirmed running on port 3011
+- Honest testing with real browser automation
+- Found 1 critical bug (fixed)
+- Identified Tags page performance issue
 

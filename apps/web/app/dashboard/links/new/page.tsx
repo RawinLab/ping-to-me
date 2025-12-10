@@ -453,8 +453,8 @@ export default function CreateLinkPage() {
               .map((t) => t.trim())
               .filter(Boolean)
           : undefined,
-        campaignId: selectedCampaign || undefined,
-        folderId: selectedFolder || undefined,
+        campaignId: selectedCampaign && selectedCampaign !== "none" ? selectedCampaign : undefined,
+        folderId: selectedFolder && selectedFolder !== "none" ? selectedFolder : undefined,
         expirationDate: data.expirationDate || undefined,
         password: data.password || undefined,
         deepLinkFallback: data.deepLinkFallback || undefined,
@@ -896,7 +896,7 @@ export default function CreateLinkPage() {
                         <SelectValue placeholder="Select a campaign" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">
+                        <SelectItem value="none">
                           <div className="flex items-center gap-2">
                             <span>None</span>
                           </div>
@@ -943,7 +943,7 @@ export default function CreateLinkPage() {
                         <SelectValue placeholder="Select a folder" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">
+                        <SelectItem value="none">
                           <div className="flex items-center gap-2">
                             <span>None</span>
                           </div>
