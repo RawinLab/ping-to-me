@@ -18,6 +18,19 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@pingtome/ui";
 import {
   Plus,
@@ -27,6 +40,13 @@ import {
   Link2,
   ExternalLink,
   Palette,
+  ChevronRight,
+  ChevronDown,
+  MoreVertical,
+  FolderPlus,
+  Edit,
+  Move,
+  FolderTree,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -34,9 +54,11 @@ interface FolderData {
   id: string;
   name: string;
   color?: string;
+  parentId?: string | null;
   _count: {
     links: number;
   };
+  children?: FolderData[];
 }
 
 const PRESET_COLORS = [
@@ -52,12 +74,230 @@ const PRESET_COLORS = [
   { name: "Cyan", value: "#06b6d4" },
 ];
 
+// Recursive component to render folder tree
+function FolderTreeItem({
+  folder,
+  depth = 0,
+  onCreateSubfolder,
+  onDelete,
+  onMove,
+  onEdit,
+  allFolders,
+}: {
+  folder: FolderData;
+  depth?: number;
+  onCreateSubfolder: (parentId: string) => void;
+  onDelete: (id: string) => void;
+  onMove: (folder: FolderData) => void;
+  onEdit: (folder: FolderData) => void;
+  allFolders: FolderData[];
+}) {
+  const [isOpen, setIsOpen] = useState(depth < 2); // Auto-expand first 2 levels
+  const hasChildren = folder.children && folder.children.length > 0;
+  const totalLinks = getTotalLinks(folder);
+
+  return (
+    <div className="w-full">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <div
+          className="group relative flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-3 hover:bg-slate-50 transition-all duration-200"
+          style={{ marginLeft: `${depth * 24}px` }}
+        >
+          {/* Color indicator */}
+          <div
+            className="absolute left-0 top-0 h-full w-1 rounded-l-lg"
+            style={{ backgroundColor: folder.color || "#3b82f6" }}
+          />
+
+          {/* Expand/collapse button */}
+          <div className="flex items-center pl-2">
+            {hasChildren ? (
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 hover:bg-slate-200"
+                >
+                  {isOpen ? (
+                    <ChevronDown className="h-4 w-4 text-slate-600" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 text-slate-600" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+            ) : (
+              <div className="h-6 w-6" />
+            )}
+          </div>
+
+          {/* Folder icon */}
+          <div
+            className="h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{
+              backgroundColor: `${folder.color || "#3b82f6"}20`,
+            }}
+          >
+            {isOpen && hasChildren ? (
+              <FolderOpen
+                className="h-5 w-5"
+                style={{ color: folder.color || "#3b82f6" }}
+              />
+            ) : (
+              <Folder
+                className="h-5 w-5"
+                style={{ color: folder.color || "#3b82f6" }}
+              />
+            )}
+          </div>
+
+          {/* Folder info */}
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-slate-900 truncate">
+              {folder.name}
+            </div>
+            <div className="flex items-center gap-3 text-xs text-slate-500">
+              <span className="flex items-center gap-1">
+                <Link2 className="h-3 w-3" />
+                {folder._count.links} direct
+              </span>
+              {hasChildren && (
+                <span className="flex items-center gap-1">
+                  <FolderTree className="h-3 w-3" />
+                  {totalLinks} total
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2">
+            <Link href={`/dashboard/links?folder=${folder.id}`}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-3 text-xs hover:bg-slate-200"
+              >
+                <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                View Links
+              </Button>
+            </Link>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => onEdit(folder)}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Folder
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onCreateSubfolder(folder.id)}>
+                  <FolderPlus className="mr-2 h-4 w-4" />
+                  Create Subfolder
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onMove(folder)}>
+                  <Move className="mr-2 h-4 w-4" />
+                  Move Folder
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => onDelete(folder.id)}
+                  className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Folder
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        {/* Children */}
+        {hasChildren && (
+          <CollapsibleContent className="mt-2 space-y-2">
+            {folder.children!.map((child) => (
+              <FolderTreeItem
+                key={child.id}
+                folder={child}
+                depth={depth + 1}
+                onCreateSubfolder={onCreateSubfolder}
+                onDelete={onDelete}
+                onMove={onMove}
+                onEdit={onEdit}
+                allFolders={allFolders}
+              />
+            ))}
+          </CollapsibleContent>
+        )}
+      </Collapsible>
+    </div>
+  );
+}
+
+// Helper to calculate total links including children
+function getTotalLinks(folder: FolderData): number {
+  let total = folder._count.links;
+  if (folder.children) {
+    folder.children.forEach((child) => {
+      total += getTotalLinks(child);
+    });
+  }
+  return total;
+}
+
+// Helper to count total folders including children
+function getTotalFolders(folders: FolderData[]): number {
+  let total = folders.length;
+  folders.forEach((folder) => {
+    if (folder.children) {
+      total += getTotalFolders(folder.children);
+    }
+  });
+  return total;
+}
+
+// Helper to flatten folder tree for select options
+function flattenFolders(
+  folders: FolderData[],
+  depth = 0,
+  excludeId?: string
+): Array<{ id: string; name: string; depth: number }> {
+  const result: Array<{ id: string; name: string; depth: number }> = [];
+
+  folders.forEach((folder) => {
+    // Exclude the folder being moved and its descendants
+    if (folder.id !== excludeId) {
+      result.push({ id: folder.id, name: folder.name, depth });
+      if (folder.children) {
+        result.push(...flattenFolders(folder.children, depth + 1, excludeId));
+      }
+    }
+  });
+
+  return result;
+}
+
 export default function FoldersPage() {
   const [folders, setFolders] = useState<FolderData[]>([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderColor, setNewFolderColor] = useState("#3b82f6");
+  const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
+  const [editingFolder, setEditingFolder] = useState<FolderData | null>(null);
+  const [movingFolder, setMovingFolder] = useState<FolderData | null>(null);
+  const [moveTargetParentId, setMoveTargetParentId] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     fetchFolders();
@@ -65,7 +305,8 @@ export default function FoldersPage() {
 
   const fetchFolders = async () => {
     try {
-      const res = await apiRequest("/folders");
+      // Fetch tree structure from API
+      const res = await apiRequest("/folders/tree");
       setFolders(res);
     } catch (error) {
       console.error("Failed to fetch folders");
@@ -80,10 +321,15 @@ export default function FoldersPage() {
     try {
       await apiRequest("/folders", {
         method: "POST",
-        body: JSON.stringify({ name: newFolderName, color: newFolderColor }),
+        body: JSON.stringify({
+          name: newFolderName,
+          color: newFolderColor,
+          parentId: selectedParentId,
+        }),
       });
       setNewFolderName("");
       setNewFolderColor("#3b82f6");
+      setSelectedParentId(null);
       setCreateDialogOpen(false);
       fetchFolders();
     } catch (error) {
@@ -91,10 +337,31 @@ export default function FoldersPage() {
     }
   };
 
+  const handleEdit = async () => {
+    if (!editingFolder || !newFolderName.trim()) return;
+
+    try {
+      await apiRequest(`/folders/${editingFolder.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          name: newFolderName,
+          color: newFolderColor,
+        }),
+      });
+      setEditingFolder(null);
+      setNewFolderName("");
+      setNewFolderColor("#3b82f6");
+      setEditDialogOpen(false);
+      fetchFolders();
+    } catch (error) {
+      alert("Failed to update folder");
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (
       !confirm(
-        "Are you sure you want to delete this folder? Links will be unassigned but not deleted.",
+        "Are you sure you want to delete this folder? Links will be unassigned but not deleted."
       )
     )
       return;
@@ -107,7 +374,43 @@ export default function FoldersPage() {
     }
   };
 
-  const totalLinks = folders.reduce((sum, f) => sum + f._count.links, 0);
+  const handleMoveFolder = (folder: FolderData) => {
+    setMovingFolder(folder);
+    setMoveTargetParentId(folder.parentId || null);
+    setMoveDialogOpen(true);
+  };
+
+  const handleMoveConfirm = async () => {
+    if (!movingFolder) return;
+
+    try {
+      await apiRequest(`/folders/${movingFolder.id}/move`, {
+        method: "POST",
+        body: JSON.stringify({ parentId: moveTargetParentId }),
+      });
+      setMoveDialogOpen(false);
+      setMovingFolder(null);
+      setMoveTargetParentId(null);
+      fetchFolders();
+    } catch (error) {
+      alert("Failed to move folder");
+    }
+  };
+
+  const handleCreateSubfolder = (parentId: string) => {
+    setSelectedParentId(parentId);
+    setCreateDialogOpen(true);
+  };
+
+  const handleEditFolder = (folder: FolderData) => {
+    setEditingFolder(folder);
+    setNewFolderName(folder.name);
+    setNewFolderColor(folder.color || "#3b82f6");
+    setEditDialogOpen(true);
+  };
+
+  const totalFolderCount = getTotalFolders(folders);
+  const totalLinks = folders.reduce((sum, f) => sum + getTotalLinks(f), 0);
 
   if (loading) {
     return (
@@ -127,9 +430,13 @@ export default function FoldersPage() {
     );
   }
 
+  const availableFolders = movingFolder
+    ? flattenFolders(folders, 0, movingFolder.id)
+    : [];
+
   return (
     <div className="p-6 lg:p-8">
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -137,93 +444,18 @@ export default function FoldersPage() {
               Folders
             </h1>
             <p className="text-slate-500 mt-1">
-              Organize your links into folders for better management.
+              Organize your links into nested folders for better management.
             </p>
           </div>
-          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="h-10 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
-                <Plus className="mr-2 h-4 w-4" /> New Folder
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Folder className="h-5 w-5 text-blue-600" />
-                  Create Folder
-                </DialogTitle>
-                <DialogDescription>
-                  Create a new folder to organize your links.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-slate-700 font-medium">
-                    Folder Name
-                  </Label>
-                  <Input
-                    id="name"
-                    placeholder="My Folder"
-                    value={newFolderName}
-                    onChange={(e) => setNewFolderName(e.target.value)}
-                    className="h-11 rounded-lg"
-                  />
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-slate-700 font-medium flex items-center gap-2">
-                    <Palette className="h-4 w-4" />
-                    Folder Color
-                  </Label>
-                  <div className="grid grid-cols-5 gap-2">
-                    {PRESET_COLORS.map((color) => (
-                      <button
-                        key={color.value}
-                        type="button"
-                        onClick={() => setNewFolderColor(color.value)}
-                        className={`h-10 w-full rounded-lg transition-all ${
-                          newFolderColor === color.value
-                            ? "ring-2 ring-offset-2 ring-slate-900 scale-110"
-                            : "hover:scale-105"
-                        }`}
-                        style={{ backgroundColor: color.value }}
-                        title={color.name}
-                      />
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <Input
-                      type="color"
-                      value={newFolderColor}
-                      onChange={(e) => setNewFolderColor(e.target.value)}
-                      className="w-12 h-10 p-1 rounded-lg cursor-pointer"
-                    />
-                    <Input
-                      value={newFolderColor}
-                      onChange={(e) => setNewFolderColor(e.target.value)}
-                      className="flex-1 h-10 rounded-lg font-mono text-sm"
-                      placeholder="#3b82f6"
-                    />
-                  </div>
-                </div>
-              </div>
-              <DialogFooter className="gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setCreateDialogOpen(false)}
-                  className="rounded-lg"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleCreate}
-                  disabled={!newFolderName.trim()}
-                  className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                >
-                  Create Folder
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button
+            onClick={() => {
+              setSelectedParentId(null);
+              setCreateDialogOpen(true);
+            }}
+            className="h-10 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25"
+          >
+            <Plus className="mr-2 h-4 w-4" /> New Folder
+          </Button>
         </div>
 
         {/* Stats */}
@@ -236,7 +468,7 @@ export default function FoldersPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-blue-700">
-                    {folders.length}
+                    {totalFolderCount}
                   </p>
                   <p className="text-sm text-blue-600">Total Folders</p>
                 </div>
@@ -260,7 +492,7 @@ export default function FoldersPage() {
           </Card>
         </div>
 
-        {/* Folders Grid */}
+        {/* Folder Tree */}
         {folders.length === 0 ? (
           <Card className="border-slate-200 border-dashed">
             <CardContent className="py-16">
@@ -275,87 +507,208 @@ export default function FoldersPage() {
                   Create your first folder to start organizing your links for
                   easier management.
                 </p>
-                <Dialog
-                  open={createDialogOpen}
-                  onOpenChange={setCreateDialogOpen}
+                <Button
+                  onClick={() => {
+                    setSelectedParentId(null);
+                    setCreateDialogOpen(true);
+                  }}
+                  className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25"
                 >
-                  <DialogTrigger asChild>
-                    <Button className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
-                      <Plus className="mr-2 h-4 w-4" /> Create Your First Folder
-                    </Button>
-                  </DialogTrigger>
-                </Dialog>
+                  <Plus className="mr-2 h-4 w-4" /> Create Your First Folder
+                </Button>
               </div>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-2">
             {folders.map((folder) => (
-              <Card
+              <FolderTreeItem
                 key={folder.id}
-                className="relative group border-slate-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden"
-              >
-                {/* Color Bar */}
-                <div
-                  className="absolute top-0 left-0 w-full h-1"
-                  style={{ backgroundColor: folder.color || "#3b82f6" }}
-                />
-                <CardHeader className="pt-5 pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="h-12 w-12 rounded-xl flex items-center justify-center"
-                        style={{
-                          backgroundColor: `${folder.color || "#3b82f6"}20`,
-                        }}
-                      >
-                        <Folder
-                          className="h-6 w-6"
-                          style={{ color: folder.color || "#3b82f6" }}
-                        />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg truncate max-w-[150px]">
-                          {folder.name}
-                        </CardTitle>
-                        <CardDescription className="flex items-center gap-1.5">
-                          <Link2 className="h-3.5 w-3.5" />
-                          {folder._count.links}{" "}
-                          {folder._count.links === 1 ? "link" : "links"}
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="flex items-center gap-2">
-                    <Link
-                      href={`/dashboard/links?folder=${folder.id}`}
-                      className="flex-1"
-                    >
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full rounded-lg border-slate-200 hover:bg-slate-50"
-                      >
-                        <ExternalLink className="mr-2 h-3.5 w-3.5" />
-                        View Links
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(folder.id)}
-                      className="rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                folder={folder}
+                onCreateSubfolder={handleCreateSubfolder}
+                onDelete={handleDelete}
+                onMove={handleMoveFolder}
+                onEdit={handleEditFolder}
+                allFolders={folders}
+              />
             ))}
           </div>
         )}
+
+        {/* Create/Edit Dialog */}
+        <Dialog
+          open={createDialogOpen || editDialogOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              setCreateDialogOpen(false);
+              setEditDialogOpen(false);
+              setEditingFolder(null);
+              setNewFolderName("");
+              setNewFolderColor("#3b82f6");
+              setSelectedParentId(null);
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Folder className="h-5 w-5 text-blue-600" />
+                {editingFolder ? "Edit Folder" : "Create Folder"}
+              </DialogTitle>
+              <DialogDescription>
+                {editingFolder
+                  ? "Update the folder name and color."
+                  : selectedParentId
+                  ? "Create a new subfolder."
+                  : "Create a new folder to organize your links."}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-slate-700 font-medium">
+                  Folder Name
+                </Label>
+                <Input
+                  id="name"
+                  placeholder="My Folder"
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  className="h-11 rounded-lg"
+                />
+              </div>
+              <div className="space-y-3">
+                <Label className="text-slate-700 font-medium flex items-center gap-2">
+                  <Palette className="h-4 w-4" />
+                  Folder Color
+                </Label>
+                <div className="grid grid-cols-5 gap-2">
+                  {PRESET_COLORS.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      onClick={() => setNewFolderColor(color.value)}
+                      className={`h-10 w-full rounded-lg transition-all ${
+                        newFolderColor === color.value
+                          ? "ring-2 ring-offset-2 ring-slate-900 scale-110"
+                          : "hover:scale-105"
+                      }`}
+                      style={{ backgroundColor: color.value }}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <Input
+                    type="color"
+                    value={newFolderColor}
+                    onChange={(e) => setNewFolderColor(e.target.value)}
+                    className="w-12 h-10 p-1 rounded-lg cursor-pointer"
+                  />
+                  <Input
+                    value={newFolderColor}
+                    onChange={(e) => setNewFolderColor(e.target.value)}
+                    className="flex-1 h-10 rounded-lg font-mono text-sm"
+                    placeholder="#3b82f6"
+                  />
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCreateDialogOpen(false);
+                  setEditDialogOpen(false);
+                  setEditingFolder(null);
+                  setNewFolderName("");
+                  setNewFolderColor("#3b82f6");
+                  setSelectedParentId(null);
+                }}
+                className="rounded-lg"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={editingFolder ? handleEdit : handleCreate}
+                disabled={!newFolderName.trim()}
+                className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              >
+                {editingFolder ? "Update Folder" : "Create Folder"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Move Folder Dialog */}
+        <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Move className="h-5 w-5 text-blue-600" />
+                Move Folder
+              </DialogTitle>
+              <DialogDescription>
+                Select the destination for &quot;{movingFolder?.name}&quot;. Leave empty
+                to move to root.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label className="text-slate-700 font-medium">
+                  Parent Folder
+                </Label>
+                <Select
+                  value={moveTargetParentId || "root"}
+                  onValueChange={(value) =>
+                    setMoveTargetParentId(value === "root" ? null : value)
+                  }
+                >
+                  <SelectTrigger className="h-11 rounded-lg">
+                    <SelectValue placeholder="Select parent folder" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="root">
+                      <div className="flex items-center gap-2">
+                        <Folder className="h-4 w-4 text-slate-500" />
+                        <span>Root (No Parent)</span>
+                      </div>
+                    </SelectItem>
+                    {availableFolders.map((folder) => (
+                      <SelectItem key={folder.id} value={folder.id}>
+                        <div
+                          className="flex items-center gap-2"
+                          style={{ paddingLeft: `${folder.depth * 16}px` }}
+                        >
+                          <Folder className="h-4 w-4 text-slate-500" />
+                          <span>{folder.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setMoveDialogOpen(false);
+                  setMovingFolder(null);
+                  setMoveTargetParentId(null);
+                }}
+                className="rounded-lg"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleMoveConfirm}
+                className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              >
+                Move Folder
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { apiRequest } from "@/lib/api";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import {
@@ -132,6 +133,7 @@ const statusIcons = {
 
 export default function CampaignsPage() {
   const { currentOrg, isLoading: orgLoading } = useOrganization();
+  const router = useRouter();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignAnalytics, setCampaignAnalytics] = useState<
     Map<string, CampaignAnalytics>
@@ -550,25 +552,36 @@ export default function CampaignsPage() {
                     )}
 
                     {/* Actions */}
-                    <div className="flex items-center gap-2 pt-2">
+                    <div className="space-y-2 pt-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleOpenDialog(campaign)}
-                        className="flex-1 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                        onClick={() => router.push(`/dashboard/campaigns/${campaign.id}/analytics`)}
+                        className="w-full border-blue-200 hover:bg-blue-50 hover:border-blue-300 text-blue-600 hover:text-blue-700"
                       >
-                        <Edit className="h-3.5 w-3.5 mr-1.5" />
-                        Edit
+                        <BarChart3 className="h-3.5 w-3.5 mr-1.5" />
+                        View Analytics
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openDeleteDialog(campaign)}
-                        className="flex-1 border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                        Delete
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenDialog(campaign)}
+                          className="flex-1 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                        >
+                          <Edit className="h-3.5 w-3.5 mr-1.5" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openDeleteDialog(campaign)}
+                          className="flex-1 border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
