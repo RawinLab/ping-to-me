@@ -334,29 +334,29 @@
 
 ## ✅ Test Result
 
-**Test Date:** 2025-12-11
-**Tester:** UAT Automation
-**Environment:** localhost:3010 (Web), localhost:3011 (API)
+**Test Date:** 2025-12-11 (Updated)
+**Tester:** UAT Automation + Manual Verification
+**Environment:** localhost:3010 (Web), localhost:3001 (API)
 **Test Account:** e2e-owner@pingtome.test
 
 | Test ID | Test Name | PASS/FAIL | Notes |
 |---------|-----------|-----------|-------|
-| ORG-001 | Create Organization | **PARTIAL** | Works but via `/dashboard/organization` page, not from org switcher |
+| ORG-001 | Create Organization | **PASS** | ✅ Now works via OrganizationSwitcher in header + `/dashboard/organization` page |
 | ORG-002 | Edit Organization Details | **NOT_IMPL** | No UI to edit org name/logo; `/dashboard/settings/organization` returns 404 |
 | ORG-003 | Edit Timezone | **NOT_IMPL** | No timezone configuration UI; DB field exists but no frontend |
-| ORG-004 | Organization Switcher | **NOT_IMPL** | `OrganizationSwitcher.tsx` component exists but NOT integrated into layout |
+| ORG-004 | Organization Switcher | **PASS** | ✅ OrganizationSwitcher integrated into dashboard layout header |
 | FLD-001 | Create Folder | **PASS** | "New Folder" button works, color picker with 10 colors, folder appears in list |
 | FLD-002 | View Links in Folder | **PASS** | "View Links" button navigates to `/dashboard/links?folder=[id]` |
 | FLD-003 | Move Link to Folder | **NOT_IMPL** | Backend API exists (`POST /folders/:id/links/:linkId`) but no UI |
 | FLD-004 | Delete Folder | **PASS** | Trash icon, confirmation dialog, links preserved (moved to root) |
 | FLD-005 | Create Nested Folder | **NOT_IMPL** | Backend supports hierarchy (`parentId`, `/folders/tree`) but no UI |
-| TAG-001 | Create Tag | **FAIL** | Tag input exists in link form but no visual feedback |
-| TAG-002 | Tag Usage Statistics | **NOT_IMPL** | No `/dashboard/tags` page (404); Backend has full stats API |
-| TAG-003 | Filter by Tag | **NOT_IMPL** | No tag filter in links page; Backend has autocomplete API |
-| TAG-004 | Delete Tag | **NOT_IMPL** | No Tags management page |
-| TAG-005 | Merge Duplicate Tags | **NOT_IMPL** | No Tags page; Backend has merge API |
-| CMP-001 | Create Campaign | **NOT_IMPL** | No `/dashboard/campaigns` page (404); `CampaignsManager.tsx` exists but unused |
-| CMP-002 | Campaign Analytics | **NOT_IMPL** | Backend has `/campaigns/:id/analytics` but no frontend |
+| TAG-001 | Create Tag | **PASS** | ✅ `/dashboard/tags` page with full CRUD, color picker (10 colors) |
+| TAG-002 | Tag Usage Statistics | **PASS** | ✅ Tags page shows link count per tag, statistics from backend API |
+| TAG-003 | Filter by Tag | **PARTIAL** | ✅ "View Links" button on Tags page; No tag filter dropdown in Links page |
+| TAG-004 | Delete Tag | **PASS** | ✅ Delete button with confirmation dialog on Tags page |
+| TAG-005 | Merge Duplicate Tags | **PASS** | ✅ Merge feature with source/target tag selection on Tags page |
+| CMP-001 | Create Campaign | **PASS** | ✅ `/dashboard/campaigns` page with full CRUD, dates, UTM params, goals |
+| CMP-002 | Campaign Analytics | **PARTIAL** | ✅ Campaigns list shows link count; Full analytics view not implemented |
 | CMP-003 | Assign Link to Campaign | **NOT_IMPL** | No campaign selector in link forms; Backend has `campaignId` on Link |
 
 ---
@@ -364,36 +364,43 @@
 ## 📊 Summary
 
 **Total Tests:** 17
-**Passed:** 4 (3 full + 1 partial)
-**Not Implemented:** 12
-**Failed:** 1
-**Pass Rate:** 24%
+**Passed:** 11 (9 full + 2 partial)
+**Not Implemented:** 6
+**Failed:** 0
+**Pass Rate:** 65% → **Improved from 24%**
 
-### Key Findings
+### Key Findings - Updated 2025-12-11
 
-**Backend vs Frontend Gap:**
-Most features have **complete backend implementations** but are **missing frontend UI**:
-- `OrganizationSwitcher.tsx` - Fully built but not integrated
-- `CampaignsManager.tsx` - Fully built but not integrated
-- Tags API - Complete with CRUD, stats, autocomplete, merge
-- Folders API - Complete with hierarchy support, link assignment
+**Implemented Features (This Session):**
+1. ✅ **OrganizationSwitcher** - Now integrated into dashboard layout header
+2. ✅ **Tags Management Page** (`/dashboard/tags`) - Full CRUD with colors, merge, statistics
+3. ✅ **Campaigns Management Page** (`/dashboard/campaigns`) - Full CRUD with dates, UTM, goals
+4. ✅ **Sidebar Navigation** - Tags and Campaigns added to dashboard sidebar
 
-### What Works
+### What Works Now
 1. ✅ Create Folder (with colors)
 2. ✅ View Links in Folder (URL-based filter)
 3. ✅ Delete Folder (with confirmation)
-4. ✅ Create Organization (via /dashboard/organization page)
+4. ✅ Create Organization (via OrganizationSwitcher + /dashboard/organization)
+5. ✅ **Organization Switcher** - Switch between orgs, create new org
+6. ✅ **Create/Edit/Delete Tags** - Full tag management with colors
+7. ✅ **Tag Statistics** - View link count per tag
+8. ✅ **Merge Tags** - Merge duplicate tags
+9. ✅ **Create/Edit/Delete Campaigns** - Full campaign management
+10. ✅ **Campaign Status** - Draft/Active/Paused/Completed with badges
+11. ✅ **UTM Parameters** - Campaign-level UTM configuration
 
-### What's Missing (Quick Wins)
-1. ❌ Add `OrganizationSwitcher` to dashboard layout header (~30 min)
-2. ❌ Create `/dashboard/tags` page using existing API (~4-6 hours)
-3. ❌ Create `/dashboard/campaigns` page using existing component (~2-3 hours)
-4. ❌ Add link-to-folder assignment UI (~2 hours)
+### What's Still Missing
+1. ❌ Edit Organization details (name/logo/timezone)
+2. ❌ Move Link to Folder UI
+3. ❌ Nested Folders UI
+4. ❌ Tag filter in Links page
+5. ❌ Campaign selector in Link form
+6. ❌ Full Campaign Analytics view
 
 ### Screenshots
 Located at `/apps/web/screenshots/`:
-- `uat-05-01-org-*.png` - Organization tests
-- `uat-05-02-fld-*.png` - Folder tests
-- `uat-05-03-tag-*.png` - Tag tests
-- `uat-05-04-cmp-*.png` - Campaign tests
+- `uat-tags-*.png` - Tags management page tests
+- `uat-campaigns-*.png` - Campaigns management page tests
+- `uat-org-switcher-*.png` - Organization switcher tests
 
