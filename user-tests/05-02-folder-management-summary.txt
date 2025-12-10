@@ -1,0 +1,253 @@
+================================================================================
+UAT REPORT: FOLDER MANAGEMENT (05-02)
+Test Date: December 11, 2025
+Tester: Automated UAT
+Environment: http://localhost:3010
+================================================================================
+
+EXECUTIVE SUMMARY
+-----------------
+Overall Score: 3/5 PASS
+
+FLD-001: Create Folder                    ✅ PASS
+FLD-002: View Links in Folder             ✅ PASS  
+FLD-003: Move Link to Folder              ⚠️  NOT_IMPL (backend exists, UI missing)
+FLD-004: Delete Folder                    ✅ PASS
+FLD-005: Create Nested Folder (Sub-folder) ⚠️  NOT_IMPL (backend exists, UI missing)
+
+================================================================================
+
+DETAILED RESULTS
+----------------
+
+FLD-001: Create Folder - ✅ PASS
+------------------------------
+✓ "New Folder" button found and clickable
+✓ Folder name input works
+✓ Color picker functional (10 presets + custom)
+✓ Folder created successfully
+✓ Folder appears in list immediately
+✓ Stats updated correctly (5 Total Folders shown)
+
+Screenshots: 
+- uat-05-02-fld-001-create-before.png
+- uat-05-02-fld-001-create.png
+
+Notes:
+- Clean UI with gradient design
+- Color bar on folder cards
+- Immediate feedback
+
+
+FLD-002: View Links in Folder - ✅ PASS
+---------------------------------------
+✓ "View Links" button on each folder card
+✓ Clicking navigates to /dashboard/links?folder=[id]
+✓ URL contains folder filter parameter
+✓ Navigation is immediate
+
+Screenshot: uat-05-02-fld-002-view.png
+
+Notes:
+- Filter approach allows bookmarking
+- Clean integration between pages
+
+
+FLD-003: Move Link to Folder - ⚠️ NOT_IMPL
+-------------------------------------------
+✗ No "Move to Folder" option in link actions
+✗ No folder field in link edit form
+✗ No context menu with folder options
+✗ Cannot assign links to folders via UI
+
+Backend Status: ✅ FULLY IMPLEMENTED
+- API: POST /folders/:id/links/:linkId
+- API: DELETE /folders/:id/links/:linkId
+- Database: Link.folderId field exists
+
+Screenshots:
+- uat-05-02-fld-003-move-before.png (10+ links visible)
+- uat-05-02-fld-003-move.png (no folder options)
+
+Gap: Backend exists but frontend UI not built
+
+Recommendation: 
+Add folder dropdown to:
+1. Link creation form
+2. Link edit modal
+3. Bulk operations menu
+
+
+FLD-004: Delete Folder - ✅ PASS
+--------------------------------
+✓ Delete button (trash icon) visible on folders
+✓ Confirmation dialog appears
+✓ Dialog message clear: "Links will be unassigned but not deleted"
+✓ Folder removed from list
+✓ Folder count decreased
+
+Screenshots:
+- uat-05-02-fld-004-delete-before.png
+- uat-05-02-fld-004-delete.png
+
+Notes:
+- Red trash icon clear visual indicator
+- Confirmation prevents accidents
+- Links preserved (moved to root)
+- Audit log created
+
+
+FLD-005: Create Nested Folder - ⚠️ NOT_IMPL
+--------------------------------------------
+✗ No right-click context menu on folders
+✗ No "Create Sub-folder" option
+✗ No menu button on folder cards
+✗ No hierarchy visualization
+
+Backend Status: ✅ FULLY IMPLEMENTED
+- API: POST /folders (supports parentId)
+- API: POST /folders/:id/move
+- API: GET /folders/tree (hierarchical structure)
+- Circular reference prevention
+- Recursive archiving
+
+Screenshots:
+- uat-05-02-fld-005-nested-before.png
+- uat-05-02-fld-005-nested.png
+
+Gap: Complete backend implementation exists, UI not built
+
+Recommendation:
+1. Add "Create Sub-folder" context menu
+2. Display folder hierarchy (tree view)
+3. Drag-and-drop reorganization
+4. Breadcrumb navigation
+
+================================================================================
+
+BACKEND API SUMMARY
+-------------------
+The backend is COMPREHENSIVE and PRODUCTION-READY:
+
+Endpoints Available:
+✅ GET /folders - List folders
+✅ GET /folders/tree - Hierarchical tree
+✅ GET /folders/:id - Single folder
+✅ POST /folders - Create (supports parentId)
+✅ PUT /folders/:id - Update
+✅ DELETE /folders/:id - Delete
+✅ POST /folders/:id/links/:linkId - Add link
+✅ DELETE /folders/:id/links/:linkId - Remove link
+✅ POST /folders/:id/move - Move to parent
+✅ POST /folders/:id/archive - Archive
+✅ POST /folders/:id/restore - Restore
+
+Security:
+✅ JWT authentication
+✅ RBAC permission checks
+✅ Organization-level access control
+✅ Audit logging for all operations
+
+================================================================================
+
+KEY FINDINGS
+------------
+
+STRENGTHS:
++ Core folder CRUD works perfectly
++ Modern, clean UI design
++ Good color selection UX
++ Fast performance
++ Proper security & RBAC
++ Comprehensive backend API
++ Audit logging complete
+
+GAPS:
+- Link-to-folder assignment UI missing (backend exists)
+- Nested folder UI missing (backend fully implemented)
+- Folder editing UI missing (backend exists)
+- No drag-and-drop organization
+
+OPPORTUNITIES:
+The backend is already built for advanced features.
+Low-hanging fruit to add UI for:
+1. Link assignment to folders
+2. Nested folder creation
+3. Folder hierarchy visualization
+4. Inline folder editing
+
+================================================================================
+
+RECOMMENDATIONS
+---------------
+
+HIGH PRIORITY:
+1. Add folder selector in link creation/edit forms
+   - Backend: POST /folders/:id/links/:linkId already exists
+   - Impact: HIGH - core workflow improvement
+   - Effort: LOW - simple dropdown addition
+
+2. Expose nested folder creation
+   - Backend: Full hierarchy support exists
+   - Impact: HIGH - advanced organization
+   - Effort: MEDIUM - needs tree UI component
+
+MEDIUM PRIORITY:
+3. Add inline folder editing
+   - Backend: PUT /folders/:id exists
+   - Impact: MEDIUM - UX improvement
+   - Effort: LOW - simple modal/inline edit
+
+4. Folder sidebar in links page
+   - Backend: GET /folders/tree exists
+   - Impact: MEDIUM - better navigation
+   - Effort: MEDIUM - sidebar component
+
+LOW PRIORITY:
+5. Drag-and-drop reorganization
+6. Folder archiving UI
+7. Advanced search/filtering
+
+================================================================================
+
+SCREENSHOTS LOCATION
+--------------------
+/Users/earn/Projects/rawinlab/pingtome/apps/web/screenshots/
+
+Files Generated:
+- uat-05-02-fld-001-create-before.png
+- uat-05-02-fld-001-create.png (5 folders visible)
+- uat-05-02-fld-002-view.png
+- uat-05-02-fld-003-move-before.png (10+ links)
+- uat-05-02-fld-003-move.png
+- uat-05-02-fld-004-delete-before.png
+- uat-05-02-fld-004-delete.png
+- uat-05-02-fld-005-nested-before.png
+- uat-05-02-fld-005-nested.png
+
+================================================================================
+
+CONCLUSION
+----------
+The Folder Management feature has a SOLID FOUNDATION with core operations
+working correctly. The backend is PRODUCTION-READY and comprehensive.
+
+However, significant UI GAPS exist - features are implemented on the backend
+but not exposed in the frontend. This represents LOW-HANGING FRUIT for quick
+feature enhancements.
+
+Score: 3/5 PASS
+- 3 features fully working
+- 2 features have backend but no UI
+
+Next Steps:
+1. Add link-to-folder assignment UI
+2. Expose nested folder creation
+3. Add folder editing
+4. Enhance with advanced features
+
+================================================================================
+Report Generated: December 11, 2025
+Testing Duration: ~42 seconds
+Tool: Playwright + Chromium
+================================================================================
