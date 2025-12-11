@@ -195,6 +195,37 @@ export class PermissionService {
   }
 
   /**
+   * Check if user has full access ('*' scope) permission for a resource/action
+   * This is used to determine if ownership checks can be bypassed
+   * @param userId - User ID
+   * @param orgId - Organization ID
+   * @param resource - Resource type
+   * @param action - Action type
+   * @returns true if user has '*' (full access) scope, false otherwise
+   */
+  async hasFullAccessPermission(
+    userId: string,
+    orgId: string,
+    resource: Resource,
+    action: Action,
+  ): Promise<boolean> {
+    // Get user's role in the organization
+    const role = await this.getUserRoleInOrg(userId, orgId);
+    if (!role) {
+      return false;
+    }
+
+    // Get permission scopes for this role, resource, and action
+    const scopes = getPermissions(role, resource, action);
+    if (!scopes || scopes.length === 0) {
+      return false;
+    }
+
+    // Check if '*' (full access) is in the scopes
+    return scopes.includes("*");
+  }
+
+  /**
    * Helper: Check if any of the scopes grants permission
    * @private
    */

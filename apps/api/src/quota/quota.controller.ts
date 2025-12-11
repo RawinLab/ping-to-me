@@ -8,6 +8,7 @@ import {
 } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { PermissionGuard, Permission } from "../auth/rbac";
 import { QuotaService, QuotaResource } from "./quota.service";
 import {
   CheckQuotaDto,
@@ -18,7 +19,7 @@ import {
 
 @ApiTags("Usage & Quota")
 @Controller()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 @ApiBearerAuth()
 export class QuotaController {
   constructor(private readonly quotaService: QuotaService) {}
@@ -27,6 +28,7 @@ export class QuotaController {
    * GET /organizations/:id/usage - Current month usage
    */
   @Get("organizations/:id/usage")
+  @Permission({ resource: "billing", action: "read" })
   @ApiOperation({ summary: "Get current month usage for organization" })
   @ApiResponse({ status: 200, description: "Current usage data" })
   async getCurrentUsage(@Param("id") orgId: string) {
@@ -41,6 +43,7 @@ export class QuotaController {
    * GET /organizations/:id/usage/history - Historical usage
    */
   @Get("organizations/:id/usage/history")
+  @Permission({ resource: "billing", action: "read" })
   @ApiOperation({ summary: "Get usage history for organization (last 12 months)" })
   @ApiResponse({ status: 200, description: "Historical usage data", type: [UsageHistoryItemDto] })
   async getUsageHistory(@Param("id") orgId: string) {
@@ -52,6 +55,7 @@ export class QuotaController {
    * GET /organizations/:id/usage/limits - Current limits vs usage
    */
   @Get("organizations/:id/usage/limits")
+  @Permission({ resource: "billing", action: "read" })
   @ApiOperation({ summary: "Get current usage compared to plan limits" })
   @ApiResponse({ status: 200, description: "Usage vs limits comparison" })
   async getUsageWithLimits(@Param("id") orgId: string) {
@@ -100,6 +104,7 @@ export class QuotaController {
    * POST /organizations/:id/usage/check - Check if action allowed
    */
   @Post("organizations/:id/usage/check")
+  @Permission({ resource: "billing", action: "read" })
   @ApiOperation({ summary: "Check if an action is allowed within quota" })
   @ApiResponse({ status: 200, description: "Quota check result", type: QuotaCheckResultDto })
   async checkQuota(
@@ -114,6 +119,7 @@ export class QuotaController {
    * GET /organizations/:id/quota - Full quota status
    */
   @Get("organizations/:id/quota")
+  @Permission({ resource: "billing", action: "read" })
   @ApiOperation({ summary: "Get full quota status for organization" })
   @ApiResponse({ status: 200, description: "Full quota status", type: FullQuotaStatusDto })
   async getFullQuotaStatus(@Param("id") orgId: string) {

@@ -215,6 +215,11 @@ export class PermissionGuard implements CanActivate {
 
   /**
    * Check a single permission with context handling
+   *
+   * For 'own' context decorators:
+   * - First check if user's role has '*' (full access) permission for this resource/action
+   * - If yes, allow without ownership check (OWNER/ADMIN can manage all resources)
+   * - If no, then check resource ownership (EDITOR can only manage own resources)
    */
   private async checkSinglePermission(
     userId: string,
@@ -224,7 +229,20 @@ export class PermissionGuard implements CanActivate {
   ): Promise<boolean> {
     const { resource, action, context } = permission;
 
-    // For 'own' context, we need to verify resource ownership
+    // First, check if user has full access ('*' scope) for this resource/action
+    // This allows OWNER/ADMIN to bypass ownership checks
+    const hasFullAccess = await this.permissionService.hasFullAccessPermission(
+      userId,
+      organizationId,
+      resource as any,
+      action as any,
+    );
+
+    if (hasFullAccess) {
+      return true;
+    }
+
+    // For 'own' context, verify resource ownership if user doesn't have full access
     if (context === "own" && resourceId) {
       const ownsResource = await this.permissionService.checkResourceOwnership(
         userId,
@@ -237,7 +255,7 @@ export class PermissionGuard implements CanActivate {
       }
     }
 
-    // Check base permission
+    // Check base permission with ownership context
     return this.permissionService.hasPermission(
       userId,
       organizationId,
