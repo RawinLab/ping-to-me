@@ -346,7 +346,7 @@
 | BIO-052 | Track Clicks | ✅ PASS | Beacon API, rate-limited tracking endpoint |
 | BIO-060 | Delete Bio Page | ❌ NOT_IMPL | API DELETE endpoint exists but NO UI button |
 
-### Summary
+### Summary - Round 1
 
 | Category | Passed | Total | Rate |
 |----------|--------|-------|------|
@@ -359,7 +359,7 @@
 | Delete Bio Page | 0 | 1 | 0% |
 | **Total** | **13.5** | **16** | **84%** |
 
-### Issues to Fix
+### Issues Found in Round 1
 
 1. **BIO-002 (Error Handling)**
    - Backend uses generic `Error()` instead of NestJS `ConflictException`
@@ -380,4 +380,68 @@
    - Backend API `DELETE /biopages/:id` exists and works
    - No delete button in dashboard list or edit page
    - **Fix**: Add delete button with confirmation dialog to bio page cards
+
+---
+
+### Round 2 - Re-Test After Fixes (2025-12-11)
+
+| Test ID | Test Name | PASS/FAIL | Notes |
+|---------|-----------|-----------|-------|
+| BIO-001 | Create Bio Page | ✅ PASS | No changes |
+| BIO-002 | Duplicate Slug | ✅ PASS | **FIXED** - API returns 409 Conflict with "Slug already taken" message |
+| BIO-010 | Edit Title/Description | ✅ PASS | No changes |
+| BIO-011 | Change Profile Image | ✅ PASS | **FIXED** - Full AvatarUploader component with drag-drop, API endpoints |
+| BIO-020 | Change Theme/Layout | ✅ PASS | **FIXED** - 4 layouts: Stacked, Grid, Minimal, Cards |
+| BIO-021 | Change Theme Colors | ✅ PASS | No changes |
+| BIO-022 | Change Button Style | ✅ PASS | No changes |
+| BIO-030 | Add Link | ✅ PASS | No changes |
+| BIO-031 | Edit Link | ✅ PASS | No changes |
+| BIO-032 | Delete Link | ✅ PASS | No changes |
+| BIO-033 | Reorder Links | ✅ PASS | No changes |
+| BIO-040 | Add Social Links | ✅ PASS | No changes |
+| BIO-050 | View Public Page | ✅ PASS | No changes |
+| BIO-051 | 404 Page | ✅ PASS | No changes |
+| BIO-052 | Track Clicks | ✅ PASS | No changes |
+| BIO-060 | Delete Bio Page | ✅ PASS | **FIXED** - Delete button with Trash2 icon, AlertDialog confirmation |
+
+### Summary - Round 2
+
+| Category | Passed | Total | Rate |
+|----------|--------|-------|------|
+| Create Bio Page | 2 | 2 | 100% |
+| Edit Bio Page | 2 | 2 | 100% |
+| Theme Customization | 3 | 3 | 100% |
+| Manage Bio Links | 4 | 4 | 100% |
+| Social Links | 1 | 1 | 100% |
+| Public Bio Page | 3 | 3 | 100% |
+| Delete Bio Page | 1 | 1 | 100% |
+| **Total** | **16** | **16** | **100%** |
+
+### Fixes Implemented
+
+1. **BIO-002 (Error Handling)** ✅ FIXED
+   - `apps/api/src/biopages/biopages.service.ts` - Changed `throw new Error()` to `throw new ConflictException("Slug already taken")`
+   - `apps/web/components/bio/BioPageBuilder.tsx` - Updated catch block to extract error message from response
+   - **Verified**: API returns `{"message":"Slug already taken","error":"Conflict","statusCode":409}`
+
+2. **BIO-011 (Profile Image Upload)** ✅ FIXED
+   - `apps/api/src/biopages/biopages.controller.ts` - Added POST/DELETE `:id/avatar` endpoints
+   - `apps/api/src/biopages/biopages.service.ts` - Added `uploadAvatar()` and `deleteAvatar()` methods
+   - `apps/web/components/bio/AvatarUploader.tsx` - NEW drag-drop upload component
+   - `apps/web/lib/api/biopages.ts` - NEW API client functions
+   - `apps/web/components/bio/BioPageBuilder.tsx` - Integrated AvatarUploader in Page Details
+
+3. **BIO-020 (Layout Options)** ✅ FIXED
+   - `packages/types/src/biopage.ts` - Updated LayoutType to `"stacked" | "grid" | "minimal" | "cards"`
+   - `apps/web/components/bio/LayoutSelector.tsx` - Added Minimal and Cards options
+   - `apps/web/components/bio/BioPagePreview.tsx` - Added rendering for new layouts
+   - `apps/web/components/bio/BioPageRenderer.tsx` - Added same rendering for public pages
+
+4. **BIO-060 (Delete Bio Page)** ✅ FIXED
+   - `apps/web/app/dashboard/bio/page.tsx` - Added:
+     - Trash2 icon button on each Bio Page card
+     - AlertDialog confirmation dialog
+     - `handleDelete()` function with DELETE API call
+     - Toast notification on success
+   - **Verified**: API DELETE `/biopages/:id` works correctly with X-Organization-Id header
 
