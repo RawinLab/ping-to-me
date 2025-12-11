@@ -569,6 +569,45 @@ export class OrganizationService {
       throw new NotFoundException("Member not found");
     }
 
+    // Get the updater's role to enforce role hierarchy
+    const updaterMember = await this.prisma.organizationMember.findUnique({
+      where: {
+        userId_organizationId: {
+          userId: updatedByUserId,
+          organizationId: orgId,
+        },
+      },
+    });
+
+    if (!updaterMember) {
+      throw new ForbiddenException("You are not a member of this organization");
+    }
+
+    // Role hierarchy enforcement
+    const roleHierarchy: Record<MemberRole, number> = {
+      OWNER: 4,
+      ADMIN: 3,
+      EDITOR: 2,
+      VIEWER: 1,
+    };
+
+    // Cannot modify users with equal or higher role
+    if (roleHierarchy[updaterMember.role] <= roleHierarchy[member.role]) {
+      throw new ForbiddenException(
+        "Cannot modify members with equal or higher role than yours",
+      );
+    }
+
+    // Cannot assign roles equal to or higher than your own (except OWNER can assign any role)
+    if (
+      updaterMember.role !== "OWNER" &&
+      roleHierarchy[updaterMember.role] <= roleHierarchy[role]
+    ) {
+      throw new ForbiddenException(
+        "Cannot assign roles equal to or higher than your own",
+      );
+    }
+
     const oldRole = member.role;
 
     const updated = await this.prisma.organizationMember.update({
@@ -610,9 +649,6 @@ export class OrganizationService {
     targetUserId: string,
     removedByUserId: string,
   ) {
-    // Prevent removing the last owner? (Optional for MVP but good practice)
-    // For now, just remove.
-
     // Get member details before removal
     const member = await this.prisma.organizationMember.findUnique({
       where: {
@@ -627,6 +663,52 @@ export class OrganizationService {
         },
       },
     });
+
+    if (!member) {
+      throw new NotFoundException("Member not found");
+    }
+
+    // Prevent self-removal
+    if (targetUserId === removedByUserId) {
+      throw new BadRequestException(
+        "Cannot remove yourself from the organization",
+      );
+    }
+
+    // Prevent removing OWNER
+    if (member.role === "OWNER") {
+      throw new BadRequestException(
+        "Cannot remove the organization owner. Transfer ownership first.",
+      );
+    }
+
+    // Get the remover's role to enforce role hierarchy
+    const removerMember = await this.prisma.organizationMember.findUnique({
+      where: {
+        userId_organizationId: {
+          userId: removedByUserId,
+          organizationId: orgId,
+        },
+      },
+    });
+
+    if (!removerMember) {
+      throw new ForbiddenException("You are not a member of this organization");
+    }
+
+    // Role hierarchy enforcement - can only remove members with lower role
+    const roleHierarchy: Record<MemberRole, number> = {
+      OWNER: 4,
+      ADMIN: 3,
+      EDITOR: 2,
+      VIEWER: 1,
+    };
+
+    if (roleHierarchy[removerMember.role] <= roleHierarchy[member.role]) {
+      throw new ForbiddenException(
+        "Cannot remove members with equal or higher role than yours",
+      );
+    }
 
     const deleted = await this.prisma.organizationMember.delete({
       where: {

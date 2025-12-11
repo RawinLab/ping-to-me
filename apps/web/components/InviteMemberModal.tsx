@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Button } from "@pingtome/ui";
 import { apiRequest } from "../lib/api";
+import { usePermission } from "../hooks/usePermission";
+import { getAssignableRoles, MemberRole } from "../lib/permissions";
 
 interface InviteMemberModalProps {
   isOpen: boolean;
@@ -17,8 +19,13 @@ export function InviteMemberModal({
   onSuccess,
   orgId,
 }: InviteMemberModalProps) {
+  const { role: currentUserRole } = usePermission();
+  const assignableRoles = getAssignableRoles(currentUserRole as MemberRole);
+
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("VIEWER");
+  const [role, setRole] = useState<string>(
+    assignableRoles[assignableRoles.length - 1] || "VIEWER"
+  );
   const [loading, setLoading] = useState(false);
 
   const handleInvite = async (e: React.FormEvent) => {
@@ -73,11 +80,15 @@ export function InviteMemberModal({
               onChange={(e) => setRole(e.target.value)}
               className="w-full p-2 border rounded"
             >
-              <option value="VIEWER">Viewer</option>
-              <option value="EDITOR">Editor</option>
-              <option value="ADMIN">Admin</option>
-              <option value="OWNER">Owner</option>
+              {assignableRoles.map((r) => (
+                <option key={r} value={r}>
+                  {r.charAt(0) + r.slice(1).toLowerCase()}
+                </option>
+              ))}
             </select>
+            <p className="text-xs text-gray-500 mt-1">
+              You can only invite members with roles at or below your level.
+            </p>
           </div>
           <Button disabled={loading} className="w-full">
             {loading ? "Sending Invite..." : "Send Invite"}

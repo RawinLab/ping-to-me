@@ -386,27 +386,75 @@
 
 ## ✅ Test Result
 
+### Round 1 - 2025-12-11
+
+**Overall: 18/21 PASS, 3 PARTIAL (86%)**
+
 | Test ID | Test Name | PASS/FAIL | Notes |
 |---------|-----------|-----------|-------|
-| MIR-001 | Send Invitation | | |
-| MIR-002 | Invite Existing Member | | |
-| MIR-003 | Email Validation | | |
-| MIR-004 | Role Options | | |
-| MIR-010 | Accept (Existing User) | | |
-| MIR-011 | Accept (New User) | | |
-| MIR-012 | Expired Invitation | | |
-| MIR-013 | Invalid Token | | |
-| MIR-014 | Already Accepted | | |
-| MIR-020 | Decline Invitation | | |
-| MIR-030 | View Pending | | |
-| MIR-031 | Resend Invitation | | |
-| MIR-032 | Cancel Invitation | | |
-| MIR-040 | View Team Members | | |
-| MIR-041 | Remove Member | | |
-| MIR-042 | Cannot Remove OWNER | | |
-| MIR-043 | Cannot Remove Self | | |
-| MIR-050 | Change Role | | |
-| MIR-051 | Cannot Change OWNER Role | | |
-| MIR-060 | Password Validation | | |
-| MIR-061 | Password Mismatch | | |
+| MIR-001 | Send Invitation | ✅ PASS | API returns invitation with token, expiresAt (7 days) |
+| MIR-002 | Invite Existing Member | ✅ PASS | Returns 409 "User is already a member" |
+| MIR-003 | Email Validation | ✅ PASS | Returns 400 "email must be an email" |
+| MIR-004 | Role Options | ⚠️ PARTIAL | InviteMemberModal shows ALL roles instead of filtering by user permission |
+| MIR-010 | Accept (Existing User) | ✅ PASS | Successfully joins org, returns member data |
+| MIR-011 | Accept (New User) | ✅ PASS | Registration form, password validation (min 8 chars) works |
+| MIR-012 | Expired Invitation | ✅ PASS | Returns 400 "Invitation has expired", frontend shows message |
+| MIR-013 | Invalid Token | ✅ PASS | Returns 404 "Invitation not found" |
+| MIR-014 | Already Accepted | ✅ PASS | Returns 400 "Invitation has already been accepted", shows dashboard link |
+| MIR-020 | Decline Invitation | ✅ PASS | Confirm dialog, updates declinedAt, prevents re-decline |
+| MIR-030 | View Pending | ✅ PASS | Returns pagination (invitations, total, limit, offset) |
+| MIR-031 | Resend Invitation | ✅ PASS | Extends expiresAt by 7 days |
+| MIR-032 | Cancel Invitation | ✅ PASS | Returns "Invitation cancelled", removed from list |
+| MIR-040 | View Team Members | ✅ PASS | Returns members with user details, role, joinedAt |
+| MIR-041 | Remove Member | ✅ PASS | DELETE endpoint works, confirm dialog in frontend |
+| MIR-042 | Cannot Remove OWNER | ⚠️ PARTIAL | Frontend protected, but backend lacks explicit OWNER removal check |
+| MIR-043 | Cannot Remove Self | ✅ PASS | Frontend checks `memberUserId === user?.id`, shows "You" badge |
+| MIR-050 | Change Role | ✅ PASS | PATCH endpoint works, audit logging implemented |
+| MIR-051 | Cannot Change OWNER Role | ⚠️ PARTIAL | **SECURITY** - Backend allows ADMIN to change OWNER role via API |
+| MIR-060 | Password Validation | ✅ PASS | Frontend validates min 8 chars, backend returns 400 |
+| MIR-061 | Password Mismatch | ✅ PASS | Frontend validates password !== confirmPassword |
+
+**Critical Issues Found:**
+1. **MIR-004**: `InviteMemberModal.tsx` shows all 4 roles (VIEWER, EDITOR, ADMIN, OWNER) regardless of user role. Should use `getAssignableRoles()` to filter.
+2. **MIR-051**: Backend `organization.service.ts:updateMemberRole` doesn't enforce role hierarchy - ADMIN can demote OWNER via direct API call.
+3. **MIR-042**: Backend lacks explicit check to prevent OWNER removal (relies on RBAC only).
+
+**Files to Fix:**
+- `/apps/web/components/InviteMemberModal.tsx` - Add role filtering
+- `/apps/api/src/organizations/organization.service.ts` - Add role hierarchy validation in updateMemberRole and removeMember
+
+---
+
+### Round 2 - 2025-12-11 (Re-Test After Fixes)
+
+**Overall: 21/21 PASS (100%)**
+
+| Test ID | Test Name | PASS/FAIL | Notes |
+|---------|-----------|-----------|-------|
+| MIR-004 | Role Options | ✅ PASS | **FIXED** - Now uses `getAssignableRoles()` to filter dropdown |
+| MIR-042 | Cannot Remove OWNER | ✅ PASS | **FIXED** - Backend returns 400 "Cannot remove organization owner" |
+| MIR-051 | Cannot Change OWNER Role | ✅ PASS | **FIXED** - Backend returns 403 "Cannot modify members with equal or higher role" |
+
+**Fixes Applied:**
+
+1. **MIR-004 Fix** (`InviteMemberModal.tsx`):
+   - Added `usePermission()` hook to get current user role
+   - Added `getAssignableRoles()` to filter available roles
+   - Role dropdown now dynamically shows only assignable roles
+   - OWNER sees: Owner, Admin, Editor, Viewer
+   - ADMIN sees: Admin, Editor, Viewer
+
+2. **MIR-051 Fix** (`organization.service.ts:updateMemberRole`):
+   - Added role hierarchy enforcement (OWNER:4 > ADMIN:3 > EDITOR:2 > VIEWER:1)
+   - Validation: Cannot modify users with equal or higher role
+   - Validation: Cannot assign roles equal to or higher than your own (except OWNER)
+   - Returns 403 Forbidden with clear error message
+
+3. **MIR-042 Fix** (`organization.service.ts:removeMember`):
+   - Added self-removal prevention: "Cannot remove yourself from the organization"
+   - Added OWNER removal prevention: "Cannot remove the organization owner. Transfer ownership first."
+   - Added role hierarchy enforcement for member removal
+   - Returns 400/403 with clear error messages
+
+**Security Status:** All identified security vulnerabilities have been fixed and verified.
 
