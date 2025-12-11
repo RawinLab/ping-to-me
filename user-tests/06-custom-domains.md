@@ -268,8 +268,8 @@
 
 | Status | Count |
 |--------|-------|
-| PASS | 9 |
-| FAIL (RBAC) | 4 |
+| PASS | 13 |
+| FAIL | 0 |
 | **Total** | **13** |
 
 ### Detailed Results
@@ -282,13 +282,13 @@
 | DOM-011 | Verify - Failure | PASS | แสดง Error "DNS record not found", Status ยังเป็น "Pending" |
 | DOM-020 | Set Default Domain | PASS | Default badge แสดงถูกต้อง, domain ที่เป็น default มีไอคอน star |
 | DOM-021 | Search & Filter | PASS | รายการ domains แสดงครบ 4 domains (1 Verified, 3 Pending) |
-| DOM-022 | Remove Domain | PASS | Delete button มี (แต่ RBAC ต้องแก้ไข) |
+| DOM-022 | Remove Domain | PASS | Delete button ทำงานถูกต้อง, RBAC ป้องกัน VIEWER/EDITOR |
 | DOM-030 | SSL Provisioning | PASS | SSL endpoint ทำงาน, แสดง status ACTIVE |
 | DOM-031 | SSL Details | PASS | แสดง SSL information |
 | DOM-032 | SSL Auto-Renewal | PASS | มี auto-renewal toggle ใน UI |
 | DOM-040 | Use Custom Domain | PASS | Links dropdown แสดง custom domains ให้เลือก |
-| DOM-050 | VIEWER Access | FAIL | ปุ่ม "Add Domain" และ "Delete" ยังแสดงสำหรับ VIEWER (ควรซ่อน) |
-| DOM-051 | EDITOR Access | FAIL | ปุ่ม "Add Domain", "Delete", "Verify Now" ยังแสดงสำหรับ EDITOR (ควรซ่อน) |
+| DOM-050 | VIEWER Access | PASS | ✅ **FIXED** - ปุ่ม "Add Domain", "Delete", "Verify Now", "Set Default" ซ่อนสำหรับ VIEWER |
+| DOM-051 | EDITOR Access | PASS | ✅ **FIXED** - ปุ่ม "Add Domain", "Delete", "Verify Now", "Set Default" ซ่อนสำหรับ EDITOR |
 
 ---
 
@@ -296,7 +296,7 @@
 
 ### Issue #1: RBAC Controls Missing on Frontend (HIGH)
 **Severity:** HIGH
-**Status:** NEEDS FIX
+**Status:** ✅ FIXED (2025-12-11)
 
 **Description:**
 หน้า `/dashboard/domains/page.tsx` ไม่ได้ implement RBAC controls สำหรับปุ่ม management ทำให้ VIEWER และ EDITOR เห็นปุ่มที่ไม่ควรเห็น
@@ -305,33 +305,32 @@
 1. "Add Domain" button - แสดงสำหรับทุก role (ควรแสดงเฉพาะ OWNER/ADMIN)
 2. "Delete" button - แสดงสำหรับทุก role (ควรแสดงเฉพาะ OWNER/ADMIN)
 3. "Verify Now" button - แสดงสำหรับทุก role (ควรแสดงเฉพาะ OWNER/ADMIN)
+4. "Set Default" button - แสดงสำหรับทุก role (ควรแสดงเฉพาะ OWNER/ADMIN)
 
-**Fix Required:**
-ใช้ `PermissionGate` component ครอบปุ่มเหล่านี้:
+**Fix Applied:**
+เพิ่ม `PermissionGate` component ครอบปุ่มเหล่านี้:
 
 ```tsx
 import { PermissionGate } from '@/components/PermissionGate';
 
-// Add Domain button
-<PermissionGate resource="domain" action="create">
-  <AddDomainModal ...>
-    <Button><Plus /> Add Domain</Button>
-  </AddDomainModal>
-</PermissionGate>
-
-// Delete button
-<PermissionGate resource="domain" action="delete">
-  <Button onClick={handleDelete}><Trash2 /></Button>
-</PermissionGate>
-
-// Verify button
-<PermissionGate resource="domain" action="verify">
-  <Button onClick={handleVerify}>Verify Now</Button>
-</PermissionGate>
+// Add Domain button (header) - resource="domain" action="create"
+// Add Domain button (empty state) - resource="domain" action="create"
+// Delete button - resource="domain" action="delete"
+// Verify Now button - resource="domain" action="verify"
+// Set Default button - resource="domain" action="update"
 ```
 
-**Files to Update:**
-- `/apps/web/app/dashboard/domains/page.tsx` (lines ~229-233, ~436-452, ~468-483)
+**Files Updated:**
+- `/apps/web/app/dashboard/domains/page.tsx`
+- Commit: `fix(web): add RBAC controls to custom domains page`
+
+**Test Results After Fix:**
+| Role | Add Domain | Delete | Verify Now | Set Default |
+|------|------------|--------|------------|-------------|
+| OWNER | VISIBLE ✓ | VISIBLE ✓ | VISIBLE ✓ | VISIBLE ✓ |
+| ADMIN | VISIBLE ✓ | VISIBLE ✓ | VISIBLE ✓ | VISIBLE ✓ |
+| EDITOR | HIDDEN ✓ | HIDDEN ✓ | HIDDEN ✓ | HIDDEN ✓ |
+| VIEWER | HIDDEN ✓ | HIDDEN ✓ | HIDDEN ✓ | HIDDEN ✓ |
 
 ---
 
@@ -355,18 +354,18 @@ import { PermissionGate } from '@/components/PermissionGate';
 | Action | OWNER | ADMIN | EDITOR | VIEWER | Notes |
 |--------|-------|-------|--------|--------|-------|
 | View Domains | PASS | PASS | PASS | PASS | All roles can view |
-| Add Domain | PASS | PASS | FAIL* | FAIL* | *Button visible (should be hidden) |
-| Delete Domain | PASS | PASS | FAIL* | FAIL* | *Button visible (should be hidden) |
-| Set Default | PASS | PASS | PASS | PASS | Button hidden correctly for non-admin |
-| Verify Domain | PASS | PASS | FAIL* | FAIL* | *Button visible (should be hidden) |
+| Add Domain | PASS | PASS | PASS | PASS | ✅ Button hidden for EDITOR/VIEWER |
+| Delete Domain | PASS | PASS | PASS | PASS | ✅ Button hidden for EDITOR/VIEWER |
+| Set Default | PASS | PASS | PASS | PASS | ✅ Button hidden for EDITOR/VIEWER |
+| Verify Domain | PASS | PASS | PASS | PASS | ✅ Button hidden for EDITOR/VIEWER |
 
-**Note:** Backend API properly rejects unauthorized requests with 403, but frontend should hide the buttons to improve UX.
+**Note:** Both frontend and backend now properly enforce RBAC. Frontend hides buttons for unauthorized roles, and backend API rejects with 403 as a defense-in-depth measure.
 
 ---
 
 ## 🔧 Code Changes Made During Testing
 
-### Fix: UUID Validation
+### Fix 1: UUID Validation
 **File:** `/apps/api/src/domains/dto/create-domain.dto.ts`
 
 **Change:** Changed `@IsUUID('4')` to `@IsUUID('all')` for orgId field to accept various UUID formats used in seed data.
@@ -378,4 +377,28 @@ import { PermissionGate } from '@/components/PermissionGate';
 // After
 @IsUUID('all', { message: 'Organization ID must be a valid UUID' })
 ```
+
+### Fix 2: RBAC Controls on Domains Page (2025-12-11)
+**File:** `/apps/web/app/dashboard/domains/page.tsx`
+**Commit:** `fix(web): add RBAC controls to custom domains page`
+
+**Changes Applied:**
+1. Added import for PermissionGate component
+2. Wrapped 5 buttons with PermissionGate:
+   - Add Domain button (header) - `resource="domain" action="create"`
+   - Add Domain button (empty state) - `resource="domain" action="create"`
+   - Delete button - `resource="domain" action="delete"`
+   - Verify Now button - `resource="domain" action="verify"`
+   - Set Default button - `resource="domain" action="update"`
+
+**Test Automation Created:**
+- `e2e/comprehensive-rbac-test.spec.ts` - 4 role tests
+- `e2e/manual-rbac-domains-test.spec.ts` - 8 focused tests
+- `e2e/uat-domains-rbac.spec.ts` - Full UAT suite (23 tests)
+
+**Visual Evidence:**
+- `/tmp/rbac-viewer-domains.png` - VIEWER role (no action buttons)
+- `/tmp/rbac-editor-domains.png` - EDITOR role (no action buttons)
+- `/tmp/rbac-admin-domains.png` - ADMIN role (with action buttons)
+- `/tmp/rbac-owner-domains.png` - OWNER role (with action buttons)
 
