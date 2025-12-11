@@ -1,20 +1,13 @@
 import { test, expect } from '@playwright/test';
 import path from 'path';
+import { loginAsUser } from './fixtures/auth';
 
 const screenshotsDir = path.join(__dirname, '..', 'screenshots');
 
 test.describe('UAT - Campaign Management Tests', () => {
   test.beforeEach(async ({ page }) => {
-    // Login before each test
-    await page.goto('http://localhost:3010/login');
-    await page.waitForLoadState('networkidle');
-
-    await page.fill('input[id="email"]', 'e2e-owner@pingtome.test');
-    await page.fill('input[id="password"]', 'TestPassword123!');
-    await page.click('button:has-text("Sign In with Email")');
-
-    // Wait for redirect to dashboard
-    await page.waitForURL('**/dashboard**', { timeout: 10000 });
+    // Login before each test using the proper helper
+    await loginAsUser(page, 'owner');
 
     // Wait 5 seconds for async data as per requirements
     await page.waitForTimeout(5000);
