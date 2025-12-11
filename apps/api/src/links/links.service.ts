@@ -14,6 +14,7 @@ import { QuotaService } from "../quota/quota.service";
 import { SafetyCheckService } from "./services/safety-check.service";
 import { MetadataService } from "./services/metadata.service";
 import { BulkEditDto } from "./dto/bulk-edit.dto";
+import { PermissionService } from "../auth/rbac/permission.service";
 import * as bcrypt from "bcrypt";
 
 @Injectable()
@@ -32,7 +33,26 @@ export class LinksService {
     private quotaService: QuotaService,
     private safetyCheckService: SafetyCheckService,
     private metadataService: MetadataService,
+    private permissionService: PermissionService,
   ) {}
+
+  /**
+   * Helper method to check if user has full access permission for a link action
+   * Users with '*' scope (OWNER/ADMIN) can manage any link in the organization
+   */
+  private async hasFullLinkAccess(
+    userId: string,
+    organizationId: string | null,
+    action: "update" | "delete" | "read",
+  ): Promise<boolean> {
+    if (!organizationId) return false;
+    return this.permissionService.hasFullAccessPermission(
+      userId,
+      organizationId,
+      "link",
+      action,
+    );
+  }
 
   private parseUtmParams(url: string): { utmSource?: string; utmMedium?: string; utmCampaign?: string; utmContent?: string; utmTerm?: string } {
     try {
@@ -454,7 +474,14 @@ export class LinksService {
 
   async findOne(userId: string, id: string): Promise<LinkResponse> {
     const link = await this.prisma.link.findUnique({ where: { id } });
-    if (!link || link.userId !== userId) {
+    if (!link) {
+      throw new ForbiddenException("Access denied");
+    }
+
+    // Check if user owns the link OR has full access permission (OWNER/ADMIN)
+    const isOwner = link.userId === userId;
+    const hasFullAccess = await this.hasFullLinkAccess(userId, link.organizationId, "read");
+    if (!isOwner && !hasFullAccess) {
       throw new ForbiddenException("Access denied");
     }
     return this.mapToResponse(link);
@@ -462,7 +489,14 @@ export class LinksService {
 
   async delete(userId: string, id: string) {
     const link = await this.prisma.link.findUnique({ where: { id } });
-    if (!link || link.userId !== userId) {
+    if (!link) {
+      throw new ForbiddenException("Access denied");
+    }
+
+    // Check if user owns the link OR has full access permission (OWNER/ADMIN)
+    const isOwner = link.userId === userId;
+    const hasFullAccess = await this.hasFullLinkAccess(userId, link.organizationId, "delete");
+    if (!isOwner && !hasFullAccess) {
       throw new ForbiddenException("Access denied");
     }
 
@@ -509,7 +543,14 @@ export class LinksService {
   async restore(userId: string, id: string) {
     const link = await this.prisma.link.findUnique({ where: { id } });
 
-    if (!link || link.userId !== userId) {
+    if (!link) {
+      throw new ForbiddenException("Access denied");
+    }
+
+    // Check if user owns the link OR has full access permission (OWNER/ADMIN)
+    const isOwner = link.userId === userId;
+    const hasFullAccess = await this.hasFullLinkAccess(userId, link.organizationId, "update");
+    if (!isOwner && !hasFullAccess) {
       throw new ForbiddenException("Access denied");
     }
 
@@ -572,7 +613,14 @@ export class LinksService {
   async scrapeMetadata(userId: string, id: string) {
     const link = await this.prisma.link.findUnique({ where: { id } });
 
-    if (!link || link.userId !== userId) {
+    if (!link) {
+      throw new ForbiddenException("Access denied");
+    }
+
+    // Check if user owns the link OR has full access permission (OWNER/ADMIN)
+    const isOwner = link.userId === userId;
+    const hasFullAccess = await this.hasFullLinkAccess(userId, link.organizationId, "update");
+    if (!isOwner && !hasFullAccess) {
       throw new ForbiddenException("Access denied");
     }
 
@@ -617,7 +665,14 @@ export class LinksService {
     },
   ) {
     const link = await this.prisma.link.findUnique({ where: { id } });
-    if (!link || link.userId !== userId) {
+    if (!link) {
+      throw new ForbiddenException("Access denied");
+    }
+
+    // Check if user owns the link OR has full access permission (OWNER/ADMIN)
+    const isOwner = link.userId === userId;
+    const hasFullAccess = await this.hasFullLinkAccess(userId, link.organizationId, "update");
+    if (!isOwner && !hasFullAccess) {
       throw new ForbiddenException("Access denied");
     }
 
@@ -1425,10 +1480,17 @@ export class LinksService {
   async getClickLimitStatus(userId: string, linkId: string) {
     const link = await this.prisma.link.findUnique({
       where: { id: linkId },
-      select: { userId: true, maxClicks: true, id: true },
+      select: { userId: true, maxClicks: true, id: true, organizationId: true },
     });
 
-    if (!link || link.userId !== userId) {
+    if (!link) {
+      throw new ForbiddenException('Access denied');
+    }
+
+    // Check if user owns the link OR has full access permission (OWNER/ADMIN)
+    const isOwner = link.userId === userId;
+    const hasFullAccess = await this.hasFullLinkAccess(userId, link.organizationId, "read");
+    if (!isOwner && !hasFullAccess) {
       throw new ForbiddenException('Access denied');
     }
 
