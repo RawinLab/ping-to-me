@@ -352,25 +352,158 @@
 
 ## ✅ Test Result
 
+### Round 1 - 2025-12-11
+
 | Test ID | Test Name | PASS/FAIL | Notes |
 |---------|-----------|-----------|-------|
-| AUD-001 | Access Audit Logs | | |
-| AUD-002 | View Activity List | | |
-| AUD-010 | Filter by Action | | |
-| AUD-011 | Filter by Resource | | |
-| AUD-012 | Filter by Date Range | | |
-| AUD-013 | Filter by Status | | |
-| AUD-014 | Search Logs | | |
-| AUD-015 | Clear Filters | | |
-| AUD-020 | View Log Details | | |
-| AUD-021 | Before/After Changes | | |
-| AUD-030 | Pagination | | |
-| AUD-040 | Export CSV | | |
-| AUD-041 | Export JSON | | |
-| AUD-042 | Export with Filters | | |
-| AUD-050 | OWNER Access | | |
-| AUD-051 | ADMIN Access | | |
-| AUD-052 | EDITOR Access | | |
-| AUD-053 | VIEWER Access | | |
-| AUD-054 | Unauthorized | | |
+| AUD-001 | Access Audit Logs | ✅ PASS | Page exists at correct path, title "Audit Logs" shown (lines 500-501) |
+| AUD-002 | View Activity List | ✅ PASS | Shows Action, Resource, Timestamp, Status (lines 730-820) |
+| AUD-010 | Filter by Action | ✅ PASS | Dropdown works, API filters correctly (lines 580-603) |
+| AUD-011 | Filter by Resource | ✅ PASS | Dropdown works, API filters correctly (lines 605-629) |
+| AUD-012 | Filter by Date Range | ✅ PASS | Date presets work: 24h, 7d, 30d, 90d, All time (lines 557-578) |
+| AUD-013 | Filter by Status | ✅ PASS | Success/Failure dropdown works (lines 632-652) |
+| AUD-014 | Search Logs | ✅ PASS | Search matches action/resource fields (lines 545-553) |
+| AUD-015 | Clear Filters | ✅ PASS | clearFilters() resets all state (lines 461-470) |
+| AUD-020 | View Log Details | ❌ FAIL | Log items NOT clickable, no detail modal, User Agent not displayed |
+| AUD-021 | Before/After Changes | ⚠️ PARTIAL | Shows field NAMES only, not actual before/after VALUES (lines 787-795) |
+| AUD-030 | Pagination | ✅ PASS | Previous/Next buttons, page indicator work (lines 825-854) |
+| AUD-040 | Export CSV | ✅ PASS | CSV export with 11 columns including required 5 (controller lines 209-221) |
+| AUD-041 | Export JSON | ✅ PASS | JSON export with proper structure (controller lines 193-201) |
+| AUD-042 | Export with Filters | ✅ PASS | All filters correctly passed to export API (frontend lines 422-430) |
+| AUD-050 | OWNER Access | ✅ PASS | Full access to all org logs, export buttons visible |
+| AUD-051 | ADMIN Access | ✅ PASS | Full access to all org logs |
+| AUD-052 | EDITOR Access | ✅ PASS | /audit/logs 403, /audit/my-activity returns own logs |
+| AUD-053 | VIEWER Access | ✅ PASS | /audit/logs 403, /audit/my-activity returns own logs |
+| AUD-054 | Unauthorized | ❌ FAIL | Returns 500 instead of 401 - JwtAuthGuard bug |
+
+### Round 1 Summary
+
+**Total: 16.5/19 PASS (87%)**
+
+| Category | Passed | Total | Rate |
+|----------|--------|-------|------|
+| View Audit Logs | 2 | 2 | 100% |
+| Filters | 6 | 6 | 100% |
+| Log Details | 0.5 | 2 | 25% |
+| Pagination | 1 | 1 | 100% |
+| Export | 3 | 3 | 100% |
+| RBAC | 4 | 5 | 80% |
+| **Total** | **16.5** | **19** | **87%** |
+
+### Issues Found (Round 1)
+
+#### 1. AUD-020: Missing Log Detail View
+- **Issue:** Log items display inline only, no clickable detail modal
+- **Missing Features:**
+  - User Agent not displayed anywhere in UI
+  - No onClick handler on log items
+  - No Dialog/Sheet component for full details
+- **Backend:** GET `/audit/logs/:id` endpoint EXISTS and works
+- **Fix Required:** Add detail modal with full log info
+
+#### 2. AUD-021: Incomplete Before/After Display
+- **Issue:** Only shows changed field NAMES, not actual VALUES
+- **Current:** "Changes: title, description"
+- **Expected:** "title: Old Value → New Value"
+- **Fix Required:** Enhance display or add to detail modal
+
+#### 3. AUD-054: Unauthorized Returns 500
+- **Issue:** API returns 500 Internal Server Error instead of 401 Unauthorized
+- **Expected:** 401 Unauthorized with redirect
+- **Cause:** JwtAuthGuard not properly handling missing tokens
+- **Fix Required:** Update guard error handling
+
+### Implementation Evidence
+
+**Frontend File:** `/apps/web/app/dashboard/settings/audit-logs/page.tsx` (887 lines)
+**Backend Controller:** `/apps/api/src/audit/audit.controller.ts` (246 lines)
+**Backend Service:** `/apps/api/src/audit/audit.service.ts` (576 lines)
+
+**Verified Features:**
+- ✅ Page routing and UI layout
+- ✅ All filter dropdowns with proper state management
+- ✅ Search input with real-time filtering
+- ✅ Clear Filters button
+- ✅ Pagination controls (20 items/page)
+- ✅ CSV export with proper escaping
+- ✅ JSON export with pretty print
+- ✅ RBAC permission checks via @Permission decorator
+- ✅ /audit/my-activity endpoint for EDITOR/VIEWER roles
+
+---
+
+### Round 2 - 2025-12-11 (After Fixes)
+
+| Test ID | Test Name | PASS/FAIL | Notes |
+|---------|-----------|-----------|-------|
+| AUD-001 | Access Audit Logs | ✅ PASS | No changes needed |
+| AUD-002 | View Activity List | ✅ PASS | No changes needed |
+| AUD-010 | Filter by Action | ✅ PASS | No changes needed |
+| AUD-011 | Filter by Resource | ✅ PASS | No changes needed |
+| AUD-012 | Filter by Date Range | ✅ PASS | No changes needed |
+| AUD-013 | Filter by Status | ✅ PASS | No changes needed |
+| AUD-014 | Search Logs | ✅ PASS | No changes needed |
+| AUD-015 | Clear Filters | ✅ PASS | No changes needed |
+| AUD-020 | View Log Details | ✅ PASS | **FIXED** - Dialog modal opens on click, shows full details (line 894) |
+| AUD-021 | Before/After Changes | ✅ PASS | **FIXED** - Shows actual VALUES with red/green color coding (lines 1014-1024) |
+| AUD-030 | Pagination | ✅ PASS | No changes needed |
+| AUD-040 | Export CSV | ✅ PASS | No changes needed |
+| AUD-041 | Export JSON | ✅ PASS | No changes needed |
+| AUD-042 | Export with Filters | ✅ PASS | No changes needed |
+| AUD-050 | OWNER Access | ✅ PASS | No changes needed |
+| AUD-051 | ADMIN Access | ✅ PASS | No changes needed |
+| AUD-052 | EDITOR Access | ✅ PASS | No changes needed |
+| AUD-053 | VIEWER Access | ✅ PASS | No changes needed |
+| AUD-054 | Unauthorized | ✅ PASS | **FIXED** - Returns 401 with "No auth token" message |
+
+### Round 2 Summary
+
+**Total: 19/19 PASS (100%)**
+
+| Category | Passed | Total | Rate |
+|----------|--------|-------|------|
+| View Audit Logs | 2 | 2 | 100% |
+| Filters | 6 | 6 | 100% |
+| Log Details | 2 | 2 | 100% |
+| Pagination | 1 | 1 | 100% |
+| Export | 3 | 3 | 100% |
+| RBAC | 5 | 5 | 100% |
+| **Total** | **19** | **19** | **100%** |
+
+### Fixes Applied (Commit: 7adc457)
+
+#### 1. AUD-020/021: Log Detail Dialog Modal
+**File:** `/apps/web/app/dashboard/settings/audit-logs/page.tsx`
+
+Changes:
+- Added `selectedLog` state (line 362)
+- Added `cursor-pointer` and `onClick` to log items (lines 740-741)
+- Added Dialog component for full log details (lines 894-1090)
+- **User Agent** now displayed in Network Information section (lines 973-979)
+- **Before/After VALUES** now shown with proper formatting (lines 999-1032)
+  - Before values in red (line 1014)
+  - After values in green (line 1022)
+  - Objects serialized with JSON.stringify (lines 1016, 1024)
+
+Dialog sections:
+1. Action Information (action, resource, resourceId, status)
+2. Network Information (IP Address, **User Agent**, Location)
+3. Changes (before/after with color coding)
+4. Additional Details (JSON formatted)
+5. Metadata (Log ID, User ID, Organization ID, Timestamp)
+
+#### 2. AUD-054: JwtAuthGuard 401 Response
+**File:** `/apps/api/src/auth/guards/jwt-auth.guard.ts`
+
+Changes:
+- Added `handleRequest()` override to catch auth errors
+- Returns `UnauthorizedException` (401) instead of propagating 500 errors
+- Message: "No auth token" or specific JWT error message
+
+Before: `{"statusCode":500,"message":"Internal server error"}`
+After: `{"message":"No auth token","error":"Unauthorized","statusCode":401}`
+
+---
+
+## MODULE 11 COMPLETE - ALL UAT TESTS PASS (100%)
 
