@@ -33,7 +33,7 @@ export class CreateDomainDto {
     description: 'Organization ID that owns this domain',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @IsUUID('4', { message: 'Organization ID must be a valid UUID' })
+  @IsUUID('all', { message: 'Organization ID must be a valid UUID' })
   orgId: string;
 
   @ApiPropertyOptional({

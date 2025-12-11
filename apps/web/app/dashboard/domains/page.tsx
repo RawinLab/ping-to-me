@@ -38,6 +38,7 @@ import { format } from "date-fns";
 import { AddDomainModal } from "@/components/domains/AddDomainModal";
 import { SslStatusBadge } from "@/components/domains/SslStatusBadge";
 import { domainsApi, Domain, DomainStatus, SslStatus } from "@/lib/api/domains";
+import { PermissionGate } from "@/components/PermissionGate";
 
 export default function DomainsPage() {
   const router = useRouter();
@@ -226,11 +227,13 @@ export default function DomainsPage() {
               Connect your own domains to brand your short links.
             </p>
           </div>
-          <AddDomainModal orgId={currentOrg.id} onSuccess={fetchDomains}>
-            <Button className="h-10 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
-              <Plus className="mr-2 h-4 w-4" /> Add Domain
-            </Button>
-          </AddDomainModal>
+          <PermissionGate resource="domain" action="create">
+            <AddDomainModal orgId={currentOrg.id} onSuccess={fetchDomains}>
+              <Button className="h-10 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
+                <Plus className="mr-2 h-4 w-4" /> Add Domain
+              </Button>
+            </AddDomainModal>
+          </PermissionGate>
         </div>
 
         {/* Stats Cards */}
@@ -332,11 +335,13 @@ export default function DomainsPage() {
                   Add your own domain to create branded short links and improve
                   trust with your audience.
                 </p>
-                <AddDomainModal orgId={currentOrg.id} onSuccess={fetchDomains}>
-                  <Button className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
-                    <Plus className="mr-2 h-4 w-4" /> Add Your First Domain
-                  </Button>
-                </AddDomainModal>
+                <PermissionGate resource="domain" action="create">
+                  <AddDomainModal orgId={currentOrg.id} onSuccess={fetchDomains}>
+                    <Button className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
+                      <Plus className="mr-2 h-4 w-4" /> Add Your First Domain
+                    </Button>
+                  </AddDomainModal>
+                </PermissionGate>
               </div>
             </CardContent>
           </Card>
@@ -416,22 +421,24 @@ export default function DomainsPage() {
                       {/* Actions */}
                       <div className="flex items-center gap-2 flex-shrink-0">
                         {domain.isVerified && !domain.isDefault && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              handleSetDefault(domain.id, domain.hostname)
-                            }
-                            disabled={actionLoading === domain.id}
-                            className="rounded-lg border-blue-200 text-blue-600 hover:bg-blue-50"
-                          >
-                            {actionLoading === domain.id ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                              <Star className="mr-2 h-4 w-4" />
-                            )}
-                            Set Default
-                          </Button>
+                          <PermissionGate resource="domain" action="update">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                handleSetDefault(domain.id, domain.hostname)
+                              }
+                              disabled={actionLoading === domain.id}
+                              className="rounded-lg border-blue-200 text-blue-600 hover:bg-blue-50"
+                            >
+                              {actionLoading === domain.id ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <Star className="mr-2 h-4 w-4" />
+                              )}
+                              Set Default
+                            </Button>
+                          </PermissionGate>
                         )}
                         <Button
                           variant="outline"
@@ -441,15 +448,17 @@ export default function DomainsPage() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(domain.id, domain.hostname)}
-                          disabled={actionLoading === domain.id}
-                          className="rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <PermissionGate resource="domain" action="delete">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(domain.id, domain.hostname)}
+                            disabled={actionLoading === domain.id}
+                            className="rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </PermissionGate>
                       </div>
                     </div>
 
@@ -465,22 +474,24 @@ export default function DomainsPage() {
                               Add the following DNS record to verify ownership:
                             </p>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleVerify(domain.id, domain.verificationType as any)}
-                            disabled={actionLoading === domain.id}
-                            className="rounded-lg border-blue-200 text-blue-600 hover:bg-blue-50 flex-shrink-0"
-                          >
-                            {actionLoading === domain.id ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : domain.status === "FAILED" ? (
-                              <RefreshCw className="mr-2 h-4 w-4" />
-                            ) : (
-                              <RefreshCw className="mr-2 h-4 w-4" />
-                            )}
-                            {domain.status === "FAILED" ? "Retry" : "Verify Now"}
-                          </Button>
+                          <PermissionGate resource="domain" action="verify">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleVerify(domain.id, domain.verificationType as any)}
+                              disabled={actionLoading === domain.id}
+                              className="rounded-lg border-blue-200 text-blue-600 hover:bg-blue-50 flex-shrink-0"
+                            >
+                              {actionLoading === domain.id ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : domain.status === "FAILED" ? (
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                              ) : (
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                              )}
+                              {domain.status === "FAILED" ? "Retry" : "Verify Now"}
+                            </Button>
+                          </PermissionGate>
                         </div>
 
                         {domain.verificationType === "txt" && domain.verificationToken && (
