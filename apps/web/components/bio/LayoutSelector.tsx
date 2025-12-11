@@ -1,9 +1,9 @@
 "use client";
 
 import { Label, cn } from "@pingtome/ui";
-import { LayoutList, LayoutGrid, LayoutDashboard, Check } from "lucide-react";
+import { LayoutList, LayoutGrid, LayoutDashboard, Check, Minus, SquareStack } from "lucide-react";
 
-type Layout = "stacked" | "grid";
+type Layout = "stacked" | "grid" | "minimal" | "cards";
 
 interface LayoutSelectorProps {
   value: Layout;
@@ -45,6 +45,32 @@ export function LayoutSelector({ value, onChange }: LayoutSelectorProps) {
         </div>
       ),
     },
+    {
+      value: "minimal",
+      label: "Minimal",
+      subtitle: "Simple and clean centered design",
+      icon: Minus,
+      preview: (
+        <div className="flex flex-col gap-3 w-full items-center">
+          <div className="h-6 w-4/5 border-2 border-slate-300 dark:border-slate-600 rounded transition-all" />
+          <div className="h-6 w-4/5 border-2 border-slate-300 dark:border-slate-600 rounded transition-all" />
+          <div className="h-6 w-4/5 border-2 border-slate-300 dark:border-slate-600 rounded transition-all" />
+        </div>
+      ),
+    },
+    {
+      value: "cards",
+      label: "Cards",
+      subtitle: "Card-style links with shadows",
+      icon: SquareStack,
+      preview: (
+        <div className="flex flex-col gap-2 w-full">
+          <div className="h-10 bg-gradient-to-r from-cyan-400 to-blue-500 dark:from-cyan-500 dark:to-blue-600 rounded-xl shadow-lg transition-all" />
+          <div className="h-10 bg-gradient-to-r from-fuchsia-400 to-purple-500 dark:from-fuchsia-500 dark:to-purple-600 rounded-xl shadow-lg transition-all" />
+          <div className="h-10 bg-gradient-to-r from-amber-400 to-orange-500 dark:from-amber-500 dark:to-orange-600 rounded-xl shadow-lg transition-all" />
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -63,7 +89,7 @@ export function LayoutSelector({ value, onChange }: LayoutSelectorProps) {
       </div>
 
       {/* Layout Options */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3">
         {layouts.map((layout) => {
           const Icon = layout.icon;
           const isSelected = value === layout.value;

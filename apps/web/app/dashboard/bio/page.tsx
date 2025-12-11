@@ -19,6 +19,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
   TooltipContent,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@pingtome/ui";
 import {
   Plus,
@@ -28,7 +36,9 @@ import {
   Eye,
   Link2,
   Sparkles,
+  Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -39,6 +49,8 @@ export default function BioPagesDashboard() {
   const [selectedPage, setSelectedPage] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pageToDelete, setPageToDelete] = useState<any>(null);
 
   // Fetch user's organization after auth is ready
   useEffect(() => {
@@ -88,6 +100,21 @@ export default function BioPagesDashboard() {
   const handleSuccess = () => {
     setView("list");
     fetchPages();
+  };
+
+  const handleDelete = async () => {
+    if (!pageToDelete) return;
+    try {
+      await apiRequest(`/biopages/${pageToDelete.id}`, { method: "DELETE" });
+      toast.success("Bio page deleted successfully");
+      fetchPages();
+    } catch (error) {
+      console.error("Failed to delete bio page", error);
+      toast.error("Failed to delete bio page");
+    } finally {
+      setDeleteDialogOpen(false);
+      setPageToDelete(null);
+    }
   };
 
   const LoadingSkeleton = () => (
@@ -202,22 +229,42 @@ export default function BioPagesDashboard() {
                           </CardDescription>
                         </div>
                       </div>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Link href={`/bio/${page.slug}`} target="_blank">
+                      <div className="flex items-center gap-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Link href={`/bio/${page.slug}`} target="_blank">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 opacity-70 group-hover:opacity-100 transition-opacity"
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>View live page</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 opacity-70 group-hover:opacity-100 transition-opacity"
+                              className="h-8 w-8 opacity-70 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setPageToDelete(page);
+                                setDeleteDialogOpen(true);
+                              }}
                             >
-                              <ExternalLink className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4" />
                             </Button>
-                          </Link>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>View live page</p>
-                        </TooltipContent>
-                      </Tooltip>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Delete page</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -265,6 +312,27 @@ export default function BioPagesDashboard() {
             ))}
           </div>
         )}
+
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete the bio page &quot;{pageToDelete?.title}&quot; and all
+                its links. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   }

@@ -2,6 +2,8 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  ConflictException,
+  BadRequestException,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { BioPage, BioPageLink } from "@prisma/client";
@@ -30,7 +32,7 @@ export class BioPageService {
     const existing = await this.prisma.bioPage.findUnique({
       where: { slug: data.slug },
     });
-    if (existing) throw new Error("Slug already taken");
+    if (existing) throw new ConflictException("Slug already taken");
 
     const bioPage = await this.prisma.bioPage.create({
       data: {
@@ -716,5 +718,92 @@ export class BioPageService {
       const buffer = Buffer.from(base64Data, "base64");
       return { data: buffer };
     }
+  }
+
+  // Avatar Management
+  async uploadAvatar(
+    id: string,
+    userId: string,
+    file: Express.Multer.File,
+  ): Promise<BioPage> {
+    // Verify ownership
+    const bioPage = await this.verifyBioPageOwnership(id, userId);
+
+    // Validate file type
+    const allowedMimeTypes = [
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "image/webp",
+    ];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException(
+        "Invalid file type. Only PNG, JPEG, and WebP are allowed.",
+      );
+    }
+
+    // Validate file size (2MB max)
+    const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+    if (file.size > maxSize) {
+      throw new BadRequestException("File size exceeds 2MB limit.");
+    }
+
+    // Convert to base64
+    const base64Avatar = `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+
+    // Update bio page with avatar
+    const updated = await this.prisma.bioPage.update({
+      where: { id },
+      data: { avatarUrl: base64Avatar },
+    });
+
+    // Audit log: avatar uploaded
+    this.auditService
+      .logResourceEvent(
+        userId,
+        bioPage.organizationId,
+        "biopage.avatar_uploaded",
+        "BioPage",
+        updated.id,
+        {
+          details: {
+            slug: updated.slug,
+            fileName: file.originalname,
+            fileSize: file.size,
+            mimeType: file.mimetype,
+          },
+        },
+      )
+      .catch(() => {}); // Fire and forget, don't block on errors
+
+    return updated;
+  }
+
+  async deleteAvatar(id: string, userId: string): Promise<BioPage> {
+    // Verify ownership
+    const bioPage = await this.verifyBioPageOwnership(id, userId);
+
+    const updated = await this.prisma.bioPage.update({
+      where: { id },
+      data: { avatarUrl: null },
+    });
+
+    // Audit log: avatar deleted
+    this.auditService
+      .logResourceEvent(
+        userId,
+        bioPage.organizationId,
+        "biopage.avatar_deleted",
+        "BioPage",
+        updated.id,
+        {
+          details: {
+            slug: updated.slug,
+          },
+        },
+      )
+      .catch(() => {}); // Fire and forget, don't block on errors
+
+    return updated;
   }
 }

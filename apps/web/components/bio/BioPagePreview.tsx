@@ -57,7 +57,7 @@ interface BioPagePreviewProps {
   description?: string;
   avatarUrl?: string;
   theme: BioPageTheme;
-  layout: "stacked" | "grid";
+  layout: "stacked" | "grid" | "minimal" | "cards";
   bioLinks: BioLink[];
   socialLinks?: SocialLink[];
   showBranding: boolean;
@@ -210,63 +210,144 @@ export function BioPagePreview({
                 {/* Bio Links Section */}
                 <div
                   className={
-                    layout === "grid" ? "grid grid-cols-2 gap-3" : "space-y-4"
+                    layout === "grid"
+                      ? "grid grid-cols-2 gap-3"
+                      : layout === "minimal"
+                      ? "space-y-3 flex flex-col items-center"
+                      : "space-y-4"
                   }
                 >
                   {bioLinks.length > 0 ? (
-                    bioLinks.map((bioLink) => (
-                      <a
-                        key={bioLink.id}
-                        href={bioLink.externalUrl || "#"}
-                        onClick={(e) => e.preventDefault()} // Prevent navigation in preview
-                        className="block"
-                      >
-                        <Card
-                          className={getButtonClasses()}
-                          style={{
-                            backgroundColor: theme.buttonColor,
-                            borderColor: "transparent",
-                          }}
-                        >
-                          <CardContent
-                            className={`flex items-center justify-between ${
-                              layout === "grid" ? "p-4" : "p-5"
-                            }`}
+                    bioLinks.map((bioLink) => {
+                      // Minimal layout - simple text links without background
+                      if (layout === "minimal") {
+                        return (
+                          <a
+                            key={bioLink.id}
+                            href={bioLink.externalUrl || "#"}
+                            onClick={(e) => e.preventDefault()}
+                            className="block text-center py-3 px-6 transition-all duration-200 hover:opacity-80 w-full max-w-xs"
+                            style={{
+                              color: theme.buttonTextColor,
+                              borderBottom: `2px solid ${theme.buttonColor}`,
+                            }}
                           >
-                            <div className="flex-1 min-w-0">
-                              <div
-                                className={`font-medium ${
-                                  layout === "grid" ? "text-sm" : "text-base"
-                                }`}
-                                style={{
-                                  color: theme.buttonTextColor,
-                                }}
-                              >
-                                {bioLink.title}
+                            <div className="font-medium text-base">
+                              {bioLink.title}
+                            </div>
+                            {bioLink.description && (
+                              <div className="text-xs mt-1 opacity-70">
+                                {bioLink.description}
                               </div>
-                              {bioLink.description && layout === "stacked" && (
+                            )}
+                          </a>
+                        );
+                      }
+
+                      // Cards layout - enhanced shadows and rounded corners
+                      if (layout === "cards") {
+                        return (
+                          <a
+                            key={bioLink.id}
+                            href={bioLink.externalUrl || "#"}
+                            onClick={(e) => e.preventDefault()}
+                            className="block"
+                          >
+                            <Card
+                              className="transition-all duration-200 hover:scale-105 rounded-2xl shadow-lg hover:shadow-xl"
+                              style={{
+                                backgroundColor: theme.buttonColor,
+                                borderColor: "transparent",
+                              }}
+                            >
+                              <CardContent className="p-6 flex items-center justify-between">
+                                <div className="flex-1 min-w-0">
+                                  <div
+                                    className="font-semibold text-base"
+                                    style={{
+                                      color: theme.buttonTextColor,
+                                    }}
+                                  >
+                                    {bioLink.title}
+                                  </div>
+                                  {bioLink.description && (
+                                    <div
+                                      className="text-xs mt-1 truncate opacity-70"
+                                      style={{
+                                        color: theme.buttonTextColor,
+                                      }}
+                                    >
+                                      {bioLink.description}
+                                    </div>
+                                  )}
+                                </div>
+                                <ExternalLink
+                                  className="h-5 w-5 flex-shrink-0 ml-3"
+                                  style={{
+                                    color: theme.buttonTextColor,
+                                  }}
+                                />
+                              </CardContent>
+                            </Card>
+                          </a>
+                        );
+                      }
+
+                      // Stacked and Grid layouts
+                      return (
+                        <a
+                          key={bioLink.id}
+                          href={bioLink.externalUrl || "#"}
+                          onClick={(e) => e.preventDefault()}
+                          className="block"
+                        >
+                          <Card
+                            className={getButtonClasses()}
+                            style={{
+                              backgroundColor: theme.buttonColor,
+                              borderColor: "transparent",
+                            }}
+                          >
+                            <CardContent
+                              className={`flex items-center justify-between ${
+                                layout === "grid" ? "p-4" : "p-5"
+                              }`}
+                            >
+                              <div className="flex-1 min-w-0">
                                 <div
-                                  className="text-xs mt-1 truncate opacity-70"
+                                  className={`font-medium ${
+                                    layout === "grid" ? "text-sm" : "text-base"
+                                  }`}
                                   style={{
                                     color: theme.buttonTextColor,
                                   }}
                                 >
-                                  {bioLink.description}
+                                  {bioLink.title}
                                 </div>
+                                {bioLink.description && layout === "stacked" && (
+                                  <div
+                                    className="text-xs mt-1 truncate opacity-70"
+                                    style={{
+                                      color: theme.buttonTextColor,
+                                    }}
+                                  >
+                                    {bioLink.description}
+                                  </div>
+                                )}
+                              </div>
+                              {layout === "stacked" && (
+                                <ExternalLink
+                                  className="h-4 w-4 flex-shrink-0 ml-3"
+                                  style={{
+                                    color: theme.buttonTextColor,
+                                  }}
+                                />
                               )}
-                            </div>
-                            {layout === "stacked" && (
-                              <ExternalLink
-                                className="h-4 w-4 flex-shrink-0 ml-3"
-                                style={{
-                                  color: theme.buttonTextColor,
-                                }}
-                              />
-                            )}
-                          </CardContent>
-                        </Card>
-                      </a>
-                    ))
+                            </CardContent>
+                          </Card>
+                        </a>
+                      );
+                    })
                   ) : (
                     <div
                       className="text-center py-12 px-4 text-sm opacity-60"

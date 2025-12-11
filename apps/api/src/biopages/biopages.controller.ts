@@ -13,7 +13,10 @@ import {
   Res,
   HttpCode,
   Req,
+  UseInterceptors,
+  UploadedFile,
 } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { BioPageService } from "./biopages.service";
 import { AuthGuard } from "../auth/auth.guard";
 import { BioPage, BioPageLink } from "@prisma/client";
@@ -251,5 +254,28 @@ export class BioPageController {
       res.setHeader("Cache-Control", "public, max-age=3600");
       res.send(result.data);
     }
+  }
+
+  // Avatar Management
+  @UseGuards(AuthGuard, PermissionGuard)
+  @Post(":id/avatar")
+  @Permission({ resource: "biopage", action: "update", context: "own" })
+  @UseInterceptors(FileInterceptor("avatar"))
+  async uploadAvatar(
+    @Request() req,
+    @Param("id") id: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException("No file uploaded");
+    }
+    return this.bioPageService.uploadAvatar(id, req.user.id, file);
+  }
+
+  @UseGuards(AuthGuard, PermissionGuard)
+  @Delete(":id/avatar")
+  @Permission({ resource: "biopage", action: "update", context: "own" })
+  async deleteAvatar(@Request() req, @Param("id") id: string) {
+    return this.bioPageService.deleteAvatar(id, req.user.id);
   }
 }

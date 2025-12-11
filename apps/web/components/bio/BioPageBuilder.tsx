@@ -60,6 +60,7 @@ import { LayoutSelector } from "@/components/bio/LayoutSelector";
 import { FontSelector } from "@/components/bio/FontSelector";
 import { BioPagePreview } from "@/components/bio/BioPagePreview";
 import { BioAnalyticsDashboard } from "@/components/bio/BioAnalyticsDashboard";
+import { AvatarUploader } from "@/components/bio/AvatarUploader";
 import { useLinkReorder } from "@/hooks/useLinkReorder";
 import type { SocialLink } from "@pingtome/types";
 import {
@@ -110,7 +111,7 @@ export function BioPageBuilder({
   const [customTheme, setCustomTheme] = useState<BioPageTheme>(
     existingPage?.theme || DEFAULT_THEME,
   );
-  const [layout, setLayout] = useState<"stacked" | "grid">(
+  const [layout, setLayout] = useState<"stacked" | "grid" | "minimal" | "cards">(
     existingPage?.layout || "stacked",
   );
   const [showBranding, setShowBranding] = useState<boolean>(
@@ -118,6 +119,9 @@ export function BioPageBuilder({
   );
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>(
     existingPage?.socialLinks || [],
+  );
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(
+    existingPage?.avatarUrl || undefined,
   );
 
   // Reorder hook
@@ -219,9 +223,10 @@ export function BioPageBuilder({
       }
       if (onSuccess) onSuccess();
       toast.success("Bio Page saved successfully!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save bio page", error);
-      toast.error("Failed to save bio page");
+      const errorMessage = error?.message || "Failed to save bio page";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -454,6 +459,27 @@ export function BioPageBuilder({
                     rows={3}
                   />
                 </div>
+
+                {/* Avatar Upload - Only show for existing pages */}
+                {existingPage?.id && (
+                  <div className="space-y-2 pt-2">
+                    <Label className="text-sm font-medium">
+                      Profile Picture
+                    </Label>
+                    <AvatarUploader
+                      bioPageId={existingPage.id}
+                      currentAvatar={avatarUrl}
+                      onUploadSuccess={(url) => {
+                        setAvatarUrl(url);
+                        toast.success("Avatar uploaded successfully!");
+                      }}
+                      onDeleteSuccess={() => {
+                        setAvatarUrl(undefined);
+                        toast.success("Avatar removed successfully!");
+                      }}
+                    />
+                  </div>
+                )}
               </form>
             </CardContent>
           </Card>
@@ -708,7 +734,7 @@ export function BioPageBuilder({
               <BioPagePreview
                 title={form.watch("title") || "Your Name"}
                 description={form.watch("description")}
-                avatarUrl={existingPage?.avatarUrl}
+                avatarUrl={avatarUrl}
                 theme={customTheme}
                 layout={layout}
                 bioLinks={bioLinks

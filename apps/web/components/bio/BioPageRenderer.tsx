@@ -249,7 +249,13 @@ export function BioPageRenderer({
 
         {/* Bio Links */}
         <div
-          className={layout === "grid" ? "grid grid-cols-2 gap-4" : "space-y-4"}
+          className={
+            layout === "grid"
+              ? "grid grid-cols-2 gap-4"
+              : layout === "minimal"
+              ? "space-y-3 flex flex-col items-center"
+              : "space-y-4"
+          }
         >
           {bioLinks.map((bioLink, index) => {
             const url = getUrl(bioLink);
@@ -268,6 +274,89 @@ export function BioPageRenderer({
               }
             };
 
+            // Minimal layout - simple text links without background
+            if (layout === "minimal") {
+              return (
+                <a
+                  key={bioLink.id}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-center py-4 px-8 transition-all duration-200 hover:opacity-80 w-full max-w-sm bio-link-item"
+                  onClick={handleClick}
+                  style={{
+                    color: textColor,
+                    borderBottom: `2px solid ${buttonColor}`,
+                    animationDelay: `${0.1 + index * 0.05}s`,
+                  }}
+                >
+                  <div className="font-medium text-lg">
+                    {displayTitle}
+                  </div>
+                  {displayDescription && (
+                    <div className="text-sm mt-1 opacity-70">
+                      {displayDescription}
+                    </div>
+                  )}
+                </a>
+              );
+            }
+
+            // Cards layout - enhanced shadows and rounded corners
+            if (layout === "cards") {
+              return (
+                <a
+                  key={bioLink.id}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block bio-link-item"
+                  onClick={handleClick}
+                  style={{
+                    animationDelay: `${0.1 + index * 0.05}s`,
+                  }}
+                >
+                  <Card
+                    className="bio-link-card cursor-pointer border-0 rounded-2xl shadow-lg transition-all duration-200 hover:shadow-2xl"
+                    style={{
+                      backgroundColor: buttonColor,
+                    }}
+                  >
+                    <CardContent className="p-6 flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div
+                          className="font-semibold text-lg"
+                          style={{
+                            color: textColor,
+                          }}
+                        >
+                          {displayTitle}
+                        </div>
+                        {displayDescription && (
+                          <div
+                            className="text-sm truncate max-w-[250px] mt-1"
+                            style={{
+                              color: textColor,
+                              opacity: 0.7,
+                            }}
+                          >
+                            {displayDescription}
+                          </div>
+                        )}
+                      </div>
+                      <ExternalLink
+                        className="h-5 w-5 flex-shrink-0 ml-3"
+                        style={{
+                          color: textColor,
+                        }}
+                      />
+                    </CardContent>
+                  </Card>
+                </a>
+              );
+            }
+
+            // Stacked and Grid layouts
             return (
               <a
                 key={bioLink.id}

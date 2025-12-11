@@ -20,7 +20,7 @@ export type ThemeName =
 /**
  * Layout types for bio link display
  */
-export type LayoutType = "stacked" | "grid";
+export type LayoutType = "stacked" | "grid" | "minimal" | "cards";
 
 /**
  * Background rendering styles

@@ -325,22 +325,59 @@
 
 ## ✅ Test Result
 
+### Round 1 - Code Review Testing (2025-12-11)
+
 | Test ID | Test Name | PASS/FAIL | Notes |
 |---------|-----------|-----------|-------|
-| BIO-001 | Create Bio Page | | |
-| BIO-002 | Duplicate Slug | | |
-| BIO-010 | Edit Title/Description | | |
-| BIO-011 | Change Profile Image | | |
-| BIO-020 | Change Theme/Layout | | |
-| BIO-021 | Change Theme Colors | | |
-| BIO-022 | Change Button Style | | |
-| BIO-030 | Add Link | | |
-| BIO-031 | Edit Link | | |
-| BIO-032 | Delete Link | | |
-| BIO-033 | Reorder Links | | |
-| BIO-040 | Add Social Links | | |
-| BIO-050 | View Public Page | | |
-| BIO-051 | 404 Page | | |
-| BIO-052 | Track Clicks | | |
-| BIO-060 | Delete Bio Page | | |
+| BIO-001 | Create Bio Page | ✅ PASS | Create Page button, form fields, POST API endpoint all working |
+| BIO-002 | Duplicate Slug | ⚠️ PARTIAL | Backend validates duplicate, but shows generic error "Failed to save" |
+| BIO-010 | Edit Title/Description | ✅ PASS | Form fields, PATCH API, preview updates work |
+| BIO-011 | Change Profile Image | ❌ NOT_IMPL | No upload UI or API endpoint - DB field exists but feature incomplete |
+| BIO-020 | Change Theme/Layout | ✅ PASS | LayoutSelector works (Stacked/Grid only, not 4 options in spec) |
+| BIO-021 | Change Theme Colors | ✅ PASS | 6 presets + custom colors, live preview |
+| BIO-022 | Change Button Style | ✅ PASS | Rounded/Square/Pill styles + shadow option |
+| BIO-030 | Add Link | ✅ PASS | Select dropdown, POST API, duplicate prevention |
+| BIO-031 | Edit Link | ✅ PASS | LinkStyleEditor modal with live preview |
+| BIO-032 | Delete Link | ✅ PASS | AlertDialog confirmation, API delete |
+| BIO-033 | Reorder Links | ✅ PASS | Drag & drop with @dnd-kit, transaction-based API |
+| BIO-040 | Add Social Links | ✅ PASS | 9 platforms (7 required + Email, WhatsApp) |
+| BIO-050 | View Public Page | ✅ PASS | All content renders, theme applied |
+| BIO-051 | 404 Page | ✅ PASS | NotFoundException handled, friendly 404 UI |
+| BIO-052 | Track Clicks | ✅ PASS | Beacon API, rate-limited tracking endpoint |
+| BIO-060 | Delete Bio Page | ❌ NOT_IMPL | API DELETE endpoint exists but NO UI button |
+
+### Summary
+
+| Category | Passed | Total | Rate |
+|----------|--------|-------|------|
+| Create Bio Page | 1.5 | 2 | 75% |
+| Edit Bio Page | 1 | 2 | 50% |
+| Theme Customization | 3 | 3 | 100% |
+| Manage Bio Links | 4 | 4 | 100% |
+| Social Links | 1 | 1 | 100% |
+| Public Bio Page | 3 | 3 | 100% |
+| Delete Bio Page | 0 | 1 | 0% |
+| **Total** | **13.5** | **16** | **84%** |
+
+### Issues to Fix
+
+1. **BIO-002 (Error Handling)**
+   - Backend uses generic `Error()` instead of NestJS `ConflictException`
+   - Frontend shows "Failed to save bio page" instead of "Slug already taken"
+   - **Fix**: Update `biopages.service.ts` line 33 and `BioPageBuilder.tsx` error handling
+
+2. **BIO-011 (Profile Image Upload)**
+   - Database has `avatarUrl` field but no upload functionality
+   - Missing: Upload UI component, API endpoint with FileInterceptor
+   - **Fix**: Add AvatarUploader component similar to org logo upload
+
+3. **BIO-020 (Layout Options)**
+   - Spec lists 4 layouts: Stacked, Grid, Minimal, Cards
+   - Only 2 implemented: Stacked, Grid
+   - **Fix**: Add Minimal and Cards layout options to LayoutSelector
+
+4. **BIO-060 (Delete Bio Page)**
+   - Backend API `DELETE /biopages/:id` exists and works
+   - No delete button in dashboard list or edit page
+   - **Fix**: Add delete button with confirmation dialog to bio page cards
 
