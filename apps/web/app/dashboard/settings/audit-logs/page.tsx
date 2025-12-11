@@ -16,6 +16,12 @@ import {
   SelectValue,
   Badge,
   Input,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  Separator,
+  ScrollArea,
 } from "@pingtome/ui";
 import {
   History,
@@ -353,6 +359,7 @@ export default function AuditLogsPage() {
   const [datePreset, setDatePreset] = useState<number>(7); // Default to last 7 days
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+  const [selectedLog, setSelectedLog] = useState<AuditLogEntry | null>(null);
   const limit = 20;
 
   // Build query params
@@ -730,7 +737,8 @@ export default function AuditLogsPage() {
                     return (
                       <div
                         key={log.id}
-                        className="flex items-start gap-4 p-4 hover:bg-slate-50 transition-colors"
+                        className="flex items-start gap-4 p-4 hover:bg-slate-50 transition-colors cursor-pointer"
+                        onClick={() => setSelectedLog(log)}
                       >
                         {/* Action Icon */}
                         <div
@@ -881,6 +889,205 @@ export default function AuditLogsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Log Detail Dialog */}
+      <Dialog open={!!selectedLog} onOpenChange={(open) => !open && setSelectedLog(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {selectedLog && (() => {
+            const actionConfig = getActionConfig(selectedLog.action);
+            const ActionIcon = actionConfig.icon;
+            const resourceConfig = RESOURCE_CONFIG[selectedLog.resource] || {
+              label: selectedLog.resource,
+              icon: FileText,
+            };
+            const ResourceIcon = resourceConfig.icon;
+            const statusConfig = STATUS_CONFIG[selectedLog.status || "success"];
+
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-3">
+                    <div className={`h-10 w-10 rounded-xl ${actionConfig.color} flex items-center justify-center`}>
+                      <ActionIcon className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-lg font-semibold">Audit Log Details</div>
+                      <div className="text-sm font-normal text-slate-500 mt-0.5">
+                        {format(new Date(selectedLog.createdAt), "MMMM d, yyyy 'at' HH:mm:ss")}
+                      </div>
+                    </div>
+                  </DialogTitle>
+                </DialogHeader>
+
+                <div className="mt-6 space-y-6">
+                  {/* Action & Resource */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-700 mb-3">Action Information</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <span className="text-sm text-slate-500">Action</span>
+                        <Badge className={`${actionConfig.color} border-0`}>
+                          {actionConfig.label}
+                        </Badge>
+                      </div>
+                      <div className="flex items-start justify-between">
+                        <span className="text-sm text-slate-500">Resource Type</span>
+                        <div className="flex items-center gap-1.5">
+                          <ResourceIcon className="h-3.5 w-3.5 text-slate-600" />
+                          <span className="text-sm font-medium text-slate-900">{resourceConfig.label}</span>
+                        </div>
+                      </div>
+                      {selectedLog.resourceId && (
+                        <div className="flex items-start justify-between">
+                          <span className="text-sm text-slate-500">Resource ID</span>
+                          <code className="text-xs text-slate-900 bg-slate-100 px-2 py-1 rounded font-mono">
+                            {selectedLog.resourceId}
+                          </code>
+                        </div>
+                      )}
+                      {selectedLog.status && (
+                        <div className="flex items-start justify-between">
+                          <span className="text-sm text-slate-500">Status</span>
+                          <Badge className={`${statusConfig.color} border-0`}>
+                            {statusConfig.label}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Network & Location */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-700 mb-3">Network Information</h3>
+                    <div className="space-y-3">
+                      {selectedLog.ipAddress && (
+                        <div className="flex items-start justify-between">
+                          <span className="text-sm text-slate-500">IP Address</span>
+                          <code className="text-xs text-slate-900 bg-slate-100 px-2 py-1 rounded font-mono">
+                            {selectedLog.ipAddress}
+                          </code>
+                        </div>
+                      )}
+                      {selectedLog.userAgent && (
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm text-slate-500">User Agent</span>
+                          <code className="text-xs text-slate-900 bg-slate-100 px-2 py-1 rounded font-mono break-all">
+                            {selectedLog.userAgent}
+                          </code>
+                        </div>
+                      )}
+                      {selectedLog.geoLocation && (
+                        <div className="flex items-start justify-between">
+                          <span className="text-sm text-slate-500">Location</span>
+                          <span className="text-sm font-medium text-slate-900">{selectedLog.geoLocation}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Changes */}
+                  {selectedLog.changes && (selectedLog.changes.before || selectedLog.changes.after) && (
+                    <>
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-700 mb-3">Changes</h3>
+                        <div className="space-y-3">
+                          {(() => {
+                            const before = selectedLog.changes?.before || {};
+                            const after = selectedLog.changes?.after || {};
+                            const allKeys = new Set([...Object.keys(before), ...Object.keys(after)]);
+
+                            return Array.from(allKeys).map((key) => {
+                              const beforeValue = before[key];
+                              const afterValue = after[key];
+                              const hasChanged = JSON.stringify(beforeValue) !== JSON.stringify(afterValue);
+
+                              return (
+                                <div key={key} className="bg-slate-50 rounded-lg p-3">
+                                  <div className="text-xs font-semibold text-slate-700 mb-2">{key}</div>
+                                  <div className="space-y-1">
+                                    {beforeValue !== undefined && (
+                                      <div className="flex items-start gap-2">
+                                        <span className="text-xs text-red-600 font-medium min-w-[50px]">Before:</span>
+                                        <code className="text-xs text-slate-900 bg-white px-2 py-1 rounded flex-1 break-all">
+                                          {typeof beforeValue === 'object' ? JSON.stringify(beforeValue, null, 2) : String(beforeValue)}
+                                        </code>
+                                      </div>
+                                    )}
+                                    {afterValue !== undefined && (
+                                      <div className="flex items-start gap-2">
+                                        <span className="text-xs text-green-600 font-medium min-w-[50px]">After:</span>
+                                        <code className="text-xs text-slate-900 bg-white px-2 py-1 rounded flex-1 break-all">
+                                          {typeof afterValue === 'object' ? JSON.stringify(afterValue, null, 2) : String(afterValue)}
+                                        </code>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      </div>
+                      <Separator />
+                    </>
+                  )}
+
+                  {/* Additional Details */}
+                  {selectedLog.details && Object.keys(selectedLog.details).length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-700 mb-3">Additional Details</h3>
+                      <div className="bg-slate-50 rounded-lg p-3">
+                        <pre className="text-xs text-slate-900 overflow-x-auto">
+                          {JSON.stringify(selectedLog.details, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Metadata */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-700 mb-3">Metadata</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <span className="text-sm text-slate-500">Log ID</span>
+                        <code className="text-xs text-slate-900 bg-slate-100 px-2 py-1 rounded font-mono">
+                          {selectedLog.id}
+                        </code>
+                      </div>
+                      {selectedLog.userId && (
+                        <div className="flex items-start justify-between">
+                          <span className="text-sm text-slate-500">User ID</span>
+                          <code className="text-xs text-slate-900 bg-slate-100 px-2 py-1 rounded font-mono">
+                            {selectedLog.userId}
+                          </code>
+                        </div>
+                      )}
+                      {selectedLog.organizationId && (
+                        <div className="flex items-start justify-between">
+                          <span className="text-sm text-slate-500">Organization ID</span>
+                          <code className="text-xs text-slate-900 bg-slate-100 px-2 py-1 rounded font-mono">
+                            {selectedLog.organizationId}
+                          </code>
+                        </div>
+                      )}
+                      <div className="flex items-start justify-between">
+                        <span className="text-sm text-slate-500">Timestamp</span>
+                        <span className="text-sm font-medium text-slate-900">
+                          {format(new Date(selectedLog.createdAt), "yyyy-MM-dd HH:mm:ss")}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
