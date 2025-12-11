@@ -1,0 +1,81 @@
+RBAC LINKS MANAGEMENT ACCESS TEST RESULTS
+==========================================
+Test Session: 2025-12-11
+API: http://localhost:3011
+Organization: e2e00000-0000-0000-0001-000000000001
+
+Test ID      | Result | Notes
+-------------|--------|--------------------------------------------------
+RBAC-030.1   | PASS   | OWNER can list links
+RBAC-030.2   | PASS   | OWNER can create links
+RBAC-030.3   | FAIL   | OWNER cannot update own links (expected 200, got 403)
+RBAC-030.4   | FAIL   | OWNER cannot delete own links (expected 200, got 403)
+RBAC-031.1   | PASS   | ADMIN can list links
+RBAC-031.2   | PASS   | ADMIN can create links
+RBAC-031.3   | FAIL   | ADMIN cannot update ANY links (expected 200, got 403)
+RBAC-031.4   | FAIL   | ADMIN cannot delete ANY links (expected 200, got 403)
+RBAC-032.1   | PASS   | EDITOR can list links
+RBAC-032.2   | PASS   | EDITOR can create links
+RBAC-032.3   | FAIL   | EDITOR cannot update OWN links (expected 200, got 403)
+RBAC-032.4   | PASS   | EDITOR correctly blocked from updating OTHER's links
+RBAC-032.5   | FAIL   | EDITOR cannot delete OWN links (expected 200, got 403)
+RBAC-032.6   | PASS   | EDITOR correctly blocked from deleting OTHER's links
+RBAC-033.1   | PASS   | VIEWER can list links
+RBAC-033.2   | PASS   | VIEWER correctly blocked from creating links
+RBAC-033.3   | PASS   | VIEWER correctly blocked from updating links
+RBAC-033.4   | PASS   | VIEWER correctly blocked from deleting links
+
+SUMMARY
+-------
+Total Tests:  20
+Passed:       12 (60%)
+Failed:       8 (40%)
+
+CRITICAL ISSUES
+---------------
+1. OWNER/ADMIN cannot update or delete links despite having '*' (full access) permission
+   - Affects: RBAC-030.3, RBAC-030.4, RBAC-031.3, RBAC-031.4
+   - Impact: P0 Critical - Blocks core functionality
+
+2. EDITOR cannot update or delete their OWN links despite having 'own' permission
+   - Affects: RBAC-032.3, RBAC-032.5
+   - Impact: P0 Critical - Blocks core functionality
+
+3. VIEWER permissions work correctly (read-only as expected)
+   - All VIEWER tests passed
+
+PROBABLE ROOT CAUSES
+--------------------
+1. Missing or incorrect OrganizationMember records in test database
+   - RBAC checks OrganizationMember.role, not User.role
+   - Database may not be seeded
+
+2. Bug in hasFullAccessPermission() implementation
+   - '*' scope should bypass ownership checks
+   - Not working for OWNER/ADMIN
+
+3. Bug in checkResourceOwnership() implementation
+   - 'own' scope checks may be failing
+   - Not working for EDITOR
+
+RECOMMENDATIONS
+---------------
+1. Reset and reseed database:
+   pnpm --filter @pingtome/database db:reset
+
+2. Verify OrganizationMember records exist:
+   SELECT * FROM "OrganizationMember" WHERE "organizationId" = 'e2e00000-0000-0000-0001-000000000001';
+
+3. Debug permission check flow:
+   - Check /apps/api/src/auth/rbac/permission.service.ts
+   - Check /apps/api/src/auth/rbac/permission.guard.ts
+
+4. Rerun tests after fixes:
+   python3 /Users/earn/Projects/rawinlab/pingtome/user-tests/rbac-links-tests/test_rbac.py
+
+CONCLUSION
+----------
+System is NOT READY for production. Critical RBAC bugs prevent OWNER, ADMIN,
+and EDITOR from performing update/delete operations on links.
+
+See REPORT.md for detailed analysis.
