@@ -23,6 +23,15 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
 } from "@pingtome/ui";
 import {
   ExternalLink,
@@ -49,6 +58,9 @@ import {
   Download,
   FileArchive,
   Folder,
+  FolderInput,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -76,6 +88,7 @@ interface LinksTableProps {
 export interface LinksTableRef {
   handleExport: () => Promise<void>;
   openBulkTagDialog: () => void;
+  refresh: () => void;
   getSelectedCount: () => number;
 }
 
@@ -130,6 +143,8 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
     const [tags, setTags] = useState<{ id: string; name: string }[]>([]);
     const [bulkTagDialogOpen, setBulkTagDialogOpen] = useState(false);
     const [bulkTagValue, setBulkTagValue] = useState<string>("");
+    const [bulkTagComboOpen, setBulkTagComboOpen] = useState(false);
+    const [bulkTagSearchValue, setBulkTagSearchValue] = useState<string>("");
     const [copiedId, setCopiedId] = useState<string | null>(null);
     const [inlineTagLinkId, setInlineTagLinkId] = useState<string | null>(null);
     const [inlineTagValue, setInlineTagValue] = useState<string>("");
@@ -138,6 +153,9 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
     const [moveFolderDialogOpen, setMoveFolderDialogOpen] = useState(false);
     const [moveFolderLinkId, setMoveFolderLinkId] = useState<string | null>(null);
     const [moveFolderCurrentId, setMoveFolderCurrentId] = useState<string | null>(null);
+    const [bulkMoveToFolderDialogOpen, setBulkMoveToFolderDialogOpen] = useState(false);
+    const [bulkMoveToFolderId, setBulkMoveToFolderId] = useState<string>("");
+    const [folders, setFolders] = useState<{ id: string; name: string; color?: string; depth?: number }[]>([]);
 
     // Permission and auth context
     const { user } = useAuth();
@@ -185,9 +203,31 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
       try {
         const tagsRes = await apiRequest("/tags");
         setTags(tagsRes);
+
+        // Fetch folders for bulk move
+        const foldersRes = await apiRequest("/folders/tree");
+        const flattenedFolders = flattenFolderTree(foldersRes);
+        setFolders(flattenedFolders);
       } catch (error) {
         console.error("Failed to fetch filters");
       }
+    };
+
+    // Helper function to flatten folder tree into a list with depth information
+    const flattenFolderTree = (
+      folders: any[],
+      depth = 0
+    ): Array<{ id: string; name: string; color?: string; depth: number }> => {
+      const result: Array<{ id: string; name: string; color?: string; depth: number }> = [];
+
+      folders.forEach((folder: any) => {
+        result.push({ id: folder.id, name: folder.name, color: folder.color, depth });
+        if (folder.children && folder.children.length > 0) {
+          result.push(...flattenFolderTree(folder.children, depth + 1));
+        }
+      });
+
+      return result;
     };
 
     const fetchLinks = async () => {
@@ -374,6 +414,53 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
       }
     };
 
+    const handleBulkMoveToFolder = async () => {
+      if (!bulkMoveToFolderId) return;
+      if (!canBulkLinks()) {
+        toast.error("Permission denied", {
+          description: "You don't have permission to perform bulk operations",
+        });
+        return;
+      }
+
+      setBulkActionLoading(true);
+      try {
+        // Use the existing bulk-edit API with folderId
+        await apiRequest("/links/bulk-edit", {
+          method: "POST",
+          body: JSON.stringify({
+            ids: Array.from(selectedIds),
+            changes: {
+              folderId: bulkMoveToFolderId === "none" ? null : bulkMoveToFolderId,
+            },
+          }),
+        });
+
+        const folderName = bulkMoveToFolderId === "none"
+          ? "root"
+          : folders.find((f) => f.id === bulkMoveToFolderId)?.name || "folder";
+
+        toast.success(
+          `${selectedIds.size} link${selectedIds.size > 1 ? "s" : ""} moved to ${folderName}`
+        );
+
+        setSelectedIds(new Set());
+        setBulkMoveToFolderDialogOpen(false);
+        setBulkMoveToFolderId("");
+        fetchLinks();
+      } catch (error: any) {
+        if (error?.response?.status === 403) {
+          toast.error("Permission denied", {
+            description: "You don't have permission to move these links",
+          });
+        } else {
+          toast.error("Failed to move links");
+        }
+      } finally {
+        setBulkActionLoading(false);
+      }
+    };
+
     const handleBulkQrDownload = async () => {
       if (selectedIds.size === 0) return;
       if (selectedIds.size > 100) {
@@ -436,6 +523,9 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
     };
 
     const openBulkTagDialog = () => {
+      setBulkTagValue("");
+      setBulkTagSearchValue("");
+      setBulkTagComboOpen(false);
       setBulkTagDialogOpen(true);
     };
 
@@ -473,6 +563,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
     useImperativeHandle(ref, () => ({
       handleExport,
       openBulkTagDialog,
+      refresh: fetchLinks,
       getSelectedCount: () => selectedIds.size,
     }));
 
@@ -1159,32 +1250,149 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
             <DialogHeader>
               <DialogTitle>Add Tag to Links</DialogTitle>
               <DialogDescription>
-                Add a tag to {selectedIds.size} selected link(s).
+                Add a tag to {selectedIds.size} selected link(s). Select an existing tag or create a new one.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
-              <Select value={bulkTagValue} onValueChange={setBulkTagValue}>
+              <Popover open={bulkTagComboOpen} onOpenChange={setBulkTagComboOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={bulkTagComboOpen}
+                    className="w-full justify-between"
+                  >
+                    {bulkTagValue || "Select or create a tag..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput
+                      placeholder="Search or type to create..."
+                      value={bulkTagSearchValue}
+                      onValueChange={setBulkTagSearchValue}
+                    />
+                    <CommandList>
+                      <CommandEmpty>
+                        {bulkTagSearchValue.trim() ? (
+                          <div className="py-2 text-center text-sm">
+                            Press Enter to create &quot;{bulkTagSearchValue}&quot;
+                          </div>
+                        ) : (
+                          <div className="py-2 text-center text-sm">
+                            Type to create a new tag
+                          </div>
+                        )}
+                      </CommandEmpty>
+                      {tags.length > 0 && (
+                        <CommandGroup heading="Existing tags">
+                          {tags
+                            .filter(tag =>
+                              tag.name.toLowerCase().includes(bulkTagSearchValue.toLowerCase())
+                            )
+                            .map((tag) => (
+                              <CommandItem
+                                key={tag.id}
+                                value={tag.name}
+                                onSelect={(currentValue) => {
+                                  setBulkTagValue(currentValue);
+                                  setBulkTagComboOpen(false);
+                                  setBulkTagSearchValue("");
+                                }}
+                              >
+                                <Check
+                                  className={
+                                    bulkTagValue === tag.name
+                                      ? "mr-2 h-4 w-4 opacity-100"
+                                      : "mr-2 h-4 w-4 opacity-0"
+                                  }
+                                />
+                                {tag.name}
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      )}
+                      {bulkTagSearchValue.trim() &&
+                       !tags.some(tag => tag.name.toLowerCase() === bulkTagSearchValue.toLowerCase()) && (
+                        <CommandGroup heading="Create new">
+                          <CommandItem
+                            value={bulkTagSearchValue}
+                            onSelect={(currentValue) => {
+                              setBulkTagValue(currentValue);
+                              setBulkTagComboOpen(false);
+                              setBulkTagSearchValue("");
+                            }}
+                          >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Create &quot;{bulkTagSearchValue}&quot;
+                          </CommandItem>
+                        </CommandGroup>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setBulkTagDialogOpen(false);
+                  setBulkTagValue("");
+                  setBulkTagSearchValue("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleBulkTag} disabled={!bulkTagValue}>
+                Add Tag
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Bulk Move to Folder Dialog */}
+        <Dialog open={bulkMoveToFolderDialogOpen} onOpenChange={setBulkMoveToFolderDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Move Links to Folder</DialogTitle>
+              <DialogDescription>
+                Move {selectedIds.size} selected link(s) to a folder.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <Select value={bulkMoveToFolderId} onValueChange={setBulkMoveToFolderId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a tag" />
+                  <SelectValue placeholder="Select a folder" />
                 </SelectTrigger>
                 <SelectContent>
-                  {tags.map((t) => (
-                    <SelectItem key={t.id} value={t.name}>
-                      {t.name}
+                  <SelectItem value="none">No Folder (Root)</SelectItem>
+                  {folders.map((f) => (
+                    <SelectItem key={f.id} value={f.id}>
+                      <div
+                        className="flex items-center gap-2"
+                        style={{ paddingLeft: `${(f.depth || 0) * 16}px` }}
+                      >
+                        {f.color && (
+                          <div
+                            className="w-3 h-3 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: f.color }}
+                          />
+                        )}
+                        <span className="truncate">{f.name}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setBulkTagDialogOpen(false)}
-              >
+              <Button variant="outline" onClick={() => setBulkMoveToFolderDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleBulkTag} disabled={!bulkTagValue}>
-                Add Tag
+              <Button onClick={handleBulkMoveToFolder} disabled={!bulkMoveToFolderId}>
+                Move to Folder
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1244,6 +1452,15 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                 className="bg-white/10 hover:bg-white/20 text-white border-0 rounded-lg"
               >
                 <Tags className="mr-2 h-4 w-4" /> Add tag
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setBulkMoveToFolderDialogOpen(true)}
+                disabled={bulkActionLoading}
+                className="bg-white/10 hover:bg-white/20 text-white border-0 rounded-lg"
+              >
+                <FolderInput className="mr-2 h-4 w-4" /> Move to Folder
               </Button>
               <Button
                 variant="secondary"

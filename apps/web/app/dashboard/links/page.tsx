@@ -22,8 +22,10 @@ import {
   Table2,
   LayoutGrid,
   Download,
+  Upload,
   X,
 } from "lucide-react";
+import { ImportLinksModal } from "@/components/links/ImportLinksModal";
 import { useState, useRef } from "react";
 import { format } from "date-fns";
 import { usePermission } from "@/hooks/usePermission";
@@ -188,6 +190,18 @@ export default function LinksPage() {
                 {selectedCount} selected
               </span>
             )}
+            <PermissionGate resource="link" action="bulk">
+              <ImportLinksModal onSuccess={() => linksTableRef.current?.refresh()}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg"
+                >
+                  <Upload className="mr-1.5 h-4 w-4" />
+                  Import
+                </Button>
+              </ImportLinksModal>
+            </PermissionGate>
             <PermissionGate resource="link" action="export">
               <Button
                 variant="ghost"
