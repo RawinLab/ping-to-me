@@ -19,6 +19,7 @@ import {
   Separator,
   Alert,
   AlertDescription,
+  Switch,
 } from "@pingtome/ui";
 import {
   User,
@@ -30,6 +31,7 @@ import {
   Camera,
   Link2,
   Unlink,
+  Bell,
 } from "lucide-react";
 
 const profileSchema = z.object({
@@ -59,6 +61,8 @@ function ProfileSettingsContent() {
   const [unlinkingProvider, setUnlinkingProvider] = useState<string | null>(
     null
   );
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [marketingEmails, setMarketingEmails] = useState(false);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -71,6 +75,7 @@ function ProfileSettingsContent() {
   useEffect(() => {
     fetchProfile();
     fetchLinkedAccounts();
+    fetchNotificationSettings();
 
     // Handle OAuth redirect params
     const success = searchParams.get("success");
@@ -124,6 +129,16 @@ function ProfileSettingsContent() {
       setLinkedAccounts(accounts);
     } catch (error) {
       console.error("Failed to fetch linked accounts");
+    }
+  };
+
+  const fetchNotificationSettings = async () => {
+    try {
+      const settings = await apiRequest("/notifications/settings");
+      setEmailNotifications(settings.emailNotificationsEnabled);
+      setMarketingEmails(settings.marketingEmailsEnabled);
+    } catch (error) {
+      console.error("Failed to fetch notification settings");
     }
   };
 
@@ -192,6 +207,32 @@ function ProfileSettingsContent() {
 
   const isAccountLinked = (provider: string) => {
     return linkedAccounts.some((acc) => acc.provider === provider);
+  };
+
+  const handleEmailToggle = async (checked: boolean) => {
+    setEmailNotifications(checked);
+    try {
+      await apiRequest("/notifications/settings", {
+        method: "PATCH",
+        body: JSON.stringify({ emailNotificationsEnabled: checked }),
+      });
+    } catch (error) {
+      setEmailNotifications(!checked); // Revert on error
+      setMessage({ type: "error", text: "Failed to update notification setting" });
+    }
+  };
+
+  const handleMarketingToggle = async (checked: boolean) => {
+    setMarketingEmails(checked);
+    try {
+      await apiRequest("/notifications/settings", {
+        method: "PATCH",
+        body: JSON.stringify({ marketingEmailsEnabled: checked }),
+      });
+    } catch (error) {
+      setMarketingEmails(!checked); // Revert on error
+      setMessage({ type: "error", text: "Failed to update notification setting" });
+    }
   };
 
   const getProviderIcon = (provider: string) => {
@@ -539,6 +580,50 @@ function ProfileSettingsContent() {
                       have at least one authentication method.
                     </AlertDescription>
                   </Alert>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Notification Settings */}
+            <Card className="border-slate-200 shadow-sm overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <Bell className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Notification Settings</CardTitle>
+                    <CardDescription>
+                      Manage your notification preferences.
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Email Notifications</p>
+                    <p className="text-sm text-muted-foreground">
+                      Receive email updates about your links and account.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={emailNotifications}
+                    onCheckedChange={handleEmailToggle}
+                  />
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">Marketing Emails</p>
+                    <p className="text-sm text-muted-foreground">
+                      Receive tips, product updates and special offers.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={marketingEmails}
+                    onCheckedChange={handleMarketingToggle}
+                  />
                 </div>
               </CardContent>
             </Card>

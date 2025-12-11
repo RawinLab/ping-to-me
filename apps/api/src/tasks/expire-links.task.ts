@@ -1,13 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { LinkStatus } from '@pingtome/types';
 
 @Injectable()
 export class ExpireLinksTask {
   private readonly logger = new Logger(ExpireLinksTask.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   /**
    * Auto-expire links whose expiration date has passed
@@ -33,6 +37,7 @@ export class ExpireLinksTask {
           passwordHash: true,
           expirationDate: true,
           deepLinkFallback: true,
+          userId: true,
         },
       });
 
@@ -54,9 +59,23 @@ export class ExpireLinksTask {
         },
       });
 
-      // Sync each expired link to Cloudflare KV
+      // Sync each expired link to Cloudflare KV and create notifications
       for (const link of expiredLinks) {
         await this.syncToKv(link);
+
+        // Create notification for link owner (NOTIF-020)
+        if (link.userId) {
+          try {
+            await this.notificationsService.create(
+              link.userId,
+              'WARNING',
+              'Link Expired',
+              `Your link '${link.slug}' has expired and is no longer accessible.`
+            );
+          } catch (error) {
+            this.logger.error(`Failed to create notification for link ${link.slug}:`, error);
+          }
+        }
       }
 
       this.logger.log(`Successfully expired ${expiredLinks.length} links`);

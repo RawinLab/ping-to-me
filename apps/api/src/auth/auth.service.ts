@@ -8,6 +8,7 @@ import { LoginSecurityService } from "./login-security.service";
 import { SessionService } from "./session.service";
 import { TwoFactorService } from "./two-factor.service";
 import { DeviceFingerprintService } from "./device-fingerprint.service";
+import { NotificationsService } from "../notifications/notifications.service";
 import { randomUUID } from "crypto";
 import { Request } from "express";
 
@@ -26,6 +27,7 @@ export class AuthService {
     private sessionService: SessionService,
     private twoFactorService: TwoFactorService,
     private deviceFingerprintService: DeviceFingerprintService,
+    private notificationsService: NotificationsService,
   ) {
     // Cleanup expired sessions every 5 minutes
     setInterval(() => this.cleanupExpiredSessions(), 5 * 60 * 1000);
@@ -89,6 +91,19 @@ export class AuthService {
 
     // Send Email
     await this.mailService.sendVerificationEmail(email, token);
+
+    // Create welcome notification (NOTIF-021)
+    try {
+      await this.notificationsService.create(
+        user.id,
+        'INFO',
+        'Welcome to PingToMe!',
+        'Get started by creating your first short link.'
+      );
+    } catch (error) {
+      // Log error but don't fail registration
+      console.error('Failed to create welcome notification:', error);
+    }
 
     return {
       id: user.id,
@@ -672,6 +687,19 @@ export class AuthService {
           },
         },
       });
+
+      // Create welcome notification for new OAuth user (NOTIF-021)
+      try {
+        await this.notificationsService.create(
+          user.id,
+          'INFO',
+          'Welcome to PingToMe!',
+          'Get started by creating your first short link.'
+        );
+      } catch (error) {
+        // Log error but don't fail registration
+        console.error('Failed to create welcome notification:', error);
+      }
     } else {
       // Link account if not already linked
       const account = await this.prisma.account.findFirst({

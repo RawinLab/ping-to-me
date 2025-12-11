@@ -8,6 +8,7 @@ import {
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
 import { MailService } from "../mail/mail.service";
+import { NotificationsService } from "../notifications/notifications.service";
 import { CreateInvitationDto } from "./dto/create-invitation.dto";
 import { AcceptInvitationDto } from "./dto/accept-invitation.dto";
 import { MemberRole } from "@pingtome/database";
@@ -20,6 +21,7 @@ export class InvitationsService {
     private prisma: PrismaService,
     private auditService: AuditService,
     private mailService: MailService,
+    private notificationsService: NotificationsService,
   ) {}
 
   // ==================== Token Utilities ====================
@@ -361,6 +363,38 @@ export class InvitationsService {
         },
       },
     );
+
+    // Notify organization owner and admins about new member (NOTIF-022)
+    try {
+      const orgAdmins = await this.prisma.organizationMember.findMany({
+        where: {
+          organizationId: invitation.organizationId,
+          role: { in: [MemberRole.OWNER, MemberRole.ADMIN] },
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      });
+
+      for (const admin of orgAdmins) {
+        // Don't notify the user who just joined
+        if (admin.userId !== user.id) {
+          await this.notificationsService.create(
+            admin.userId,
+            'INFO',
+            'New team member joined',
+            `${user.name || user.email} has joined ${invitation.organization.name}.`
+          );
+        }
+      }
+    } catch (error) {
+      // Log error but don't fail the invitation acceptance
+      console.error('Failed to create team member notifications:', error);
+    }
 
     return {
       member,

@@ -29,6 +29,10 @@ model User {
   twoFactorEnabled Boolean @default(false)
   twoFactorSecret  String?
 
+  // Notification Settings
+  emailNotificationsEnabled Boolean @default(true)
+  marketingEmailsEnabled    Boolean @default(false)
+
   memberships     OrganizationMember[]
   accounts        Account[]
   sessions        Session[]

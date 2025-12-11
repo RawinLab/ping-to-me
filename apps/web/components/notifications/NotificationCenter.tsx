@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bell, Check } from "lucide-react";
+import { Bell, Check, Info, AlertTriangle, AlertCircle } from "lucide-react";
 import {
   Button,
   Popover,
@@ -20,6 +20,31 @@ interface Notification {
   message: string;
   read: boolean;
   createdAt: string;
+}
+
+function getNotificationStyle(type: "INFO" | "WARNING" | "ERROR") {
+  switch (type) {
+    case "INFO":
+      return {
+        icon: Info,
+        colorClass: "text-blue-500",
+      };
+    case "WARNING":
+      return {
+        icon: AlertTriangle,
+        colorClass: "text-amber-500",
+      };
+    case "ERROR":
+      return {
+        icon: AlertCircle,
+        colorClass: "text-red-500",
+      };
+    default:
+      return {
+        icon: Info,
+        colorClass: "text-blue-500",
+      };
+  }
 }
 
 export function NotificationCenter() {
@@ -102,36 +127,42 @@ export function NotificationCenter() {
             </div>
           ) : (
             <div className="divide-y">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-4 hover:bg-muted/50 transition-colors ${
-                    !notification.read ? "bg-muted/20" : ""
-                  }`}
-                  onClick={() =>
-                    !notification.read && markAsRead(notification.id)
-                  }
-                >
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {notification.title}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(notification.createdAt), {
-                          addSuffix: true,
-                        })}
-                      </p>
+              {notifications.map((notification) => {
+                const { icon: Icon, colorClass } = getNotificationStyle(notification.type);
+                return (
+                  <div
+                    key={notification.id}
+                    className={`p-4 hover:bg-muted/50 transition-colors ${
+                      !notification.read ? "bg-muted/20" : ""
+                    }`}
+                    onClick={() =>
+                      !notification.read && markAsRead(notification.id)
+                    }
+                  >
+                    <div className="flex items-start gap-3">
+                      <Icon className={`h-5 w-5 mt-0.5 flex-shrink-0 ${colorClass}`} />
+                      <div className="flex justify-between items-start gap-2 flex-1">
+                        <div className="space-y-1 flex-1">
+                          <p className="text-sm font-medium leading-none">
+                            {notification.title}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {notification.message}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(notification.createdAt), {
+                              addSuffix: true,
+                            })}
+                          </p>
+                        </div>
+                        {!notification.read && (
+                          <div className="h-2 w-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+                        )}
+                      </div>
                     </div>
-                    {!notification.read && (
-                      <div className="h-2 w-2 rounded-full bg-blue-500 mt-1.5" />
-                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </ScrollArea>

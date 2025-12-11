@@ -7,9 +7,10 @@ import { SendScheduledReportsTask } from './send-scheduled-reports.task';
 import { TasksController } from './tasks.controller';
 import { AnalyticsModule } from '../analytics/analytics.module';
 import { MailModule } from '../mail/mail.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), AnalyticsModule, MailModule],
+  imports: [ScheduleModule.forRoot(), AnalyticsModule, MailModule, NotificationsModule],
   controllers: [TasksController],
   providers: [
     PrismaService,

@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { UpdateNotificationSettingsDto } from "./dto/notification-settings.dto";
 
 @Injectable()
 export class NotificationsService {
@@ -46,6 +47,25 @@ export class NotificationsService {
     return this.prisma.notification.updateMany({
       where: { userId, read: false },
       data: { read: true },
+    });
+  }
+
+  async getSettings(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { emailNotificationsEnabled: true, marketingEmailsEnabled: true },
+    });
+    return {
+      emailNotificationsEnabled: user?.emailNotificationsEnabled ?? true,
+      marketingEmailsEnabled: user?.marketingEmailsEnabled ?? false,
+    };
+  }
+
+  async updateSettings(userId: string, dto: UpdateNotificationSettingsDto) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: dto,
+      select: { emailNotificationsEnabled: true, marketingEmailsEnabled: true },
     });
   }
 }

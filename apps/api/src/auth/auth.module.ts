@@ -14,6 +14,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { MailModule } from "../mail/mail.module";
 import { AuditModule } from "../audit/audit.module";
 import { ScheduleModule } from "@nestjs/schedule";
+import { NotificationsModule } from "../notifications/notifications.module";
 // Legacy RolesGuard - kept for backward compatibility
 import { RolesGuard } from "./guards/roles.guard";
 // New RBAC system
@@ -53,6 +54,7 @@ import { SSOModule } from "./sso/sso.module";
     ScheduleModule.forRoot(),
     forwardRef(() => AuditModule),
     SSOModule,
+    NotificationsModule,
   ],
   controllers: [
     AuthController,

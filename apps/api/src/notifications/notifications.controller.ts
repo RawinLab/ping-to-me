@@ -10,6 +10,7 @@ import {
 } from "@nestjs/common";
 import { NotificationsService } from "./notifications.service";
 import { AuthGuard } from "../auth/auth.guard";
+import { UpdateNotificationSettingsDto } from "./dto/notification-settings.dto";
 
 @Controller("notifications")
 @UseGuards(AuthGuard)
@@ -52,5 +53,15 @@ export class NotificationsController {
       body.title,
       body.message,
     );
+  }
+
+  @Get('settings')
+  async getSettings(@Request() req) {
+    return this.notificationsService.getSettings(req.user.id);
+  }
+
+  @Patch('settings')
+  async updateSettings(@Request() req, @Body() dto: UpdateNotificationSettingsDto) {
+    return this.notificationsService.updateSettings(req.user.id, dto);
   }
 }
