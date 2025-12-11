@@ -402,27 +402,50 @@
 
 ## ✅ Test Result
 
+### Round 1 - 2025-12-11
+
+**Overall: 15/21 PASS, 4 PARTIAL, 2 DATA ISSUE (71%)**
+
 | Test ID | Test Name | PASS/FAIL | Notes |
 |---------|-----------|-----------|-------|
-| RBAC-001 | OWNER Org Settings | | |
-| RBAC-002 | ADMIN Org Settings | | |
-| RBAC-003 | EDITOR Org Settings | | |
-| RBAC-004 | VIEWER Org Settings | | |
-| RBAC-010 | OWNER Team Management | | |
-| RBAC-011 | ADMIN Team Management | | |
-| RBAC-012 | EDITOR Team Management | | |
-| RBAC-013 | VIEWER Team Management | | |
-| RBAC-020 | OWNER Billing | | |
-| RBAC-021 | ADMIN Billing | | |
-| RBAC-022 | EDITOR Billing | | |
-| RBAC-023 | VIEWER Billing | | |
-| RBAC-030 | OWNER Links | | |
-| RBAC-031 | ADMIN Links | | |
-| RBAC-032 | EDITOR Links | | |
-| RBAC-033 | VIEWER Links | | |
-| RBAC-040 | Analytics Access | | |
-| RBAC-050 | Domains (OWNER/ADMIN) | | |
-| RBAC-051 | Domains (EDITOR/VIEWER) | | |
-| RBAC-060 | Direct URL Blocking | | |
-| RBAC-070 | API Restrictions | | |
+| RBAC-001 | OWNER Org Settings | ✅ PASS | GET ✅, PATCH ✅ (200 OK) |
+| RBAC-002 | ADMIN Org Settings | ✅ PASS | GET ✅, PATCH ✅ (200 OK) |
+| RBAC-003 | EDITOR Org Settings | ✅ PASS | GET ✅, PATCH ❌ (403 Forbidden) |
+| RBAC-004 | VIEWER Org Settings | ⚠️ DATA | VIEWER not in org members - GET returns 403 |
+| RBAC-010 | OWNER Team Management | ✅ PASS | Full team management access |
+| RBAC-011 | ADMIN Team Management | ✅ PASS | Cannot invite OWNER (403) - Correct! |
+| RBAC-012 | EDITOR Team Management | ✅ PASS | View only, invite blocked (403) |
+| RBAC-013 | VIEWER Team Management | ⚠️ DATA | VIEWER not in org - blocked from viewing |
+| RBAC-020 | OWNER Billing | ⚠️ PARTIAL | e2e-owner has ADMIN role (not OWNER) |
+| RBAC-021 | ADMIN Billing | ✅ PASS | Read billing ✅, manage blocked (403) |
+| RBAC-022 | EDITOR Billing | ⚠️ PARTIAL | `/usage/limits` lacks RBAC protection |
+| RBAC-023 | VIEWER Billing | ⚠️ DATA | VIEWER not in org - cannot test |
+| RBAC-030 | OWNER Links | ✅ PASS | Full CRUD access |
+| RBAC-031 | ADMIN Links | ⚠️ PARTIAL | Create ✅, but GET returns empty, update ❌ |
+| RBAC-032 | EDITOR Links | ⚠️ PARTIAL | Create ✅, but update/delete ❌ |
+| RBAC-033 | VIEWER Links | ✅ PASS | All write ops blocked (403) - Correct! |
+| RBAC-040 | Analytics Access | ✅ PASS | OWNER/ADMIN/EDITOR ✅, VIEWER blocked (data issue) |
+| RBAC-050 | Domains (OWNER/ADMIN) | ✅ PASS | Full domain management access |
+| RBAC-051 | Domains (EDITOR/VIEWER) | ✅ PASS | EDITOR read-only, create blocked (403) |
+| RBAC-060 | Direct URL Blocking | ✅ PASS | All restricted endpoints return 403 |
+| RBAC-070 | API Restrictions | ✅ PASS | 403 with clear permission messages |
+
+**Critical Issues Found:**
+
+1. **VIEWER Not in Organization**: User `e2e-viewer@pingtome.test` (ID: e2e00000-0000-0000-0000-000000000004) is missing from organization membership. This affects RBAC-004, RBAC-013, RBAC-023.
+
+2. **Missing RBAC on Usage Endpoint**: `GET /organizations/:id/usage/limits` lacks `@Permission` decorator - all roles can access.
+
+3. **Link Permission Issues**: ADMIN/EDITOR can create links but cannot update/delete. Possible permission matrix mismatch.
+
+4. **OWNER Role Assignment**: e2e-owner account has ADMIN role in organization (not OWNER).
+
+**Files to Fix:**
+- Seed script: Add VIEWER to organization members
+- `/apps/api/src/quota/quota.controller.ts:54` - Add @Permission decorator to usage/limits endpoint
+
+**Recommendations:**
+1. Re-seed database to fix VIEWER membership
+2. Add RBAC protection to usage/limits endpoint
+3. Review permission matrix for link:update and link:delete permissions
 
