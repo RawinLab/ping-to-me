@@ -238,18 +238,122 @@
 
 ## ✅ Test Result
 
+### Round 1 - 2025-12-11
+
 | Test ID | Test Name | PASS/FAIL | Notes |
 |---------|-----------|-----------|-------|
-| NOTIF-001 | Notification Badge | | |
-| NOTIF-002 | Open Dropdown | | |
-| NOTIF-003 | Notification Types | | |
-| NOTIF-010 | Mark All as Read | | |
-| NOTIF-011 | Mark Single as Read | | |
-| NOTIF-020 | Link Expired | | |
-| NOTIF-021 | Welcome Notification | | |
-| NOTIF-022 | New Team Member | | |
-| NOTIF-030 | View Settings | | |
-| NOTIF-031 | Toggle Email | | |
-| NOTIF-032 | Toggle Marketing | | |
-| NOTIF-040 | No Notifications | | |
+| NOTIF-001 | Notification Badge | ✅ PASS | Bell icon visible, red badge shows unread count |
+| NOTIF-002 | Open Dropdown | ✅ PASS | Dropdown opens, shows Title/Message/Time, blue dot for unread |
+| NOTIF-003 | Notification Types | ⚠️ PARTIAL | All types display but no type-specific colors (unified blue dot) |
+| NOTIF-010 | Mark All as Read | ✅ PASS | All notifications marked read, badge disappears, button hides |
+| NOTIF-011 | Mark Single as Read | ✅ PASS | API works, blue dot removed, badge count decreases |
+| NOTIF-020 | Link Expired | ❌ NOT_IMPL | Cron job exists but doesn't create notifications |
+| NOTIF-021 | Welcome Notification | ❌ NOT_IMPL | No auto-create on registration |
+| NOTIF-022 | New Team Member | ❌ NOT_IMPL | No notification on invitation accept |
+| NOTIF-030 | View Settings | ❌ NOT_IMPL | Notification Settings section missing from Profile page |
+| NOTIF-031 | Toggle Email | ❌ NOT_IMPL | No toggle exists |
+| NOTIF-032 | Toggle Marketing | ❌ NOT_IMPL | No toggle exists |
+| NOTIF-040 | No Notifications | ✅ PASS | "No notifications" message, no badge displayed |
+
+### Summary - Round 1
+
+| Category | Passed | Total | Rate |
+|----------|--------|-------|------|
+| In-App Notifications (001-003) | 2.5 | 3 | 83% |
+| Mark as Read (010-011) | 2 | 2 | 100% |
+| Notification Content (020-022) | 0 | 3 | 0% |
+| Notification Settings (030-032) | 0 | 3 | 0% |
+| Empty State (040) | 1 | 1 | 100% |
+| **Total** | **5.5** | **12** | **46%** |
+
+### Issues Found
+
+**NOTIF-003 (PARTIAL):**
+- Current: All notification types use same style (blue dot for unread)
+- Expected: INFO=blue, WARNING=yellow, ERROR=red icons/colors
+- Fix: Add type-based styling to NotificationCenter.tsx
+
+**NOTIF-020/021/022 (NOT_IMPLEMENTED):**
+- System triggers (Link Expired, Welcome, Team Join) don't create notifications
+- Need to inject NotificationsService into relevant modules (tasks, auth, invitations)
+
+**NOTIF-030/031/032 (NOT_IMPLEMENTED):**
+- No Notification Settings section in Profile page
+- Need to add UI toggles and backend API for notification preferences
+
+### Fix Recommendations
+
+1. **Type-Based Styling (NOTIF-003)** - Low effort
+   - Update `NotificationCenter.tsx` to add icon/color based on `notification.type`
+
+2. **Auto-Create Notifications (NOTIF-020/021/022)** - Medium effort
+   - Inject NotificationsService into:
+     - `expire-links.task.ts` for Link Expired
+     - `auth.service.ts` for Welcome
+     - `invitations.service.ts` for New Team Member
+
+3. **Notification Settings (NOTIF-030/031/032)** - Medium-High effort
+   - Add UI toggles to Profile Settings page
+   - Add API endpoints for notification preferences
+   - Add database fields to User model
+
+---
+
+### Round 2 - 2025-12-11
+
+**Fixes Implemented (Commit: dcef6cf):**
+1. **NOTIF-003**: Added type-based styling with Info/AlertTriangle/AlertCircle icons
+2. **NOTIF-020/021/022**: Injected NotificationsService into tasks, auth, invitations modules
+3. **NOTIF-030/031/032**: Added Notification Settings to Profile page + API endpoints
+
+| Test ID | Test Name | PASS/FAIL | Notes |
+|---------|-----------|-----------|-------|
+| NOTIF-001 | Notification Badge | ✅ PASS | No changes needed |
+| NOTIF-002 | Open Dropdown | ✅ PASS | No changes needed |
+| NOTIF-003 | Notification Types | ✅ PASS | **FIXED** - Type-specific icons/colors (INFO=blue, WARNING=amber, ERROR=red) |
+| NOTIF-010 | Mark All as Read | ✅ PASS | No changes needed |
+| NOTIF-011 | Mark Single as Read | ✅ PASS | No changes needed |
+| NOTIF-020 | Link Expired | ✅ PASS | **FIXED** - NotificationsService injected into expire-links.task.ts |
+| NOTIF-021 | Welcome Notification | ✅ PASS | **FIXED** - Created on registration (email/password + OAuth) |
+| NOTIF-022 | New Team Member | ✅ PASS | **FIXED** - Notifies OWNER/ADMIN on invitation accept |
+| NOTIF-030 | View Settings | ✅ PASS | **FIXED** - Settings card in Profile page |
+| NOTIF-031 | Toggle Email | ✅ PASS | **FIXED** - Switch component with API integration |
+| NOTIF-032 | Toggle Marketing | ✅ PASS | **FIXED** - Switch component with API integration |
+| NOTIF-040 | No Notifications | ✅ PASS | No changes needed |
+
+### Summary - Round 2
+
+| Category | Round 1 | Round 2 | Total | Rate |
+|----------|---------|---------|-------|------|
+| In-App Notifications (001-003) | 2.5 | 0.5 | 3/3 | 100% |
+| Mark as Read (010-011) | 2 | 0 | 2/2 | 100% |
+| Notification Content (020-022) | 0 | 3 | 3/3 | 100% |
+| Notification Settings (030-032) | 0 | 3 | 3/3 | 100% |
+| Empty State (040) | 1 | 0 | 1/1 | 100% |
+| **Total** | **5.5** | **6.5** | **12/12** | **100%** |
+
+### Implementation Details
+
+**Type-Based Styling (NOTIF-003):**
+- Added `getNotificationStyle(type)` helper function
+- INFO: text-blue-500 + Info icon
+- WARNING: text-amber-500 + AlertTriangle icon
+- ERROR: text-red-500 + AlertCircle icon
+- Icon on LEFT, unread dot on RIGHT
+
+**Auto Notifications (NOTIF-020/021/022):**
+- Link Expired: WARNING notification with link slug
+- Welcome: INFO notification on registration
+- Team Member: INFO notification to OWNER/ADMIN (excludes new member)
+- Error handling doesn't fail main operations
+
+**Notification Settings (NOTIF-030/031/032):**
+- Database: Added `emailNotificationsEnabled` and `marketingEmailsEnabled` to User model
+- API: GET/PATCH `/notifications/settings` endpoints
+- UI: Notification Settings card in Profile page with Switch toggles
+- Optimistic updates with error rollback
+
+---
+
+## ✅ MODULE 10 COMPLETE - ALL 12 TESTS PASS (100%)
 
