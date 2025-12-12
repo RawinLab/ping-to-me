@@ -13,6 +13,7 @@ import {
 } from "@nestjs/common";
 import { TagsService } from "./tags.service";
 import { AuthGuard } from "../auth/auth.guard";
+import { OptionalAuthGuard } from "../auth/optional-auth.guard";
 import { PrismaService } from "../prisma/prisma.service";
 import { PermissionGuard, Permission } from "../auth/rbac";
 import { CreateTagDto } from "./dto/create-tag.dto";
@@ -22,7 +23,7 @@ import { ApiScopeGuard } from "../auth/guards/api-scope.guard";
 import { RequireScope } from "../auth/rbac/require-scope.decorator";
 
 @Controller("tags")
-@UseGuards(AuthGuard, PermissionGuard, ApiScopeGuard)
+@UseGuards(OptionalAuthGuard, PermissionGuard, ApiScopeGuard)
 export class TagsController {
   constructor(
     private readonly tagsService: TagsService,

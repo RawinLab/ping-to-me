@@ -14,6 +14,7 @@ import {
 import { DomainService } from "./domains.service";
 import { SslService } from "./ssl.service";
 import { AuthGuard } from "../auth/auth.guard";
+import { OptionalAuthGuard } from "../auth/optional-auth.guard";
 import { EmailVerifiedGuard } from "../auth/guards";
 import { PermissionGuard, Permission } from "../auth/rbac";
 import { ApiScopeGuard } from "../auth/guards/api-scope.guard";
@@ -22,7 +23,7 @@ import { UpdateSslDto } from "./dto/ssl.dto";
 import { CreateDomainDto, UpdateDomainDto } from "./dto";
 
 @Controller("domains")
-@UseGuards(AuthGuard, EmailVerifiedGuard, PermissionGuard, ApiScopeGuard)
+@UseGuards(OptionalAuthGuard, EmailVerifiedGuard, PermissionGuard, ApiScopeGuard)
 export class DomainsController {
   constructor(
     private readonly domainService: DomainService,

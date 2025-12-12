@@ -16,6 +16,7 @@ import { Response } from "express";
 import { ConfigService } from "@nestjs/config";
 import { AnalyticsService } from "./analytics.service";
 import { AuthGuard } from "../auth/auth.guard";
+import { OptionalAuthGuard } from "../auth/optional-auth.guard";
 import { TrackClickDto } from "./dto/track-click.dto";
 import { PermissionGuard, Permission } from "../auth/rbac";
 import { ExportFiltersDto } from "./dto/export-filters.dto";
@@ -49,7 +50,7 @@ export class AnalyticsController {
 
   @Get("dashboard")
   @RequireScope('analytics:read')
-  @UseGuards(AuthGuard, ApiScopeGuard, PermissionGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "analytics", action: "read" })
   async getDashboardMetrics(@Request() req, @Query("days") days?: string) {
     const daysNum = days ? parseInt(days, 10) : 30;
@@ -58,7 +59,7 @@ export class AnalyticsController {
 
   @Get("qr-summary")
   @RequireScope('analytics:read')
-  @UseGuards(AuthGuard, ApiScopeGuard, PermissionGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "analytics", action: "read" })
   async getQrSummary(@Request() req) {
     return this.analyticsService.getQrSummary(req.user.id);
@@ -66,7 +67,7 @@ export class AnalyticsController {
 
   @Get("export")
   @RequireScope('analytics:export')
-  @UseGuards(AuthGuard, ApiScopeGuard, PermissionGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "analytics", action: "export" })
   async exportDashboard(
     @Request() req,
@@ -88,7 +89,7 @@ export class AnalyticsController {
 
   @Get("export/pdf")
   @RequireScope('analytics:export')
-  @UseGuards(AuthGuard, ApiScopeGuard, PermissionGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "analytics", action: "export" })
   async exportDashboardPdf(
     @Request() req,
@@ -119,7 +120,7 @@ export class LinkAnalyticsController {
 
   @Get(":id/analytics")
   @RequireScope('analytics:read')
-  @UseGuards(AuthGuard, ApiScopeGuard, PermissionGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "analytics", action: "read" })
   async getAnalytics(
     @Request() req,
@@ -132,7 +133,7 @@ export class LinkAnalyticsController {
 
   @Get(":id/analytics/qr")
   @RequireScope('analytics:read')
-  @UseGuards(AuthGuard, ApiScopeGuard, PermissionGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "analytics", action: "read" })
   async getQrAnalytics(@Request() req, @Param("id") id: string) {
     return this.analyticsService.getQrAnalytics(id, req.user.id);
@@ -140,7 +141,7 @@ export class LinkAnalyticsController {
 
   @Get(":id/analytics/visitors")
   @RequireScope('analytics:read')
-  @UseGuards(AuthGuard, ApiScopeGuard, PermissionGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "analytics", action: "read" })
   async getUniqueVisitors(
     @Request() req,
@@ -153,7 +154,7 @@ export class LinkAnalyticsController {
 
   @Get(":id/analytics/export")
   @RequireScope('analytics:export')
-  @UseGuards(AuthGuard, ApiScopeGuard, PermissionGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "analytics", action: "export" })
   async exportLinkAnalytics(
     @Request() req,
@@ -177,7 +178,7 @@ export class LinkAnalyticsController {
 
   @Get(":id/analytics/hourly")
   @RequireScope('analytics:read')
-  @UseGuards(AuthGuard, ApiScopeGuard, PermissionGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "analytics", action: "read" })
   async getHourlyHeatmap(
     @Request() req,
@@ -190,7 +191,7 @@ export class LinkAnalyticsController {
 
   @Get(":id/analytics/daily-breakdown")
   @RequireScope('analytics:read')
-  @UseGuards(AuthGuard, ApiScopeGuard, PermissionGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "analytics", action: "read" })
   async getDayOfWeekStats(
     @Request() req,
@@ -203,7 +204,7 @@ export class LinkAnalyticsController {
 
   @Get(":id/analytics/export/pdf")
   @RequireScope('analytics:export')
-  @UseGuards(AuthGuard, ApiScopeGuard, PermissionGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "analytics", action: "export" })
   async exportLinkAnalyticsPdf(
     @Request() req,

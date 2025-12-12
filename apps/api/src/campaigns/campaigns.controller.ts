@@ -13,6 +13,7 @@ import {
 } from "@nestjs/common";
 import { CampaignsService } from "./campaigns.service";
 import { AuthGuard } from "../auth/auth.guard";
+import { OptionalAuthGuard } from "../auth/optional-auth.guard";
 import { PrismaService } from "../prisma/prisma.service";
 import { PermissionGuard, Permission } from "../auth/rbac";
 import { CreateCampaignDto } from "./dto/create-campaign.dto";
@@ -21,7 +22,7 @@ import { ApiScopeGuard } from "../auth/guards/api-scope.guard";
 import { RequireScope } from "../auth/rbac/require-scope.decorator";
 
 @Controller("campaigns")
-@UseGuards(AuthGuard, PermissionGuard, ApiScopeGuard)
+@UseGuards(OptionalAuthGuard, PermissionGuard, ApiScopeGuard)
 export class CampaignsController {
   constructor(
     private readonly campaignsService: CampaignsService,
