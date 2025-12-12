@@ -11,6 +11,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Checkbox,
 } from "@pingtome/ui";
 import Link from "next/link";
 import {
@@ -36,6 +37,7 @@ export default function LinksPage() {
   const [viewMode, setViewMode] = useState<"list" | "table" | "grid">("list");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedCount, setSelectedCount] = useState(0);
+  const [totalLinksCount, setTotalLinksCount] = useState(0);
   const linksTableRef = useRef<LinksTableRef>(null);
 
   // Permission checks
@@ -185,6 +187,22 @@ export default function LinksPage() {
         {/* Toolbar */}
         <div className="flex justify-between items-center py-3">
           <div className="flex items-center gap-3 text-sm">
+            {canBulkLinks() && totalLinksCount > 0 && (
+              <div className="flex items-center gap-2 px-2 py-1.5 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                <Checkbox
+                  checked={selectedCount > 0 && selectedCount === totalLinksCount}
+                  onCheckedChange={() => linksTableRef.current?.toggleSelectAll()}
+                  className="border-slate-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                  data-select-all
+                />
+                <label
+                  className="text-slate-700 font-medium cursor-pointer select-none"
+                  onClick={() => linksTableRef.current?.toggleSelectAll()}
+                >
+                  Select All
+                </label>
+              </div>
+            )}
             {selectedCount > 0 && canBulkLinks() && (
               <span className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg font-medium">
                 {selectedCount} selected
@@ -291,6 +309,7 @@ export default function LinksPage() {
           dateRange={dateRange}
           tagFilters={tagFilters}
           onSelectionChange={setSelectedCount}
+          onLinksCountChange={setTotalLinksCount}
         />
       </div>
 

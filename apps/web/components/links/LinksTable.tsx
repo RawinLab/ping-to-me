@@ -83,6 +83,7 @@ interface LinksTableProps {
   dateRange?: { start: Date | null; end: Date | null };
   tagFilters?: FilterValues;
   onSelectionChange?: (count: number) => void;
+  onLinksCountChange?: (count: number) => void;
 }
 
 export interface LinksTableRef {
@@ -90,6 +91,7 @@ export interface LinksTableRef {
   openBulkTagDialog: () => void;
   refresh: () => void;
   getSelectedCount: () => number;
+  toggleSelectAll: () => void;
 }
 
 // Get favicon URL for a domain
@@ -130,6 +132,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
       dateRange,
       tagFilters = defaultTagFilters,
       onSelectionChange,
+      onLinksCountChange,
     },
     ref,
   ) {
@@ -197,6 +200,11 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
     useEffect(() => {
       onSelectionChange?.(selectedIds.size);
     }, [selectedIds, onSelectionChange]);
+
+    // Notify parent when links count changes
+    useEffect(() => {
+      onLinksCountChange?.(links.length);
+    }, [links.length, onLinksCountChange]);
 
     const fetchFilters = async () => {
       if (!currentOrg) return;
@@ -565,6 +573,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
       openBulkTagDialog,
       refresh: fetchLinks,
       getSelectedCount: () => selectedIds.size,
+      toggleSelectAll,
     }));
 
     const handleStatusChange = async (id: string, status: string) => {
@@ -1400,7 +1409,12 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
 
         {/* Bulk Actions Bar */}
         {selectedIds.size > 0 && (
-          <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl p-4 px-6 flex justify-between items-center shadow-xl shadow-slate-900/20">
+          <div
+            className="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl p-4 px-6 flex justify-between items-center shadow-xl shadow-slate-900/20"
+            data-bulk-actions
+            role="toolbar"
+            aria-label="Bulk actions"
+          >
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
                 <CheckCircle2 className="h-4 w-4 text-blue-400" />
