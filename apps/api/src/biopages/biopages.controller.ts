@@ -28,6 +28,8 @@ import { ReorderLinksDto } from "./dto/reorder-links.dto";
 import { TrackEventDto } from "./dto/track-event.dto";
 import { Throttle } from "@nestjs/throttler";
 import { PermissionGuard, Permission } from "../auth/rbac";
+import { ApiScopeGuard } from "../auth/guards/api-scope.guard";
+import { RequireScope } from "../auth/rbac/require-scope.decorator";
 
 @Controller("biopages")
 export class BioPageController {
@@ -36,7 +38,8 @@ export class BioPageController {
     private readonly prisma: PrismaService,
   ) {}
 
-  @UseGuards(AuthGuard, PermissionGuard)
+  @RequireScope('biopage:create')
+  @UseGuards(AuthGuard, PermissionGuard, ApiScopeGuard)
   @Post()
   @Permission({ resource: "biopage", action: "create" })
   async create(
@@ -68,14 +71,16 @@ export class BioPageController {
     res.json(page);
   }
 
-  @UseGuards(AuthGuard, PermissionGuard)
+  @RequireScope('biopage:read')
+  @UseGuards(AuthGuard, PermissionGuard, ApiScopeGuard)
   @Get(":slug")
   @Permission({ resource: "biopage", action: "read" })
   async get(@Param("slug") slug: string): Promise<BioPage | null> {
     return this.bioPageService.getBioPage(slug);
   }
 
-  @UseGuards(AuthGuard, PermissionGuard)
+  @RequireScope('biopage:update')
+  @UseGuards(AuthGuard, PermissionGuard, ApiScopeGuard)
   @Patch(":id")
   @Permission({ resource: "biopage", action: "update", context: "own" })
   async update(
@@ -86,14 +91,16 @@ export class BioPageController {
     return this.bioPageService.updateBioPage(id, req.user.id, body);
   }
 
-  @UseGuards(AuthGuard, PermissionGuard)
+  @RequireScope('biopage:delete')
+  @UseGuards(AuthGuard, PermissionGuard, ApiScopeGuard)
   @Delete(":id")
   @Permission({ resource: "biopage", action: "delete", context: "own" })
   async delete(@Request() req, @Param("id") id: string): Promise<BioPage> {
     return this.bioPageService.deleteBioPage(id, req.user.id);
   }
 
-  @UseGuards(AuthGuard, PermissionGuard)
+  @RequireScope('biopage:read')
+  @UseGuards(AuthGuard, PermissionGuard, ApiScopeGuard)
   @Get()
   @Permission({ resource: "biopage", action: "read" })
   async list(
@@ -112,7 +119,8 @@ export class BioPageController {
 
   // BioPageLink endpoints
 
-  @UseGuards(AuthGuard, PermissionGuard)
+  @RequireScope('biopage:update')
+  @UseGuards(AuthGuard, PermissionGuard, ApiScopeGuard)
   @Post(":id/links")
   @Permission({ resource: "biopage", action: "update", context: "own" })
   async addLink(
@@ -123,7 +131,8 @@ export class BioPageController {
     return this.bioPageService.addLink(bioPageId, req.user.id, dto);
   }
 
-  @UseGuards(AuthGuard, PermissionGuard)
+  @RequireScope('biopage:update')
+  @UseGuards(AuthGuard, PermissionGuard, ApiScopeGuard)
   @Patch(":id/links/:linkId")
   @Permission({ resource: "biopage", action: "update", context: "own" })
   async updateLink(
@@ -135,7 +144,8 @@ export class BioPageController {
     return this.bioPageService.updateLink(bioPageId, linkId, req.user.id, dto);
   }
 
-  @UseGuards(AuthGuard, PermissionGuard)
+  @RequireScope('biopage:update')
+  @UseGuards(AuthGuard, PermissionGuard, ApiScopeGuard)
   @Delete(":id/links/:linkId")
   @Permission({ resource: "biopage", action: "update", context: "own" })
   async removeLink(
@@ -146,7 +156,8 @@ export class BioPageController {
     return this.bioPageService.removeLink(bioPageId, linkId, req.user.id);
   }
 
-  @UseGuards(AuthGuard, PermissionGuard)
+  @RequireScope('biopage:update')
+  @UseGuards(AuthGuard, PermissionGuard, ApiScopeGuard)
   @Patch(":id/links/reorder")
   @Permission({ resource: "biopage", action: "update", context: "own" })
   async reorderLinks(
@@ -187,7 +198,8 @@ export class BioPageController {
 
   // Analytics endpoints
 
-  @UseGuards(AuthGuard, PermissionGuard)
+  @RequireScope('biopage:read')
+  @UseGuards(AuthGuard, PermissionGuard, ApiScopeGuard)
   @Get(":id/analytics/summary")
   @Permission({ resource: "biopage", action: "read" })
   async getAnalyticsSummary(
@@ -203,7 +215,8 @@ export class BioPageController {
     );
   }
 
-  @UseGuards(AuthGuard, PermissionGuard)
+  @RequireScope('biopage:read')
+  @UseGuards(AuthGuard, PermissionGuard, ApiScopeGuard)
   @Get(":id/analytics/timeseries")
   @Permission({ resource: "biopage", action: "read" })
   async getAnalyticsTimeseries(
@@ -220,7 +233,8 @@ export class BioPageController {
     );
   }
 
-  @UseGuards(AuthGuard, PermissionGuard)
+  @RequireScope('biopage:read')
+  @UseGuards(AuthGuard, PermissionGuard, ApiScopeGuard)
   @Get(":id/analytics/clicks")
   @Permission({ resource: "biopage", action: "read" })
   async getClicksByLink(@Request() req, @Param("id") bioPageId: string) {
@@ -257,7 +271,8 @@ export class BioPageController {
   }
 
   // Avatar Management
-  @UseGuards(AuthGuard, PermissionGuard)
+  @RequireScope('biopage:update')
+  @UseGuards(AuthGuard, PermissionGuard, ApiScopeGuard)
   @Post(":id/avatar")
   @Permission({ resource: "biopage", action: "update", context: "own" })
   @UseInterceptors(FileInterceptor("avatar"))
@@ -272,7 +287,8 @@ export class BioPageController {
     return this.bioPageService.uploadAvatar(id, req.user.id, file);
   }
 
-  @UseGuards(AuthGuard, PermissionGuard)
+  @RequireScope('biopage:update')
+  @UseGuards(AuthGuard, PermissionGuard, ApiScopeGuard)
   @Delete(":id/avatar")
   @Permission({ resource: "biopage", action: "update", context: "own" })
   async deleteAvatar(@Request() req, @Param("id") id: string) {

@@ -16,11 +16,13 @@ import { SslService } from "./ssl.service";
 import { AuthGuard } from "../auth/auth.guard";
 import { EmailVerifiedGuard } from "../auth/guards";
 import { PermissionGuard, Permission } from "../auth/rbac";
+import { ApiScopeGuard } from "../auth/guards/api-scope.guard";
+import { RequireScope } from "../auth/rbac/require-scope.decorator";
 import { UpdateSslDto } from "./dto/ssl.dto";
 import { CreateDomainDto, UpdateDomainDto } from "./dto";
 
 @Controller("domains")
-@UseGuards(AuthGuard, EmailVerifiedGuard, PermissionGuard)
+@UseGuards(AuthGuard, EmailVerifiedGuard, PermissionGuard, ApiScopeGuard)
 export class DomainsController {
   constructor(
     private readonly domainService: DomainService,
@@ -28,18 +30,21 @@ export class DomainsController {
   ) {}
 
   @Post()
+  @RequireScope("domain:create")
   @Permission({ resource: "domain", action: "create" })
   async add(@Request() req, @Body() dto: CreateDomainDto) {
     return this.domainService.addDomain(req.user.id, dto.orgId, dto.hostname);
   }
 
   @Post(":id/verify")
+  @RequireScope("domain:verify")
   @Permission({ resource: "domain", action: "verify" })
   async verify(@Request() req, @Param("id", ParseUUIDPipe) id: string) {
     return this.domainService.verifyDomain(req.user.id, id);
   }
 
   @Get()
+  @RequireScope("domain:read")
   @Permission({ resource: "domain", action: "read" })
   async list(@Request() req, @Query("orgId") orgId: string) {
     return this.domainService.listDomains(req.user.id, orgId);
@@ -51,6 +56,7 @@ export class DomainsController {
    * GET /domains/:id
    */
   @Get(":id")
+  @RequireScope("domain:read")
   @Permission({ resource: "domain", action: "read" })
   async getDetails(@Param("id", ParseUUIDPipe) id: string) {
     return this.domainService.getDomainDetails(id);
@@ -62,6 +68,7 @@ export class DomainsController {
    * POST /domains/:id/default
    */
   @Post(":id/default")
+  @RequireScope("domain:create")
   @Permission({ resource: "domain", action: "update" })
   async setDefault(
     @Request() req,
@@ -77,6 +84,7 @@ export class DomainsController {
    * GET /domains/:id/links
    */
   @Get(":id/links")
+  @RequireScope("domain:read")
   @Permission({ resource: "domain", action: "read" })
   async getLinks(
     @Param("id", ParseUUIDPipe) id: string,
@@ -95,6 +103,7 @@ export class DomainsController {
    * GET /domains/:id/analytics
    */
   @Get(":id/analytics")
+  @RequireScope("domain:read")
   @Permission({ resource: "domain", action: "read" })
   async getAnalytics(
     @Param("id", ParseUUIDPipe) id: string,
@@ -104,6 +113,7 @@ export class DomainsController {
   }
 
   @Patch(":id")
+  @RequireScope("domain:create")
   @Permission({ resource: "domain", action: "update" })
   async update(
     @Request() req,
@@ -115,6 +125,7 @@ export class DomainsController {
   }
 
   @Delete(":id")
+  @RequireScope("domain:delete")
   @Permission({ resource: "domain", action: "delete" })
   async remove(@Request() req, @Param("id", ParseUUIDPipe) id: string) {
     return this.domainService.removeDomain(req.user.id, id);
@@ -128,6 +139,7 @@ export class DomainsController {
    * POST /domains/:id/ssl
    */
   @Post(":id/ssl")
+  @RequireScope("domain:create")
   @Permission({ resource: "domain", action: "update" })
   async provisionSsl(@Request() req, @Param("id", ParseUUIDPipe) id: string) {
     return this.sslService.provisionCertificate(id, req.user.id);
@@ -139,6 +151,7 @@ export class DomainsController {
    * GET /domains/:id/ssl
    */
   @Get(":id/ssl")
+  @RequireScope("domain:read")
   @Permission({ resource: "domain", action: "read" })
   async getSslStatus(@Param("id", ParseUUIDPipe) id: string) {
     return this.sslService.getCertificateStatus(id);
@@ -150,6 +163,7 @@ export class DomainsController {
    * PATCH /domains/:id/ssl
    */
   @Patch(":id/ssl")
+  @RequireScope("domain:create")
   @Permission({ resource: "domain", action: "update" })
   async updateSslSettings(
     @Request() req,

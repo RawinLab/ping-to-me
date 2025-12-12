@@ -17,9 +17,11 @@ import { PrismaService } from "../prisma/prisma.service";
 import { PermissionGuard, Permission } from "../auth/rbac";
 import { CreateCampaignDto } from "./dto/create-campaign.dto";
 import { UpdateCampaignDto } from "./dto/update-campaign.dto";
+import { ApiScopeGuard } from "../auth/guards/api-scope.guard";
+import { RequireScope } from "../auth/rbac/require-scope.decorator";
 
 @Controller("campaigns")
-@UseGuards(AuthGuard, PermissionGuard)
+@UseGuards(AuthGuard, PermissionGuard, ApiScopeGuard)
 export class CampaignsController {
   constructor(
     private readonly campaignsService: CampaignsService,
@@ -27,6 +29,7 @@ export class CampaignsController {
   ) {}
 
   @Post()
+  @RequireScope("campaign:create")
   @Permission({ resource: "campaign", action: "create" })
   async create(
     @Request() req,
@@ -57,6 +60,7 @@ export class CampaignsController {
   }
 
   @Get()
+  @RequireScope("campaign:read")
   @Permission({ resource: "campaign", action: "read" })
   async findAll(@Request() req, @Query("orgId") orgId: string) {
     if (!orgId || orgId === "default") {
@@ -70,6 +74,7 @@ export class CampaignsController {
   }
 
   @Patch(":id")
+  @RequireScope("campaign:update")
   @Permission({ resource: "campaign", action: "update", context: "own" })
   update(
     @Request() req,
@@ -80,12 +85,14 @@ export class CampaignsController {
   }
 
   @Delete(":id")
+  @RequireScope("campaign:delete")
   @Permission({ resource: "campaign", action: "delete", context: "own" })
   remove(@Request() req, @Param("id") id: string) {
     return this.campaignsService.remove(req.user.id, id);
   }
 
   @Get(":id/analytics")
+  @RequireScope("campaign:read")
   @Permission({ resource: "campaign", action: "read" })
   async getAnalytics(@Request() req, @Param("id") id: string) {
     return this.campaignsService.getAnalytics(req.user.id, id);

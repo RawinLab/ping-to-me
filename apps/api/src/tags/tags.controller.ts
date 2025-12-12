@@ -18,9 +18,11 @@ import { PermissionGuard, Permission } from "../auth/rbac";
 import { CreateTagDto } from "./dto/create-tag.dto";
 import { UpdateTagDto } from "./dto/update-tag.dto";
 import { AutocompleteTagDto } from "./dto/autocomplete-tag.dto";
+import { ApiScopeGuard } from "../auth/guards/api-scope.guard";
+import { RequireScope } from "../auth/rbac/require-scope.decorator";
 
 @Controller("tags")
-@UseGuards(AuthGuard, PermissionGuard)
+@UseGuards(AuthGuard, PermissionGuard, ApiScopeGuard)
 export class TagsController {
   constructor(
     private readonly tagsService: TagsService,
@@ -28,6 +30,7 @@ export class TagsController {
   ) {}
 
   @Post()
+  @RequireScope('tag:create')
   @Permission({ resource: "tag", action: "create" })
   async create(
     @Request() req,
@@ -45,6 +48,7 @@ export class TagsController {
   }
 
   @Get()
+  @RequireScope('tag:read')
   @Permission({ resource: "tag", action: "read" })
   async findAll(@Request() req, @Query("orgId") orgId: string) {
     if (!orgId || orgId === "default") {
@@ -58,6 +62,7 @@ export class TagsController {
   }
 
   @Get('autocomplete')
+  @RequireScope('tag:read')
   @Permission({ resource: "tag", action: "read" })
   async autocomplete(@Request() req, @Query() query: AutocompleteTagDto) {
     let orgId = query.orgId;
@@ -73,6 +78,7 @@ export class TagsController {
   }
 
   @Patch(":id")
+  @RequireScope('tag:update')
   @Permission({ resource: "tag", action: "update", context: "own" })
   update(
     @Request() req,
@@ -83,12 +89,14 @@ export class TagsController {
   }
 
   @Delete(":id")
+  @RequireScope('tag:delete')
   @Permission({ resource: "tag", action: "delete" })
   remove(@Request() req, @Param("id") id: string) {
     return this.tagsService.remove(req.user.id, id);
   }
 
   @Get('statistics')
+  @RequireScope('tag:read')
   @Permission({ resource: 'tag', action: 'read' })
   async getStatistics(@Request() req, @Query('orgId') orgId?: string) {
     let organizationId = orgId;
@@ -103,6 +111,7 @@ export class TagsController {
   }
 
   @Post(':id/merge')
+  @RequireScope('tag:delete')
   @Permission({ resource: 'tag', action: 'delete' })
   async merge(
     @Request() req,

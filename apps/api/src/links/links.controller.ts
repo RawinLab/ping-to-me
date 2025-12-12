@@ -20,9 +20,11 @@ import { Response } from "express";
 import { LinksService } from "./links.service";
 import { LinkResponse } from "@pingtome/types";
 import { JwtAuthGuard, EmailVerifiedGuard } from "../auth/guards";
+import { ApiScopeGuard } from "../auth/guards/api-scope.guard";
 import { QrCodeService } from "../qr/qr.service";
 import { CreateQrConfigDto } from "../qr/dto/qr-config.dto";
 import { PermissionGuard, Permission } from "../auth/rbac";
+import { RequireScope } from "../auth/rbac/require-scope.decorator";
 import {
   CreateLinkDto,
   UpdateLinkDto,
@@ -51,7 +53,8 @@ export class LinksController {
   ) {}
 
   @Post("import")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:bulk')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "bulk" })
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseInterceptors(FileInterceptor("file"))
@@ -64,7 +67,8 @@ export class LinksController {
   }
 
   @Post("import/preview")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:bulk')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "bulk" })
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseInterceptors(FileInterceptor("file"))
@@ -76,7 +80,8 @@ export class LinksController {
   }
 
   @Get("import/template")
-  @UseGuards(JwtAuthGuard)
+  @RequireScope('link:read')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard)
   async downloadTemplate(@Res() res: Response) {
     const template = 'originalUrl,slug,title,description,tags,expirationDate\n' +
       'https://example.com,my-link,Example Link,Description here,"tag1,tag2",2024-12-31\n';
@@ -86,7 +91,8 @@ export class LinksController {
   }
 
   @Post("bulk-delete")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:bulk')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "bulk" })
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   async bulkDelete(
@@ -97,7 +103,8 @@ export class LinksController {
   }
 
   @Post("bulk-tag")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:bulk')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "bulk" })
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   async bulkTag(
@@ -108,7 +115,8 @@ export class LinksController {
   }
 
   @Post("bulk-status")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:bulk')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "bulk" })
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   async bulkStatus(@Request() req, @Body() body: BulkStatusDto) {
@@ -116,7 +124,8 @@ export class LinksController {
   }
 
   @Post("bulk-edit")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:bulk')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "bulk" })
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   async bulkEdit(
@@ -127,7 +136,8 @@ export class LinksController {
   }
 
   @Get("export")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:export')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "export" })
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   async export(
@@ -142,7 +152,8 @@ export class LinksController {
   }
 
   @Post("export")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:export')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "export" })
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   async exportFiltered(
@@ -164,13 +175,15 @@ export class LinksController {
   }
 
   @Post("check-slug")
-  @UseGuards(JwtAuthGuard)
+  @RequireScope('link:read')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard)
   async checkSlugAvailability(@Body() dto: CheckSlugDto): Promise<{ available: boolean; suggestions?: string[] }> {
     return this.linksService.checkSlugAvailability(dto.slug, dto.domainId);
   }
 
   @Post("check-duplicate")
-  @UseGuards(JwtAuthGuard)
+  @RequireScope('link:read')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard)
   async checkDuplicate(
     @Body() body: { originalUrl: string; organizationId?: string },
   ) {
@@ -198,7 +211,8 @@ export class LinksController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, EmailVerifiedGuard, PermissionGuard)
+  @RequireScope('link:create')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, EmailVerifiedGuard, PermissionGuard)
   @Permission({ resource: "link", action: "create" })
   async create(
     @Request() req,
@@ -208,14 +222,16 @@ export class LinksController {
   }
 
   @Post(":id") // Using POST for update to avoid CORS preflight issues sometimes, but PATCH is better REST
-  @UseGuards(JwtAuthGuard, EmailVerifiedGuard, PermissionGuard)
+  @RequireScope('link:update')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, EmailVerifiedGuard, PermissionGuard)
   @Permission({ resource: "link", action: "update", context: "own" })
   async update(@Request() req, @Param("id") id: string, @Body() body: UpdateLinkDto) {
     return this.linksService.update(req.user.id, id, body);
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:read')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "read" })
   async findAll(
     @Request() req,
@@ -242,28 +258,32 @@ export class LinksController {
     });
   }
   @Get(":id")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:read')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "read" })
   async findOne(@Request() req, @Param("id") id: string) {
     return this.linksService.findOne(req.user.id, id);
   }
 
   @Delete(":id")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:delete')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "delete", context: "own" })
   async delete(@Request() req, @Param("id") id: string) {
     return this.linksService.delete(req.user.id, id);
   }
 
   @Post(":id/restore")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:update')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "update", context: "own" })
   async restore(@Request() req, @Param("id") id: string) {
     return this.linksService.restore(req.user.id, id);
   }
 
   @Post(":id/scrape-metadata")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:update')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "update", context: "own" })
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   async scrapeMetadata(@Request() req, @Param("id") id: string) {
@@ -276,7 +296,8 @@ export class LinksController {
   }
 
   @Get(":id/click-limit")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:read')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "read" })
   async getClickLimit(@Request() req, @Param("id") id: string) {
     return this.linksService.getClickLimitStatus(req.user.id, id);
@@ -285,7 +306,8 @@ export class LinksController {
   // ============ QR Config Endpoints ============
 
   @Get(":id/qr")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:read')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "read" })
   async getQrConfig(@Request() req, @Param("id") id: string) {
     // Verify ownership
@@ -294,7 +316,8 @@ export class LinksController {
   }
 
   @Post(":id/qr")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:update')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "update", context: "own" })
   async saveQrConfig(
     @Request() req,
@@ -309,14 +332,16 @@ export class LinksController {
   // ============ Redirect Rules Endpoints ============
 
   @Get(":id/rules")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:read')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "read" })
   async getRedirectRules(@Request() req, @Param("id") id: string) {
     return this.redirectRulesService.findAllByLink(req.user.id, id);
   }
 
   @Post(":id/rules")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:update')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "update", context: "own" })
   async createRedirectRule(
     @Request() req,
@@ -327,7 +352,8 @@ export class LinksController {
   }
 
   @Put(":id/rules/:ruleId")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:update')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "update", context: "own" })
   async updateRedirectRule(
     @Request() req,
@@ -339,7 +365,8 @@ export class LinksController {
   }
 
   @Delete(":id/rules/:ruleId")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:update')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "update", context: "own" })
   async deleteRedirectRule(
     @Request() req,
@@ -350,7 +377,8 @@ export class LinksController {
   }
 
   @Post(":id/rules/reorder")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:update')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "update", context: "own" })
   async reorderRedirectRules(
     @Request() req,
@@ -363,14 +391,16 @@ export class LinksController {
   // ============ Link Variant Endpoints (A/B Testing) ============
 
   @Get(":id/variants")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:read')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "read" })
   async getVariants(@Request() req, @Param("id") id: string) {
     return this.linkVariantsService.findAllByLink(req.user.id, id);
   }
 
   @Post(":id/variants")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:update')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "update", context: "own" })
   async createVariant(
     @Request() req,
@@ -381,7 +411,8 @@ export class LinksController {
   }
 
   @Put(":id/variants/:variantId")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:update')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "update", context: "own" })
   async updateVariant(
     @Request() req,
@@ -393,7 +424,8 @@ export class LinksController {
   }
 
   @Delete(":id/variants/:variantId")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:update')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "update", context: "own" })
   async deleteVariant(
     @Request() req,
@@ -404,7 +436,8 @@ export class LinksController {
   }
 
   @Get(":id/variants/stats")
-  @UseGuards(JwtAuthGuard, PermissionGuard)
+  @RequireScope('link:read')
+  @UseGuards(JwtAuthGuard, ApiScopeGuard, PermissionGuard)
   @Permission({ resource: "link", action: "read" })
   async getVariantStats(@Request() req, @Param("id") id: string) {
     return this.linkVariantsService.getVariantStats(req.user.id, id);
