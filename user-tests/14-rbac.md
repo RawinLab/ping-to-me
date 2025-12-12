@@ -411,7 +411,7 @@
 | RBAC-001 | OWNER Org Settings | ✅ PASS | GET ✅, PATCH ✅ (200 OK) |
 | RBAC-002 | ADMIN Org Settings | ✅ PASS | GET ✅, PATCH ✅ (200 OK) |
 | RBAC-003 | EDITOR Org Settings | ✅ PASS | GET ✅, PATCH ❌ (403 Forbidden) |
-| RBAC-004 | VIEWER Org Settings | ⚠️ DATA | VIEWER not in org members - GET returns 403 |
+| RBAC-004 | VIEWER Org Settings | ✅ PASS | GET ✅ (200 OK), PUT ❌ (403 Forbidden) - Correct! |
 | RBAC-010 | OWNER Team Management | ✅ PASS | Full team management access |
 | RBAC-011 | ADMIN Team Management | ✅ PASS | Cannot invite OWNER (403) - Correct! |
 | RBAC-012 | EDITOR Team Management | ✅ PASS | View only, invite blocked (403) |
@@ -448,4 +448,108 @@
 1. Re-seed database to fix VIEWER membership
 2. Add RBAC protection to usage/limits endpoint
 3. Review permission matrix for link:update and link:delete permissions
+
+---
+
+### Round 2 - RBAC-004 Retest (2025-12-11)
+
+**Status: PASSED - VIEWER Organization Settings Access Properly Restricted**
+
+**Test Script:** `/user-tests/rbac-004-viewer-org-settings.sh`
+**Report:** `/user-tests/RBAC-004-REPORT.md`
+
+| Test Step | Action | Expected | Result | Status |
+|-----------|--------|----------|--------|--------|
+| 1 | Login as VIEWER | 200/201 | 201 Created | ✅ PASS |
+| 2 | GET /organizations/:id | 200 OK | 200 OK | ✅ PASS |
+| 3 | PUT /organizations/:id | 403 Forbidden | 403 Forbidden | ✅ PASS |
+| 4 | Verify data unchanged | No modification | No modification | ✅ PASS |
+| 5 | PATCH /organizations/:id/settings | 403 Forbidden | 403 Forbidden | ✅ PASS |
+| 6 | DELETE /organizations/:id | 403 Forbidden | 403 Forbidden | ✅ PASS |
+
+**Total Tests:** 6/6 PASSED (100%)
+
+**Key Findings:**
+- VIEWER can successfully view organization details (read permission)
+- VIEWER is correctly blocked from all write operations (403 Forbidden)
+- Proper error message with permission details returned
+- API response includes required permission and user ID for audit purposes
+- Data integrity maintained - no modifications occur despite attempted operations
+
+**API Error Response Quality:**
+```json
+{
+  "message": "Insufficient permissions for organization:update",
+  "error": "Forbidden",
+  "details": {
+    "requiredPermission": "organization:update",
+    "userId": "e2e00000-0000-0000-0000-000000000004"
+  }
+}
+```
+
+**Note:** VIEWER membership issue has been resolved - user is now properly added to organization members table.
+
+---
+
+### Round 3 - Full RBAC Re-Test (2025-12-11)
+
+**Overall: 21/21 PASS (100%)**
+
+| Test ID | Test Name | PASS/FAIL | Notes |
+|---------|-----------|-----------|-------|
+| RBAC-001 | OWNER Org Settings | ✅ PASS | GET 200, PATCH works |
+| RBAC-002 | ADMIN Org Settings | ✅ PASS | GET 200, PATCH works |
+| RBAC-003 | EDITOR Org Settings | ✅ PASS | GET 200, PATCH 403 (correctly blocked) |
+| RBAC-004 | VIEWER Org Settings | ✅ PASS | GET 200, PATCH 403 (correctly blocked) |
+| RBAC-010 | OWNER Team Management | ✅ PASS | Full team management access |
+| RBAC-011 | ADMIN Team Management | ✅ PASS | Limited team management |
+| RBAC-012 | EDITOR Team Management | ✅ PASS | View only, invite blocked (403) |
+| RBAC-013 | VIEWER Team Management | ✅ PASS | GET members 200, POST invite 403 |
+| RBAC-020 | OWNER Billing | ✅ PASS | GET /organizations/:id/usage 200 |
+| RBAC-021 | ADMIN Billing | ✅ PASS | GET /organizations/:id/usage 200 |
+| RBAC-022 | EDITOR Billing | ✅ PASS | GET /organizations/:id/usage 403 (correctly blocked) |
+| RBAC-023 | VIEWER Billing | ✅ PASS | GET /organizations/:id/usage 403 (correctly blocked) |
+| RBAC-030 | OWNER Links | ✅ PASS | Full CRUD access |
+| RBAC-031 | ADMIN Links | ✅ PASS | Create ✅, Update OWNER's link ✅ (201) |
+| RBAC-032 | EDITOR Links | ✅ PASS | Create ✅, Update own ✅, Update OWNER's 403 |
+| RBAC-033 | VIEWER Links | ✅ PASS | Read only ✅, Create 403 |
+| RBAC-040 | Analytics Access | ✅ PASS | All roles can read analytics |
+| RBAC-050 | Domains (OWNER/ADMIN) | ✅ PASS | Full domain management access |
+| RBAC-051 | Domains (EDITOR/VIEWER) | ✅ PASS | EDITOR/VIEWER read-only |
+| RBAC-060 | Direct URL Blocking | ✅ PASS | All restricted endpoints return 403 |
+| RBAC-070 | API Restrictions | ✅ PASS | 403 with clear permission messages |
+
+**All Issues Fixed:**
+
+1. **VIEWER Membership** - Fixed in seed.ts (line 661-665)
+2. **Quota Controller RBAC** - `@Permission({ resource: "billing", action: "read" })` added to all endpoints
+3. **LinksService RBAC** - `hasFullLinkAccess()` method properly checks for `*` scope
+   - ADMIN/OWNER can update/delete any link in org
+   - EDITOR can only update/delete own links
+
+**Key Test Results:**
+
+```
+RBAC-004 VIEWER Org Settings:
+  ✅ VIEWER GET org: 200
+  ✅ VIEWER PATCH org: 403 (correctly blocked)
+
+RBAC-013 VIEWER Team:
+  ✅ VIEWER GET members: 200
+  ✅ VIEWER POST invite: 403 (correctly blocked)
+
+RBAC-022/023 Billing:
+  ✅ EDITOR GET usage: 403
+  ✅ VIEWER GET usage: 403
+  ✅ OWNER GET usage: 200
+  ✅ ADMIN GET usage: 200
+
+RBAC-031/032 Links:
+  ✅ ADMIN update OWNER's link: 201
+  ✅ EDITOR update own link: 201
+  ✅ EDITOR update OWNER's link: 403 (correctly blocked)
+```
+
+**Security Status:** All RBAC protections working correctly. Permission matrix enforced at both controller and service layers.
 
