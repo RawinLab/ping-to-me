@@ -23,7 +23,7 @@ import { ApiScopeGuard } from "../auth/guards/api-scope.guard";
 import { RequireScope } from "../auth/rbac/require-scope.decorator";
 
 @Controller("tags")
-@UseGuards(OptionalAuthGuard, PermissionGuard, ApiScopeGuard)
+@UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
 export class TagsController {
   constructor(
     private readonly tagsService: TagsService,
@@ -37,45 +37,72 @@ export class TagsController {
     @Request() req,
     @Body() createTagDto: CreateTagDto,
   ) {
-    let orgId = createTagDto.orgId;
-    if (!orgId || orgId === "default") {
+    // Support both JWT auth (req.user) and API key auth (req.apiKey)
+    const userId = req.user?.id || `api:${req.apiKey?.id}` || null;
+    let organizationId = req.apiKey?.organizationId || createTagDto.orgId || null;
+
+    if ((!organizationId || organizationId === "default") && req.user?.id) {
       const member = await this.prisma.organizationMember.findFirst({
         where: { userId: req.user.id },
       });
       if (!member) throw new BadRequestException("User has no organization");
-      orgId = member.organizationId;
+      organizationId = member.organizationId;
     }
-    return this.tagsService.create(req.user.id, orgId, createTagDto.name, createTagDto.color);
+
+    if (!organizationId) {
+      throw new BadRequestException("Organization ID is required");
+    }
+
+    return this.tagsService.create(userId, organizationId, createTagDto.name, createTagDto.color);
   }
 
   @Get()
   @RequireScope('tag:read')
   @Permission({ resource: "tag", action: "read" })
   async findAll(@Request() req, @Query("orgId") orgId: string) {
-    if (!orgId || orgId === "default") {
+    // Support both JWT auth (req.user) and API key auth (req.apiKey)
+    const userId = req.user?.id || null;
+    let organizationId = req.apiKey?.organizationId || orgId || null;
+
+    // If no orgId provided and we have a user, look up their organization
+    if ((!organizationId || organizationId === "default") && userId) {
       const member = await this.prisma.organizationMember.findFirst({
-        where: { userId: req.user.id },
+        where: { userId },
       });
       if (!member) return [];
-      orgId = member.organizationId;
+      organizationId = member.organizationId;
     }
-    return this.tagsService.findAll(req.user.id, orgId);
+
+    // API key auth requires orgId to be set (from apiKey)
+    if (!organizationId) {
+      return [];
+    }
+
+    return this.tagsService.findAll(userId, organizationId);
   }
 
   @Get('autocomplete')
   @RequireScope('tag:read')
   @Permission({ resource: "tag", action: "read" })
   async autocomplete(@Request() req, @Query() query: AutocompleteTagDto) {
-    let orgId = query.orgId;
-    if (!orgId || orgId === "default") {
+    // Support both JWT auth (req.user) and API key auth (req.apiKey)
+    const userId = req.user?.id || null;
+    let organizationId = req.apiKey?.organizationId || query.orgId || null;
+
+    if ((!organizationId || organizationId === "default") && userId) {
       const member = await this.prisma.organizationMember.findFirst({
-        where: { userId: req.user.id },
+        where: { userId },
       });
       if (!member) return [];
-      orgId = member.organizationId;
+      organizationId = member.organizationId;
     }
+
+    if (!organizationId) {
+      return [];
+    }
+
     const limit = query.limit || 10;
-    return this.tagsService.autocomplete(req.user.id, orgId, query.q, limit);
+    return this.tagsService.autocomplete(userId, organizationId, query.q, limit);
   }
 
   @Patch(":id")
@@ -86,29 +113,41 @@ export class TagsController {
     @Param("id") id: string,
     @Body() updateTagDto: UpdateTagDto,
   ) {
-    return this.tagsService.update(req.user.id, id, updateTagDto);
+    // Support both JWT auth (req.user) and API key auth (req.apiKey)
+    const userId = req.user?.id || `api:${req.apiKey?.id}` || null;
+    return this.tagsService.update(userId, id, updateTagDto);
   }
 
   @Delete(":id")
   @RequireScope('tag:delete')
   @Permission({ resource: "tag", action: "delete" })
   remove(@Request() req, @Param("id") id: string) {
-    return this.tagsService.remove(req.user.id, id);
+    // Support both JWT auth (req.user) and API key auth (req.apiKey)
+    const userId = req.user?.id || `api:${req.apiKey?.id}` || null;
+    return this.tagsService.remove(userId, id);
   }
 
   @Get('statistics')
   @RequireScope('tag:read')
   @Permission({ resource: 'tag', action: 'read' })
   async getStatistics(@Request() req, @Query('orgId') orgId?: string) {
-    let organizationId = orgId;
-    if (!orgId || orgId === 'default') {
+    // Support both JWT auth (req.user) and API key auth (req.apiKey)
+    const userId = req.user?.id || null;
+    let organizationId = req.apiKey?.organizationId || orgId || null;
+
+    if ((!organizationId || organizationId === 'default') && userId) {
       const member = await this.prisma.organizationMember.findFirst({
-        where: { userId: req.user.id },
+        where: { userId },
       });
       if (!member) return { tags: [], totalTags: 0, unusedTags: 0, usedTags: 0 };
       organizationId = member.organizationId;
     }
-    return this.tagsService.getStatistics(req.user.id, organizationId);
+
+    if (!organizationId) {
+      return { tags: [], totalTags: 0, unusedTags: 0, usedTags: 0 };
+    }
+
+    return this.tagsService.getStatistics(userId, organizationId);
   }
 
   @Post(':id/merge')
@@ -119,6 +158,8 @@ export class TagsController {
     @Param('id') id: string,
     @Body() body: { targetTagId: string },
   ) {
-    return this.tagsService.merge(req.user.id, id, body.targetTagId);
+    // Support both JWT auth (req.user) and API key auth (req.apiKey)
+    const userId = req.user?.id || `api:${req.apiKey?.id}` || null;
+    return this.tagsService.merge(userId, id, body.targetTagId);
   }
 }

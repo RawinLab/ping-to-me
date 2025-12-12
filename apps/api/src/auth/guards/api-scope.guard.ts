@@ -169,18 +169,29 @@ export class ApiScopeGuard implements CanActivate {
   /**
    * Extract API key from request headers
    * Supports both `x-api-key` and `Authorization: Bearer` formats
+   *
+   * IMPORTANT: Only extracts from Bearer header if it looks like an API key (pk_*)
+   * This prevents JWT tokens from being mistakenly treated as API keys
    */
   private extractApiKey(request: any): string | undefined {
-    // Try x-api-key header
+    // Try x-api-key header (always considered an API key)
     const xApiKey = request.headers["x-api-key"];
     if (xApiKey) {
       return xApiKey;
     }
 
     // Try Authorization: Bearer header
+    // Only use it if it looks like an API key (starts with pk_)
+    // JWT tokens should NOT be extracted as API keys
     const authHeader = request.headers["authorization"];
     if (authHeader && authHeader.startsWith("Bearer ")) {
-      return authHeader.substring(7);
+      const token = authHeader.substring(7);
+      // API keys start with "pk_" prefix, JWT tokens start with "eyJ"
+      if (token.startsWith("pk_")) {
+        return token;
+      }
+      // If it's not an API key format, don't return it
+      // Let JWT authentication handle it instead
     }
 
     return undefined;
