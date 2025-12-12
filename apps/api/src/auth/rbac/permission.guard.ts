@@ -68,6 +68,13 @@ export class PermissionGuard implements CanActivate {
     // Extract request context
     const request = context.switchToHttp().getRequest();
     const user = request.user;
+    const apiKey = request.apiKey;
+
+    // If API key is present and has valid scopes, allow access
+    // API key scope validation is handled by ApiScopeGuard
+    if (apiKey && apiKey.scopes) {
+      return true;
+    }
 
     if (!user) {
       throw new ForbiddenException("User not authenticated");

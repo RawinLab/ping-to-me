@@ -346,7 +346,7 @@ export class LinksService {
   }
 
   async findAll(
-    userId: string,
+    userId: string | null,
     params: {
       page: number;
       limit: number;
@@ -357,22 +357,29 @@ export class LinksService {
       status?: string;
       startDate?: string;
       endDate?: string;
+      organizationId?: string;
     },
   ): Promise<{
     data: LinkResponse[];
     meta: { total: number; page: number; limit: number; totalPages: number };
   }> {
-    const { tag, campaignId, folderId, search, status, startDate, endDate } = params;
+    const { tag, campaignId, folderId, search, status, startDate, endDate, organizationId } = params;
     // Ensure page and limit are valid numbers with defaults
     const page = Number.isFinite(params.page) && params.page > 0 ? params.page : 1;
     const limit = Number.isFinite(params.limit) && params.limit > 0 ? Math.min(params.limit, 100) : 10;
     const skip = (page - 1) * limit;
 
     const where: any = {
-      userId,
       status: { not: LinkStatus.BANNED },
       deletedAt: null, // Exclude soft-deleted links by default
     };
+
+    // Filter by organizationId if provided (API key auth), otherwise by userId (JWT auth)
+    if (organizationId) {
+      where.organizationId = organizationId;
+    } else if (userId) {
+      where.userId = userId;
+    }
 
     // Filter by status
     if (status && status !== "all") {
@@ -472,19 +479,31 @@ export class LinksService {
     };
   }
 
-  async findOne(userId: string, id: string): Promise<LinkResponse> {
+  async findOne(userId: string | null, id: string, organizationId?: string): Promise<LinkResponse> {
     const link = await this.prisma.link.findUnique({ where: { id } });
     if (!link) {
       throw new ForbiddenException("Access denied");
     }
 
-    // Check if user owns the link OR has full access permission (OWNER/ADMIN)
-    const isOwner = link.userId === userId;
-    const hasFullAccess = await this.hasFullLinkAccess(userId, link.organizationId, "read");
-    if (!isOwner && !hasFullAccess) {
-      throw new ForbiddenException("Access denied");
+    // For API key auth: check if the link belongs to the API key's organization
+    if (organizationId) {
+      if (link.organizationId !== organizationId) {
+        throw new ForbiddenException("Access denied");
+      }
+      return this.mapToResponse(link);
     }
-    return this.mapToResponse(link);
+
+    // For JWT auth: Check if user owns the link OR has full access permission (OWNER/ADMIN)
+    if (userId) {
+      const isOwner = link.userId === userId;
+      const hasFullAccess = await this.hasFullLinkAccess(userId, link.organizationId, "read");
+      if (!isOwner && !hasFullAccess) {
+        throw new ForbiddenException("Access denied");
+      }
+      return this.mapToResponse(link);
+    }
+
+    throw new ForbiddenException("Access denied");
   }
 
   async delete(userId: string, id: string) {
