@@ -23,7 +23,7 @@ import { UpdateSslDto } from "./dto/ssl.dto";
 import { CreateDomainDto, UpdateDomainDto } from "./dto";
 
 @Controller("domains")
-@UseGuards(OptionalAuthGuard, EmailVerifiedGuard, PermissionGuard, ApiScopeGuard)
+@UseGuards(OptionalAuthGuard, EmailVerifiedGuard, ApiScopeGuard, PermissionGuard)
 export class DomainsController {
   constructor(
     private readonly domainService: DomainService,

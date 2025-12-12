@@ -22,7 +22,7 @@ import { ApiScopeGuard } from "../auth/guards/api-scope.guard";
 import { RequireScope } from "../auth/rbac/require-scope.decorator";
 
 @Controller("campaigns")
-@UseGuards(OptionalAuthGuard, PermissionGuard, ApiScopeGuard)
+@UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
 export class CampaignsController {
   constructor(
     private readonly campaignsService: CampaignsService,

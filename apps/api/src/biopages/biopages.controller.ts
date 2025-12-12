@@ -40,7 +40,7 @@ export class BioPageController {
   ) {}
 
   @RequireScope('biopage:create')
-  @UseGuards(OptionalAuthGuard, PermissionGuard, ApiScopeGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Post()
   @Permission({ resource: "biopage", action: "create" })
   async create(
@@ -73,7 +73,7 @@ export class BioPageController {
   }
 
   @RequireScope('biopage:read')
-  @UseGuards(OptionalAuthGuard, PermissionGuard, ApiScopeGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Get(":slug")
   @Permission({ resource: "biopage", action: "read" })
   async get(@Param("slug") slug: string): Promise<BioPage | null> {
@@ -81,7 +81,7 @@ export class BioPageController {
   }
 
   @RequireScope('biopage:update')
-  @UseGuards(OptionalAuthGuard, PermissionGuard, ApiScopeGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Patch(":id")
   @Permission({ resource: "biopage", action: "update", context: "own" })
   async update(
@@ -93,7 +93,7 @@ export class BioPageController {
   }
 
   @RequireScope('biopage:delete')
-  @UseGuards(OptionalAuthGuard, PermissionGuard, ApiScopeGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Delete(":id")
   @Permission({ resource: "biopage", action: "delete", context: "own" })
   async delete(@Request() req, @Param("id") id: string): Promise<BioPage> {
@@ -101,7 +101,7 @@ export class BioPageController {
   }
 
   @RequireScope('biopage:read')
-  @UseGuards(OptionalAuthGuard, PermissionGuard, ApiScopeGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Get()
   @Permission({ resource: "biopage", action: "read" })
   async list(
@@ -121,7 +121,7 @@ export class BioPageController {
   // BioPageLink endpoints
 
   @RequireScope('biopage:update')
-  @UseGuards(OptionalAuthGuard, PermissionGuard, ApiScopeGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Post(":id/links")
   @Permission({ resource: "biopage", action: "update", context: "own" })
   async addLink(
@@ -133,7 +133,7 @@ export class BioPageController {
   }
 
   @RequireScope('biopage:update')
-  @UseGuards(OptionalAuthGuard, PermissionGuard, ApiScopeGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Patch(":id/links/:linkId")
   @Permission({ resource: "biopage", action: "update", context: "own" })
   async updateLink(
@@ -146,7 +146,7 @@ export class BioPageController {
   }
 
   @RequireScope('biopage:update')
-  @UseGuards(OptionalAuthGuard, PermissionGuard, ApiScopeGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Delete(":id/links/:linkId")
   @Permission({ resource: "biopage", action: "update", context: "own" })
   async removeLink(
@@ -158,7 +158,7 @@ export class BioPageController {
   }
 
   @RequireScope('biopage:update')
-  @UseGuards(OptionalAuthGuard, PermissionGuard, ApiScopeGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Patch(":id/links/reorder")
   @Permission({ resource: "biopage", action: "update", context: "own" })
   async reorderLinks(
@@ -200,7 +200,7 @@ export class BioPageController {
   // Analytics endpoints
 
   @RequireScope('biopage:read')
-  @UseGuards(OptionalAuthGuard, PermissionGuard, ApiScopeGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Get(":id/analytics/summary")
   @Permission({ resource: "biopage", action: "read" })
   async getAnalyticsSummary(
@@ -217,7 +217,7 @@ export class BioPageController {
   }
 
   @RequireScope('biopage:read')
-  @UseGuards(OptionalAuthGuard, PermissionGuard, ApiScopeGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Get(":id/analytics/timeseries")
   @Permission({ resource: "biopage", action: "read" })
   async getAnalyticsTimeseries(
@@ -235,7 +235,7 @@ export class BioPageController {
   }
 
   @RequireScope('biopage:read')
-  @UseGuards(OptionalAuthGuard, PermissionGuard, ApiScopeGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Get(":id/analytics/clicks")
   @Permission({ resource: "biopage", action: "read" })
   async getClicksByLink(@Request() req, @Param("id") bioPageId: string) {
@@ -273,7 +273,7 @@ export class BioPageController {
 
   // Avatar Management
   @RequireScope('biopage:update')
-  @UseGuards(OptionalAuthGuard, PermissionGuard, ApiScopeGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Post(":id/avatar")
   @Permission({ resource: "biopage", action: "update", context: "own" })
   @UseInterceptors(FileInterceptor("avatar"))
@@ -289,7 +289,7 @@ export class BioPageController {
   }
 
   @RequireScope('biopage:update')
-  @UseGuards(OptionalAuthGuard, PermissionGuard, ApiScopeGuard)
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Delete(":id/avatar")
   @Permission({ resource: "biopage", action: "update", context: "own" })
   async deleteAvatar(@Request() req, @Param("id") id: string) {
