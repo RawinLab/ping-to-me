@@ -474,13 +474,13 @@
 | LINK-042 | Search Links | **PASS** | Real-time search filtering. Instant results as you type. |
 | LINK-043 | Filter by Status | **PASS** | Dropdown: All/Active/Disabled/Expired/Archived. Works correctly. |
 | LINK-044 | Filter by Tags | **PASS** | Advanced filters modal with Tags, Link Type, QR Code filters. |
-| LINK-050 | Select Multiple | **NOT_IMPL** | No checkboxes on link cards. Bulk selection not implemented. |
-| LINK-051 | Select All | **NOT_IMPL** | No "Select All" checkbox. Bulk operations not implemented. |
+| LINK-050 | Select Multiple | **PASS** | **FIXED** - Select All checkbox in toolbar, checkboxes on link cards. Bulk Action Bar appears with count. |
+| LINK-051 | Select All | **PASS** | **FIXED** - Select All checkbox toggles all links. Bulk Action Bar shows selected count and actions. |
 
 ### Summary
 - **Total Tests:** 23
-- **Passed:** 21 (91.3%)
-- **Not Implemented:** 2 (8.7%)
+- **Passed:** 23 (100%)
+- **Not Implemented:** 0
 - **Failed:** 0
 
 ### Notes
@@ -490,6 +490,16 @@
    - Advanced Settings (collapsed): expiration, password, UTM
 2. **View Modes:** List, Table, Grid - 3 options available
 3. **Status Management:** Full support for Disable/Enable/Archive via context menu
-4. **Bulk Selection:** Not implemented - no checkboxes or bulk actions available
+4. **Bulk Selection:** **IMPLEMENTED** - Select All checkbox in toolbar, individual checkboxes on cards, Bulk Action Bar with count and actions
 5. **Duplicate Detection:** System also detects duplicate URLs (bonus feature)
+
+### Round 2 - 2025-12-12 (Bulk Selection Fix)
+
+**LINK-050 & LINK-051 FIXED:**
+- Added Select All checkbox in toolbar with proper styling
+- Added `toggleSelectAll()` method to LinksTableRef interface
+- Added `onLinksCountChange` callback to track total links
+- Bulk Action Bar shows selected count with actions (Delete, Add Tag, Move to Folder, etc.)
+- Only visible for OWNER/ADMIN/EDITOR roles (RBAC enforced)
+- Commit: `696edf6 feat(web): add bulk selection checkboxes to links page`
 
