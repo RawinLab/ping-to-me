@@ -44,17 +44,19 @@ export class CreateApiKeyDto {
   /**
    * Array of permission scopes granted to this API key
    * If not provided, defaults to ['admin'] for full access
+   * Must have at least one scope when provided
    * @example ["link:read", "link:create", "analytics:read"]
    */
   @ApiPropertyOptional({
     description:
-      'Array of permission scopes. If not provided, defaults to ["admin"] for full access',
+      'Array of permission scopes. If not provided, defaults to ["admin"] for full access. Must have at least one scope when provided.',
     example: ["link:read", "link:create", "analytics:read"],
     type: [String],
     default: ["admin"],
   })
   @IsArray()
   @IsOptional()
+  @ArrayMinSize(1, { message: "At least one scope is required" })
   @IsString({ each: true })
   scopes?: string[];
 
