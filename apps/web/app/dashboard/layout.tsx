@@ -624,6 +624,9 @@ export default function DashboardLayout({
   // This handles cases where refresh token is invalid on page load
   useEffect(() => {
     if (!loading && !user) {
+      // Clear potentially invalid/expired refresh token cookie
+      // This prevents middleware redirect loop (middleware checks cookie existence, not validity)
+      document.cookie = "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       window.location.href = "/login";
     }
   }, [loading, user]);
