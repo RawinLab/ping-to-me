@@ -142,8 +142,7 @@ function BillingContent() {
   const features = planFeatures[currentPlan] || planFeatures.free;
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="max-w-5xl mx-auto space-y-8">
+    <div className="p-6 lg:p-8 space-y-8">
         {/* Header */}
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
@@ -449,7 +448,6 @@ function BillingContent() {
             </CardContent>
           </Card>
         )}
-      </div>
     </div>
   );
 }

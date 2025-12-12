@@ -190,8 +190,7 @@ export default function TwoFactorPage() {
 
   if (loading) {
     return (
-      <div className="p-6 lg:p-8">
-        <div className="max-w-5xl mx-auto">
+      <div className="p-6 lg:p-8 space-y-6">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-slate-200 rounded w-32" />
             <div className="h-4 bg-slate-200 rounded w-64" />
@@ -204,16 +203,14 @@ export default function TwoFactorPage() {
               <div className="h-64 bg-slate-100 rounded-xl" />
             </div>
           </div>
-        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="p-6 lg:p-8 space-y-8">
         {/* Header */}
-        <div className="mb-8">
+        <div>
           <h1 className="text-2xl lg:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
             Two-Factor Authentication
           </h1>
@@ -791,7 +788,6 @@ export default function TwoFactorPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      </div>
     </div>
   );
 }

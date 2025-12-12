@@ -32,10 +32,9 @@ function SecurityPageContent() {
   };
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="p-6 lg:p-8 space-y-8">
         {/* Header */}
-        <div className="mb-8">
+        <div>
           <h1 className="text-2xl lg:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
             Security Settings
           </h1>
@@ -82,15 +81,13 @@ function SecurityPageContent() {
             <LoginActivityTab />
           </TabsContent>
         </Tabs>
-      </div>
     </div>
   );
 }
 
 function LoadingSkeleton() {
   return (
-    <div className="p-6 lg:p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="p-6 lg:p-8 space-y-6">
         <Skeleton className="h-10 w-64" />
         <Skeleton className="h-4 w-96" />
         <Skeleton className="h-12 w-full max-w-lg" />
@@ -98,7 +95,6 @@ function LoadingSkeleton() {
           <Skeleton className="h-64 w-full rounded-xl" />
           <Skeleton className="h-48 w-full rounded-xl" />
         </div>
-      </div>
     </div>
   );
 }

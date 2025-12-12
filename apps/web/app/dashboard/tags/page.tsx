@@ -280,8 +280,7 @@ export default function TagsPage() {
 
   if (loading) {
     return (
-      <div className="p-6 lg:p-8">
-        <div className="max-w-5xl mx-auto">
+      <div className="p-6 lg:p-8 space-y-6">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-slate-200 rounded w-32" />
             <div className="h-4 bg-slate-200 rounded w-64" />
@@ -296,7 +295,6 @@ export default function TagsPage() {
               ))}
             </div>
           </div>
-        </div>
       </div>
     );
   }
@@ -304,8 +302,7 @@ export default function TagsPage() {
   // Show error state if there's an error and no tags
   if (error && tags.length === 0) {
     return (
-      <div className="p-6 lg:p-8">
-        <div className="max-w-5xl mx-auto">
+      <div className="p-6 lg:p-8 space-y-8">
           <Card className="border-red-200 bg-red-50">
             <CardContent className="py-12">
               <div className="text-center">
@@ -333,7 +330,6 @@ export default function TagsPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
       </div>
     );
   }
@@ -343,8 +339,7 @@ export default function TagsPage() {
   const unusedTagsCount = tags.length - usedTagsCount;
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="max-w-5xl mx-auto space-y-8">
+    <div className="p-6 lg:p-8 space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -862,7 +857,6 @@ export default function TagsPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </div>
     </div>
   );
 }

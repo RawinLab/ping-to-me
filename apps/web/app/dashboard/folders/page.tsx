@@ -414,8 +414,7 @@ export default function FoldersPage() {
 
   if (loading) {
     return (
-      <div className="p-6 lg:p-8">
-        <div className="max-w-5xl mx-auto">
+      <div className="p-6 lg:p-8 space-y-6">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-slate-200 rounded w-32" />
             <div className="h-4 bg-slate-200 rounded w-64" />
@@ -425,7 +424,6 @@ export default function FoldersPage() {
               ))}
             </div>
           </div>
-        </div>
       </div>
     );
   }
@@ -435,8 +433,7 @@ export default function FoldersPage() {
     : [];
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="p-6 lg:p-8 space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -709,7 +706,6 @@ export default function FoldersPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
     </div>
   );
 }

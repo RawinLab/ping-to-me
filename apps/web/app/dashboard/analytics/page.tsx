@@ -190,8 +190,7 @@ export default function AnalyticsPage() {
     .sort((a, b) => b.value - a.value);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      <div className="max-w-6xl mx-auto p-6 lg:p-8 space-y-6">
+    <div className="p-6 lg:p-8 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -510,7 +509,6 @@ export default function AnalyticsPage() {
             </CardContent>
           </Card>
         )}
-      </div>
     </div>
   );
 }

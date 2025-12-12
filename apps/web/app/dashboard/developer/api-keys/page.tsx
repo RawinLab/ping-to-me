@@ -355,8 +355,7 @@ export default function ApiKeysPage() {
   }
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="max-w-5xl mx-auto">
+    <div className="p-6 lg:p-8 space-y-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl lg:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
@@ -1119,7 +1118,6 @@ export default function ApiKeysPage() {
             </Card>
           </div>
         </div>
-      </div>
 
       {/* Rotate API Key Dialog */}
       <Dialog open={rotateDialogOpen} onOpenChange={setRotateDialogOpen}>

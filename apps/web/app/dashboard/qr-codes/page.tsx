@@ -222,8 +222,7 @@ export default function QrCodesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100/50">
-      <div className="container py-8 space-y-6 max-w-6xl">
+    <div className="p-6 lg:p-8 space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
@@ -693,7 +692,6 @@ export default function QrCodesPage() {
             ))}
           </div>
         )}
-      </div>
 
       {/* QR Customizer Dialog */}
       {selectedLink && (

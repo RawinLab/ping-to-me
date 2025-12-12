@@ -314,8 +314,7 @@ export default function CampaignsPage() {
 
   if (loading && !campaigns.length) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100/50">
-        <div className="container py-8 space-y-6 max-w-6xl">
+      <div className="p-6 lg:p-8 space-y-6">
           <div className="flex justify-between items-center">
             <div>
               <Skeleton className="h-9 w-48 mb-2" />
@@ -339,14 +338,12 @@ export default function CampaignsPage() {
               <Skeleton className="h-64 w-full" />
             </CardContent>
           </Card>
-        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100/50">
-      <div className="container py-8 space-y-6 max-w-6xl">
+    <div className="p-6 lg:p-8 space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
@@ -589,7 +586,6 @@ export default function CampaignsPage() {
             })}
           </div>
         )}
-      </div>
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>

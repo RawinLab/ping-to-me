@@ -499,8 +499,7 @@ export default function AuditLogsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-8">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="p-6 lg:p-8 space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -888,7 +887,6 @@ export default function AuditLogsPage() {
             )}
           </CardContent>
         </Card>
-      </div>
 
       {/* Log Detail Dialog */}
       <Dialog open={!!selectedLog} onOpenChange={(open) => !open && setSelectedLog(null)}>
