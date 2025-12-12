@@ -156,7 +156,25 @@ export default function ApiKeysPage() {
   const fetchScopes = async () => {
     try {
       const res = await apiRequest("/developer/api-keys/scopes");
-      setAvailableScopes(res || {});
+      // Transform array response to grouped object format
+      const grouped: ScopesData = {};
+      if (Array.isArray(res)) {
+        res.forEach((scope: { value: string; description: string; group: string }) => {
+          const group = scope.group || 'Other';
+          if (!grouped[group]) {
+            grouped[group] = { scopes: [] };
+          }
+          // Format label from scope value (e.g., "link:read" -> "Read")
+          const action = scope.value.split(':')[1] || scope.value;
+          const label = action.charAt(0).toUpperCase() + action.slice(1);
+          grouped[group].scopes.push({
+            value: scope.value,
+            label: label,
+            description: scope.description,
+          });
+        });
+      }
+      setAvailableScopes(grouped);
     } catch (error) {
       console.error("Failed to fetch scopes");
     } finally {

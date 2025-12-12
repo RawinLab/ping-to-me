@@ -618,14 +618,15 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { loading, user } = useAuth();
-  const router = useRouter();
 
   // Redirect to login if not authenticated (after loading completes)
+  // Use window.location.href for hard redirect to ensure it always works
+  // This handles cases where refresh token is invalid on page load
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/login");
+      window.location.href = "/login";
     }
-  }, [loading, user, router]);
+  }, [loading, user]);
 
   // Show loading skeleton while auth is initializing or redirecting
   if (loading || !user) {
