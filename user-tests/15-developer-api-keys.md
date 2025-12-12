@@ -610,9 +610,23 @@ The API Key Authentication tests (DEV-050, DEV-051, DEV-053, DEV-054) are now **
 
 **Files Modified:**
 - `apps/api/src/auth/guards/optional-jwt-auth.guard.ts` - New guard supporting both auth types
+- `apps/api/src/auth/optional-auth.guard.ts` - Alternative optional auth guard
 - `apps/api/src/auth/rbac/permission.guard.ts` - Added API key bypass logic
 - `apps/api/src/links/links.service.ts` - Organization-scoped queries for API key auth
 - `apps/api/src/links/links.controller.ts` - Uses OptionalJwtAuthGuard + ApiScopeGuard
+- `apps/api/src/analytics/analytics.controller.ts` - API key auth for analytics endpoints
+- `apps/api/src/biopages/biopages.controller.ts` - API key auth for bio pages
+- `apps/api/src/campaigns/campaigns.controller.ts` - API key auth for campaigns
+- `apps/api/src/domains/domains.controller.ts` - API key auth for domains
+- `apps/api/src/tags/tags.controller.ts` - API key auth for tags
+
+**Endpoints Supporting API Key Authentication:**
+- `/links` - Link management (via `link:*` scopes)
+- `/analytics` - Dashboard, QR summary, export (via `analytics:*` scopes)
+- `/biopages` - Bio page management (via `biopage:*` scopes)
+- `/campaigns` - Campaign management (via `campaign:*` scopes)
+- `/domains` - Domain management (via `domain:*` scopes)
+- `/tags` - Tag management (via `tag:*` scopes)
 
 ---
 
