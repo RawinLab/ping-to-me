@@ -1,14 +1,14 @@
-# Developer API Keys - UAT Test Documentation Index
+# PingTO.Me - UAT Test Documentation Index
 
 ## Overview
 
-This directory contains consolidated UAT test documentation for the Developer API Keys feature (Module 15).
-
-**Total Tests: 30 | Passed: 29 | Blocked: 1 (97%)**
+This directory contains consolidated UAT test documentation for PingTO.Me URL Shortener platform.
 
 ---
 
-## Documentation Structure
+## Module 15: Developer API Keys
+
+**Total Tests: 30 | Passed: 29 | Blocked: 1 (97%)**
 
 | File | Test Cases | Status | Description |
 |------|------------|--------|-------------|
@@ -21,70 +21,71 @@ This directory contains consolidated UAT test documentation for the Developer AP
 
 ---
 
-## Test Summary by Feature
+## Module 14: RBAC (Role-Based Access Control)
 
-### 1. Page Access (DEV-001 to DEV-002)
-- Access API Keys page at `/dashboard/developer/api-keys`
-- Quick Start Guide with cURL examples
-- **Status: 100% PASS**
+**Overall Status: Mostly Working | Some Frontend RBAC Missing**
 
-### 2. Create API Key (DEV-010 to DEV-014)
-- Create dialog with all form elements
-- Name and scope validation
-- Advanced settings (IP whitelist, rate limit, expiration)
-- **Status: 100% PASS**
-
-### 3. API Scopes (DEV-020 to DEV-021)
-- Display 25+ scopes across 7 categories
-- Checkbox selection/deselection
-- Scope descriptions and tooltips
-- **Status: 100% PASS**
-
-### 4. Key Management (DEV-030 to DEV-036)
-- List API keys with metadata
-- Copy masked key preview
-- Rotate key with password confirmation
-- Set/clear expiration dates
-- Revoke/delete keys
-- **Status: 100% PASS**
-
-### 5. Status Badges (DEV-040 to DEV-045)
-- Active (green), Never Used (gray)
-- IP Restricted (blue), Rate Limited (purple)
-- Expired (red), Expiring Soon (orange)
-- **Status: 100% PASS**
-
-### 6. API Authentication (DEV-050 to DEV-054)
-- Valid API key authentication
-- Scope validation (403 for insufficient)
-- Invalid/revoked key rejection (401)
-- **Status: 4/5 PASS (1 BLOCKED)**
-
-### 7. RBAC (DEV-070 to DEV-071)
-- VIEWER cannot access API Keys
-- EDITOR cannot create API Keys
-- **Status: 100% PASS**
+| File | Test Cases | Status | Description |
+|------|------------|--------|-------------|
+| [07-RBAC-organization-settings.md](07-RBAC-organization-settings.md) | RBAC-001 to RBAC-004 | ✅ 4/4 PASS | Organization Settings Access |
+| [08-RBAC-team-management.md](08-RBAC-team-management.md) | RBAC-010 to RBAC-013 | ✅ 4/4 PASS | Team Management Access |
+| [09-RBAC-links-access.md](09-RBAC-links-access.md) | RBAC-030 to RBAC-033 | ⚠️ 12/20 PASS | Links Management Access |
+| [10-RBAC-custom-domains.md](10-RBAC-custom-domains.md) | DOM-050 to DOM-054 | ⚠️ 11/23 PASS | Custom Domains RBAC |
 
 ---
 
-## E2E Test Files
+## Module 05: Organization Features
 
-| File | Coverage |
-|------|----------|
-| `uat-dev-001-002-simple.spec.ts` | DEV-001, DEV-002 |
-| `uat-dev-001-002-api-keys-access.spec.ts` | DEV-001, DEV-002 (comprehensive) |
-| `dev-api-keys-validation.spec.ts` | DEV-010 to DEV-014 |
-| `uat-dev-api-scopes.spec.ts` | DEV-020, DEV-021 |
-| `uat-developer-api-keys.spec.ts` | DEV-030 to DEV-036 |
-| `dev-040-045-api-key-badges.spec.ts` | DEV-040 to DEV-045 |
-| `dev-070-rbac-viewer-api-keys.spec.ts` | DEV-070 |
-| `dev-071-rbac-editor-api-keys.spec.ts` | DEV-071 |
+| File | Test Cases | Status | Description |
+|------|------------|--------|-------------|
+| [11-folder-management.md](11-folder-management.md) | FLD-001 to FLD-005 | ⚠️ 3/5 PASS | Folder Management |
 
-### Run All Tests
-```bash
-cd apps/web
-npx playwright test --project=chromium e2e/dev-*.spec.ts e2e/uat-dev*.spec.ts
-```
+---
+
+## Summary by Category
+
+### Developer API Keys (Module 15)
+- **Page Access**: 100% PASS
+- **Create API Key**: 100% PASS
+- **API Scopes**: 100% PASS
+- **Key Management**: 100% PASS
+- **Status Badges**: 100% PASS
+- **API Authentication**: 80% (1 BLOCKED - requires expired key)
+- **API Key RBAC**: 100% PASS
+
+### RBAC Tests (Module 14)
+- **Organization Settings**: 100% PASS
+- **Team Management**: 100% PASS
+- **Links Access**: 60% (Known issue with update/delete)
+- **Custom Domains**: 48% (Frontend RBAC not implemented)
+
+### Organization Features (Module 05)
+- **Folder Management**: 60% (Backend ready, UI pending)
+
+---
+
+## Test Specifications
+
+Full test specifications are located in `/user-tests/testcase/`:
+
+| File | Module |
+|------|--------|
+| 01-authentication.md | Authentication |
+| 02-dashboard.md | Dashboard |
+| 03-link-management.md | Link Management |
+| 04-link-analytics.md | Analytics |
+| 05-organization.md | Organization |
+| 06-custom-domains.md | Custom Domains |
+| 07-qr-codes.md | QR Codes |
+| 08-bio-pages.md | Bio Pages |
+| 09-bulk-operations.md | Bulk Operations |
+| 10-notifications.md | Notifications |
+| 11-audit-logs.md | Audit Logs |
+| 12-billing-quota.md | Billing & Quota |
+| 13-team-management.md | Team Management |
+| 14-rbac.md | RBAC |
+| 15-developer-api-keys.md | API Keys |
+| 16-developer-webhooks.md | Webhooks |
 
 ---
 
@@ -102,7 +103,30 @@ npx playwright test --project=chromium e2e/dev-*.spec.ts e2e/uat-dev*.spec.ts
 
 ## Archive
 
-Original detailed reports have been moved to `./archive/` directory for reference.
+Original detailed reports have been moved to `./archive/` directory:
+- Developer API Keys reports (22 files)
+- RBAC test reports
+- Folder management report
+- Test scripts
+
+---
+
+## Known Issues
+
+### 1. Links Update/Delete RBAC
+OWNER, ADMIN, EDITOR cannot update/delete links despite having permissions.
+- **Root cause**: Possible OrganizationMember records issue
+- **Workaround**: `pnpm --filter @pingtome/database db:reset`
+
+### 2. Custom Domains Frontend RBAC
+Add/Delete/Verify buttons visible to VIEWER and EDITOR roles.
+- **Root cause**: Missing `PermissionGate` wrappers
+- **Impact**: UX issue only (backend blocks unauthorized actions)
+
+### 3. Folder UI Features
+Move link to folder and nested folders not implemented in UI.
+- **Backend**: Fully implemented
+- **Frontend**: UI pending
 
 ---
 
