@@ -20,6 +20,7 @@ import {
   RotateApiKeyDto,
   SetExpirationDto,
   ApiKeyRotatedResponseDto,
+  CreateWebhookDto,
 } from "./dto";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 
@@ -172,11 +173,20 @@ export class DeveloperController {
   // Webhooks
   @Post("webhooks")
   @Permission({ resource: "api-key", action: "create" })
+  @ApiOperation({ summary: "Create a new webhook subscription" })
+  @ApiResponse({
+    status: 201,
+    description: "Webhook created successfully",
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Invalid URL or events",
+  })
   async createWebhook(
     @Request() req,
-    @Body() body: { url: string; events: string[]; orgId: string },
+    @Body(ValidationPipe) dto: CreateWebhookDto,
   ) {
-    return this.webhookService.createWebhook(body.orgId, body.url, body.events);
+    return this.webhookService.createWebhook(dto.orgId, dto.url, dto.events);
   }
 
   @Get("webhooks")

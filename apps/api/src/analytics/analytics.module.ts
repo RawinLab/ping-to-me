@@ -11,9 +11,10 @@ import { AnalyticsPdfModule } from "./pdf/analytics-pdf.module";
 import { RealtimeModule } from "./realtime/realtime.module";
 import { ScheduledReportsController } from "./reports/scheduled-reports.controller";
 import { ScheduledReportsService } from "./reports/scheduled-reports.service";
+import { DeveloperModule } from "../developer/developer.module";
 
 @Module({
-  imports: [AuthModule, ConfigModule, AnalyticsCacheModule, AnalyticsPdfModule, RealtimeModule],
+  imports: [AuthModule, ConfigModule, AnalyticsCacheModule, AnalyticsPdfModule, RealtimeModule, DeveloperModule],
   controllers: [
     AnalyticsController,
     LinkAnalyticsController,

@@ -13,6 +13,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { isBot } from "./utils/bot-filter";
 import { AnalyticsGateway } from "./realtime/analytics.gateway";
 import { LinksService } from "../links/links.service";
+import { WebhookService } from "../developer/webhooks.service";
 
 @Injectable()
 export class AnalyticsService {
@@ -24,6 +25,8 @@ export class AnalyticsService {
     @Optional()
     @Inject(forwardRef(() => LinksService))
     private readonly linksService: LinksService,
+    @Optional()
+    private readonly webhookService: WebhookService,
   ) {}
 
   /**
@@ -120,6 +123,31 @@ export class AnalyticsService {
       this.linksService
         .incrementClickCount(data.slug)
         .catch((err) => console.error("Failed to check click limit:", err));
+    }
+
+    // Trigger webhook for link.clicked event (fire-and-forget)
+    if (this.webhookService && link.organizationId) {
+      const webhookPayload = {
+        event: 'link.clicked',
+        timestamp: new Date().toISOString(),
+        data: {
+          linkId: link.id,
+          shortCode: link.slug,
+          ip: clickEvent.ip,
+          userAgent: clickEvent.userAgent,
+          referrer: clickEvent.referrer,
+          country: clickEvent.country,
+          city: clickEvent.city,
+          device: clickEvent.device,
+          browser: clickEvent.browser,
+          os: clickEvent.os,
+          source: clickEvent.source,
+        },
+      };
+
+      this.webhookService
+        .triggerWebhook('link.clicked', webhookPayload, link.organizationId)
+        .catch((err) => console.error('Failed to trigger webhook:', err));
     }
 
     return clickEvent;

@@ -15,6 +15,7 @@ import { SafetyCheckService } from "./services/safety-check.service";
 import { MetadataService } from "./services/metadata.service";
 import { BulkEditDto } from "./dto/bulk-edit.dto";
 import { PermissionService } from "../auth/rbac/permission.service";
+import { WebhookService } from "../developer/webhooks.service";
 import * as bcrypt from "bcrypt";
 
 @Injectable()
@@ -34,6 +35,7 @@ export class LinksService {
     private safetyCheckService: SafetyCheckService,
     private metadataService: MetadataService,
     private permissionService: PermissionService,
+    private webhookService: WebhookService,
   ) {}
 
   /**
@@ -288,7 +290,34 @@ export class LinksService {
       .checkAndUpdateLink(link.id, dto.originalUrl)
       .catch((err) => console.error("Safety check failed:", err));
 
-    // 13. Return response with QR options
+    // 13. Trigger webhook for link.created event (fire-and-forget)
+    if (link.organizationId) {
+      this.webhookService
+        .triggerWebhook(
+          "link.created",
+          {
+            event: "link.created",
+            timestamp: new Date().toISOString(),
+            data: {
+              id: link.id,
+              slug: link.slug,
+              originalUrl: link.originalUrl,
+              shortUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${link.slug}`,
+              title: link.title,
+              description: link.description,
+              tags: link.tags,
+              status: link.status,
+              organizationId: link.organizationId,
+              userId: link.userId,
+              createdAt: link.createdAt.toISOString(),
+            },
+          },
+          link.organizationId,
+        )
+        .catch(() => {});
+    }
+
+    // 14. Return response with QR options
     return this.mapToResponse(link, {
       qrColor: dto.qrColor,
       qrLogo: dto.qrLogo,
@@ -556,6 +585,28 @@ export class LinksService {
       )
       .catch((err) => console.error("Audit log failed:", err));
 
+    // Trigger webhook for link.deleted event (fire-and-forget)
+    if (link.organizationId) {
+      this.webhookService
+        .triggerWebhook(
+          "link.deleted",
+          {
+            event: "link.deleted",
+            timestamp: new Date().toISOString(),
+            data: {
+              id: link.id,
+              slug: link.slug,
+              originalUrl: link.originalUrl,
+              organizationId: link.organizationId,
+              userId,
+              deletedAt: deleted.deletedAt?.toISOString(),
+            },
+          },
+          link.organizationId,
+        )
+        .catch(() => {});
+    }
+
     return deleted;
   }
 
@@ -768,6 +819,34 @@ export class LinksService {
           },
         )
         .catch((err) => console.error("Audit log failed:", err));
+    }
+
+    // Trigger webhook for link.updated event (fire-and-forget)
+    if (updated.organizationId) {
+      this.webhookService
+        .triggerWebhook(
+          "link.updated",
+          {
+            event: "link.updated",
+            timestamp: new Date().toISOString(),
+            data: {
+              id: updated.id,
+              slug: updated.slug,
+              originalUrl: updated.originalUrl,
+              shortUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${updated.slug}`,
+              title: updated.title,
+              description: updated.description,
+              tags: updated.tags,
+              status: updated.status,
+              organizationId: updated.organizationId,
+              userId: updated.userId,
+              updatedAt: updated.updatedAt?.toISOString(),
+              changes,
+            },
+          },
+          updated.organizationId,
+        )
+        .catch(() => {});
     }
 
     return this.mapToResponse(updated);

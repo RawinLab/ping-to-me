@@ -14,6 +14,7 @@ import { BioEventType } from "./dto/track-event.dto";
 import { UAParser } from "ua-parser-js";
 import { QrCodeService } from "../qr/qr.service";
 import { AuditService } from "../audit/audit.service";
+import { WebhookService } from "../developer/webhooks.service";
 
 @Injectable()
 export class BioPageService {
@@ -21,6 +22,7 @@ export class BioPageService {
     private readonly prisma: PrismaService,
     private readonly qrService: QrCodeService,
     private readonly auditService: AuditService,
+    private readonly webhookService: WebhookService,
   ) {}
 
   async createBioPage(
@@ -452,6 +454,30 @@ export class BioPageService {
       } else {
         device = "desktop";
       }
+    }
+
+    // Trigger webhook for bio.viewed event (fire and forget)
+    if (eventType === BioEventType.PAGE_VIEW) {
+      this.webhookService
+        .triggerWebhook(
+          "bio.viewed",
+          {
+            event: "bio.viewed",
+            timestamp: new Date().toISOString(),
+            data: {
+              bioPageId: bioPage.id,
+              slug: bioPage.slug,
+              title: bioPage.title,
+              referrer,
+              device,
+              browser,
+              os,
+              ip,
+            },
+          },
+          bioPage.organizationId,
+        )
+        .catch(() => {}); // Fire and forget, don't block on errors
     }
 
     // Create analytics record (fire and forget, non-blocking)
