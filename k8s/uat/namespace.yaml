@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pingtome-uat
+  labels:
+    env: uat
+    app: pingtome

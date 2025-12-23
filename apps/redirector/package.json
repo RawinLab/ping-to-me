@@ -3,9 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "deploy": "wrangler deploy",
-    "dev": "wrangler dev",
-    "start": "wrangler dev"
+    "dev": "wrangler dev --env development",
+    "start": "wrangler dev --env development",
+    "deploy": "wrangler deploy --env production",
+    "deploy:uat": "wrangler deploy --env uat",
+    "deploy:prod": "wrangler deploy --env production",
+    "preview": "wrangler deploy --env development --dry-run"
   },
   "dependencies": {
     "hono": "^4.0.0"

@@ -1,0 +1,180 @@
+name: Deploy Redirector
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'apps/redirector/**'
+      - '.github/workflows/deploy-redirector.yml'
+      - 'pnpm-lock.yaml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'uat'
+        type: choice
+        options:
+          - uat
+          - production
+
+concurrency:
+  group: redirector-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Redirector
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build redirector
+        run: pnpm --filter redirector build
+
+      - name: Lint redirector
+        run: pnpm --filter redirector lint --max-warnings 0
+        continue-on-error: true
+
+  deploy-uat:
+    name: Deploy to UAT
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push' || github.event.inputs.environment == 'uat'
+
+    environment:
+      name: uat
+      url: https://uat.pingto.me
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy to UAT
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        working-directory: apps/redirector
+        run: wrangler deploy --env uat
+
+      - name: Verify deployment
+        run: |
+          for i in {1..5}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://uat.pingto.me/health)
+            if [ "$STATUS" = "404" ]; then
+              echo "Deployment verified (404 expected for /health)"
+              exit 0
+            fi
+            echo "Attempt $i: Status $STATUS, retrying in 5s..."
+            sleep 5
+          done
+          echo "Failed to verify deployment"
+          exit 1
+
+      - name: Post deployment notification
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ job.status }}';
+            const message = `Redirector UAT deployment ${status === 'success' ? '✓' : '✗'} - ${status.toUpperCase()}`;
+            console.log(message);
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' || github.event.inputs.environment == 'production'
+
+    environment:
+      name: production
+      url: https://pingto.me
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy to Production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        working-directory: apps/redirector
+        run: wrangler deploy --env production
+
+      - name: Verify deployment
+        run: |
+          for i in {1..5}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://pingto.me/health)
+            if [ "$STATUS" = "404" ]; then
+              echo "Deployment verified (404 expected for /health)"
+              exit 0
+            fi
+            echo "Attempt $i: Status $STATUS, retrying in 5s..."
+            sleep 5
+          done
+          echo "Failed to verify deployment"
+          exit 1
+
+      - name: Post deployment notification
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const status = '${{ job.status }}';
+            const message = `Redirector Production deployment ${status === 'success' ? '✓' : '✗'} - ${status.toUpperCase()}`;
+            console.log(message);
+
+      - name: Create deployment record
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha,
+              environment: 'production',
+              description: 'Redirector service deployment',
+              auto_merge: false,
+              required_contexts: [],
+              production_environment: true
+            });

@@ -1,11 +1,41 @@
+# Base configuration
 name = "pingtome-redirector"
 compatibility_date = "2024-02-08"
 main = "src/index.ts"
 
-[[kv_namespaces]]
-binding = "LINKS_KV"
-id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Placeholder ID
-preview_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Placeholder ID
+# Development environment (local)
+[env.development]
+name = "pingtome-redirector-dev"
+vars = { API_URL = "http://localhost:3001", ANALYTICS_API_KEY = "dev-analytics-key" }
 
-[vars]
-# Environment variables
+[[env.development.kv_namespaces]]
+binding = "LINKS_KV"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Dev KV ID - replace with actual
+preview_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Dev preview KV ID - replace with actual
+
+# UAT/Staging environment
+[env.uat]
+name = "pingtome-redirector-uat"
+routes = [
+  { pattern = "uat.pingto.me/*", zone_name = "pingto.me" }
+]
+vars = { API_URL = "https://api-uat.pingto.me", ANALYTICS_API_KEY = "uat-analytics-key" }
+
+[[env.uat.kv_namespaces]]
+binding = "LINKS_KV"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # UAT KV ID - replace with actual
+preview_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # UAT preview KV ID - replace with actual
+
+# Production environment
+[env.production]
+name = "pingtome-redirector"
+routes = [
+  { pattern = "pingto.me/*", zone_name = "pingto.me" },
+  { pattern = "*.pingto.me/*", zone_name = "pingto.me" }
+]
+vars = { API_URL = "https://api.pingto.me", ANALYTICS_API_KEY = "prod-analytics-key" }
+
+[[env.production.kv_namespaces]]
+binding = "LINKS_KV"
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Production KV ID - replace with actual
+preview_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Production preview KV ID - replace with actual

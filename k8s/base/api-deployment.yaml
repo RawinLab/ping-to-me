@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  labels:
+    app: api
+    component: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+        component: backend
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/OWNER/pingtome/api:latest
+          ports:
+            - containerPort: 3011
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "3011"
+          envFrom:
+            - secretRef:
+                name: api-secrets
+            - configMapRef:
+                name: api-config
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3011
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3011
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      imagePullSecrets:
+        - name: ghcr-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+spec:
+  selector:
+    app: api
+  ports:
+    - port: 80
+      targetPort: 3011
+  type: ClusterIP

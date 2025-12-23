@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: pingtome-prod
+
+resources:
+  - ../base/api-deployment.yaml
+  - ../base/web-deployment.yaml
+  - namespace.yaml
+  - ingress.yaml
+
+configMapGenerator:
+  - name: api-config
+    literals:
+      - DATABASE_URL=postgresql://postgres:PASSWORD@db.pingto.me:5432/pingtome
+      - NEXT_PUBLIC_API_URL=https://api.pingto.me
+      - NEXT_PUBLIC_APP_URL=https://app.pingto.me
+      - CORS_ORIGIN=https://app.pingto.me
+
+  - name: web-config
+    literals:
+      - NEXT_PUBLIC_API_URL=https://api.pingto.me
+      - NEXT_PUBLIC_APP_URL=https://app.pingto.me
+
+images:
+  - name: ghcr.io/OWNER/pingtome/api
+    newTag: latest
+  - name: ghcr.io/OWNER/pingtome/web
+    newTag: latest
+
+replicas:
+  - name: api
+    count: 3
+  - name: web
+    count: 3
