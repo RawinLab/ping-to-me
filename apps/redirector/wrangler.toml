@@ -1,41 +1,71 @@
+# Cloudflare Workers Configuration for PingToMe Redirector
+#
+# This configuration manages the edge redirector service across multiple environments
+# See: https://developers.cloudflare.com/workers/
+#
+
 # Base configuration
 name = "pingtome-redirector"
 compatibility_date = "2024-02-08"
 main = "src/index.ts"
+node_compat = true
+
+# Build configuration
+build = { command = "npm run build", cwd = "." }
+
+# Observability
+observability = { enabled = true }
 
 # Development environment (local)
+# Used for local development with `wrangler dev`
 [env.development]
 name = "pingtome-redirector-dev"
-vars = { API_URL = "http://localhost:3001", ANALYTICS_API_KEY = "dev-analytics-key" }
+vars = {
+  API_URL = "http://localhost:3001",
+  ANALYTICS_API_KEY = "dev-analytics-key"
+}
 
 [[env.development.kv_namespaces]]
 binding = "LINKS_KV"
-id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Dev KV ID - replace with actual
-preview_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Dev preview KV ID - replace with actual
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+preview_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+# Local development KV namespaces for testing
 
 # UAT/Staging environment
+# Deployed from the develop branch
+# Route: uat.pingto.me
 [env.uat]
 name = "pingtome-redirector-uat"
 routes = [
   { pattern = "uat.pingto.me/*", zone_name = "pingto.me" }
 ]
-vars = { API_URL = "https://api-uat.pingto.me", ANALYTICS_API_KEY = "uat-analytics-key" }
+vars = {
+  API_URL = "https://api-uat.pingto.me",
+  ANALYTICS_API_KEY = "uat-analytics-key"
+}
 
 [[env.uat.kv_namespaces]]
 binding = "LINKS_KV"
-id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # UAT KV ID - replace with actual
-preview_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # UAT preview KV ID - replace with actual
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+preview_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+# UAT KV namespaces for staging deployments
 
 # Production environment
+# Deployed from the main branch
+# Routes: pingto.me/* and *.pingto.me/*
 [env.production]
 name = "pingtome-redirector"
 routes = [
   { pattern = "pingto.me/*", zone_name = "pingto.me" },
   { pattern = "*.pingto.me/*", zone_name = "pingto.me" }
 ]
-vars = { API_URL = "https://api.pingto.me", ANALYTICS_API_KEY = "prod-analytics-key" }
+vars = {
+  API_URL = "https://api.pingto.me",
+  ANALYTICS_API_KEY = "prod-analytics-key"
+}
 
 [[env.production.kv_namespaces]]
 binding = "LINKS_KV"
-id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Production KV ID - replace with actual
-preview_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" # Production preview KV ID - replace with actual
+id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+preview_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+# Production KV namespaces for link caching and domain routing

@@ -51,13 +51,17 @@ jobs:
 
       - name: Lint redirector
         run: pnpm --filter redirector lint --max-warnings 0
-        continue-on-error: true
+
+      - name: Validate wrangler configuration
+        working-directory: apps/redirector
+        run: npx wrangler deploy --dry-run --env development
+        timeout-minutes: 5
 
   deploy-uat:
     name: Deploy to UAT
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push' || github.event.inputs.environment == 'uat'
+    if: (github.ref == 'refs/heads/develop' && github.event_name == 'push') || github.event.inputs.environment == 'uat'
 
     environment:
       name: uat
@@ -84,6 +88,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         working-directory: apps/redirector
         run: wrangler deploy --env uat
+        timeout-minutes: 5
 
       - name: Verify deployment
         run: |
@@ -112,7 +117,7 @@ jobs:
     name: Deploy to Production
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push' || github.event.inputs.environment == 'production'
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || github.event.inputs.environment == 'production'
 
     environment:
       name: production
@@ -139,6 +144,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         working-directory: apps/redirector
         run: wrangler deploy --env production
+        timeout-minutes: 5
 
       - name: Verify deployment
         run: |

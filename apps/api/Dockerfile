@@ -11,7 +11,7 @@ WORKDIR /app
 COPY --from=builder /app/out/json/ .
 COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
 RUN corepack enable
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 
 COPY --from=builder /app/out/full/ .
 COPY turbo.json turbo.json
@@ -19,5 +19,26 @@ RUN pnpm turbo run build --filter=api...
 
 FROM base AS runner
 WORKDIR /app
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
+
+# Create non-root user for Cloud Run
+RUN addgroup -g 1000 appuser && \
+    adduser -D -u 1000 -G appuser appuser
+
 COPY --from=installer /app .
+
+# Set proper permissions
+RUN chown -R appuser:appuser /app
+
+USER appuser
+
+# Cloud Run requires PORT env var, default to 3000
+ENV PORT=3000 NODE_ENV=production
+
+EXPOSE 3000
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["/sbin/dumb-init", "--"]
 CMD ["node", "apps/api/dist/main"]

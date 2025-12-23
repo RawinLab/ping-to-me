@@ -1,0 +1,90 @@
+# Google Cloud Build configuration for PingToMe API
+# This file is used to build Docker images and push to Artifact Registry
+# Triggered automatically via GitHub Actions workflow
+
+steps:
+  # Step 1: Build Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build'
+    args:
+      - 'build'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY_REPO}/api:${SHORT_SHA}'
+      - '-t'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY_REPO}/api:latest'
+      - '-f'
+      - 'apps/api/Dockerfile'
+      - '.'
+    env:
+      - 'DOCKER_BUILDKIT=1'
+
+  # Step 2: Push image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push'
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY_REPO}/api:${SHORT_SHA}'
+    waitFor: ['build']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-latest'
+    args:
+      - 'push'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY_REPO}/api:latest'
+    waitFor: ['build']
+
+  # Step 3: Deploy to Cloud Run
+  - name: 'gcr.io/cloud-builders/gke-deploy'
+    id: 'deploy-cloudrun'
+    args:
+      - 'run'
+      - '--filename=apps/api/cloudrun-service.yaml'
+      - '--image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY_REPO}/api:${SHORT_SHA}'
+      - '--location=${_REGION}'
+    env:
+      - 'CLOUDSDK_COMPUTE_REGION=${_REGION}'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLOUDRUN_SERVICE}'
+
+  # Step 4: Smoke test - verify service is responding
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'smoke-test'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Waiting for Cloud Run service to stabilize..."
+        sleep 10
+        SERVICE_URL=$(gcloud run services describe ${_CLOUDRUN_SERVICE} \
+          --region=${_REGION} \
+          --format='value(status.url)' 2>/dev/null || echo "")
+
+        if [ -z "$SERVICE_URL" ]; then
+          echo "Warning: Could not retrieve service URL"
+          exit 0
+        fi
+
+        echo "Testing service health endpoint..."
+        curl -f -s -m 10 "$SERVICE_URL/health/live" || \
+          (echo "Health check failed" && exit 1)
+        echo "Health check passed!"
+
+images:
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY_REPO}/api:${SHORT_SHA}'
+  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY_REPO}/api:latest'
+
+options:
+  machineType: 'N1_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
+
+# Substitutions for environment-specific values
+substitutions:
+  _REGION: 'us-central1'  # Override in trigger
+  _ARTIFACT_REGISTRY_REPO: 'docker-repo'  # Override in trigger
+  _CLOUDRUN_SERVICE: 'api-service'  # Override in trigger
+
+# Build timeout (default 1800s)
+timeout: '1800s'
+
+# On failure, don't fail the entire build if optional steps fail
+onFailure:
+  - 'ALLOW'

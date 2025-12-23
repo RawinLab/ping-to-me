@@ -1,0 +1,215 @@
+# Google Cloud Run Service Configuration Template
+# This file defines the Cloud Run service with auto-scaling, health checks, and environment config
+# Use with: gcloud run deploy --from-config=cloudrun-service.yaml
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: api-service
+  namespace: default
+spec:
+  template:
+    metadata:
+      annotations:
+        # Auto-scaling configuration
+        # min: minimum number of concurrent requests per container
+        # max: maximum number of concurrent requests per container
+        autoscaling.knative.dev/min-scale: "1"  # Override per environment
+        autoscaling.knative.dev/max-scale: "10"  # Override per environment
+        # Timeout for request (seconds)
+        run.googleapis.com/execution-environment: "gen2"
+        # CPU allocation
+        run.googleapis.com/cpu-throttling: "true"
+
+    spec:
+      # Service account for the Cloud Run service
+      serviceAccountName: api-cloudrun-sa  # Must be created beforehand
+
+      # Container configuration
+      containers:
+        - name: api
+          # Image will be replaced during deployment
+          image: PLACEHOLDER_IMAGE_URI
+
+          ports:
+            - name: http1
+              containerPort: 3000
+              protocol: TCP
+
+          # Environment variables
+          env:
+            # Application environment
+            - name: NODE_ENV
+              value: "production"
+
+            # API configuration
+            - name: PORT
+              value: "3000"
+
+            # Logging
+            - name: LOG_LEVEL
+              value: "info"
+
+            # Database connection
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: api-database-url
+                  key: url
+
+            # JWT secrets
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: api-jwt-secret
+                  key: secret
+
+            - name: REFRESH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: api-refresh-secret
+                  key: secret
+
+            # OAuth credentials
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: api-oauth-google
+                  key: client_id
+
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: api-oauth-google
+                  key: client_secret
+
+            - name: GITHUB_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: api-oauth-github
+                  key: client_id
+
+            - name: GITHUB_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: api-oauth-github
+                  key: client_secret
+
+            # Stripe configuration
+            - name: STRIPE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: api-stripe-secret
+                  key: key
+
+            - name: STRIPE_WEBHOOK_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: api-stripe-webhook
+                  key: secret
+
+            # App URLs
+            - name: NEXT_PUBLIC_API_URL
+              value: "https://api.example.com"  # Override per environment
+
+            - name: NEXT_PUBLIC_APP_URL
+              value: "https://app.example.com"  # Override per environment
+
+            # Rate limiting
+            - name: THROTTLE_TTL
+              value: "60000"
+
+            - name: THROTTLE_LIMIT
+              value: "100"
+
+            - name: THROTTLE_DISABLED
+              value: "false"
+
+          # Resource allocation
+          resources:
+            limits:
+              # CPU: 1, 2, or 4 (in cores)
+              cpu: "2"
+              # Memory in Mi (256, 512, 1024, 2048, 4096, 8192)
+              memory: "1Gi"
+            requests:
+              cpu: "1"
+              memory: "512Mi"
+
+          # Readiness probe - checks if service is ready to receive traffic
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # Liveness probe - checks if service is alive
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 3000
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # Security context
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+
+      # Timeout for requests (seconds)
+      timeoutSeconds: 300
+
+      # Service account token
+      serviceAccountName: api-cloudrun-sa
+
+  # Traffic configuration
+  traffic:
+    - percent: 100
+      latestRevision: true
+
+---
+# Environment-specific overrides for UAT
+# Apply with: kustomize build uat/ | kubectl apply -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudrun-uat-config
+  namespace: default
+data:
+  min-scale: "0"
+  max-scale: "10"
+  cpu: "1"
+  memory: "512Mi"
+  request-cpu: "512m"
+  request-memory: "256Mi"
+  api-url: "https://api-uat.example.com"
+  app-url: "https://uat.example.com"
+
+---
+# Environment-specific overrides for Production
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudrun-prod-config
+  namespace: default
+data:
+  min-scale: "1"
+  max-scale: "100"
+  cpu: "4"
+  memory: "4Gi"
+  request-cpu: "2"
+  request-memory: "2Gi"
+  api-url: "https://api.pingtome.com"
+  app-url: "https://app.pingtome.com"

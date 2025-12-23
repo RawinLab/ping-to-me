@@ -1,0 +1,297 @@
+name: Deploy Web to Firebase App Hosting
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+    paths:
+      - "apps/web/**"
+      - "packages/ui/**"
+      - "packages/types/**"
+      - ".github/workflows/deploy-web-firebase.yml"
+      - "pnpm-lock.yaml"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        default: "uat"
+        type: choice
+        options:
+          - uat
+          - production
+
+concurrency:
+  group: deploy-web-firebase-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9.0.0"
+
+jobs:
+  determine-environment:
+    name: Determine Environment
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.env.outputs.environment }}
+      firebase_project: ${{ steps.env.outputs.firebase_project }}
+      api_url: ${{ steps.env.outputs.api_url }}
+      app_url: ${{ steps.env.outputs.app_url }}
+
+    steps:
+      - name: Determine target environment
+        id: env
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]] || [[ "${{ github.event.inputs.environment }}" == "production" ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "firebase_project=${{ secrets.FIREBASE_PROJECT_ID_PROD }}" >> $GITHUB_OUTPUT
+            echo "api_url=https://api.pingto.me" >> $GITHUB_OUTPUT
+            echo "app_url=https://app.pingto.me" >> $GITHUB_OUTPUT
+          else
+            echo "environment=uat" >> $GITHUB_OUTPUT
+            echo "firebase_project=${{ secrets.FIREBASE_PROJECT_ID_UAT }}" >> $GITHUB_OUTPUT
+            echo "api_url=https://api-uat.pingto.me" >> $GITHUB_OUTPUT
+            echo "app_url=https://app-uat.pingto.me" >> $GITHUB_OUTPUT
+          fi
+
+  build:
+    name: Build Next.js Application
+    runs-on: ubuntu-latest
+    needs: determine-environment
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Next.js application
+        env:
+          NEXT_PUBLIC_API_URL: ${{ needs.determine-environment.outputs.api_url }}
+          NEXT_PUBLIC_APP_URL: ${{ needs.determine-environment.outputs.app_url }}
+        run: pnpm --filter=web build
+
+      - name: Verify standalone output
+        run: |
+          if [ ! -d "apps/web/.next/standalone" ]; then
+            echo "ERROR: Standalone build output not found"
+            exit 1
+          fi
+          echo "Standalone build verified"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build-${{ github.sha }}
+          path: apps/web/.next
+          retention-days: 1
+          compression-level: 6
+
+  lint-and-test:
+    name: Lint and Test
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint web application
+        run: pnpm --filter=web lint
+
+  deploy-firebase:
+    name: Deploy to Firebase App Hosting
+    runs-on: ubuntu-latest
+    needs:
+      - determine-environment
+      - build
+      - lint-and-test
+
+    environment:
+      name: ${{ needs.determine-environment.outputs.environment }}
+      url: ${{ needs.determine-environment.outputs.app_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build-${{ github.sha }}
+          path: apps/web/.next
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare environment variables
+        id: env-vars
+        env:
+          FIREBASE_PROJECT: ${{ needs.determine-environment.outputs.firebase_project }}
+        run: |
+          echo "Environment: ${{ needs.determine-environment.outputs.environment }}"
+          echo "Firebase Project: $FIREBASE_PROJECT"
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: |
+            ${{ needs.determine-environment.outputs.environment == 'production' &&
+                secrets.FIREBASE_SERVICE_ACCOUNT_PROD ||
+                secrets.FIREBASE_SERVICE_ACCOUNT_UAT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Verify Firebase project
+        run: |
+          gcloud config set project ${{ needs.determine-environment.outputs.firebase_project }}
+          gcloud firebase projects describe ${{ needs.determine-environment.outputs.firebase_project }}
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools@latest
+
+      - name: Configure Firebase project
+        run: |
+          firebase projects:list
+          # Set the active Firebase project for CLI
+          firebase use ${{ needs.determine-environment.outputs.firebase_project }} --add ${{ needs.determine-environment.outputs.environment }}
+
+      - name: Deploy to Firebase App Hosting
+        env:
+          FIREBASE_PROJECT: ${{ needs.determine-environment.outputs.firebase_project }}
+          ENVIRONMENT: ${{ needs.determine-environment.outputs.environment }}
+          NEXT_PUBLIC_API_URL: ${{ needs.determine-environment.outputs.api_url }}
+          NEXT_PUBLIC_APP_URL: ${{ needs.determine-environment.outputs.app_url }}
+        run: |
+          # Set the GCP project
+          gcloud config set project $FIREBASE_PROJECT
+
+          # Deploy Next.js app using Firebase App Hosting backend
+          # Firebase App Hosting will use the apphosting.yaml configuration
+          firebase apphosting:backends:deploy \
+            --project=$FIREBASE_PROJECT \
+            --source=./apps/web \
+            --location=us-central1 \
+            --environment=$ENVIRONMENT \
+            --verbose
+
+          echo "Firebase App Hosting deployment initiated for environment: $ENVIRONMENT"
+
+  health-check:
+    name: Health Check
+    runs-on: ubuntu-latest
+    needs:
+      - determine-environment
+      - deploy-firebase
+    if: success()
+
+    steps:
+      - name: Check deployment health
+        run: |
+          URL="${{ needs.determine-environment.outputs.app_url }}"
+          echo "Checking health of: $URL"
+
+          for i in {1..15}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || echo "000")
+            if [ "$STATUS" = "200" ] || [ "$STATUS" = "301" ] || [ "$STATUS" = "302" ]; then
+              echo "Health check passed with status: $STATUS"
+              exit 0
+            fi
+            echo "Attempt $i/15: Status $STATUS, retrying in 10s..."
+            sleep 10
+          done
+
+          echo "Health check failed after 15 attempts"
+          exit 1
+
+      - name: Verify application functionality
+        run: |
+          URL="${{ needs.determine-environment.outputs.app_url }}"
+
+          # Check for content
+          CONTENT=$(curl -s "$URL" | head -c 1000)
+          if [ -z "$CONTENT" ]; then
+            echo "ERROR: No content returned from application"
+            exit 1
+          fi
+
+          echo "Application content verified"
+
+  notify-deployment:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs:
+      - determine-environment
+      - health-check
+    if: always()
+
+    steps:
+      - name: Create deployment summary
+        env:
+          STATUS: ${{ job.status }}
+          ENVIRONMENT: ${{ needs.determine-environment.outputs.environment }}
+          APP_URL: ${{ needs.determine-environment.outputs.app_url }}
+          COMMIT_SHA: ${{ github.sha }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          echo "Deployment completed"
+          echo "Status: $STATUS"
+          echo "Environment: $ENVIRONMENT"
+          echo "App URL: $APP_URL"
+          echo "Commit: $COMMIT_SHA"
+          echo "Message: $COMMIT_MESSAGE"
+          echo "Deployed by: $ACTOR"
+
+      - name: Create GitHub Release (Production only)
+        if: success() && needs.determine-environment.outputs.environment == 'production'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const date = new Date().toISOString().split('T')[0];
+            await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: `web-firebase-${date}-${context.sha.substring(0, 7)}`,
+              name: `Web Firebase Release ${date}`,
+              body: `Deployed to Firebase App Hosting\nCommit: ${context.sha}\nEnvironment: Production`,
+              draft: false,
+              prerelease: false
+            });

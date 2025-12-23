@@ -1,0 +1,23 @@
+{
+  "projects": {
+    "default": "pingtome-prod",
+    "uat": "pingtome-uat",
+    "production": "pingtome-prod"
+  },
+  "targets": {
+    "pingtome-uat": {
+      "hosting": {
+        "web-uat": [
+          "pingtome-web-uat"
+        ]
+      }
+    },
+    "pingtome-prod": {
+      "hosting": {
+        "web-prod": [
+          "pingtome-web-prod"
+        ]
+      }
+    }
+  }
+}
