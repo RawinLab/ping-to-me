@@ -50,14 +50,14 @@ jobs:
           echo "environment=${ENVIRONMENT}" >> $GITHUB_OUTPUT
 
           if [[ "${ENVIRONMENT}" == "prod" ]]; then
-            echo "gcp-project=${{ secrets.GCP_PROJECT_ID_PROD }}" >> $GITHUB_OUTPUT
+            echo "gcp-project=pingtome-2c60e" >> $GITHUB_OUTPUT
             echo "cloudrun-service=api-prod" >> $GITHUB_OUTPUT
             echo "min-scale=1" >> $GITHUB_OUTPUT
             echo "max-scale=100" >> $GITHUB_OUTPUT
             echo "cpu=4" >> $GITHUB_OUTPUT
             echo "memory=4Gi" >> $GITHUB_OUTPUT
           else
-            echo "gcp-project=${{ secrets.GCP_PROJECT_ID_UAT }}" >> $GITHUB_OUTPUT
+            echo "gcp-project=pingtome-2c60e" >> $GITHUB_OUTPUT
             echo "cloudrun-service=api-uat" >> $GITHUB_OUTPUT
             echo "min-scale=0" >> $GITHUB_OUTPUT
             echo "max-scale=10" >> $GITHUB_OUTPUT
