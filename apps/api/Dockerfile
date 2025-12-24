@@ -23,16 +23,12 @@ WORKDIR /app
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
 
-# Create non-root user for Cloud Run
-RUN addgroup -g 1000 appuser && \
-    adduser -D -u 1000 -G appuser appuser
-
 COPY --from=installer /app .
 
-# Set proper permissions
-RUN chown -R appuser:appuser /app
+# Set proper permissions for node user (built-in in node:alpine)
+RUN chown -R node:node /app
 
-USER appuser
+USER node
 
 # Cloud Run requires PORT env var, default to 3000
 ENV PORT=3000 NODE_ENV=production
