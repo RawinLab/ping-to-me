@@ -1,23 +1,7 @@
 {
   "projects": {
-    "default": "pingtome-prod",
-    "uat": "pingtome-uat",
-    "production": "pingtome-prod"
-  },
-  "targets": {
-    "pingtome-uat": {
-      "hosting": {
-        "web-uat": [
-          "pingtome-web-uat"
-        ]
-      }
-    },
-    "pingtome-prod": {
-      "hosting": {
-        "web-prod": [
-          "pingtome-web-prod"
-        ]
-      }
-    }
+    "default": "pingtome-2c60e",
+    "uat": "pingtome-2c60e",
+    "production": "pingtome-2c60e"
   }
 }
