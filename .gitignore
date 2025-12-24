@@ -51,3 +51,11 @@ generated-docs/
 
 # Migration/utility scripts
 **/apply-*.js
+
+# Firebase local files
+firebase.json
+firebase-debug.log
+.firebase/
+apps/web/.firebase/
+apps/web/firebase-debug.log
+apps/web/.bin/

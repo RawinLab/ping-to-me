@@ -1,80 +1,20 @@
-apiVersion: apphosting.googleapis.com/v1
-kind: Config
-metadata:
-  name: pingtome-web
-spec:
-  # Buildpack configuration for Next.js
-  buildConfig:
-    nodeVersion: "20"
-    # Environment variables passed during build
-    env:
-      - name: PNPM_VERSION
-        value: "9.0.0"
-      - name: NODE_ENV
-        value: "production"
+# Firebase App Hosting Configuration for Next.js
+# https://firebase.google.com/docs/app-hosting/configure
 
-  # Service configuration
-  serviceConfig:
-    # Runtime configuration
-    runtime: nodejs20
-    # Port where the Next.js app listens
-    port: 3000
-    # Concurrency settings
-    concurrency: 100
-    # Timeout for requests
-    timeoutSeconds: 60
-    # Memory allocation
-    memoryMiB: 512
-    # CPU allocation
-    cpuCount: 1
+runConfig:
+  # CPU allocation (fractional vCPUs)
+  cpu: 1
+  # Memory allocation in MiB
+  memoryMiB: 512
+  # Maximum concurrent requests per instance
+  concurrency: 100
+  # Request timeout in seconds
+  maxInstances: 10
+  minInstances: 0
 
-    # Environment variables (non-sensitive)
-    env:
-      - name: NODE_ENV
-        value: production
-      - name: PORT
-        value: "3000"
-
-    # Health check configuration
-    healthChecks:
-      startup:
-        path: /
-        timeoutSeconds: 30
-        initialDelaySeconds: 10
-        periodSeconds: 10
-        failureThreshold: 3
-      liveness:
-        path: /
-        timeoutSeconds: 10
-        initialDelaySeconds: 30
-        periodSeconds: 30
-        failureThreshold: 3
-      readiness:
-        path: /
-        timeoutSeconds: 10
-        initialDelaySeconds: 5
-        periodSeconds: 10
-        failureThreshold: 3
-
-    # Secrets (injected from Firebase Secret Manager)
-    secrets:
-      - name: NEXT_PUBLIC_API_URL
-        versionRef: latest
-      - name: NEXT_PUBLIC_APP_URL
-        versionRef: latest
-      - name: NEXTAUTH_SECRET
-        versionRef: latest
-
-  # Scaling configuration
-  scalingConfig:
-    minInstances: 1
-    maxInstances: 10
-    cpuTargetUtilization: 0.8
-    memoryTargetUtilization: 0.85
-
-  # Network configuration
-  networkConfig:
-    # Enable Cloud Armor for DDoS protection (optional)
-    cloudArmor: false
-    # VPC access (optional, for private backend connectivity)
-    vpcConnector: ""
+env:
+  # Runtime environment variables
+  - variable: NODE_ENV
+    value: production
+  - variable: NEXT_TELEMETRY_DISABLED
+    value: "1"
