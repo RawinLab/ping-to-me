@@ -152,12 +152,7 @@ jobs:
             --min-instances=${{ needs.determine-environment.outputs.min-scale }} \
             --max-instances=${{ needs.determine-environment.outputs.max-scale }} \
             --timeout=300 \
-            --startup-probe-path=/health/live \
-            --startup-probe-failure-threshold=5 \
-            --liveness-probe-path=/health/live \
-            --readiness-probe-path=/health/ready \
-            --labels=environment=${{ needs.determine-environment.outputs.environment }},commit=${{ github.sha }},branch=${{ github.ref_name }} \
-            --service-account=api-cloudrun-sa@${{ needs.determine-environment.outputs.gcp-project }}.iam.gserviceaccount.com
+            --labels=environment=${{ needs.determine-environment.outputs.environment }},commit=${{ github.sha }},branch=${{ github.ref_name }}
 
       - name: Get Cloud Run service URL
         id: get-url
