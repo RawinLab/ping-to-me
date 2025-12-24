@@ -153,7 +153,7 @@ jobs:
             --max-instances=${{ needs.determine-environment.outputs.max-scale }} \
             --timeout=300 \
             --set-secrets=DATABASE_URL=DATABASE_URL:latest,JWT_SECRET=JWT_SECRET:latest \
-            --set-env-vars=NODE_ENV=production,PORT=3000 \
+            --set-env-vars=NODE_ENV=production \
             --labels=environment=${{ needs.determine-environment.outputs.environment }},commit=${{ github.sha }},branch=${{ github.ref_name }}
 
       - name: Get Cloud Run service URL
