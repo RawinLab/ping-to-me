@@ -62,7 +62,7 @@ jobs:
             echo "min-scale=0" >> $GITHUB_OUTPUT
             echo "max-scale=10" >> $GITHUB_OUTPUT
             echo "cpu=1" >> $GITHUB_OUTPUT
-            echo "memory=512Mi" >> $GITHUB_OUTPUT
+            echo "memory=1Gi" >> $GITHUB_OUTPUT
           fi
 
       - name: Display Configuration
