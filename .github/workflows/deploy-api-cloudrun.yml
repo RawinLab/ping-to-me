@@ -32,7 +32,6 @@ jobs:
     outputs:
       environment: ${{ steps.set-env.outputs.environment }}
       gcp-project: ${{ steps.set-env.outputs.gcp-project }}
-      gcp-sa-key: ${{ steps.set-env.outputs.gcp-sa-key }}
       cloudrun-service: ${{ steps.set-env.outputs.cloudrun-service }}
       min-scale: ${{ steps.set-env.outputs.min-scale }}
       max-scale: ${{ steps.set-env.outputs.max-scale }}
@@ -52,7 +51,6 @@ jobs:
 
           if [[ "${ENVIRONMENT}" == "prod" ]]; then
             echo "gcp-project=${{ secrets.GCP_PROJECT_ID_PROD }}" >> $GITHUB_OUTPUT
-            echo "gcp-sa-key=${{ secrets.GCP_SA_KEY_PROD }}" >> $GITHUB_OUTPUT
             echo "cloudrun-service=api-prod" >> $GITHUB_OUTPUT
             echo "min-scale=1" >> $GITHUB_OUTPUT
             echo "max-scale=100" >> $GITHUB_OUTPUT
@@ -60,7 +58,6 @@ jobs:
             echo "memory=4Gi" >> $GITHUB_OUTPUT
           else
             echo "gcp-project=${{ secrets.GCP_PROJECT_ID_UAT }}" >> $GITHUB_OUTPUT
-            echo "gcp-sa-key=${{ secrets.GCP_SA_KEY_UAT }}" >> $GITHUB_OUTPUT
             echo "cloudrun-service=api-uat" >> $GITHUB_OUTPUT
             echo "min-scale=0" >> $GITHUB_OUTPUT
             echo "max-scale=10" >> $GITHUB_OUTPUT
@@ -93,7 +90,7 @@ jobs:
         id: auth
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ needs.determine-environment.outputs.gcp-sa-key }}
+          credentials_json: ${{ needs.determine-environment.outputs.environment == 'prod' && secrets.GCP_SA_KEY_PROD || secrets.GCP_SA_KEY_UAT }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -137,7 +134,7 @@ jobs:
         id: auth
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ needs.determine-environment.outputs.gcp-sa-key }}
+          credentials_json: ${{ needs.determine-environment.outputs.environment == 'prod' && secrets.GCP_SA_KEY_PROD || secrets.GCP_SA_KEY_UAT }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -219,7 +216,7 @@ jobs:
         id: auth
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ needs.determine-environment.outputs.gcp-sa-key }}
+          credentials_json: ${{ needs.determine-environment.outputs.environment == 'prod' && secrets.GCP_SA_KEY_PROD || secrets.GCP_SA_KEY_UAT }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -270,7 +267,7 @@ jobs:
         id: auth
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ needs.determine-environment.outputs.gcp-sa-key }}
+          credentials_json: ${{ needs.determine-environment.outputs.environment == 'prod' && secrets.GCP_SA_KEY_PROD || secrets.GCP_SA_KEY_UAT }}
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
