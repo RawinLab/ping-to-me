@@ -15,6 +15,11 @@ RUN pnpm install --frozen-lockfile
 
 COPY --from=builder /app/out/full/ .
 COPY turbo.json turbo.json
+
+# Generate Prisma client
+RUN pnpm --filter @pingtome/database db:generate
+
+# Build the API and its dependencies
 RUN pnpm turbo run build --filter=api...
 
 FROM base AS runner
