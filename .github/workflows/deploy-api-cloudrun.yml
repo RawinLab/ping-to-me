@@ -269,6 +269,14 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Fetch container logs
+        run: |
+          echo "=== Cloud Run Container Logs (last 50 entries) ==="
+          gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=${{ needs.determine-environment.outputs.cloudrun-service }}" \
+            --limit=50 \
+            --format='table(timestamp,severity,textPayload)' \
+            || echo "Failed to fetch logs"
+
       - name: Get previous stable revision
         id: get-revision
         run: |
