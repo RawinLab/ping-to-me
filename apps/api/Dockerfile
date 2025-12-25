@@ -25,8 +25,11 @@ RUN pnpm --filter @pingtome/database db:generate
 # Build the API and its dependencies
 RUN pnpm turbo run build --filter=api...
 
-FROM base AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
+
+# Install OpenSSL for Prisma
+RUN apk add --no-cache openssl
 
 COPY --from=installer /app .
 
