@@ -1,21 +1,25 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 @Injectable()
-export class StorageService {
-  private s3Client: S3Client;
-  private bucketName: string;
+export class StorageService implements OnModuleInit {
+  private readonly logger = new Logger(StorageService.name);
+  private s3Client: S3Client | null = null;
+  private bucketName: string | undefined;
+  private isConfigured = false;
 
-  constructor() {
+  onModuleInit() {
     const accountId = process.env.R2_ACCOUNT_ID;
     const accessKeyId = process.env.R2_ACCESS_KEY_ID;
     const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
     this.bucketName = process.env.R2_BUCKET_NAME;
 
     if (!accountId || !accessKeyId || !secretAccessKey || !this.bucketName) {
-      throw new Error(
-        "Missing R2 configuration. Please check R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, and R2_BUCKET_NAME environment variables.",
+      this.logger.warn(
+        "R2 storage is not configured. File upload features will be disabled. " +
+          "Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, and R2_BUCKET_NAME to enable.",
       );
+      return;
     }
 
     this.s3Client = new S3Client({
@@ -26,6 +30,8 @@ export class StorageService {
         secretAccessKey,
       },
     });
+    this.isConfigured = true;
+    this.logger.log("R2 storage configured successfully");
   }
 
   async uploadFile(
@@ -33,6 +39,12 @@ export class StorageService {
     body: Buffer,
     contentType: string,
   ): Promise<string> {
+    if (!this.isConfigured || !this.s3Client) {
+      throw new Error(
+        "R2 storage is not configured. Cannot upload files.",
+      );
+    }
+
     const command = new PutObjectCommand({
       Bucket: this.bucketName,
       Key: key,
@@ -45,8 +57,12 @@ export class StorageService {
       // Return the public URL (assuming custom domain or R2.dev subdomain)
       return `https://assets.pingto.me/${key}`;
     } catch (error) {
-      console.error("Error uploading to R2:", error);
+      this.logger.error("Error uploading to R2:", error);
       throw new Error("Failed to upload file");
     }
+  }
+
+  isAvailable(): boolean {
+    return this.isConfigured;
   }
 }
