@@ -1,0 +1,16 @@
+[phases.install]
+cmds = [
+  "corepack enable",
+  "corepack prepare pnpm@9.0.0 --activate",
+  "pnpm install --frozen-lockfile"
+]
+
+[phases.build]
+cmds = [
+  "pnpm --filter @pingtome/database db:generate",
+  "pnpm --filter api build",
+  "pnpm --filter web build"
+]
+
+[start]
+cmd = "sh -c 'PORT=3001 node apps/api/dist/apps/api/src/main.js & PORT=3010 HOSTNAME=0.0.0.0 node apps/web/.next/standalone/apps/web/server.js & wait'"
