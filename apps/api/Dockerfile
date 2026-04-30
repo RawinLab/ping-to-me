@@ -63,7 +63,7 @@ FROM node:20-alpine AS production
 WORKDIR /app
 
 # OpenSSL required by Prisma on Alpine
-RUN apk add --no-cache openssl dumb-init
+RUN apk add --no-cache openssl dumb-init curl
 
 # Create non-root user
 RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
@@ -84,7 +84,7 @@ ENV PORT=3001
 
 EXPOSE 3001
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \
+  CMD curl -sf http://localhost:3001/health || exit 1
 
 CMD ["dumb-init", "node", "apps/api/dist/apps/api/src/main"]

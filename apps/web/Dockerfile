@@ -27,7 +27,7 @@ RUN pnpm --filter web build
 FROM node:20-alpine AS production
 WORKDIR /app
 
-RUN apk add --no-cache dumb-init
+RUN apk add --no-cache dumb-init curl
 RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
 
 COPY --from=build --chown=appuser:appgroup /app/apps/web/.next/standalone ./
@@ -42,7 +42,7 @@ ENV HOSTNAME="0.0.0.0"
 
 EXPOSE 3010
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3010/ || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=5 \
+  CMD curl -sf http://localhost:3010/ || exit 1
 
 CMD ["dumb-init", "node", "apps/web/server.js"]
