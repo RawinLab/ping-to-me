@@ -1,6 +1,45 @@
-FROM alpine:3.19
-RUN echo "Hello from Coolify Docker build test"
-RUN apk add --no-cache curl wget
+FROM node:20-alpine
+
+ENV NODE_ENV=development
+
+RUN apk add --no-cache python3 make g++ libc6-compat
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY packages/database/package.json ./packages/database/package.json
+COPY packages/types/package.json ./packages/types/package.json
+COPY packages/config/package.json ./packages/config/package.json
+COPY packages/ui/package.json ./packages/ui/package.json
+COPY apps/api/package.json ./apps/api/package.json
+COPY apps/web/package.json ./apps/web/package.json
+
+RUN pnpm install --frozen-lockfile 2>&1 || pnpm install 2>&1
+
+COPY packages/database ./packages/database
+COPY packages/types ./packages/types
+COPY packages/config ./packages/config
+COPY packages/ui ./packages/ui
+COPY apps/api ./apps/api
+COPY apps/web ./apps/web
+
+RUN pnpm --filter @pingtome/database db:generate
+RUN pnpm --filter api build
+RUN pnpm --filter web build
+
+RUN apk add --no-cache openssl dumb-init supervisor
+RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
+
+COPY --chown=appuser:appgroup docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+RUN mkdir -p /var/log/supervisor && chown -R appuser:appgroup /var/log/supervisor
+
+USER appuser
+
+ENV NODE_ENV=production
 EXPOSE 3001 3010
-HEALTHCHECK CMD wget --no-verbose --tries=1 --spider http://localhost:3001/ || exit 1
-CMD ["sleep", "infinity"]
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
+
+CMD ["dumb-init", "supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
