@@ -40,6 +40,11 @@ RUN pnpm --filter api build
 ENV NODE_ENV=production
 RUN pnpm --filter web build
 
+# Fix Next.js standalone static file paths
+# Standalone server expects .next/static inside the standalone directory
+RUN cp -r apps/web/.next/static apps/web/.next/standalone/apps/web/.next/static && \
+    cp -r apps/web/public apps/web/.next/standalone/apps/web/public 2>/dev/null || true
+
 RUN apk add --no-cache dumb-init supervisor curl
 RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
 
