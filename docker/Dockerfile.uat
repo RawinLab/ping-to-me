@@ -2,7 +2,14 @@ FROM node:20-alpine
 
 ENV NODE_ENV=development
 
-RUN apk add --no-cache python3 make g++ libc6-compat
+ARG NEXT_PUBLIC_API_URL=http://localhost:3001
+ARG NEXT_PUBLIC_APP_URL=http://localhost:3010
+ARG NEXT_PUBLIC_SHORT_URL=http://pingto.me
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_SHORT_URL=$NEXT_PUBLIC_SHORT_URL
+
+RUN apk add --no-cache python3 make g++ libc6-compat openssl
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
 WORKDIR /app
@@ -15,7 +22,7 @@ COPY packages/ui/package.json ./packages/ui/package.json
 COPY apps/api/package.json ./apps/api/package.json
 COPY apps/web/package.json ./apps/web/package.json
 
-RUN pnpm install --frozen-lockfile 2>&1 || pnpm install 2>&1
+RUN pnpm install --frozen-lockfile 2>&1 || pnpm install --no-frozen-lockfile 2>&1
 
 COPY packages/database ./packages/database
 COPY packages/types ./packages/types
@@ -24,11 +31,16 @@ COPY packages/ui ./packages/ui
 COPY apps/api ./apps/api
 COPY apps/web ./apps/web
 
+RUN pnpm --filter @pingtome/config build || true
+RUN pnpm --filter @pingtome/types build
 RUN pnpm --filter @pingtome/database db:generate
 RUN pnpm --filter api build
+
+# Switch to production for Next.js build to avoid prerender issues
+ENV NODE_ENV=production
 RUN pnpm --filter web build
 
-RUN apk add --no-cache openssl dumb-init supervisor
+RUN apk add --no-cache dumb-init supervisor
 RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
 
 COPY --chown=appuser:appgroup docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
@@ -36,7 +48,6 @@ RUN mkdir -p /var/log/supervisor && chown -R appuser:appgroup /var/log/superviso
 
 USER appuser
 
-ENV NODE_ENV=production
 EXPOSE 3001 3010
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
