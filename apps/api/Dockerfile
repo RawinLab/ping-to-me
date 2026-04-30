@@ -50,10 +50,14 @@ COPY apps/api ./apps/api
 RUN pnpm --filter @pingtome/database db:generate
 
 # Build the API and its workspace dependencies (types, database)
+RUN pnpm --filter @pingtome/types build
 RUN pnpm --filter api build
 
 # Prune dev dependencies for production
-RUN pnpm install --prod --frozen-lockfile
+RUN pnpm install --prod --frozen-lockfile || pnpm install --prod
+
+# Re-generate Prisma client after prod install (ensures client is in prod node_modules)
+RUN pnpm --filter @pingtome/database db:generate
 
 # ---------------------------------------------------------------------------
 # Stage 4: Production - minimal runtime image
