@@ -1,84 +1,48 @@
-# Multi-stage Dockerfile for Next.js 14 in Turborepo monorepo
-# Optimized for production with minimal image size using standalone output
-
 FROM node:20-alpine AS base
 
-# ============================================================================
-# STAGE 1: Prune dependencies and workspace for the web app
-# ============================================================================
-FROM base AS builder
+RUN apk add --no-cache libc6-compat
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+
+FROM base AS deps
 WORKDIR /app
 
-# Install turbo for monorepo pruning
-RUN npm install -g turbo
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY packages/types/package.json ./packages/types/package.json
+COPY packages/config/package.json ./packages/config/package.json
+COPY packages/ui/package.json ./packages/ui/package.json
+COPY apps/web/package.json ./apps/web/package.json
 
-# Copy the entire monorepo
-COPY . .
-
-# Prune the monorepo to only include web app dependencies
-# This creates a sparse checkout of only necessary files
-RUN turbo prune --scope=web --docker
-
-# ============================================================================
-# STAGE 2: Install dependencies
-# ============================================================================
-FROM base AS installer
-WORKDIR /app
-
-# Enable pnpm (corepack comes with Node.js 20)
-RUN corepack enable
-
-# Copy pruned dependency tree from builder
-COPY --from=builder /app/out/json/ .
-COPY --from=builder /app/out/pnpm-lock.yaml ./pnpm-lock.yaml
-
-# Install dependencies using pnpm
-# Use --frozen-lockfile to prevent modifications during install
 RUN pnpm install --frozen-lockfile
 
-# Copy the pruned full source from builder
-COPY --from=builder /app/out/full/ .
-
-# Copy turbo config for build task
-COPY turbo.json turbo.json
-
-# Build the web app and its dependencies
-# The --filter=web... builds web and all its dependencies (e.g., @pingtome/ui)
-RUN pnpm turbo run build --filter=web...
-
-# ============================================================================
-# STAGE 3: Runtime - Create minimal production image
-# ============================================================================
-FROM base AS runner
+FROM deps AS build
 WORKDIR /app
 
-# Install dumb-init to handle signals properly
-# This ensures the Node process receives SIGTERM for graceful shutdown
+COPY packages/types ./packages/types
+COPY packages/config ./packages/config
+COPY packages/ui ./packages/ui
+COPY apps/web ./apps/web
+
+RUN pnpm --filter web build
+
+FROM node:20-alpine AS production
+WORKDIR /app
+
 RUN apk add --no-cache dumb-init
+RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
 
-# Create non-root user for security best practices
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
+COPY --from=build --chown=appuser:appgroup /app/apps/web/.next/standalone ./
+COPY --from=build --chown=appuser:appgroup /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=build --chown=appuser:appgroup /app/apps/web/public ./apps/web/public
 
-# Copy the entire app from installer (includes node_modules and built output)
-COPY --from=installer /app .
+USER appuser
 
-# Switch to non-root user
-USER nextjs
-
-# Expose port 3000 (default Next.js port)
-EXPOSE 3000
-
-# Set environment to production
 ENV NODE_ENV=production
+ENV PORT=3010
+ENV HOSTNAME="0.0.0.0"
 
-# Health check for container orchestration
+EXPOSE 3010
+
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3010/ || exit 1
 
-# Use dumb-init to handle signals and prevent zombie processes
-ENTRYPOINT ["dumb-init", "--"]
-
-# Start the Next.js server
-# The standalone output from the build creates a standalone server that doesn't need 'next start'
-CMD ["node", "apps/web/.next/standalone/server.js"]
+CMD ["dumb-init", "node", "apps/web/server.js"]

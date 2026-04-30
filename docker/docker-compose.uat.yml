@@ -1,0 +1,64 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.uat
+    container_name: pingtome-uat
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+      - "3010:3010"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://pingtome_uat:${UAT_DB_PASSWORD}@db:5432/pingtome_uat
+      JWT_SECRET: ${UAT_JWT_SECRET}
+      REFRESH_SECRET: ${UAT_REFRESH_SECRET}
+      JWT_EXPIRES_IN: 15m
+      REFRESH_EXPIRES_IN: 7d
+      NEXT_PUBLIC_API_URL: ${UAT_API_URL:-http://localhost:3001}
+      NEXT_PUBLIC_APP_URL: ${UAT_APP_URL:-http://localhost:3010}
+      FRONTEND_URL: ${UAT_APP_URL:-http://localhost:3010}
+      STRIPE_SECRET_KEY: ${UAT_STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${UAT_STRIPE_WEBHOOK_SECRET}
+      GOOGLE_CLIENT_ID: ${UAT_GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${UAT_GOOGLE_CLIENT_SECRET}
+      GITHUB_CLIENT_ID: ${UAT_GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${UAT_GITHUB_CLIENT_SECRET}
+      THROTTLE_TTL: 60000
+      THROTTLE_LIMIT: 100
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - pingtome-uat
+    volumes:
+      - uploads:/app/uploads
+
+  db:
+    image: postgres:16-alpine
+    container_name: pingtome-uat-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pingtome_uat
+      POSTGRES_PASSWORD: ${UAT_DB_PASSWORD}
+      POSTGRES_DB: pingtome_uat
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - pingtome-uat
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pingtome_uat -d pingtome_uat"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+networks:
+  pingtome-uat:
+    driver: bridge
+
+volumes:
+  pgdata:
+  uploads:
