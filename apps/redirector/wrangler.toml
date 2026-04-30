@@ -30,12 +30,9 @@ preview_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
 # UAT/Staging environment
 # Deployed from the develop branch
-# Route: uat.pingto.me
+# Route: uat.pingto.me (set via Cloudflare Dashboard/API)
 [env.uat]
 name = "pingtome-redirector-uat"
-routes = [
-  { pattern = "uat.pingto.me/*", zone_name = "pingto.me" }
-]
 
 [env.uat.vars]
 API_URL = "https://uat-api.pingto.me"
@@ -48,13 +45,9 @@ preview_id = "8c2b6f0f5fab42129a80904f2e307d8e"
 
 # Production environment
 # Deployed from the main branch
-# Routes: pingto.me/* and *.pingto.me/*
+# Routes: pingto.me/* and *.pingto.me/* (set via Cloudflare Dashboard/API)
 [env.production]
 name = "pingtome-redirector"
-routes = [
-  { pattern = "pingto.me/*", zone_name = "pingto.me" },
-  { pattern = "*.pingto.me/*", zone_name = "pingto.me" }
-]
 
 [env.production.vars]
 API_URL = "https://api.pingto.me"

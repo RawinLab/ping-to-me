@@ -1,12 +1,12 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine
 
-RUN apk add --no-cache python3 make g++ libc6-compat
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
-
-# Force development mode for install (Coolify may inject NODE_ENV=production)
-FROM base AS deps
-WORKDIR /app
 ENV NODE_ENV=development
+
+RUN apk add --no-cache python3 make g++ libc6-compat openssl dumb-init supervisor
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
+
+WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY packages/database/package.json ./packages/database/package.json
@@ -17,10 +17,6 @@ COPY apps/api/package.json ./apps/api/package.json
 COPY apps/web/package.json ./apps/web/package.json
 
 RUN pnpm install --frozen-lockfile
-
-FROM deps AS build
-WORKDIR /app
-ENV NODE_ENV=development
 
 COPY packages/database ./packages/database
 COPY packages/types ./packages/types
@@ -33,29 +29,7 @@ RUN pnpm --filter @pingtome/database db:generate
 RUN pnpm --filter api build
 RUN pnpm --filter web build
 
-# Prune dev dependencies for production
-RUN rm -rf node_modules && pnpm install --prod --no-frozen-lockfile
-
-FROM node:20-alpine AS production
-WORKDIR /app
-
-RUN apk add --no-cache openssl dumb-init supervisor
-
-RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
-
-COPY --from=build --chown=appuser:appgroup /app/node_modules ./node_modules
-COPY --from=build --chown=appuser:appgroup /app/apps/api/dist ./apps/api/dist
-COPY --from=build --chown=appuser:appgroup /app/apps/api/node_modules ./apps/api/node_modules
-COPY --from=build --chown=appuser:appgroup /app/apps/api/package.json ./apps/api/package.json
-COPY --from=build --chown=appuser:appgroup /app/apps/web/.next/standalone ./standalone
-COPY --from=build --chown=appuser:appgroup /app/apps/web/.next/static ./standalone/apps/web/.next/static
-COPY --from=build --chown=appuser:appgroup /app/apps/web/public ./standalone/apps/web/public
-COPY --from=build --chown=appuser:appgroup /app/packages/database ./packages/database
-COPY --from=build --chown=appuser:appgroup /app/packages/types ./packages/types
-COPY --from=build --chown=appuser:appgroup /app/package.json ./package.json
-COPY --from=build --chown=appuser:appgroup /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 COPY --chown=appuser:appgroup docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
 RUN mkdir -p /var/log/supervisor && chown -R appuser:appgroup /var/log/supervisor
 
 USER appuser
