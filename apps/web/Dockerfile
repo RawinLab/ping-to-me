@@ -22,6 +22,9 @@ COPY packages/config ./packages/config
 COPY packages/ui ./packages/ui
 COPY apps/web ./apps/web
 
+# Build shared packages first (types outputs to dist/ which is gitignored)
+RUN pnpm --filter @pingtome/types build
+
 RUN pnpm --filter web build
 
 FROM node:20-alpine AS production
