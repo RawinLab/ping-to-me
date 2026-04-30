@@ -121,10 +121,23 @@ export class SessionService {
     const sessions = await this.prisma.session.findMany({
       where: {
         userId,
-        expires: { gt: new Date() }, // Only non-expired sessions
+        expires: { gt: new Date() },
       },
       orderBy: { lastActive: 'desc' },
     });
+
+    let currentSessionId: string | undefined;
+
+    if (currentSessionToken) {
+      const currentSession = await this.prisma.session.findFirst({
+        where: {
+          userId,
+          tokenHash: this.hashToken(currentSessionToken),
+          expires: { gt: new Date() },
+        },
+      });
+      currentSessionId = currentSession?.id;
+    }
 
     return sessions.map((session) => ({
       id: session.id,
@@ -132,7 +145,7 @@ export class SessionService {
       ipAddress: session.ipAddress ? this.maskIpAddress(session.ipAddress) : 'Unknown',
       location: session.location || 'Unknown Location',
       lastActive: session.lastActive,
-      isCurrent: session.sessionToken === currentSessionToken,
+      isCurrent: session.id === currentSessionId,
       createdAt: session.createdAt,
     }));
   }

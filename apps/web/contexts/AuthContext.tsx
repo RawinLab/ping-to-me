@@ -57,7 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [memberships, setMemberships] = useState<OrgMembership[]>([]);
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sessionToken, setSessionToken] = useState<string | null>(null);
+  const [sessionToken, setSessionToken] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return sessionStorage.getItem("2fa_sessionToken");
+    }
+    return null;
+  });
   const initRef = useRef(false);
   const isRedirectingRef = useRef(false); // Prevent multiple redirects
   const router = useRouter();
@@ -195,6 +200,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (res.data.requires2FA) {
       setSessionToken(res.data.sessionToken);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("2fa_sessionToken", res.data.sessionToken);
+      }
       return { requires2FA: true };
     }
 
@@ -223,6 +231,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setUser(res.data.user);
     setSessionToken(null);
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("2fa_sessionToken");
+    }
 
     // Fetch memberships after successful 2FA
     await refresh();

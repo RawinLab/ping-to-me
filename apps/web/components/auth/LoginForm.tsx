@@ -24,6 +24,7 @@ interface LockStatus {
 
 export function LoginForm() {
   const { login } = useAuth();
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [lockStatus, setLockStatus] = useState<LockStatus | null>(null);
@@ -68,8 +69,7 @@ export function LoginForm() {
     try {
       const result = await login(data);
       if (result.requires2FA) {
-        // Redirect to 2FA page is handled by AuthContext
-        window.location.href = "/login/2fa";
+        router.push("/login/2fa");
       }
     } catch (err: any) {
       const errorData = err.response?.data;

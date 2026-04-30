@@ -386,6 +386,15 @@ model Link {
   utmContent  String?
   utmTerm     String?
 
+  // Interstitial page config
+  interstitial     Boolean  @default(false)
+  countdownSeconds Int      @default(0)
+
+  // OG Preview data (scraped by MetadataService)
+  ogImage    String?  @db.VarChar(2048)
+  ogFavicon  String?  @db.VarChar(512)
+  ogSiteName String?  @db.VarChar(200)
+
   status    LinkStatus @default(ACTIVE)
   deletedAt DateTime?
   createdAt DateTime   @default(now())

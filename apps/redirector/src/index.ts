@@ -1,10 +1,18 @@
 import { Hono } from "hono";
+import { renderInterstitial } from "./templates/interstitial";
 
 type Bindings = {
   LINKS_KV: KVNamespace;
   API_URL: string;
   ANALYTICS_API_KEY: string;
 };
+
+interface OgPreview {
+  title?: string;
+  description?: string;
+  image?: string;
+  favicon?: string;
+}
 
 interface LinkMetadata {
   url: string;
@@ -18,6 +26,10 @@ interface LinkMetadata {
   currentClicks?: number;
   redirectRules?: RedirectRule[];
   variants?: LinkVariant[];
+  // Interstitial fields
+  interstitial?: boolean;
+  countdownSeconds?: number;
+  ogPreview?: OgPreview | null;
 }
 
 interface RedirectRule {
@@ -272,6 +284,9 @@ app.get("/:slug", async (c) => {
           currentClicks: data.currentClicks,
           redirectRules: data.redirectRules,
           variants: data.variants,
+          interstitial: data.interstitial ?? false,
+          countdownSeconds: data.countdownSeconds ?? 0,
+          ogPreview: data.ogPreview,
         });
         // Cache in KV for next time
         c.executionCtx.waitUntil(kv.put(slug, value, { expirationTtl: 3600 })); // Cache for 1 hour
@@ -414,6 +429,17 @@ app.get("/:slug", async (c) => {
     const validRedirectCode = (redirectCode === 301 || redirectCode === 302) ? redirectCode : 301;
 
     console.log(`Redirecting ${slug} to ${destination} with ${validRedirectCode}`);
+
+    if (metadata.interstitial) {
+      const html = renderInterstitial({
+        destination,
+        countdownSeconds: metadata.countdownSeconds ?? 0,
+        ogPreview: metadata.ogPreview,
+        slug,
+      });
+      return c.html(html);
+    }
+
     return c.redirect(destination, validRedirectCode);
   }
 

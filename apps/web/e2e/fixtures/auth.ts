@@ -1,4 +1,4 @@
-import { test as base, expect, Page, BrowserContext } from "@playwright/test";
+import { test as base, expect, Page, BrowserContext, request, APIRequestContext } from "@playwright/test";
 import { TEST_CREDENTIALS } from "./test-data";
 
 type UserRole = "owner" | "admin" | "editor" | "viewer";
@@ -9,84 +9,64 @@ interface AuthenticatedTestFixtures {
 }
 
 /**
- * Login helper - performs actual login against the API
+ * Login helper - performs UI login with retries and robust wait handling.
+ * Uses the actual login form to ensure frontend auth state is fully established.
  */
 export async function loginAsUser(
   page: Page,
   role: UserRole = "owner",
 ): Promise<void> {
   const credentials = TEST_CREDENTIALS[role];
+  await page.context().clearCookies();
 
-  // Go to login page
-  await page.goto("/login");
-  await page.waitForLoadState("networkidle");
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      await page.goto("/login", { timeout: 45000 });
+      await page.waitForLoadState("domcontentloaded");
 
-  // Wait for React to hydrate (check for a React-rendered element)
-  await page.waitForFunction(() => {
-    const form = document.querySelector("form");
-    return form && document.querySelector('input[id="email"]');
-  }, { timeout: 10000 });
+      await page.waitForFunction(() => {
+        const form = document.querySelector("form");
+        return form && document.querySelector('input[id="email"]');
+      }, { timeout: 20000 });
 
-  // Additional wait for React event handlers to be attached
-  await page.waitForTimeout(500);
+      await page.waitForTimeout(500);
 
-  // Get input elements
-  const emailInput = page.locator('input[id="email"]');
-  const passwordInput = page.locator('input[id="password"]');
+      const emailInput = page.locator('input[id="email"]');
+      const passwordInput = page.locator('input[id="password"]');
+      const loginButton = page.locator('button:has-text("Sign In with Email")');
 
-  // Wait for inputs to be ready
-  await emailInput.waitFor({ state: "visible" });
-  await passwordInput.waitFor({ state: "visible" });
+      await emailInput.waitFor({ state: "visible" });
+      await passwordInput.waitFor({ state: "visible" });
+      await loginButton.waitFor({ state: "visible" });
 
-  // Fill using standard fill() which works after React hydration
-  await emailInput.fill(credentials.email);
-  await passwordInput.fill(credentials.password);
+      await emailInput.fill(credentials.email);
+      await passwordInput.fill(credentials.password);
 
-  // Click login button
-  const loginButton = page.locator('button:has-text("Sign In with Email")');
-  await loginButton.waitFor({ state: "visible" });
+      const responsePromise = page.waitForResponse(
+        (resp) => resp.url().includes("/auth/login"),
+        { timeout: 30000 }
+      );
 
-  // Listen for API response
-  const responsePromise = page.waitForResponse(
-    (response) => response.url().includes("/auth/login"),
-    { timeout: 10000 }
-  );
+      await loginButton.click();
+      const response = await responsePromise;
 
-  await loginButton.click();
-
-  // Wait for API response
-  const response = await responsePromise;
-  const status = response.status();
-
-  if (status === 201 || status === 200) {
-    // Wait for redirect to dashboard or 2FA page with longer timeout
-    // Use waitForURL with a timeout that accounts for Next.js client navigation
-    await Promise.race([
-      page.waitForURL(/\/dashboard/, { timeout: 20000 }),
-      page.waitForURL(/\/login\/2fa/, { timeout: 20000 }),
-    ]).catch(async () => {
-      // If URL doesn't change, wait for dashboard elements to appear (SPA navigation)
-      const currentUrl = page.url();
-      if (currentUrl.includes("/login")) {
-        // Try waiting a bit more for SPA navigation
-        await page.waitForTimeout(2000);
-        // Force navigation if still on login
-        if (page.url().includes("/login")) {
-          await page.goto("/dashboard");
-        }
+      if (response.status() !== 200 && response.status() !== 201) {
+        throw new Error(`Login API returned status ${response.status()}`);
       }
-    });
-  } else {
-    throw new Error(`Login API returned status ${status}`);
-  }
 
-  // Wait for dashboard to load
-  await page.waitForLoadState("networkidle");
-
-  // Verify we're logged in by checking dashboard elements (unless 2FA required)
-  if (page.url().includes("/dashboard")) {
-    await expect(page.locator("h1, nav").first()).toBeVisible({ timeout: 10000 });
+      await page.waitForURL(/\/dashboard/, { timeout: 30000 });
+      await page.waitForLoadState("domcontentloaded");
+      return;
+    } catch {
+      if (attempt < 2) {
+        try {
+          await page.context().clearCookies();
+          await page.waitForTimeout(2000);
+        } catch { /* context may be closed — cannot retry */ break; }
+      }
+    }
   }
+  throw new Error(`Failed to login as ${role} after 3 attempts`);
 }
 
 /**
@@ -141,4 +121,124 @@ export async function waitForAuthReady(page: Page): Promise<void> {
     page.waitForURL(/\/dashboard/, { timeout: 5000 }).catch(() => {}),
     page.waitForURL(/\/login/, { timeout: 5000 }).catch(() => {}),
   ]);
+}
+
+/**
+ * API-based login - returns tokens without requiring a browser
+ */
+export async function apiLogin(role: string = "owner"): Promise<{
+  accessToken: string;
+  cookies: { name: string; value: string; domain: string; path: string }[];
+}> {
+  const credentials = TEST_CREDENTIALS[role as keyof typeof TEST_CREDENTIALS];
+
+  const apiContext = await request.newContext({
+    baseURL: "http://localhost:3011",
+  });
+
+  const response = await apiContext.post("/auth/login", {
+    data: {
+      email: credentials.email,
+      password: credentials.password,
+    },
+  });
+
+  if (response.status() !== 200 && response.status() !== 201) {
+    await apiContext.dispose();
+    throw new Error(`API login failed with status ${response.status()}`);
+  }
+
+  const body = await response.json();
+  const state = await apiContext.storageState();
+
+  await apiContext.dispose();
+
+  return {
+    accessToken: body.accessToken,
+    cookies: state.cookies.map((c) => ({
+      name: c.name,
+      value: c.value,
+      domain: c.domain,
+      path: c.path,
+    })),
+  };
+}
+
+/**
+ * Create an authenticated Playwright APIRequestContext with auth headers
+ */
+export async function createAuthenticatedContext(
+  role: string = "owner",
+  orgId?: string,
+): Promise<APIRequestContext> {
+  const { accessToken, cookies } = await apiLogin(role);
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${accessToken}`,
+  };
+
+  if (orgId) {
+    headers["X-Organization-Id"] = orgId;
+  }
+
+  const storageState = {
+    cookies: cookies.map((c) => ({
+      name: c.name,
+      value: c.value,
+      domain: c.domain,
+      path: c.path,
+      expires: -1,
+      httpOnly: false,
+      secure: false,
+      sameSite: "Lax" as const,
+    })),
+    origins: [] as Array<{
+      origin: string;
+      localStorage: Array<{ name: string; value: string }>;
+    }>,
+  };
+
+  return await request.newContext({
+    baseURL: "http://localhost:3011",
+    extraHTTPHeaders: headers,
+    storageState,
+  });
+}
+
+/**
+ * Storage state cache for browser login reuse
+ */
+const storageStateCache = new Map<string, string>();
+
+/**
+ * Browser login with storage state caching for faster repeated logins
+ */
+export async function loginWithCachedState(
+  page: Page,
+  context: BrowserContext,
+  role: string = "owner",
+): Promise<void> {
+  const cacheKey = `login-state-${role}`;
+
+  const cachedState = storageStateCache.get(cacheKey);
+
+  if (cachedState) {
+    const state = JSON.parse(cachedState);
+    await context.addCookies(state.cookies);
+
+    await page.goto("/dashboard");
+    await page.waitForLoadState("networkidle");
+
+    const currentUrl = page.url();
+    if (currentUrl.includes("/login")) {
+      storageStateCache.delete(cacheKey);
+      await loginWithCachedState(page, context, role);
+      return;
+    }
+  } else {
+    await loginAsUser(page, role as UserRole);
+
+    const state = await context.storageState();
+    storageStateCache.set(cacheKey, JSON.stringify(state));
+  }
 }

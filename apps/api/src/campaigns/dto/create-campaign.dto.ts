@@ -26,7 +26,7 @@ export class CreateCampaignDto {
 
   @IsOptional()
   @IsUUID()
-  orgId?: string;
+  organizationId?: string;
 
   @IsOptional()
   @IsDateString()

@@ -19,6 +19,9 @@ export interface CreateLinkDto {
   generateQrCode?: boolean; // Whether to generate QR code (default: true)
   // Duplicate URL handling
   allowDuplicate?: boolean; // Whether to allow creating a duplicate short link for the same URL (default: false)
+  // Interstitial page config
+  interstitial?: boolean;
+  countdownSeconds?: number;
 }
 
 export interface LinkResponse {
@@ -36,6 +39,13 @@ export interface LinkResponse {
   // Safety check fields (Module 1.2 Phase 2)
   safetyStatus?: "safe" | "unsafe" | "pending" | "unknown";
   safetyThreats?: string[]; // List of detected threats (e.g., "MALWARE", "PHISHING")
+  // Interstitial page config
+  interstitial?: boolean;
+  countdownSeconds?: number;
+  // OG Preview data
+  ogImage?: string;
+  ogFavicon?: string;
+  ogSiteName?: string;
 }
 
 export enum LinkStatus {

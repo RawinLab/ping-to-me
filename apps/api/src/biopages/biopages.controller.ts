@@ -89,7 +89,8 @@ export class BioPageController {
     @Param("id") id: string,
     @Body() body: any,
   ): Promise<BioPage> {
-    return this.bioPageService.updateBioPage(id, req.user.id, body);
+    const { orgId, ...data } = body;
+    return this.bioPageService.updateBioPage(id, req.user.id, data);
   }
 
   @RequireScope('biopage:delete')
@@ -134,6 +135,18 @@ export class BioPageController {
 
   @RequireScope('biopage:update')
   @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
+  @Patch(":id/links/reorder")
+  @Permission({ resource: "biopage", action: "update", context: "own" })
+  async reorderLinks(
+    @Request() req,
+    @Param("id") bioPageId: string,
+    @Body() dto: ReorderLinksDto,
+  ): Promise<BioPageLink[]> {
+    return this.bioPageService.reorderLinks(bioPageId, req.user.id, dto);
+  }
+
+  @RequireScope('biopage:update')
+  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
   @Patch(":id/links/:linkId")
   @Permission({ resource: "biopage", action: "update", context: "own" })
   async updateLink(
@@ -155,18 +168,6 @@ export class BioPageController {
     @Param("linkId") linkId: string,
   ): Promise<BioPageLink> {
     return this.bioPageService.removeLink(bioPageId, linkId, req.user.id);
-  }
-
-  @RequireScope('biopage:update')
-  @UseGuards(OptionalAuthGuard, ApiScopeGuard, PermissionGuard)
-  @Patch(":id/links/reorder")
-  @Permission({ resource: "biopage", action: "update", context: "own" })
-  async reorderLinks(
-    @Request() req,
-    @Param("id") bioPageId: string,
-    @Body() dto: ReorderLinksDto,
-  ): Promise<BioPageLink[]> {
-    return this.bioPageService.reorderLinks(bioPageId, req.user.id, dto);
   }
 
   // Public tracking endpoint (no auth required)

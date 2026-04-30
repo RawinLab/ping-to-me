@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsHexColor, MinLength, MaxLength, Matches, IsUUID } from 'class-validator';
+import { IsString, IsOptional, IsHexColor, MinLength, MaxLength, Matches } from 'class-validator';
 
 export class CreateTagDto {
   @IsString()
@@ -17,6 +17,6 @@ export class CreateTagDto {
   description?: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
   orgId?: string;
 }

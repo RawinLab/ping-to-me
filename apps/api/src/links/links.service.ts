@@ -264,6 +264,12 @@ export class LinksService {
     // 10. Sync to Cloudflare KV
     await this.syncToKv(link);
 
+    // Auto-scrape OG metadata (fire-and-forget)
+    this.metadataService
+      .scrapeAndUpdateLink(link.id, link.originalUrl)
+      .then(() => this.syncToKv({ ...link }))
+      .catch((err) => console.error("Metadata scrape failed:", err));
+
     // 11. Audit log - link created (async, non-blocking)
     this.auditService
       .logLinkEvent(
@@ -340,6 +346,12 @@ export class LinksService {
       where: { linkId: link.id },
     });
 
+    // Fetch redirect rules and variants for this link
+    const [redirectRules, variants] = await Promise.all([
+      this.prisma.redirectRule.findMany({ where: { linkId: link.id } }),
+      this.prisma.linkVariant.findMany({ where: { linkId: link.id } }),
+    ]);
+
     const kvKey = link.slug;
     const kvValue = JSON.stringify({
       url: link.originalUrl,
@@ -350,6 +362,16 @@ export class LinksService {
       deepLinkFallback: link.deepLinkFallback,
       status: link.status,
       redirectType: link.redirectType,
+      interstitial: link.interstitial ?? false,
+      countdownSeconds: link.countdownSeconds ?? 0,
+      redirectRules,
+      variants,
+      ogPreview: (link.title || link.description || link.ogImage || link.ogFavicon) ? {
+        title: link.title,
+        description: link.description,
+        image: link.ogImage,
+        favicon: link.ogFavicon,
+      } : null,
     });
 
     try {
@@ -473,6 +495,7 @@ export class LinksService {
   async lookup(slug: string) {
     const link = await this.prisma.link.findUnique({
       where: { slug },
+      include: { redirectRules: true, variants: true },
     });
 
     if (!link) {
@@ -505,6 +528,16 @@ export class LinksService {
       currentClicks,
       deepLinkFallback: link.deepLinkFallback,
       redirectType: link.redirectType,
+      interstitial: link.interstitial ?? false,
+      countdownSeconds: link.countdownSeconds ?? 0,
+      redirectRules: link.redirectRules,
+      variants: link.variants,
+      ogPreview: (link.title || link.description || link.ogImage || link.ogFavicon) ? {
+        title: link.title,
+        description: link.description,
+        image: link.ogImage,
+        favicon: link.ogFavicon,
+      } : null,
     };
   }
 
@@ -801,6 +834,14 @@ export class LinksService {
 
     await this.syncToKv(updated);
 
+    // Re-scrape OG if URL changed
+    if (data.originalUrl && data.originalUrl !== link.originalUrl) {
+      this.metadataService
+        .scrapeAndUpdateLink(updated.id, updated.originalUrl)
+        .then(() => this.syncToKv(updated))
+        .catch((err) => console.error("Metadata re-scrape failed:", err));
+    }
+
     // Audit log - link updated with changes (async, non-blocking)
     const changes = this.auditService.captureChanges(before, after);
     if (changes) {
@@ -906,6 +947,11 @@ export class LinksService {
       status: link.status as any,
       createdAt: link.createdAt.toISOString(),
       clicks,
+      interstitial: link.interstitial,
+      countdownSeconds: link.countdownSeconds,
+      ogImage: link.ogImage || undefined,
+      ogFavicon: link.ogFavicon || undefined,
+      ogSiteName: link.ogSiteName || undefined,
     };
   }
   private getMaxImportRows(plan?: string): number {

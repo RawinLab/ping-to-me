@@ -44,6 +44,7 @@ export class TagsController {
     if ((!organizationId || organizationId === "default") && req.user?.id) {
       const member = await this.prisma.organizationMember.findFirst({
         where: { userId: req.user.id },
+        orderBy: { joinedAt: 'asc' },
       });
       if (!member) throw new BadRequestException("User has no organization");
       organizationId = member.organizationId;

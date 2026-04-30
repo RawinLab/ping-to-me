@@ -85,7 +85,22 @@ export const securityApi = {
   // Sessions
   getSessions: async (): Promise<Session[]> => {
     const response = await apiRequest("/auth/sessions");
-    return response.sessions || [];
+    const raw = response.sessions || [];
+    return raw.map((s: any) => {
+      const parts = (s.deviceInfo || "Unknown Browser on Unknown OS").split(" on ");
+      return {
+        id: s.id,
+        userId: s.userId || "",
+        deviceType: "",
+        browser: parts[0] || "Unknown Browser",
+        os: parts.slice(1).join(" on ") || "Unknown OS",
+        ipAddress: s.ipAddress || "",
+        location: s.location || "Unknown Location",
+        lastActiveAt: s.lastActive || new Date().toISOString(),
+        createdAt: s.createdAt || new Date().toISOString(),
+        isCurrent: !!s.isCurrent,
+      };
+    });
   },
 
   logoutSession: async (sessionId: string): Promise<void> => {

@@ -11,7 +11,7 @@ export class CampaignsService {
 
   async create(
     userId: string,
-    orgId: string,
+    organizationId: string,
     data: {
       name: string;
       description?: string;
@@ -31,7 +31,7 @@ export class CampaignsService {
       data: {
         name: data.name,
         description: data.description,
-        organizationId: orgId,
+        organizationId: organizationId,
         startDate: data.startDate ? new Date(data.startDate) : undefined,
         endDate: data.endDate ? new Date(data.endDate) : undefined,
         status: data.status as any,
@@ -49,7 +49,7 @@ export class CampaignsService {
     this.auditService
       .logResourceEvent(
         userId,
-        orgId,
+        organizationId,
         "campaign.created",
         "Campaign",
         campaign.id,
@@ -80,6 +80,23 @@ export class CampaignsService {
         },
       },
     });
+  }
+
+  async findOne(userId: string, id: string) {
+    const campaign = await this.prisma.campaign.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: { links: true },
+        },
+      },
+    });
+
+    if (!campaign) {
+      throw new NotFoundException("Campaign not found");
+    }
+
+    return campaign;
   }
 
   async update(

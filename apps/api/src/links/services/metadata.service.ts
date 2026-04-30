@@ -67,10 +67,25 @@ export class MetadataService {
       data: {
         title: metadata.ogTitle || undefined,
         description: metadata.ogDescription || undefined,
-        // Note: ogImage and siteName are not stored in the Link model currently
-        // They could be added as separate fields if needed in the future
+        ogImage: metadata.ogImage || undefined,
+        ogFavicon: metadata.favicon || undefined,
+        ogSiteName: metadata.siteName || undefined,
       },
     });
+  }
+
+  async getOgPreview(linkId: string): Promise<{ title?: string; description?: string; image?: string; favicon?: string } | null> {
+    const link = await this.prisma.link.findUnique({
+      where: { id: linkId },
+      select: { title: true, description: true, ogImage: true, ogFavicon: true },
+    });
+    if (!link) return null;
+    return {
+      title: link.title || undefined,
+      description: link.description || undefined,
+      image: link.ogImage || undefined,
+      favicon: link.ogFavicon || undefined,
+    };
   }
 
   async scrapeAndUpdateLink(linkId: string, url: string): Promise<LinkMetadata> {

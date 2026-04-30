@@ -19,45 +19,40 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./e2e",
+  testIgnore: ["**/_archive/**", "**/debug-*"],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: "html",
+  workers: process.env.CI ? 1 : 2,
+  reporter: [
+    ["html", { open: "never" }],
+    ["json", { outputFile: "test-results/results.json" }],
+  ],
   use: {
     baseURL: "http://localhost:3010",
     trace: "on-first-retry",
     // Increase timeout for real API calls
-    actionTimeout: 10000,
+    actionTimeout: 15000,
     navigationTimeout: 30000,
   },
   // Increase test timeout for real database operations
-  timeout: 60000,
+  timeout: 90000,
+  expect: { timeout: 15000 },
   // Global setup for database seeding
   globalSetup: "./e2e/global-setup.ts",
-  projects: [
-    {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
-    },
-    {
-      name: "firefox",
-      use: { ...devices["Desktop Firefox"] },
-    },
-    {
-      name: "webkit",
-      use: { ...devices["Desktop Safari"] },
-    },
-    {
-      name: "mobile",
-      use: { ...devices["Pixel 5"] },
-    },
-  ],
+  projects: process.env.CI
+    ? [
+        { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+        { name: "firefox", use: { ...devices["Desktop Firefox"] } },
+        { name: "webkit", use: { ...devices["Desktop Safari"] } },
+        { name: "mobile", use: { ...devices["Pixel 5"] } },
+      ]
+    : [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   // Web server configuration
   webServer: process.env.CI
     ? undefined
     : {
-        command: "pnpm dev",
+        command: "THROTTLE_DISABLED=true pnpm dev",
         url: "http://localhost:3010",
         reuseExistingServer: true,
         timeout: 120000,

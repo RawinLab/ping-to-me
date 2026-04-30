@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, getCurrentOrganizationId } from "@/lib/api";
 import {
   Card,
   CardContent,
@@ -126,7 +126,7 @@ export default function WebhooksPage() {
     try {
       await apiRequest("/developer/webhooks", {
         method: "POST",
-        body: JSON.stringify({ url: newUrl, events: selectedEvents }),
+        body: JSON.stringify({ url: newUrl, events: selectedEvents, orgId: getCurrentOrganizationId() }),
       });
 
       setNewUrl("");

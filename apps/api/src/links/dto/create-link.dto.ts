@@ -10,8 +10,11 @@ import {
   Matches,
   IsBoolean,
   IsInt,
+  IsIn,
   Min,
 } from 'class-validator';
+
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateLinkDto {
   @IsUrl({}, { message: 'Original URL must be a valid URL' })
@@ -86,4 +89,15 @@ export class CreateLinkDto {
   @IsOptional()
   @IsBoolean()
   allowDuplicate?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  @ApiProperty({ required: false, description: 'Show interstitial page before redirect' })
+  interstitial?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @IsIn([0, 5, 10, 15, 30], { message: 'Countdown must be 0, 5, 10, 15, or 30 seconds' })
+  @ApiProperty({ required: false, description: 'Countdown timer seconds (0, 5, 10, 15, 30)', enum: [0, 5, 10, 15, 30] })
+  countdownSeconds?: number;
 }

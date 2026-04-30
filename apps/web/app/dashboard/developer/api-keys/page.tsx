@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, getCurrentOrganizationId } from "@/lib/api";
 import { securityApi } from "@/lib/api/security";
 import {
   Card,
@@ -194,6 +194,7 @@ export default function ApiKeysPage() {
       const body: any = {
         name: newKeyName,
         scopes: selectedScopes,
+        orgId: getCurrentOrganizationId(),
       };
 
       // Add optional fields if provided

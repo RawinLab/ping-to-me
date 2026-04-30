@@ -1,5 +1,11 @@
 # PingTO.Me - URL Shortener Platform
 
+## Shared Infrastructure
+This project uses **shared-infra** for PostgreSQL. Do NOT start a separate database container.
+- **Setup guide**: `/home/dev/projects/shared-infra/intro.md`
+- **Start services**: `cd ~/projects/shared-infra && ./infra.sh up`
+- **DB**: `postgresql://postgres:postgres@localhost:5432/pingtome`
+
 A Bitly-clone URL shortening platform with analytics, QR codes, and team management.
 
 ## Project Overview

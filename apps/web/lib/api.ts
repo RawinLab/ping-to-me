@@ -93,8 +93,12 @@ api.interceptors.response.use(
 
     // If 401 and not already retrying
     if (error.response?.status === 401 && !originalRequest._retry) {
-      // Skip refresh for the refresh endpoint itself
-      if (originalRequest.url?.includes("/auth/refresh")) {
+      // Skip refresh for auth endpoints that are expected to return 401
+      if (
+        originalRequest.url?.includes("/auth/refresh") ||
+        originalRequest.url?.includes("/auth/login") ||
+        originalRequest.url?.includes("/auth/register")
+      ) {
         return Promise.reject(error);
       }
 

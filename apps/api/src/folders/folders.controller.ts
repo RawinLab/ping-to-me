@@ -32,6 +32,7 @@ export class FoldersController {
   private async getDefaultOrgId(userId: string): Promise<string> {
     const member = await this.prisma.organizationMember.findFirst({
       where: { userId },
+      orderBy: { joinedAt: 'asc' },
     });
     if (!member) {
       throw new BadRequestException("User has no organization");
@@ -65,9 +66,9 @@ export class FoldersController {
   ) {
     let organizationId = orgId;
     if (!orgId || orgId === "default") {
-      // Get default org if not specified
       const member = await this.prisma.organizationMember.findFirst({
         where: { userId: req.user.id },
+        orderBy: { joinedAt: 'asc' },
       });
       if (member) {
         organizationId = member.organizationId;
@@ -89,6 +90,7 @@ export class FoldersController {
     if (!orgId || orgId === "default") {
       const member = await this.prisma.organizationMember.findFirst({
         where: { userId: req.user.id },
+        orderBy: { joinedAt: 'asc' },
       });
       if (!member) return [];
       organizationId = member.organizationId;

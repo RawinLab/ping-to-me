@@ -16,10 +16,10 @@ export class CreateFolderDto {
   description?: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
   parentId?: string;
 
   @IsOptional()
-  @IsUUID()
+  @IsString()
   orgId?: string;
 }

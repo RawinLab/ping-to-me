@@ -36,15 +36,15 @@ export class CampaignsController {
     @Request() req,
     @Body() createCampaignDto: CreateCampaignDto,
   ) {
-    let orgId = createCampaignDto.orgId;
-    if (!orgId || orgId === "default") {
+    let organizationId = createCampaignDto.organizationId;
+    if (!organizationId || organizationId === "default") {
       const member = await this.prisma.organizationMember.findFirst({
         where: { userId: req.user.id },
       });
       if (!member) throw new BadRequestException("User has no organization");
-      orgId = member.organizationId;
+      organizationId = member.organizationId;
     }
-    return this.campaignsService.create(req.user.id, orgId, {
+    return this.campaignsService.create(req.user.id, organizationId, {
       name: createCampaignDto.name,
       description: createCampaignDto.description,
       startDate: createCampaignDto.startDate,
@@ -72,6 +72,13 @@ export class CampaignsController {
       orgId = member.organizationId;
     }
     return this.campaignsService.findAll(req.user.id, orgId);
+  }
+
+  @Get(":id")
+  @RequireScope("campaign:read")
+  @Permission({ resource: "campaign", action: "read" })
+  findOne(@Request() req, @Param("id") id: string) {
+    return this.campaignsService.findOne(req.user.id, id);
   }
 
   @Patch(":id")
