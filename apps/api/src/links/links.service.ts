@@ -252,6 +252,8 @@ export class LinksService {
         domainId: domainId || null, // Store domain association (TASK-2.4.15)
         status: LinkStatus.ACTIVE,
         safetyStatus: 'pending', // Initialize safety status as pending
+        interstitial: dto.interstitial ?? false,
+        countdownSeconds: dto.countdownSeconds ?? 0,
         ...utmParams, // Spread UTM parameters
       },
     });
@@ -816,6 +818,8 @@ export class LinksService {
         passwordHash: data.password ? await bcrypt.hash(data.password, 10) : undefined,
         deepLinkFallback: data.deepLinkFallback,
         campaignId: data.campaignId === null ? null : data.campaignId,
+        interstitial: data.interstitial,
+        countdownSeconds: data.countdownSeconds,
       },
     });
 
