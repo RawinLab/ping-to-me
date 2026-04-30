@@ -38,14 +38,13 @@ routes = [
 ]
 
 [env.uat.vars]
-API_URL = "https://api-uat.pingto.me"
+API_URL = "https://uat-api.pingto.me"
 ANALYTICS_API_KEY = "uat-analytics-key"
 
 [[env.uat.kv_namespaces]]
 binding = "LINKS_KV"
-id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-preview_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-# UAT KV namespaces for staging deployments
+id = "8c2b6f0f5fab42129a80904f2e307d8e"
+preview_id = "8c2b6f0f5fab42129a80904f2e307d8e"
 
 # Production environment
 # Deployed from the main branch
@@ -63,6 +62,5 @@ ANALYTICS_API_KEY = "prod-analytics-key"
 
 [[env.production.kv_namespaces]]
 binding = "LINKS_KV"
-id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-preview_id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-# Production KV namespaces for link caching and domain routing
+id = "66922c2f638a462f9a2509fbb650271d"
+preview_id = "66922c2f638a462f9a2509fbb650271d"
