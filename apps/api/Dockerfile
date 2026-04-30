@@ -1,85 +1,33 @@
-# =============================================================================
-# PingToMe API - Production Dockerfile
-# Multi-stage build for NestJS API in Turborepo + pnpm monorepo
-# Build context: monorepo root (docker build -f apps/api/Dockerfile .)
-# =============================================================================
+FROM node:20-alpine
 
-# ---------------------------------------------------------------------------
-# Stage 1: Base - shared Alpine image with build tools
-# ---------------------------------------------------------------------------
-FROM node:20-alpine AS base
+ENV NODE_ENV=development
 
-RUN apk add --no-cache python3 make g++ libc6-compat
+RUN apk add --no-cache python3 make g++ libc6-compat openssl
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
-
-# ---------------------------------------------------------------------------
-# Stage 2: Deps - install all dependencies
-# ---------------------------------------------------------------------------
-FROM base AS deps
 
 WORKDIR /app
 
-# Copy workspace root files first (for better layer caching)
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
-
-# Copy package manifests for install resolution
 COPY packages/database/package.json ./packages/database/package.json
 COPY packages/types/package.json ./packages/types/package.json
 COPY packages/config/package.json ./packages/config/package.json
 COPY packages/ui/package.json ./packages/ui/package.json
 COPY apps/api/package.json ./apps/api/package.json
 
-# Install all dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile 2>&1 || pnpm install --no-frozen-lockfile 2>&1
 
-# ---------------------------------------------------------------------------
-# Stage 3: Build - compile TypeScript, generate Prisma client
-# ---------------------------------------------------------------------------
-FROM deps AS build
-
-WORKDIR /app
-
-# Copy full source for all required packages and the API app
 COPY packages/database ./packages/database
 COPY packages/types ./packages/types
 COPY packages/config ./packages/config
 COPY packages/ui ./packages/ui
 COPY apps/api ./apps/api
 
-# Generate Prisma client
-RUN pnpm --filter @pingtome/database db:generate
-
-# Build the API and its workspace dependencies (types, database)
 RUN pnpm --filter @pingtome/types build
+RUN pnpm --filter @pingtome/database db:generate
 RUN pnpm --filter api build
 
-# Prune dev dependencies for production
-RUN pnpm install --prod --frozen-lockfile || pnpm install --prod
-
-# Re-generate Prisma client after prod install (ensures client is in prod node_modules)
-RUN pnpm --filter @pingtome/database db:generate
-
-# ---------------------------------------------------------------------------
-# Stage 4: Production - minimal runtime image
-# ---------------------------------------------------------------------------
-FROM node:20-alpine AS production
-
-WORKDIR /app
-
-# OpenSSL required by Prisma on Alpine
-RUN apk add --no-cache openssl dumb-init curl
-
-# Create non-root user
+RUN apk add --no-cache dumb-init curl
 RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
-
-# Copy production node_modules, built app, and packages
-COPY --from=build --chown=appuser:appgroup /app/node_modules ./node_modules
-COPY --from=build --chown=appuser:appgroup /app/apps/api/dist ./apps/api/dist
-COPY --from=build --chown=appuser:appgroup /app/packages/database ./packages/database
-COPY --from=build --chown=appuser:appgroup /app/packages/types ./packages/types
-COPY --from=build --chown=appuser:appgroup /app/apps/api/package.json ./apps/api/package.json
-COPY --from=build --chown=appuser:appgroup /app/package.json ./package.json
-COPY --from=build --chown=appuser:appgroup /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
 
 USER appuser
 
