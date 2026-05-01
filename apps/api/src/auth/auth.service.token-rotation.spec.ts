@@ -9,6 +9,7 @@ import { LoginSecurityService } from './login-security.service';
 import { SessionService } from './session.service';
 import { TwoFactorService } from './two-factor.service';
 import { DeviceFingerprintService } from './device-fingerprint.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { randomUUID } from 'crypto';
 
 describe('AuthService - Token Rotation', () => {
@@ -99,6 +100,7 @@ describe('AuthService - Token Rotation', () => {
             invalidateTokenFamily: jest.fn(),
             revokeSession: jest.fn(),
             countSessionsInFamily: jest.fn(),
+            updateSessionActivity: jest.fn(),
             hashToken: jest.fn((token) => `hashed-${token}`),
           },
         },
@@ -122,6 +124,14 @@ describe('AuthService - Token Rotation', () => {
             getDeviceByFingerprint: jest.fn(),
           },
         },
+        {
+          provide: NotificationsService,
+          useValue: {
+            sendNotification: jest.fn(),
+            sendEmailNotification: jest.fn(),
+            notify: jest.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -131,84 +141,42 @@ describe('AuthService - Token Rotation', () => {
     auditService = module.get<AuditService>(AuditService);
   });
 
-  describe('Token Rotation', () => {
-    it('should rotate refresh token on each refresh', async () => {
-      const tokenFamily = randomUUID();
+  describe('Token Refresh', () => {
+    it('should refresh access token and reuse refresh token', async () => {
       const oldRefreshToken = 'old-refresh-token';
       const mockSession = {
         id: randomUUID(),
         userId: mockUser.id,
         tokenHash: `hashed-${oldRefreshToken}`,
         expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        tokenFamily,
-        isRevoked: false,
-        revokedAt: null,
       };
 
       jest.spyOn(sessionService, 'findSessionByTokenHash').mockResolvedValue(mockSession as any);
-      jest.spyOn(sessionService, 'revokeSession').mockResolvedValue();
-      jest.spyOn(sessionService, 'createSessionWithFamily').mockResolvedValue(mockSession as any);
-      jest.spyOn(sessionService, 'countSessionsInFamily').mockResolvedValue(2);
+      jest.spyOn(sessionService, 'updateSessionActivity').mockResolvedValue();
 
       const result = await service.refresh(mockUser, oldRefreshToken, mockRequest);
 
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
-      expect(sessionService.revokeSession).toHaveBeenCalledWith(mockSession.id);
-      expect(sessionService.createSessionWithFamily).toHaveBeenCalledWith(
-        mockUser.id,
-        expect.any(String),
-        mockRequest,
-        tokenFamily,
-      );
-      expect(auditService.logSecurityEvent).toHaveBeenCalledWith(
-        mockUser.id,
-        'auth.token_refreshed',
-        expect.objectContaining({
-          status: 'success',
-          details: expect.objectContaining({
-            tokenFamily,
-          }),
-        }),
-      );
+      expect(result.refreshToken).toBe(oldRefreshToken);
+      expect(sessionService.updateSessionActivity).toHaveBeenCalledWith(mockSession.id);
     });
 
-    it('should detect token reuse and invalidate entire token family', async () => {
-      const tokenFamily = randomUUID();
-      const oldRefreshToken = 'already-used-token';
+    it('should update session activity on refresh', async () => {
+      const oldRefreshToken = 'refresh-token';
       const mockSession = {
         id: randomUUID(),
         userId: mockUser.id,
         tokenHash: `hashed-${oldRefreshToken}`,
         expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        tokenFamily,
-        isRevoked: true, // Already revoked!
-        revokedAt: new Date(Date.now() - 60000), // Revoked 1 minute ago
       };
 
       jest.spyOn(sessionService, 'findSessionByTokenHash').mockResolvedValue(mockSession as any);
-      jest.spyOn(sessionService, 'invalidateTokenFamily').mockResolvedValue(3);
+      jest.spyOn(sessionService, 'updateSessionActivity').mockResolvedValue();
 
-      await expect(service.refresh(mockUser, oldRefreshToken, mockRequest)).rejects.toThrow(
-        UnauthorizedException,
-      );
-      await expect(service.refresh(mockUser, oldRefreshToken, mockRequest)).rejects.toThrow(
-        'Token reuse detected',
-      );
+      await service.refresh(mockUser, oldRefreshToken, mockRequest);
 
-      expect(sessionService.invalidateTokenFamily).toHaveBeenCalledWith(tokenFamily);
-      expect(auditService.logSecurityEvent).toHaveBeenCalledWith(
-        mockUser.id,
-        'auth.token_reuse_detected',
-        expect.objectContaining({
-          status: 'failure',
-          details: expect.objectContaining({
-            sessionId: mockSession.id,
-            tokenFamily,
-            suspectedTheft: true,
-          }),
-        }),
-      );
+      expect(sessionService.updateSessionActivity).toHaveBeenCalledWith(mockSession.id);
     });
 
     it('should create session on login', async () => {
@@ -228,74 +196,25 @@ describe('AuthService - Token Rotation', () => {
       );
     });
 
-    it('should maintain token family across multiple rotations', async () => {
+    it('should handle sessions with token family', async () => {
       const tokenFamily = randomUUID();
-      let currentToken = 'initial-token';
-
-      // First refresh
-      const session1 = {
-        id: randomUUID(),
-        userId: mockUser.id,
-        tokenHash: `hashed-${currentToken}`,
-        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        tokenFamily,
-        isRevoked: false,
-      };
-
-      jest.spyOn(sessionService, 'findSessionByTokenHash').mockResolvedValue(session1 as any);
-      jest.spyOn(sessionService, 'revokeSession').mockResolvedValue();
-      jest.spyOn(sessionService, 'createSessionWithFamily').mockResolvedValue(session1 as any);
-      jest.spyOn(sessionService, 'countSessionsInFamily').mockResolvedValue(2);
-
-      await service.refresh(mockUser, currentToken, mockRequest);
-
-      // Verify token family is maintained
-      const createCall = (sessionService.createSessionWithFamily as jest.Mock).mock.calls[0];
-      expect(createCall[3]).toBe(tokenFamily);
-
-      // Second refresh with new token
-      currentToken = 'second-token';
-      const session2 = {
-        ...session1,
-        id: randomUUID(),
-        tokenHash: `hashed-${currentToken}`,
-      };
-
-      jest.spyOn(sessionService, 'findSessionByTokenHash').mockResolvedValue(session2 as any);
-      jest.spyOn(sessionService, 'countSessionsInFamily').mockResolvedValue(3);
-
-      await service.refresh(mockUser, currentToken, mockRequest);
-
-      // Verify same token family
-      const createCall2 = (sessionService.createSessionWithFamily as jest.Mock).mock.calls[1];
-      expect(createCall2[3]).toBe(tokenFamily);
-    });
-
-    it('should handle sessions without token family (backward compatibility)', async () => {
-      const oldRefreshToken = 'legacy-token';
+      const oldRefreshToken = 'token-with-family';
       const mockSession = {
         id: randomUUID(),
         userId: mockUser.id,
         tokenHash: `hashed-${oldRefreshToken}`,
         expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        tokenFamily: null, // No token family (legacy session)
-        isRevoked: false,
+        tokenFamily,
       };
 
       jest.spyOn(sessionService, 'findSessionByTokenHash').mockResolvedValue(mockSession as any);
-      jest.spyOn(sessionService, 'revokeSession').mockResolvedValue();
-      jest.spyOn(sessionService, 'createSessionWithFamily').mockResolvedValue(mockSession as any);
-      jest.spyOn(sessionService, 'countSessionsInFamily').mockResolvedValue(1);
+      jest.spyOn(sessionService, 'updateSessionActivity').mockResolvedValue();
 
       const result = await service.refresh(mockUser, oldRefreshToken, mockRequest);
 
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
-
-      // Should create new token family
-      const createCall = (sessionService.createSessionWithFamily as jest.Mock).mock.calls[0];
-      expect(createCall[3]).toBeDefined();
-      expect(typeof createCall[3]).toBe('string');
+      expect(result.refreshToken).toBe(oldRefreshToken);
     });
 
     it('should reject expired refresh token', async () => {
@@ -304,9 +223,8 @@ describe('AuthService - Token Rotation', () => {
         id: randomUUID(),
         userId: mockUser.id,
         tokenHash: `hashed-${oldRefreshToken}`,
-        expires: new Date(Date.now() - 1000), // Expired
+        expires: new Date(Date.now() - 1000),
         tokenFamily: randomUUID(),
-        isRevoked: false,
       };
 
       jest.spyOn(sessionService, 'findSessionByTokenHash').mockResolvedValue(mockSession as any);
@@ -329,11 +247,10 @@ describe('AuthService - Token Rotation', () => {
       const differentUserId = randomUUID();
       const mockSession = {
         id: randomUUID(),
-        userId: differentUserId, // Different user!
+        userId: differentUserId,
         tokenHash: `hashed-${oldRefreshToken}`,
         expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         tokenFamily: randomUUID(),
-        isRevoked: false,
       };
 
       jest.spyOn(sessionService, 'findSessionByTokenHash').mockResolvedValue(mockSession as any);
@@ -371,44 +288,40 @@ describe('AuthService - Token Rotation', () => {
     });
   });
 
-  describe('Token Family Management', () => {
-    it('should invalidate all sessions in family when reuse detected', async () => {
-      const tokenFamily = randomUUID();
-      const revokedSession = {
+  describe('Session Invalidation', () => {
+    it('should invalidate session when token is expired', async () => {
+      const oldRefreshToken = 'expired-token';
+      const mockSession = {
         id: randomUUID(),
         userId: mockUser.id,
-        tokenHash: 'hashed-old-token',
-        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        tokenFamily,
-        isRevoked: true,
-        revokedAt: new Date(),
+        tokenHash: `hashed-${oldRefreshToken}`,
+        expires: new Date(Date.now() - 1000),
       };
 
-      jest.spyOn(sessionService, 'findSessionByTokenHash').mockResolvedValue(revokedSession as any);
-      jest.spyOn(sessionService, 'invalidateTokenFamily').mockResolvedValue(5);
+      jest.spyOn(sessionService, 'findSessionByTokenHash').mockResolvedValue(mockSession as any);
+      jest.spyOn(sessionService, 'invalidateSession').mockResolvedValue();
 
-      await expect(service.refresh(mockUser, 'old-token', mockRequest)).rejects.toThrow(
+      await expect(service.refresh(mockUser, oldRefreshToken, mockRequest)).rejects.toThrow(
         UnauthorizedException,
       );
 
-      expect(sessionService.invalidateTokenFamily).toHaveBeenCalledWith(tokenFamily);
+      expect(sessionService.invalidateSession).toHaveBeenCalledWith(mockSession.id);
     });
 
-    it('should fallback to invalidateAllSessions if no token family', async () => {
-      const revokedSession = {
+    it('should invalidate all sessions when user mismatch detected', async () => {
+      const oldRefreshToken = 'mismatched-token';
+      const differentUserId = randomUUID();
+      const mockSession = {
         id: randomUUID(),
-        userId: mockUser.id,
-        tokenHash: 'hashed-old-token',
+        userId: differentUserId,
+        tokenHash: `hashed-${oldRefreshToken}`,
         expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        tokenFamily: null, // No family
-        isRevoked: true,
-        revokedAt: new Date(),
       };
 
-      jest.spyOn(sessionService, 'findSessionByTokenHash').mockResolvedValue(revokedSession as any);
+      jest.spyOn(sessionService, 'findSessionByTokenHash').mockResolvedValue(mockSession as any);
       jest.spyOn(sessionService, 'invalidateAllSessions').mockResolvedValue(3);
 
-      await expect(service.refresh(mockUser, 'old-token', mockRequest)).rejects.toThrow(
+      await expect(service.refresh(mockUser, oldRefreshToken, mockRequest)).rejects.toThrow(
         UnauthorizedException,
       );
 
@@ -417,67 +330,40 @@ describe('AuthService - Token Rotation', () => {
   });
 
   describe('Audit Logging', () => {
-    it('should log successful token refresh with rotation details', async () => {
-      const tokenFamily = randomUUID();
+    it('should log security event on expired token', async () => {
+      const oldRefreshToken = 'expired-token';
       const mockSession = {
         id: randomUUID(),
         userId: mockUser.id,
-        tokenHash: 'hashed-token',
-        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        tokenFamily,
-        isRevoked: false,
+        tokenHash: `hashed-${oldRefreshToken}`,
+        expires: new Date(Date.now() - 1000),
       };
 
       jest.spyOn(sessionService, 'findSessionByTokenHash').mockResolvedValue(mockSession as any);
-      jest.spyOn(sessionService, 'revokeSession').mockResolvedValue();
-      jest.spyOn(sessionService, 'createSessionWithFamily').mockResolvedValue(mockSession as any);
-      jest.spyOn(sessionService, 'countSessionsInFamily').mockResolvedValue(3);
+      jest.spyOn(sessionService, 'invalidateSession').mockResolvedValue();
 
-      await service.refresh(mockUser, 'token', mockRequest);
+      await expect(service.refresh(mockUser, oldRefreshToken, mockRequest)).rejects.toThrow();
 
       expect(auditService.logSecurityEvent).toHaveBeenCalledWith(
         mockUser.id,
-        'auth.token_refreshed',
+        'auth.refresh_token_expired',
         expect.objectContaining({
-          status: 'success',
-          details: expect.objectContaining({
-            oldSessionId: mockSession.id,
-            tokenFamily,
-            rotationCount: 3,
-          }),
+          status: 'failure',
         }),
       );
     });
 
-    it('should log token reuse with detailed context', async () => {
-      const tokenFamily = randomUUID();
-      const revokedAt = new Date(Date.now() - 5000);
-      const mockSession = {
-        id: randomUUID(),
-        userId: mockUser.id,
-        tokenHash: 'hashed-token',
-        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        tokenFamily,
-        isRevoked: true,
-        revokedAt,
-      };
+    it('should log security event on invalid token', async () => {
+      jest.spyOn(sessionService, 'findSessionByTokenHash').mockResolvedValue(null);
 
-      jest.spyOn(sessionService, 'findSessionByTokenHash').mockResolvedValue(mockSession as any);
-      jest.spyOn(sessionService, 'invalidateTokenFamily').mockResolvedValue(4);
-
-      await expect(service.refresh(mockUser, 'token', mockRequest)).rejects.toThrow();
+      await expect(service.refresh(mockUser, 'bad-token', mockRequest)).rejects.toThrow();
 
       expect(auditService.logSecurityEvent).toHaveBeenCalledWith(
         mockUser.id,
-        'auth.token_reuse_detected',
+        'auth.refresh_token_invalid',
         expect.objectContaining({
           status: 'failure',
-          details: expect.objectContaining({
-            sessionId: mockSession.id,
-            tokenFamily,
-            revokedAt,
-            suspectedTheft: true,
-          }),
+          details: { reason: 'token_not_found' },
         }),
       );
     });

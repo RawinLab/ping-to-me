@@ -163,16 +163,18 @@ describe("ApiScopeGuard", () => {
 
     it("should extract API key from Authorization: Bearer header", async () => {
       mockReflector.getAllAndOverride.mockReturnValue("link:read");
-      mockPrisma.apiKey.findUnique.mockResolvedValue(createMockApiKey());
+      mockPrisma.apiKey.findUnique.mockResolvedValue(createMockApiKey({
+        keyHash: hashKey("pk_test-api-key"),
+      }));
 
       const context = createMockContext({
-        headers: { authorization: "Bearer test-api-key" },
+        headers: { authorization: "Bearer pk_test-api-key" },
       });
 
       await guard.canActivate(context);
 
       expect(mockPrisma.apiKey.findUnique).toHaveBeenCalledWith({
-        where: { keyHash: hashKey("test-api-key") },
+        where: { keyHash: hashKey("pk_test-api-key") },
         include: {
           organization: {
             select: {

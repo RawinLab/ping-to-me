@@ -70,6 +70,7 @@ describe("LoginActivityController", () => {
         "test@example.com",
         1,
         20,
+        undefined,
       );
     });
 
@@ -92,6 +93,7 @@ describe("LoginActivityController", () => {
         "test@example.com",
         1,
         20,
+        undefined,
       );
     });
   });

@@ -21,6 +21,7 @@ describe("PermissionGuard", () => {
 
   const mockPermissionService = {
     hasPermission: jest.fn(),
+    hasFullAccessPermission: jest.fn(),
     checkResourceOwnership: jest.fn(),
     getUserRoleInOrg: jest.fn(),
   };

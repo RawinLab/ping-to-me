@@ -6,6 +6,8 @@ import { AuditService } from '../../audit/audit.service';
 import { QuotaService } from '../../quota/quota.service';
 import { SafetyCheckService } from '../services/safety-check.service';
 import { MetadataService } from '../services/metadata.service';
+import { PermissionService } from '../../auth/rbac/permission.service';
+import { WebhookService } from '../../developer/webhooks.service';
 
 describe('LinksService - Import with Failed Rows CSV', () => {
   let service: LinksService;
@@ -65,6 +67,22 @@ describe('LinksService - Import with Failed Rows CSV', () => {
           provide: MetadataService,
           useValue: {
             scrapeAndUpdateLink: jest.fn().mockResolvedValue(undefined),
+          },
+        },
+        {
+          provide: PermissionService,
+          useValue: {
+            checkPermission: jest.fn(),
+            getUserPermissions: jest.fn(),
+            hasPermission: jest.fn().mockResolvedValue(true),
+            hasFullAccessPermission: jest.fn().mockResolvedValue(false),
+          },
+        },
+        {
+          provide: WebhookService,
+          useValue: {
+            triggerEvent: jest.fn(),
+            sendWebhook: jest.fn(),
           },
         },
       ],

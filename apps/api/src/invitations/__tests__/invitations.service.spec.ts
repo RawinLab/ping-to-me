@@ -10,6 +10,7 @@ import { PrismaService } from "../../prisma/prisma.service";
 import { AuditService } from "../../audit/audit.service";
 import { MailService } from "../../mail/mail.service";
 import { MemberRole } from "@pingtome/database";
+import { NotificationsService } from "../../notifications/notifications.service";
 import * as crypto from "crypto";
 
 describe("InvitationsService", () => {
@@ -52,6 +53,12 @@ describe("InvitationsService", () => {
     sendInvitationEmail: jest.fn().mockResolvedValue(undefined),
   };
 
+  const mockNotificationsService = {
+    sendNotification: jest.fn(),
+    sendEmailNotification: jest.fn(),
+    notify: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -59,6 +66,7 @@ describe("InvitationsService", () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: AuditService, useValue: mockAuditService },
         { provide: MailService, useValue: mockMailService },
+        { provide: NotificationsService, useValue: mockNotificationsService },
       ],
     }).compile();
 

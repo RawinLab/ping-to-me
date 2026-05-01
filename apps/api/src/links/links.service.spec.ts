@@ -6,6 +6,8 @@ import { AuditService } from "../audit/audit.service";
 import { QuotaService } from "../quota/quota.service";
 import { SafetyCheckService } from "./services/safety-check.service";
 import { MetadataService } from "./services/metadata.service";
+import { PermissionService } from "../auth/rbac/permission.service";
+import { WebhookService } from "../developer/webhooks.service";
 import { BadRequestException, ForbiddenException } from "@nestjs/common";
 import { LinkStatus } from "@pingtome/types";
 
@@ -43,6 +45,12 @@ describe("LinksService", () => {
               findFirst: jest.fn(),
               findUnique: jest.fn(),
             },
+            redirectRule: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
+            linkVariant: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
           },
         },
         {
@@ -77,6 +85,22 @@ describe("LinksService", () => {
           useValue: {
             scrape: jest.fn().mockResolvedValue({}),
             scrapeAndUpdateLink: jest.fn().mockResolvedValue({}),
+          },
+        },
+        {
+          provide: PermissionService,
+          useValue: {
+            checkPermission: jest.fn(),
+            getUserPermissions: jest.fn(),
+            hasPermission: jest.fn().mockResolvedValue(true),
+            hasFullAccessPermission: jest.fn().mockResolvedValue(false),
+          },
+        },
+        {
+          provide: WebhookService,
+          useValue: {
+            triggerEvent: jest.fn(),
+            sendWebhook: jest.fn(),
           },
         },
       ],
