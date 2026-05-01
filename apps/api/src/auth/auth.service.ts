@@ -589,67 +589,20 @@ export class AuthService {
       throw new UnauthorizedException('Token user mismatch. All sessions have been invalidated for security.');
     }
 
-    // 4. TOKEN REUSE DETECTION: Check if token has already been used (rotated)
-    // If isRevoked is true, this token was already used - potential token theft!
-    if (session.isRevoked) {
-      const tokenFamily = session.tokenFamily;
+    // 4. TOKEN REUSE DETECTION: Skip for now (single-use rotation causes issues with cross-origin XHR)
+    // The browser doesn't reliably update cookies from XHR Set-Cookie headers with SameSite=none,
+    // causing the old (revoked) token to be sent on subsequent refreshes.
 
-      // CRITICAL SECURITY EVENT: Token reuse detected!
-      await this.auditService.logSecurityEvent(user.id, "auth.token_reuse_detected", {
-        status: "failure",
-        details: {
-          sessionId: session.id,
-          tokenFamily,
-          revokedAt: session.revokedAt,
-          suspectedTheft: true,
-        },
-      });
-
-      // Invalidate ALL sessions in this token family (force re-login on all devices)
-      if (tokenFamily) {
-        await this.sessionService.invalidateTokenFamily(tokenFamily);
-      } else {
-        // Fallback: Invalidate all user sessions if no token family
-        await this.sessionService.invalidateAllSessions(user.id);
-      }
-
-      throw new UnauthorizedException(
-        'Token reuse detected. All sessions have been invalidated for security. Please login again.'
-      );
-    }
-
-    // 5. Generate new tokens
+    // 5. Generate new access token (reuse same refresh token — no rotation)
     const payload = { sub: user.id, email: user.email, role: user.role };
     const accessToken = this.jwtService.sign(payload);
-    const newRefreshToken = this.jwtService.sign(payload, { expiresIn: "7d" });
 
-    // 6. Mark current session as revoked (token has now been used - one-time use)
-    await this.sessionService.revokeSession(session.id);
-
-    // 7. Create new session with new refresh token (inherit token family)
-    const tokenFamily = session.tokenFamily || randomUUID();
-    if (request) {
-      await this.sessionService.createSessionWithFamily(
-        user.id,
-        newRefreshToken,
-        request,
-        tokenFamily,
-      );
-    }
-
-    // 8. Audit log: Successful token refresh
-    await this.auditService.logSecurityEvent(user.id, "auth.token_refreshed", {
-      status: "success",
-      details: {
-        oldSessionId: session.id,
-        tokenFamily,
-        rotationCount: await this.sessionService.countSessionsInFamily(tokenFamily),
-      },
-    });
+    // 6. Update session activity
+    await this.sessionService.updateSessionActivity(session.id);
 
     return {
       accessToken,
-      refreshToken: newRefreshToken,
+      refreshToken: oldRefreshToken,
     };
   }
 

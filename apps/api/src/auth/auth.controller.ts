@@ -138,21 +138,11 @@ export class AuthController {
     }
 
     // Rotate refresh token
-    const { accessToken, refreshToken } = await this.authService.refresh(
+    const { accessToken } = await this.authService.refresh(
       req.user,
       oldRefreshToken,
       req,
     );
-
-    // Set new refresh token cookie
-    res.cookie("refresh_token", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      domain: process.env.COOKIE_DOMAIN || (process.env.NODE_ENV === "production" ? ".pingto.me" : undefined),
-      path: "/",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
 
     return { accessToken };
   }
