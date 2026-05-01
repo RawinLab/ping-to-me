@@ -29,6 +29,9 @@ RUN pnpm --filter api build
 RUN apk add --no-cache dumb-init curl
 RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
 
+COPY docker/entrypoint-api.sh /app/entrypoint-api.sh
+RUN chmod +x /app/entrypoint-api.sh
+
 USER appuser
 
 ENV NODE_ENV=production
@@ -38,8 +41,5 @@ EXPOSE 3001
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \
   CMD curl -sf http://localhost:3001/health || exit 1
-
-COPY docker/entrypoint-api.sh /app/entrypoint-api.sh
-RUN chmod +x /app/entrypoint-api.sh
 
 CMD ["/app/entrypoint-api.sh"]
