@@ -4,24 +4,42 @@ import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class MailService {
-  private transporter: nodemailer.Transporter;
+  private transporter: nodemailer.Transporter | null = null;
+  private isConfigured = false;
 
   constructor(private configService: ConfigService) {
-    this.transporter = nodemailer.createTransport({
-      host: this.configService.get("EMAIL_SERVER_HOST"),
-      port: Number(this.configService.get("EMAIL_SERVER_PORT")),
-      auth: {
-        user: this.configService.get("EMAIL_SERVER_USER"),
-        pass: this.configService.get("EMAIL_SERVER_PASSWORD"),
-      },
+    const host = this.configService.get("EMAIL_SERVER_HOST");
+    const port = this.configService.get("EMAIL_SERVER_PORT");
+    const user = this.configService.get("EMAIL_SERVER_USER");
+    const pass = this.configService.get("EMAIL_SERVER_PASSWORD");
+
+    if (host && port && user && pass) {
+      this.transporter = nodemailer.createTransport({
+        host,
+        port: Number(port),
+        auth: { user, pass },
+      });
+      this.isConfigured = true;
+    } else {
+      console.warn('MailService: SMTP not configured. Email sending will be skipped.');
+    }
+  }
+
+  private async sendMail(options: nodemailer.SendMailOptions) {
+    if (!this.isConfigured || !this.transporter) {
+      console.warn('MailService: Skipping email send - SMTP not configured');
+      return;
+    }
+    await this.transporter.sendMail({
+      from: this.configService.get("EMAIL_FROM"),
+      ...options,
     });
   }
 
   async sendVerificationEmail(email: string, token: string) {
     const url = `${this.configService.get("NEXTAUTH_URL")}/verify-email?token=${token}`;
 
-    await this.transporter.sendMail({
-      from: this.configService.get("EMAIL_FROM"),
+    await this.sendMail({
       to: email,
       subject: "Verify your email for PingTO.Me",
       text: `Verify your email\n${url}\n\n`,
@@ -32,8 +50,7 @@ export class MailService {
   async sendPasswordResetEmail(email: string, token: string) {
     const url = `${this.configService.get("NEXTAUTH_URL")}/reset-password?token=${token}`;
 
-    await this.transporter.sendMail({
-      from: this.configService.get("EMAIL_FROM"),
+    await this.sendMail({
       to: email,
       subject: "Reset your password",
       text: `Reset your password\n${url}\n\n`,
@@ -44,8 +61,7 @@ export class MailService {
   async sendLoginVerificationEmail(email: string, token: string) {
     const url = `${this.configService.get("NEXTAUTH_URL")}/verify-login?token=${token}`;
 
-    await this.transporter.sendMail({
-      from: this.configService.get("EMAIL_FROM"),
+    await this.sendMail({
       to: email,
       subject: "Verify your login attempt - PingTO.Me",
       text: `We detected a login attempt from an unusual location or device.\n\nIf this was you, please verify your login:\n${url}\n\nIf this wasn't you, please ignore this email and ensure your account is secure.`,
@@ -154,8 +170,7 @@ PingTO.Me - URL Shortener Platform
 </html>
     `.trim();
 
-    await this.transporter.sendMail({
-      from: this.configService.get("EMAIL_FROM"),
+    await this.sendMail({
       to: params.email,
       subject: `You're invited to join ${params.organizationName} on PingTO.Me`,
       text: textContent,
@@ -243,8 +258,7 @@ PingTO.Me - URL Shortener Platform
 </html>
     `.trim();
 
-    await this.transporter.sendMail({
-      from: this.configService.get("EMAIL_FROM"),
+    await this.sendMail({
       to: params.to,
       subject: `Your ${params.frequency} Analytics Report - PingTO.Me`,
       text: textContent,

@@ -90,7 +90,12 @@ export class AuthService {
     });
 
     // Send Email
-    await this.mailService.sendVerificationEmail(email, token);
+    try {
+      await this.mailService.sendVerificationEmail(email, token);
+    } catch (error) {
+      // Log error but don't fail registration - email may not be configured
+      console.error('Failed to send verification email:', error);
+    }
 
     // Create welcome notification (NOTIF-021)
     try {
@@ -790,8 +795,11 @@ export class AuthService {
       },
     });
 
-    // Send Email
-    await this.mailService.sendVerificationEmail(email, token);
+    try {
+      await this.mailService.sendVerificationEmail(email, token);
+    } catch (error) {
+      console.error('Failed to send verification email:', error);
+    }
 
     // Audit log: Verification email sent
     await this.auditService.logSecurityEvent(userId, "auth.verification_email_sent", {
