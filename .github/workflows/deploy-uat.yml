@@ -2,9 +2,11 @@
 # Deploys to Coolify (single service: API+Web) and Cloudflare Workers (redirector)
 #
 # Required secrets:
-#   COOLIFY_UAT_WEBHOOK_URL  - Coolify webhook URL for UAT service deployment
-#   CLOUDFLARE_API_TOKEN     - Cloudflare API token for Workers deployment
-#   CLOUDFLARE_ACCOUNT_ID    - Cloudflare account ID
+#   COOLIFY_API_URL         - Coolify instance URL (e.g. https://coolify.example.com)
+#   COOLIFY_TOKEN           - Coolify API token
+#   COOLIFY_UAT_UUID        - Coolify application UUID for UAT service
+#   CLOUDFLARE_API_TOKEN    - Cloudflare API token for Workers deployment
+#   CLOUDFLARE_ACCOUNT_ID   - Cloudflare account ID
 
 name: Deploy UAT
 
@@ -21,8 +23,8 @@ env:
   NODE_VERSION: "20"
 
 jobs:
-  build-and-test:
-    name: Build & Test
+  build:
+    name: Build
     runs-on: ubuntu-latest
 
     services:
@@ -44,20 +46,67 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
       - name: Generate Prisma Client
         run: pnpm --filter @pingtome/database db:generate
+
       - name: Push schema to test DB
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5434/pingtome_test
         run: pnpm --filter @pingtome/database db:push
+
       - name: Build all packages
         run: pnpm build
+
+  test:
+    name: Test & Lint
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: pingtome_test
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter @pingtome/database db:generate
+
+      - name: Push schema to test DB
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5434/pingtome_test
+        run: pnpm --filter @pingtome/database db:push
+
       - name: Run API unit tests
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5434/pingtome_test
@@ -65,15 +114,18 @@ jobs:
           REFRESH_SECRET: test-refresh-secret
           NODE_ENV: test
         run: pnpm --filter api test
+
       - name: Lint
         run: pnpm lint
+
   deploy-uat:
     name: Deploy to UAT (Coolify)
     runs-on: ubuntu-latest
-    needs: build-and-test
+    needs: build
     environment:
       name: uat
       url: https://uat.pingto.me
+
     steps:
       - name: Trigger Coolify deploy
         env:
@@ -92,8 +144,10 @@ jobs:
             exit 1
           fi
           echo "Coolify UAT deploy triggered successfully"
+
       - name: Wait for build & deploy
         run: sleep 120
+
       - name: Health check
         run: |
           for i in $(seq 1 10); do
@@ -109,19 +163,25 @@ jobs:
           done
           echo "Health check failed after 10 attempts"
           exit 1
+
   deploy-redirector-uat:
     name: Deploy Redirector (UAT)
     runs-on: ubuntu-latest
-    needs: build-and-test
+    needs: build
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
       - name: Deploy Redirector to UAT
         working-directory: apps/redirector
         env:
