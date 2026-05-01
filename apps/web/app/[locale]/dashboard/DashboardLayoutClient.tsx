@@ -75,8 +75,10 @@ interface NavItem {
 
 function DashboardLayoutInner({
   children,
+  user,
 }: {
   children: React.ReactNode;
+  user: { id: string; email: string; name?: string };
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -496,9 +498,9 @@ function DashboardLayoutInner({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 rounded-xl p-2">
                 <DropdownMenuLabel className="px-2 py-1.5">
-                  <p className="font-medium">{t("myAccount")}</p>
+                  <p className="font-medium">{user.name || user.email}</p>
                   <p className="text-xs font-normal text-muted-foreground">
-                    user@example.com
+                    {user.email}
                   </p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="my-2" />
@@ -645,7 +647,7 @@ export default function DashboardLayoutClient({
 
   return (
     <OrganizationProvider>
-      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+      <DashboardLayoutInner user={user}>{children}</DashboardLayoutInner>
     </OrganizationProvider>
   );
 }

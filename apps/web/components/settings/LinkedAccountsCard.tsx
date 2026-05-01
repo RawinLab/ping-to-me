@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, getAccessToken } from "@/lib/api";
 import {
   Card,
   CardContent,
@@ -51,10 +51,6 @@ export function LinkedAccountsCard({ showMessage }: LinkedAccountsCardProps) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const getAccessToken = () => {
-    return localStorage.getItem("accessToken") || "";
   };
 
   const handleLinkAccount = (provider: string) => {

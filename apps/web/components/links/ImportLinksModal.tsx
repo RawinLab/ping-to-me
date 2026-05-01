@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, getAccessToken } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -80,7 +80,7 @@ export function ImportLinksModal({
     formData.append("file", file);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/links/import`,
         {
@@ -109,7 +109,7 @@ export function ImportLinksModal({
 
   const downloadTemplate = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/links/import/template`,
         {

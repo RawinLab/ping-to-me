@@ -12,7 +12,7 @@ import {
   Badge,
   Progress,
 } from "@pingtome/ui";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, getAccessToken } from "@/lib/api";
 import { useTranslations } from "next-intl";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { LinksTable } from "@/components/links/LinksTable";
@@ -93,7 +93,7 @@ export default function DashboardPage() {
 
   const handleExport = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/links/export`,
         {

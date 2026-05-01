@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, getAccessToken } from "@/lib/api";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import {
   Card,
@@ -81,7 +81,7 @@ export default function AnalyticsPage() {
 
   const handleExport = async (format: 'csv' | 'pdf' = 'csv') => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       const days = dateRange === "7d" ? 7 : dateRange === "30d" ? 30 : 90;
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);

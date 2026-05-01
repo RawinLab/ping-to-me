@@ -34,7 +34,7 @@ import {
   Smartphone,
   Shield,
 } from 'lucide-react';
-import axios from 'axios';
+import { apiRequest } from '@/lib/api';
 
 interface SecurityKey {
   id: string;
@@ -60,18 +60,10 @@ export function SecurityKeyManager() {
 
   const loadSecurityKeys = async () => {
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/passkey/list`,
-        {
-          withCredentials: true,
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-          },
-        }
-      );
+      const response = await apiRequest('/auth/passkey/list');
 
       // Filter to show only cross-platform authenticators (hardware security keys)
-      const keys = response.data.passkeys.filter(
+      const keys = response.passkeys.filter(
         (key: SecurityKey) => key.authenticatorType === 'cross-platform'
       );
       setSecurityKeys(keys);
@@ -85,37 +77,31 @@ export function SecurityKeyManager() {
     setLoading(true);
     try {
       // Get registration options from server
-      const optionsResponse = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/passkey/register/options`,
+      const optionsResponse = await apiRequest(
+        '/auth/passkey/register/options',
         {
-          authenticatorType: 'cross-platform', // Always request cross-platform for security keys
-          name: newKeyName || undefined,
-        },
-        {
-          withCredentials: true,
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-          },
+          method: 'POST',
+          body: JSON.stringify({
+            authenticatorType: 'cross-platform', // Always request cross-platform for security keys
+            name: newKeyName || undefined,
+          }),
         }
       );
 
-      const options = optionsResponse.data.options;
+      const options = optionsResponse.options;
 
       // Start WebAuthn registration
       const credential = await startRegistration({ optionsJSON: options });
 
       // Verify registration with server
-      await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/passkey/register/verify`,
+      await apiRequest(
+        '/auth/passkey/register/verify',
         {
-          registrationResponse: credential,
-          name: newKeyName || undefined,
-        },
-        {
-          withCredentials: true,
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-          },
+          method: 'POST',
+          body: JSON.stringify({
+            registrationResponse: credential,
+            name: newKeyName || undefined,
+          }),
         }
       );
 
@@ -140,14 +126,11 @@ export function SecurityKeyManager() {
 
     setLoading(true);
     try {
-      await axios.patch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/passkey/${selectedKey.id}`,
-        { name: newKeyName },
+      await apiRequest(
+        `/auth/passkey/${selectedKey.id}`,
         {
-          withCredentials: true,
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-          },
+          method: 'PATCH',
+          body: JSON.stringify({ name: newKeyName }),
         }
       );
 
@@ -170,15 +153,7 @@ export function SecurityKeyManager() {
     }
 
     try {
-      await axios.delete(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/passkey/${keyId}`,
-        {
-          withCredentials: true,
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-          },
-        }
-      );
+      await apiRequest(`/auth/passkey/${keyId}`, { method: 'DELETE' });
 
       toast.success('Security key removed successfully');
       loadSecurityKeys();

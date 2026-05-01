@@ -20,7 +20,7 @@ import {
   Label,
 } from "@pingtome/ui";
 import { Loader2, Key, Trash2, Edit2, Check, X, Fingerprint, Shield } from "lucide-react";
-import axios from "axios";
+import { apiRequest } from "@/lib/api";
 import { toast } from "sonner";
 
 interface Passkey {
@@ -49,15 +49,8 @@ export function PasskeyManager() {
   const loadPasskeys = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/passkey/list`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        }
-      );
-      setPasskeys(response.data.passkeys || []);
+      const response = await apiRequest("/auth/passkey/list");
+      setPasskeys(response.passkeys || []);
     } catch (error) {
       console.error("Failed to load passkeys:", error);
       toast.error(t("loadFailed"));
@@ -80,30 +73,23 @@ export function PasskeyManager() {
     try {
       setRegistering(true);
 
-      const optionsResponse = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/passkey/register/options`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        }
+      const optionsResponse = await apiRequest(
+        "/auth/passkey/register/options",
+        { method: "POST", body: JSON.stringify({}) }
       );
 
-      const { options } = optionsResponse.data;
+      const { options } = optionsResponse;
 
       const registrationResponse = await startRegistration({ optionsJSON: options });
 
-      const verifyResponse = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/passkey/register/verify`,
+      await apiRequest(
+        "/auth/passkey/register/verify",
         {
-          registrationResponse,
-          name: passkeyName || undefined,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
+          method: "POST",
+          body: JSON.stringify({
+            registrationResponse,
+            name: passkeyName || undefined,
+          }),
         }
       );
 
@@ -124,14 +110,7 @@ export function PasskeyManager() {
     if (!confirm(t("deleteConfirm"))) return;
 
     try {
-      await axios.delete(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/passkey/${passkeyId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
-        }
-      );
+      await apiRequest(`/auth/passkey/${passkeyId}`, { method: "DELETE" });
 
       toast.success(t("deletedSuccess"));
       loadPasskeys();
@@ -145,13 +124,11 @@ export function PasskeyManager() {
     if (!editingName.trim()) return;
 
     try {
-      await axios.patch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/passkey/${passkeyId}`,
-        { name: editingName },
+      await apiRequest(
+        `/auth/passkey/${passkeyId}`,
         {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-          },
+          method: "PATCH",
+          body: JSON.stringify({ name: editingName }),
         }
       );
 
