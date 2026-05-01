@@ -46,6 +46,7 @@ import {
   cn,
 } from "@pingtome/ui";
 import type { SocialPlatform, SocialLink } from "@pingtome/types";
+import { useTranslations } from "next-intl";
 
 /**
  * Props for the SocialLinksEditor component
@@ -158,16 +159,15 @@ function detectPlatformFromUrl(url: string): SocialPlatform | null {
 function validatePlatformUrl(
   platform: SocialPlatform,
   url: string,
+  t: (key: string, params?: Record<string, string>) => string,
 ): { valid: boolean; error?: string } {
   const config = PLATFORM_CONFIG[platform];
   const normalizedUrl = url.toLowerCase().trim();
 
-  // Check if URL is empty
   if (!normalizedUrl) {
-    return { valid: false, error: "URL is required" };
+    return { valid: false, error: t("urlRequired") };
   }
 
-  // For email, check if it's a mailto link or just an email
   if (platform === "email") {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (normalizedUrl.startsWith("mailto:")) {
@@ -177,12 +177,10 @@ function validatePlatformUrl(
     }
     return {
       valid: false,
-      error:
-        'Email should be in format "mailto:email@example.com" or "email@example.com"',
+      error: t("emailFormat"),
     };
   }
 
-  // Check if URL matches any of the platform's patterns
   const matches = config.urlPatterns.some((pattern) =>
     pattern.test(normalizedUrl),
   );
@@ -190,7 +188,7 @@ function validatePlatformUrl(
   if (!matches) {
     return {
       valid: false,
-      error: `URL does not match ${config.label} format`,
+      error: t("urlNotMatchFormat", { label: config.label }),
     };
   }
 
@@ -218,6 +216,7 @@ function SortableSocialLinkItem({
   onDelete,
   index,
 }: SortableSocialLinkItemProps) {
+  const t = useTranslations("bio");
   const {
     attributes,
     listeners,
@@ -279,7 +278,7 @@ function SortableSocialLinkItem({
               variant="ghost"
               size="sm"
               onClick={() => onDelete(index)}
-              title="Delete social link"
+              title={t("deleteSocialLink")}
               className="h-8 w-8 p-0"
             >
               <Trash2 className="h-4 w-4 text-muted-foreground hover:text-red-500" />
@@ -306,6 +305,8 @@ export function SocialLinksEditor({
   socialLinks,
   onChange,
 }: SocialLinksEditorProps) {
+  const t = useTranslations("bio");
+
   // Form state for new link
   const [selectedPlatform, setSelectedPlatform] =
     React.useState<SocialPlatform>("instagram");
@@ -385,9 +386,9 @@ export function SocialLinksEditor({
     const normalizedUrl = normalizeUrl(selectedPlatform, url.trim());
 
     // Validate URL
-    const validation = validatePlatformUrl(selectedPlatform, normalizedUrl);
+    const validation = validatePlatformUrl(selectedPlatform, normalizedUrl, t);
     if (!validation.valid) {
-      setUrlError(validation.error || "Invalid URL");
+      setUrlError(validation.error ?? null);
       return;
     }
 
@@ -399,9 +400,7 @@ export function SocialLinksEditor({
     );
 
     if (isDuplicate) {
-      setUrlError(
-        `${PLATFORM_CONFIG[selectedPlatform].label} link already exists`,
-      );
+      setUrlError(t("linkAlreadyExists", { label: PLATFORM_CONFIG[selectedPlatform].label }));
       return;
     }
 
@@ -446,9 +445,9 @@ export function SocialLinksEditor({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold">Social Links</h3>
+          <h3 className="text-sm font-semibold">{t("socialLinks")}</h3>
           <p className="text-xs text-muted-foreground">
-            Add your social media profiles
+            {t("addSocialProfiles")}
           </p>
         </div>
         {!isAddingLink && (
@@ -459,7 +458,7 @@ export function SocialLinksEditor({
             onClick={() => setIsAddingLink(true)}
           >
             <Plus className="h-4 w-4 mr-1" />
-            Add Link
+            {t("addLink")}
           </Button>
         )}
       </div>
@@ -469,7 +468,7 @@ export function SocialLinksEditor({
         <Card className="border-2 border-primary/20 bg-primary/5">
           <CardContent className="p-4 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="platform">Platform</Label>
+              <Label htmlFor="platform">{t("platform")}</Label>
               <Select
                 value={selectedPlatform}
                 onValueChange={(value) =>
@@ -496,7 +495,7 @@ export function SocialLinksEditor({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="url">URL</Label>
+              <Label htmlFor="url">{t("url")}</Label>
               <Input
                 id="url"
                 type="text"
@@ -512,7 +511,7 @@ export function SocialLinksEditor({
                 </div>
               )}
               <p className="text-xs text-muted-foreground">
-                Paste your profile URL and we&apos;ll auto-detect the platform
+                {t("pasteUrlAutoDetect")}
               </p>
             </div>
 
@@ -526,7 +525,7 @@ export function SocialLinksEditor({
                 Cancel
               </Button>
               <Button type="button" size="sm" onClick={handleAddLink}>
-                Add Link
+                {t("addLink")}
               </Button>
             </div>
           </CardContent>
@@ -562,9 +561,9 @@ export function SocialLinksEditor({
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-muted mb-3">
               <MessageCircle className="h-6 w-6 text-muted-foreground" />
             </div>
-            <h4 className="text-sm font-medium mb-1">No social links yet</h4>
+            <h4 className="text-sm font-medium mb-1">{t("noSocialLinksYet")}</h4>
             <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-              Add your social media profiles to display them on your bio page
+              {t("addSocialProfilesDescription")}
             </p>
           </div>
         )

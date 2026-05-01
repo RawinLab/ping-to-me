@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, Button } from "@pingtome/ui";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { Download } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface OSData {
   name: string;
@@ -31,6 +32,7 @@ export function OSChart({
   totalClicks,
   onExport,
 }: OSChartProps) {
+  const t = useTranslations("dashboard.charts");
   // Calculate threshold for "Other" grouping (5% of total)
   const threshold = totalClicks * 0.05;
 
@@ -52,7 +54,7 @@ export function OSChart({
   // Add "Other" category if needed
   if (otherValue > 0) {
     chartData.push({
-      name: "Other",
+      name: t("other"),
       value: otherValue,
     });
   }
@@ -72,7 +74,7 @@ export function OSChart({
   return (
     <Card className="overflow-hidden h-full">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-xl font-semibold">Operating Systems</CardTitle>
+        <CardTitle className="text-xl font-semibold">{t("operatingSystems")}</CardTitle>
         {onExport && (
           <Button variant="ghost" size="icon" onClick={onExport}>
             <Download className="h-4 w-4 text-primary" />
@@ -105,7 +107,7 @@ export function OSChart({
                 {totalClicks.toLocaleString()}
               </span>
               <span className="text-xs text-muted-foreground uppercase tracking-wider">
-                CLICKS
+                {t("clicksLabel")}
               </span>
             </div>
           </div>

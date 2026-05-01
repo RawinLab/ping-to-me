@@ -6,66 +6,62 @@ import {
   Users,
   Code2,
 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
-const features = [
-  {
-    icon: BarChart3,
-    title: "Advanced analytics",
-    description:
-      "Track clicks, conversions, and revenue with detailed charts. Understand your audience with location, device, and referrer data.",
-    link: "Learn more",
-  },
-  {
-    icon: LinkIcon,
-    title: "Custom domains",
-    description:
-      "Use your own branded domain to create trustworthy short links. Build brand recognition with every click.",
-    link: "Learn more",
-  },
-  {
-    icon: Users,
-    title: "Team collaboration",
-    description:
-      "Work together with your team using shared workspaces. Manage permissions and track activity across your organization.",
-    link: "Learn more",
-  },
-  {
-    icon: QrCode,
-    title: "QR codes",
-    description:
-      "Generate beautiful, customizable QR codes for any link. Perfect for print materials, business cards, and events.",
-    link: "Learn more",
-  },
-  {
-    icon: Code2,
-    title: "API access",
-    description:
-      "Integrate link shortening into your applications with our powerful REST API. Automate your workflow with webhooks.",
-    link: "View docs",
-  },
-  {
-    icon: FileText,
-    title: "Bio pages",
-    description:
-      "Create beautiful landing pages to showcase all your important links. Perfect for social media profiles.",
-    link: "Learn more",
-  },
-];
+export async function Features() {
+  const t = await getTranslations("landing.features");
 
-export function Features() {
+  const features = [
+    {
+      icon: BarChart3,
+      title: t("analytics.title"),
+      description: t("analytics.description"),
+      link: t("learnMore"),
+    },
+    {
+      icon: LinkIcon,
+      title: t("customDomains.title"),
+      description: t("customDomains.description"),
+      link: t("learnMore"),
+    },
+    {
+      icon: Users,
+      title: t("teamCollaboration.title"),
+      description: t("teamCollaboration.description"),
+      link: t("learnMore"),
+    },
+    {
+      icon: QrCode,
+      title: t("qrCodes.title"),
+      description: t("qrCodes.description"),
+      link: t("learnMore"),
+    },
+    {
+      icon: Code2,
+      title: t("apiAccess.title"),
+      description: t("apiAccess.description"),
+      link: t("viewDocs"),
+    },
+    {
+      icon: FileText,
+      title: t("bioPages.title"),
+      description: t("bioPages.description"),
+      link: t("learnMore"),
+    },
+  ];
+
   return (
     <section id="features" className="section-padding bg-white">
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center justify-center space-y-4 text-center mb-16">
           <div className="inline-block rounded-full bg-blue-100 px-4 py-1.5 text-sm font-medium text-blue-700">
-            Features
+            {t("badge")}
           </div>
           <h2 className="text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl">
-            Everything you need to manage links
+            {t("heading")}
           </h2>
           <p className="max-w-[800px] text-muted-foreground md:text-lg">
-            Robust link management tools that help you track performance and
-            optimize campaigns.
+            {t("description")}
           </p>
         </div>
 

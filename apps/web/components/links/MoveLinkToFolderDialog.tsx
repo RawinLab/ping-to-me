@@ -18,6 +18,7 @@ import {
 import { apiRequest } from "@/lib/api";
 import { toast } from "sonner";
 import { Folder, FolderX } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface FolderData {
   id: string;
@@ -48,6 +49,8 @@ export function MoveLinkToFolderDialog({
   );
   const [loading, setLoading] = useState(false);
   const [fetchingFolders, setFetchingFolders] = useState(true);
+  const t = useTranslations("links.moveFolder");
+  const tc = useTranslations("common");
 
   useEffect(() => {
     if (isOpen) {
@@ -65,7 +68,7 @@ export function MoveLinkToFolderDialog({
       setFolders(flattenedFolders);
     } catch (error) {
       console.error("Failed to fetch folders:", error);
-      toast.error("Failed to load folders");
+      toast.error(t("failedToLoadFolders"));
     } finally {
       setFetchingFolders(false);
     }
@@ -107,10 +110,10 @@ export function MoveLinkToFolderDialog({
       });
 
       if (selectedFolder === "none") {
-        toast.success("Link removed from folder");
+        toast.success(t("removedFromFolder"));
       } else {
         const folderName = folders.find((f) => f.id === selectedFolder)?.name;
-        toast.success(`Link moved to ${folderName || "folder"}`);
+        toast.success(t("movedToFolder", { folder: folderName || t("folder") }));
       }
 
       onMoved();
@@ -118,11 +121,11 @@ export function MoveLinkToFolderDialog({
     } catch (error: any) {
       console.error("Failed to move link:", error);
       if (error?.response?.status === 403) {
-        toast.error("Permission denied", {
-          description: "You don't have permission to move this link",
+        toast.error(t("permissionDenied"), {
+          description: t("noMovePermission"),
         });
       } else {
-        toast.error("Failed to move link");
+        toast.error(t("failedToMove"));
       }
     } finally {
       setLoading(false);
@@ -137,11 +140,10 @@ export function MoveLinkToFolderDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Folder className="h-5 w-5 text-blue-600" />
-            Move to Folder
+            {t("moveToFolder")}
           </DialogTitle>
           <DialogDescription>
-            Choose a folder to organize this link, or remove it from its current
-            folder.
+            {t("moveToFolderDesc")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
@@ -152,13 +154,13 @@ export function MoveLinkToFolderDialog({
           ) : (
             <Select value={selectedFolder} onValueChange={setSelectedFolder}>
               <SelectTrigger className="h-11 rounded-lg">
-                <SelectValue placeholder="Select a folder" />
+                <SelectValue placeholder={t("selectFolder")} />
               </SelectTrigger>
               <SelectContent className="max-h-[300px]">
                 <SelectItem value="none">
                   <div className="flex items-center gap-2">
                     <FolderX className="h-4 w-4 text-slate-400" />
-                    <span>No Folder</span>
+                    <span>{t("noFolder")}</span>
                   </div>
                 </SelectItem>
                 {folders.map((folder: any) => (
@@ -177,9 +179,9 @@ export function MoveLinkToFolderDialog({
                 ))}
                 {folders.length === 0 && (
                   <div className="px-2 py-6 text-center text-sm text-slate-500">
-                    No folders available.
+                    {t("noFoldersAvailable")}
                     <br />
-                    Create one from the Folders page.
+                    {t("createFromFoldersPage")}
                   </div>
                 )}
               </SelectContent>
@@ -193,14 +195,14 @@ export function MoveLinkToFolderDialog({
             disabled={loading}
             className="rounded-lg"
           >
-            Cancel
+            {tc("cancel")}
           </Button>
           <Button
             onClick={handleMove}
             disabled={loading || fetchingFolders || !hasChanged}
             className="rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
           >
-            {loading ? "Moving..." : "Move"}
+            {loading ? t("moving") : t("move")}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Button } from "@pingtome/ui";
+import { getTranslations } from "next-intl/server";
 
-const integrations = [
+const integrationLogos = [
   {
     name: "Slack",
     logo: (
@@ -112,25 +113,26 @@ const integrations = [
   },
 ];
 
-export function Integrations() {
+export async function Integrations() {
+  const t = await getTranslations("landing.integrations");
+
   return (
     <section id="integrations" className="section-padding bg-white">
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
           <div className="inline-block rounded-full bg-blue-100 px-4 py-1.5 text-sm font-medium text-blue-700">
-            Integrations
+            {t("badge")}
           </div>
           <h2 className="text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl">
-            Connect with your favorite tools
+            {t("heading")}
           </h2>
           <p className="max-w-[800px] text-muted-foreground md:text-lg">
-            Connect PingTO.Me to your existing workflow with ready-made
-            integrations and API access.
+            {t("description")}
           </p>
         </div>
 
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 max-w-4xl mx-auto mb-12">
-          {integrations.map((integration) => (
+          {integrationLogos.map((integration) => (
             <div
               key={integration.name}
               className="group aspect-square flex flex-col items-center justify-center p-4 rounded-xl border bg-card hover:shadow-lg hover:border-blue-200 transition-all cursor-pointer"
@@ -151,7 +153,7 @@ export function Integrations() {
         <div className="text-center">
           <Link href="/integrations">
             <Button variant="outline" size="lg">
-              View all integrations
+              {t("viewAll")}
             </Button>
           </Link>
         </div>

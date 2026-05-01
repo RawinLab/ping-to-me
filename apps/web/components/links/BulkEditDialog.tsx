@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { apiRequest } from "@/lib/api";
 import {
   Dialog,
@@ -51,12 +52,12 @@ export function BulkEditDialog({
   onSuccess,
   children,
 }: BulkEditDialogProps) {
+  const t = useTranslations("links.bulk");
   const [open, setOpen] = useState(false);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Form state
   const [folderId, setFolderId] = useState<string | null>(null);
   const [campaignId, setCampaignId] = useState<string | null>(null);
   const [expirationDate, setExpirationDate] = useState("");
@@ -69,7 +70,6 @@ export function BulkEditDialog({
     { id: string; name: string }[]
   >([]);
 
-  // Fetch folders, campaigns, and tags on open
   useEffect(() => {
     if (open) {
       fetchData();
@@ -107,11 +107,10 @@ export function BulkEditDialog({
     e.preventDefault();
 
     if (selectedIds.length === 0) {
-      toast.error("No links selected");
+      toast.error(t("noLinksSelected"));
       return;
     }
 
-    // Build changes object, only include fields that have been modified
     const changes: {
       folderId?: string | null;
       campaignId?: string | null;
@@ -137,9 +136,8 @@ export function BulkEditDialog({
       changes.tagsAction = tagsAction;
     }
 
-    // Check if any changes were made
     if (Object.keys(changes).length === 0) {
-      toast.error("No changes to apply");
+      toast.error(t("noChangesToApply"));
       return;
     }
 
@@ -155,16 +153,15 @@ export function BulkEditDialog({
       });
 
       toast.success(
-        `Successfully updated ${selectedIds.length} link${selectedIds.length > 1 ? "s" : ""}`,
+        t("updatedSuccess", { count: selectedIds.length }),
       );
 
-      // Reset form state
       resetForm();
       setOpen(false);
       onSuccess();
     } catch (error: any) {
       console.error("Bulk edit failed:", error);
-      toast.error(error?.message || "Failed to update links");
+      toast.error(error?.message || t("failedToUpdate"));
     } finally {
       setLoading(false);
     }
@@ -192,20 +189,17 @@ export function BulkEditDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Bulk Edit Links</DialogTitle>
+          <DialogTitle>{t("bulkEditLinks")}</DialogTitle>
           <DialogDescription>
-            Apply changes to {selectedIds.length} selected link
-            {selectedIds.length > 1 ? "s" : ""}. Only modified fields will be
-            updated.
+            {t("bulkEditDesc", { count: selectedIds.length })}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Folder Selector */}
           <div className="space-y-2">
             <Label htmlFor="folder" className="flex items-center gap-2">
               <FolderOpen className="h-4 w-4 text-slate-500" />
-              Folder
+              {t("folder")}
             </Label>
             <Select
               value={folderId || "unchanged"}
@@ -214,11 +208,11 @@ export function BulkEditDialog({
               }
             >
               <SelectTrigger id="folder">
-                <SelectValue placeholder="Keep current" />
+                <SelectValue placeholder={t("keepCurrent")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unchanged">Keep current</SelectItem>
-                <SelectItem value="none">No Folder</SelectItem>
+                <SelectItem value="unchanged">{t("keepCurrent")}</SelectItem>
+                <SelectItem value="none">{t("noFolder")}</SelectItem>
                 {folders.map((folder) => (
                   <SelectItem key={folder.id} value={folder.id}>
                     {folder.name}
@@ -228,11 +222,10 @@ export function BulkEditDialog({
             </Select>
           </div>
 
-          {/* Campaign Selector */}
           <div className="space-y-2">
             <Label htmlFor="campaign" className="flex items-center gap-2">
               <Layers className="h-4 w-4 text-slate-500" />
-              Campaign
+              {t("campaign")}
             </Label>
             <Select
               value={campaignId || "unchanged"}
@@ -241,11 +234,11 @@ export function BulkEditDialog({
               }
             >
               <SelectTrigger id="campaign">
-                <SelectValue placeholder="Keep current" />
+                <SelectValue placeholder={t("keepCurrent")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unchanged">Keep current</SelectItem>
-                <SelectItem value="none">No Campaign</SelectItem>
+                <SelectItem value="unchanged">{t("keepCurrent")}</SelectItem>
+                <SelectItem value="none">{t("noCampaign")}</SelectItem>
                 {campaigns.map((campaign) => (
                   <SelectItem key={campaign.id} value={campaign.id}>
                     {campaign.name}
@@ -255,11 +248,10 @@ export function BulkEditDialog({
             </Select>
           </div>
 
-          {/* Expiration Date */}
           <div className="space-y-2">
             <Label htmlFor="expirationDate" className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-slate-500" />
-              Expiration Date (optional)
+              {t("expirationDateOptional")}
             </Label>
             <Input
               id="expirationDate"
@@ -269,16 +261,15 @@ export function BulkEditDialog({
               min={new Date().toISOString().split("T")[0]}
             />
             <p className="text-xs text-slate-500">
-              Leave empty to keep current expiration dates
+              {t("leaveEmptyExpiration")}
             </p>
           </div>
 
-          {/* Tags */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-2">
                 <Tag className="h-4 w-4 text-slate-500" />
-                Tags
+                {t("tags")}
               </Label>
               <Select
                 value={tagsAction}
@@ -290,14 +281,13 @@ export function BulkEditDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="add">Add</SelectItem>
-                  <SelectItem value="replace">Replace</SelectItem>
-                  <SelectItem value="remove">Remove</SelectItem>
+                  <SelectItem value="add">{t("addTag")}</SelectItem>
+                  <SelectItem value="replace">{t("replaceTag")}</SelectItem>
+                  <SelectItem value="remove">{t("removeTag")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Selected Tags Display */}
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-slate-50">
                 {tags.map((tag) => (
@@ -319,7 +309,6 @@ export function BulkEditDialog({
               </div>
             )}
 
-            {/* Tag Input */}
             <div className="flex gap-2">
               <Select
                 value=""
@@ -328,7 +317,7 @@ export function BulkEditDialog({
                 }}
               >
                 <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select existing tag" />
+                  <SelectValue placeholder={t("selectExistingTag")} />
                 </SelectTrigger>
                 <SelectContent>
                   {availableTags
@@ -342,7 +331,7 @@ export function BulkEditDialog({
               </Select>
               <div className="flex gap-1">
                 <Input
-                  placeholder="New tag"
+                  placeholder={t("newTag")}
                   value={newTagInput}
                   onChange={(e) => setNewTagInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -365,14 +354,10 @@ export function BulkEditDialog({
               </div>
             </div>
 
-            {/* Tags Action Description */}
             <p className="text-xs text-slate-500">
-              {tagsAction === "add" &&
-                "Add these tags to existing tags on selected links"}
-              {tagsAction === "replace" &&
-                "Replace all existing tags with these tags"}
-              {tagsAction === "remove" &&
-                "Remove these tags from selected links"}
+              {tagsAction === "add" && t("addTagDesc")}
+              {tagsAction === "replace" && t("replaceTagDesc")}
+              {tagsAction === "remove" && t("removeTagDesc")}
             </p>
           </div>
 
@@ -383,10 +368,10 @@ export function BulkEditDialog({
               onClick={() => setOpen(false)}
               disabled={loading}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Applying Changes..." : "Apply Changes"}
+              {loading ? t("applyingChanges") : t("applyChanges")}
             </Button>
           </DialogFooter>
         </form>

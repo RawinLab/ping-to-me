@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { apiRequest } from "@/lib/api";
 import { LinkedAccountsCard } from "@/components/settings/LinkedAccountsCard";
 import { PasskeyManager } from "@/components/settings/PasskeyManager";
@@ -32,21 +33,9 @@ import {
   Key,
 } from "lucide-react";
 
-const passwordSchema = z
-  .object({
-    currentPassword: z.string().min(1, "Current password is required"),
-    newPassword: z.string().min(8, "Password must be at least 8 characters"),
-    confirmPassword: z.string().min(1, "Please confirm your password"),
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
-
-type PasswordFormData = z.infer<typeof passwordSchema>;
-
 export function SecuritySettingsTab() {
   const searchParams = useSearchParams();
+  const t = useTranslations("settings.changePassword");
   const [saving, setSaving] = useState(false);
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
@@ -55,6 +44,19 @@ export function SecuritySettingsTab() {
     type: "success" | "error";
     text: string;
   } | null>(null);
+
+  const passwordSchema = z
+    .object({
+      currentPassword: z.string().min(1, t("currentPasswordRequired")),
+      newPassword: z.string().min(8, t("passwordMinLength")),
+      confirmPassword: z.string().min(1, t("confirmRequired")),
+    })
+    .refine((data) => data.newPassword === data.confirmPassword, {
+      message: t("passwordsNoMatch"),
+      path: ["confirmPassword"],
+    });
+
+  type PasswordFormData = z.infer<typeof passwordSchema>;
 
   const form = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
@@ -73,11 +75,11 @@ export function SecuritySettingsTab() {
     if (oauthStatus === "linked" && provider) {
       setMessage({
         type: "success",
-        text: `${provider} account linked successfully!`,
+        text: t("accountLinked", { provider }),
       });
       window.history.replaceState({}, "", "/dashboard/settings/security");
     } else if (oauthStatus === "error") {
-      setMessage({ type: "error", text: errorMessage || "Failed to link account" });
+      setMessage({ type: "error", text: errorMessage || t("linkFailed") });
       window.history.replaceState({}, "", "/dashboard/settings/security");
     }
   }, [searchParams]);
@@ -93,12 +95,12 @@ export function SecuritySettingsTab() {
           newPassword: data.newPassword,
         }),
       });
-      setMessage({ type: "success", text: "Password updated successfully!" });
+      setMessage({ type: "success", text: t("passwordUpdated") });
       form.reset();
     } catch (error: any) {
       setMessage({
         type: "error",
-        text: error.message || "Failed to update password",
+        text: error.message || t("updateFailed"),
       });
     } finally {
       setSaving(false);
@@ -116,10 +118,10 @@ export function SecuritySettingsTab() {
     if (/[0-9]/.test(pwd)) score++;
     if (/[^A-Za-z0-9]/.test(pwd)) score++;
 
-    if (score <= 2) return { label: "Weak", color: "bg-red-500", width: "33%" };
+    if (score <= 2) return { label: t("strengthWeak"), color: "bg-red-500", width: "33%" };
     if (score <= 4)
-      return { label: "Medium", color: "bg-amber-500", width: "66%" };
-    return { label: "Strong", color: "bg-emerald-500", width: "100%" };
+      return { label: t("strengthMedium"), color: "bg-amber-500", width: "66%" };
+    return { label: t("strengthStrong"), color: "bg-emerald-500", width: "100%" };
   };
 
   const strength = getPasswordStrength(password);
@@ -134,9 +136,9 @@ export function SecuritySettingsTab() {
               <Lock className="h-4 w-4 text-amber-600" />
             </div>
             <div>
-              <CardTitle className="text-lg">Change Password</CardTitle>
+              <CardTitle className="text-lg">{t("title")}</CardTitle>
               <CardDescription>
-                Update your password to keep your account secure.
+                {t("subtitle")}
               </CardDescription>
             </div>
           </div>
@@ -149,13 +151,13 @@ export function SecuritySettingsTab() {
                 htmlFor="currentPassword"
                 className="text-slate-700 font-medium"
               >
-                Current Password
+                {t("currentPassword")}
               </Label>
               <div className="relative">
                 <Input
                   id="currentPassword"
                   type={showCurrent ? "text" : "password"}
-                  placeholder="Enter your current password"
+                  placeholder={t("currentPasswordPlaceholder")}
                   className="h-11 rounded-lg border-slate-200 focus:border-blue-300 focus:ring-blue-100 pr-10"
                   {...form.register("currentPassword")}
                 />
@@ -187,13 +189,13 @@ export function SecuritySettingsTab() {
                 htmlFor="newPassword"
                 className="text-slate-700 font-medium"
               >
-                New Password
+                {t("newPassword")}
               </Label>
               <div className="relative">
                 <Input
                   id="newPassword"
                   type={showNew ? "text" : "password"}
-                  placeholder="Enter your new password"
+                  placeholder={t("newPasswordPlaceholder")}
                   className="h-11 rounded-lg border-slate-200 focus:border-blue-300 focus:ring-blue-100 pr-10"
                   {...form.register("newPassword")}
                 />
@@ -219,7 +221,7 @@ export function SecuritySettingsTab() {
                     />
                   </div>
                   <p className="text-xs text-slate-500">
-                    Password strength:{" "}
+                    {t("passwordStrength")}{" "}
                     <span
                       className={
                         strength.color === "bg-emerald-500"
@@ -248,13 +250,13 @@ export function SecuritySettingsTab() {
                 htmlFor="confirmPassword"
                 className="text-slate-700 font-medium"
               >
-                Confirm New Password
+                {t("confirmPassword")}
               </Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
                   type={showConfirm ? "text" : "password"}
-                  placeholder="Confirm your new password"
+                  placeholder={t("confirmPasswordPlaceholder")}
                   className="h-11 rounded-lg border-slate-200 focus:border-blue-300 focus:ring-blue-100 pr-10"
                   {...form.register("confirmPassword")}
                 />
@@ -304,7 +306,7 @@ export function SecuritySettingsTab() {
                 className="h-10 px-6 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25"
               >
                 <Shield className="mr-2 h-4 w-4" />
-                {saving ? "Updating..." : "Update Password"}
+                {saving ? t("updating") : t("updatePassword")}
               </Button>
             </div>
           </form>
@@ -331,11 +333,10 @@ export function SecuritySettingsTab() {
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-emerald-900 mb-1">
-                Enable Two-Factor Authentication
+                {t("enable2fa")}
               </h3>
               <p className="text-sm text-emerald-700 mb-4">
-                Add an extra layer of security to your account by enabling 2FA
-                with an authenticator app.
+                {t("enable2faDesc")}
               </p>
               <Link href="/dashboard/settings/two-factor">
                 <Button
@@ -343,7 +344,7 @@ export function SecuritySettingsTab() {
                   className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
                 >
                   <Key className="mr-2 h-4 w-4" />
-                  Set up 2FA
+                  {t("setup2fa")}
                 </Button>
               </Link>
             </div>

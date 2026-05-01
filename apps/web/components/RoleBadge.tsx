@@ -1,6 +1,7 @@
 "use client";
 
 import { Crown, Shield, Edit, Eye } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { MemberRole } from "@/lib/permissions";
 
 const roleConfig: Record<
@@ -10,7 +11,6 @@ const roleConfig: Record<
     bgColor: string;
     borderColor: string;
     icon: typeof Crown;
-    description: string;
   }
 > = {
   OWNER: {
@@ -18,29 +18,39 @@ const roleConfig: Record<
     bgColor: "bg-purple-50",
     borderColor: "border-purple-200",
     icon: Crown,
-    description: "Full access to all features",
   },
   ADMIN: {
     color: "text-blue-700",
     bgColor: "bg-blue-50",
     borderColor: "border-blue-200",
     icon: Shield,
-    description: "Manage team and content",
   },
   EDITOR: {
     color: "text-green-700",
     bgColor: "bg-green-50",
     borderColor: "border-green-200",
     icon: Edit,
-    description: "Create and edit content",
   },
   VIEWER: {
     color: "text-gray-700",
     bgColor: "bg-gray-50",
     borderColor: "border-gray-200",
     icon: Eye,
-    description: "View only access",
   },
+};
+
+const roleDescriptionKeys: Record<MemberRole, string> = {
+  OWNER: "ownerDescription",
+  ADMIN: "adminDescription",
+  EDITOR: "editorDescription",
+  VIEWER: "viewerDescription",
+};
+
+const roleNameKeys: Record<MemberRole, string> = {
+  OWNER: "roleOwner",
+  ADMIN: "roleAdmin",
+  EDITOR: "roleEditor",
+  VIEWER: "roleViewer",
 };
 
 interface RoleBadgeProps {
@@ -58,6 +68,7 @@ export function RoleBadge({
   size = "md",
   className = "",
 }: RoleBadgeProps) {
+  const t = useTranslations("shared");
   const config = roleConfig[role] || roleConfig.VIEWER;
   const Icon = config.icon;
 
@@ -83,11 +94,11 @@ export function RoleBadge({
         `}
       >
         {showIcon && <Icon className={iconSizes[size]} />}
-        {role}
+        {t(roleNameKeys[role])}
       </span>
       {showDescription && (
         <span className="text-xs text-gray-500 mt-0.5">
-          {config.description}
+          {t(roleDescriptionKeys[role])}
         </span>
       )}
     </div>
@@ -95,6 +106,7 @@ export function RoleBadge({
 }
 
 export function RoleBadgeInline({ role }: { role: MemberRole }) {
+  const t = useTranslations("shared");
   const config = roleConfig[role] || roleConfig.VIEWER;
-  return <span className={`font-medium ${config.color}`}>{role}</span>;
+  return <span className={`font-medium ${config.color}`}>{t(roleNameKeys[role])}</span>;
 }

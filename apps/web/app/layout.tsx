@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Noto_Sans, Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { Toaster } from "@pingtome/ui";
 
 const notoSans = Noto_Sans({
   subsets: ["latin"],
@@ -28,12 +26,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html suppressHydrationWarning>
       <body
         className={`${notoSans.variable} ${notoSansThai.variable} font-sans antialiased`}
       >
-        <AuthProvider>{children}</AuthProvider>
-        <Toaster position="top-right" richColors closeButton />
+        {children}
       </body>
     </html>
   );

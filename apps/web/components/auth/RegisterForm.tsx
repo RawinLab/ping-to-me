@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -12,29 +12,67 @@ import {
   AlertDescription,
   buttonVariants,
 } from "@pingtome/ui";
+import { Eye, EyeOff, Check, X } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { useTranslations } from "next-intl";
 
-const registerSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  name: z.string().optional(),
-});
+const createRegisterSchema = (t: (key: string) => string) =>
+  z.object({
+    email: z.string().email(t("invalidEmail")),
+    password: z
+      .string()
+      .min(8, t("passwordMinLength"))
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/,
+        t("passwordRequirements")
+      ),
+    name: z.string().optional(),
+  });
 
-type RegisterFormData = z.infer<typeof registerSchema>;
+type RegisterFormData = z.infer<ReturnType<typeof createRegisterSchema>>;
 
 export function RegisterForm() {
+  const t = useTranslations("auth.register");
+  const tv = useTranslations("auth.register.validation");
+  const tc = useTranslations("common");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
+
+  const registerSchema = useMemo(() => createRegisterSchema(tv), [tv]);
+
+  const PASSWORD_REQUIREMENTS = useMemo(() => [
+    { key: "length", label: t("passwordChecks.length"), test: (v: string) => v.length >= 8 },
+    { key: "uppercase", label: t("passwordChecks.uppercase"), test: (v: string) => /[A-Z]/.test(v) },
+    { key: "lowercase", label: t("passwordChecks.lowercase"), test: (v: string) => /[a-z]/.test(v) },
+    { key: "number", label: t("passwordChecks.number"), test: (v: string) => /\d/.test(v) },
+    { key: "special", label: t("passwordChecks.special"), test: (v: string) => /[@$!%*?&]/.test(v) },
+  ], [t]);
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   });
+
+  const passwordValue = watch("password") || "";
+  const emailValue = watch("email") || "";
+
+  const requirementChecks = useMemo(
+    () => PASSWORD_REQUIREMENTS.map((req) => ({
+      ...req,
+      met: req.test(passwordValue),
+    })),
+    [passwordValue, PASSWORD_REQUIREMENTS]
+  );
+
+  const allRequirementsMet = requirementChecks.every((r) => r.met);
 
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
@@ -55,8 +93,7 @@ export function RegisterForm() {
       <div className="grid gap-6">
         <Alert className="bg-green-50 border-green-200 text-green-800">
           <AlertDescription>
-            Registration successful! Please check your email to verify your
-            account.
+            {t("registrationSuccess")}
           </AlertDescription>
         </Alert>
         <Link
@@ -66,7 +103,7 @@ export function RegisterForm() {
             className: "w-full",
           })}
         >
-          Back to Login
+          {t("backToLogin")}
         </Link>
       </div>
     );
@@ -77,10 +114,10 @@ export function RegisterForm() {
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("emailLabel")}</Label>
             <Input
               id="email"
-              placeholder="name@example.com"
+              placeholder={t("emailPlaceholder")}
               type="email"
               autoCapitalize="none"
               autoComplete="email"
@@ -93,19 +130,58 @@ export function RegisterForm() {
             )}
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              disabled={isLoading}
-              {...register("password")}
-            />
-            {errors.password && (
+            <Label htmlFor="password">{t("passwordLabel")}</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                disabled={isLoading}
+                className="pr-10"
+                {...register("password", {
+                  onBlur: undefined,
+                })}
+                onFocus={() => setPasswordFocused(true)}
+                onBlur={() => {
+                  if (!passwordValue) setPasswordFocused(false);
+                }}
+              />
+              <button
+                type="button"
+                tabIndex={-1}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+            {(passwordFocused || (passwordValue && !allRequirementsMet)) && (
+              <div className="mt-1 rounded-md border bg-muted/50 p-3 text-sm space-y-1.5">
+                <p className="font-medium text-muted-foreground mb-2">{t("passwordRequirements")}</p>
+                {requirementChecks.map((req) => (
+                  <div key={req.key} className="flex items-center gap-2">
+                    {req.met ? (
+                      <Check className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                    ) : (
+                      <X className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    )}
+                    <span className={req.met ? "text-green-600" : "text-muted-foreground"}>
+                      {req.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {errors.password && !passwordFocused && (
               <p className="text-sm text-red-500">{errors.password.message}</p>
             )}
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="name">Name (Optional)</Label>
+            <Label htmlFor="name">{t("nameLabel")}</Label>
             <Input
               id="name"
               type="text"
@@ -118,11 +194,11 @@ export function RegisterForm() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <Button disabled={isLoading}>
+          <Button disabled={isLoading || (passwordValue.length > 0 && !allRequirementsMet)}>
             {isLoading && (
               <span className="mr-2 h-4 w-4 animate-spin">...</span>
             )}
-            Sign Up with Email
+            {t("signUp")}
           </Button>
         </div>
       </form>
@@ -132,17 +208,16 @@ export function RegisterForm() {
         </div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-background px-2 text-muted-foreground">
-            Or continue with
+            {t("orContinueWith")}
           </span>
         </div>
       </div>
-      {/* Social Login Buttons Placeholder */}
       <div className="flex flex-col space-y-2 text-center text-sm">
         <Link
           href="/login"
           className="underline underline-offset-4 hover:text-primary"
         >
-          Already have an account? Sign In
+          {t("hasAccount")}
         </Link>
       </div>
     </div>

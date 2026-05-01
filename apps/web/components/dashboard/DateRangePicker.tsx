@@ -18,6 +18,7 @@ import {
   Calendar,
 } from "@pingtome/ui";
 import { cn } from "@pingtome/ui";
+import { useTranslations } from "next-intl";
 
 interface DateRange {
   start: Date;
@@ -31,41 +32,41 @@ interface DateRangePickerProps {
 }
 
 interface Preset {
-  label: string;
+  labelKey: string;
   getValue: () => DateRange;
 }
 
 const PRESETS: Preset[] = [
   {
-    label: "Today",
+    labelKey: "today",
     getValue: () => ({
       start: startOfToday(),
       end: endOfToday(),
     }),
   },
   {
-    label: "7 Days",
+    labelKey: "7days",
     getValue: () => ({
       start: startOfDay(subDays(new Date(), 6)),
       end: endOfToday(),
     }),
   },
   {
-    label: "30 Days",
+    labelKey: "30days",
     getValue: () => ({
       start: startOfDay(subDays(new Date(), 29)),
       end: endOfToday(),
     }),
   },
   {
-    label: "90 Days",
+    labelKey: "90days",
     getValue: () => ({
       start: startOfDay(subDays(new Date(), 89)),
       end: endOfToday(),
     }),
   },
   {
-    label: "1 Year",
+    labelKey: "1year",
     getValue: () => ({
       start: startOfDay(subDays(new Date(), 364)),
       end: endOfToday(),
@@ -82,6 +83,7 @@ export function DateRangePicker({
   const [customMode, setCustomMode] = useState(false);
   const [tempStart, setTempStart] = useState<Date | undefined>(value.start);
   const [tempEnd, setTempEnd] = useState<Date | undefined>(value.end);
+  const t = useTranslations("dashboard.dateRange");
 
   // Determine which preset is currently selected, if any
   const getCurrentPreset = () => {
@@ -94,7 +96,7 @@ export function DateRangePicker({
       const presetEnd = endOfDay(presetRange.end).getTime();
 
       if (currentStart === presetStart && currentEnd === presetEnd) {
-        return preset.label;
+        return preset.labelKey;
       }
     }
 
@@ -144,7 +146,7 @@ export function DateRangePicker({
 
   const formatDateRange = () => {
     if (currentPreset) {
-      return currentPreset;
+      return t(currentPreset);
     }
     return `${format(value.start, "MMM d, yyyy")} - ${format(value.end, "MMM d, yyyy")}`;
   };
@@ -169,16 +171,16 @@ export function DateRangePicker({
             {/* Preset Buttons */}
             {PRESETS.map((preset) => (
               <button
-                key={preset.label}
+                key={preset.labelKey}
                 onClick={() => handlePresetClick(preset)}
                 className={cn(
                   "w-full text-left px-3 py-2 text-sm rounded-md transition-colors",
-                  currentPreset === preset.label
+                  currentPreset === preset.labelKey
                     ? "bg-primary text-primary-foreground"
                     : "hover:bg-accent hover:text-accent-foreground",
                 )}
               >
-                {preset.label}
+                {t(preset.labelKey)}
               </button>
             ))}
 
@@ -192,14 +194,14 @@ export function DateRangePicker({
                   : "hover:bg-accent hover:text-accent-foreground",
               )}
             >
-              Custom
+              {t("custom")}
             </button>
           </div>
         ) : (
           <div className="p-3 space-y-3">
             {/* Custom Mode Header */}
             <div className="flex items-center justify-between pb-2 border-b">
-              <h3 className="font-semibold text-sm">Select Date Range</h3>
+              <h3 className="font-semibold text-sm">{t("selectDateRange")}</h3>
               <Button
                 variant="ghost"
                 size="icon"
@@ -214,7 +216,7 @@ export function DateRangePicker({
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">
-                  Start Date
+                  {t("startDate")}
                 </label>
                 <Calendar
                   mode="single"
@@ -227,7 +229,7 @@ export function DateRangePicker({
 
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">
-                  End Date
+                  {t("endDate")}
                 </label>
                 <Calendar
                   mode="single"
@@ -243,7 +245,7 @@ export function DateRangePicker({
             {/* Validation Message */}
             {tempStart && tempEnd && tempEnd < tempStart && (
               <div className="text-xs text-amber-600 bg-amber-50 px-2 py-1.5 rounded-md">
-                End date should be after start date. Dates will be swapped.
+                {t("endDateWarning")}
               </div>
             )}
 
@@ -255,7 +257,7 @@ export function DateRangePicker({
                 onClick={handleCancel}
                 className="flex-1"
               >
-                Cancel
+                {t("cancel")}
               </Button>
               <Button
                 size="sm"
@@ -263,7 +265,7 @@ export function DateRangePicker({
                 disabled={!tempStart || !tempEnd}
                 className="flex-1"
               >
-                Apply
+                {t("apply")}
               </Button>
             </div>
           </div>

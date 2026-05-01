@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -20,38 +21,6 @@ interface DateFilterModalProps {
   initialEndDate?: Date | null;
 }
 
-const QUICK_OPTIONS = [
-  {
-    label: "Last hour",
-    getValue: () => ({ start: subHours(new Date(), 1), end: new Date() }),
-  },
-  {
-    label: "Today",
-    getValue: () => ({
-      start: startOfDay(new Date()),
-      end: endOfDay(new Date()),
-    }),
-  },
-  {
-    label: "Last 7 days",
-    getValue: () => ({ start: subDays(new Date(), 7), end: new Date() }),
-  },
-  {
-    label: "Last 30 days",
-    getValue: () => ({ start: subDays(new Date(), 30), end: new Date() }),
-  },
-  {
-    label: "Last 60 days",
-    getValue: () => ({ start: subDays(new Date(), 60), end: new Date() }),
-  },
-  {
-    label: "Last 90 days",
-    getValue: () => ({ start: subDays(new Date(), 90), end: new Date() }),
-  },
-];
-
-const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
 export function DateFilterModal({
   isOpen,
   onClose,
@@ -59,12 +28,45 @@ export function DateFilterModal({
   initialStartDate,
   initialEndDate,
 }: DateFilterModalProps) {
+  const t = useTranslations("links.dateFilter");
   const [startDate, setStartDate] = useState<Date | null>(
     initialStartDate || null,
   );
   const [endDate, setEndDate] = useState<Date | null>(initialEndDate || null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectingStart, setSelectingStart] = useState(true);
+
+  const QUICK_OPTIONS = [
+    {
+      label: t("lastHour"),
+      getValue: () => ({ start: subHours(new Date(), 1), end: new Date() }),
+    },
+    {
+      label: t("today"),
+      getValue: () => ({
+        start: startOfDay(new Date()),
+        end: endOfDay(new Date()),
+      }),
+    },
+    {
+      label: t("last7days"),
+      getValue: () => ({ start: subDays(new Date(), 7), end: new Date() }),
+    },
+    {
+      label: t("last30days"),
+      getValue: () => ({ start: subDays(new Date(), 30), end: new Date() }),
+    },
+    {
+      label: t("last60days"),
+      getValue: () => ({ start: subDays(new Date(), 60), end: new Date() }),
+    },
+    {
+      label: t("last90days"),
+      getValue: () => ({ start: subDays(new Date(), 90), end: new Date() }),
+    },
+  ];
+
+  const DAYS = [t("sun"), t("mon"), t("tue"), t("wed"), t("thu"), t("fri"), t("sat")];
 
   const handleQuickOption = (option: (typeof QUICK_OPTIONS)[0]) => {
     const { start, end } = option.getValue();
@@ -108,12 +110,10 @@ export function DateFilterModal({
 
     const days: (Date | null)[] = [];
 
-    // Add empty slots for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
     }
 
-    // Add all days of the month
     for (let i = 1; i <= daysInMonth; i++) {
       days.push(new Date(year, month, i));
     }
@@ -165,31 +165,28 @@ export function DateFilterModal({
         <DialogHeader className="p-6 pb-4 border-b">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl font-semibold">
-              Filter by created date
+              {t("filterByDate")}
             </DialogTitle>
           </div>
         </DialogHeader>
 
         <div className="p-6 space-y-6">
-          {/* Date inputs */}
           <div className="grid grid-cols-2 gap-3">
             <Input
               value={startDate ? format(startDate, "MM/dd/yyyy") : ""}
               readOnly
-              placeholder="Start date"
+              placeholder={t("startDate")}
               className="text-center bg-slate-50"
             />
             <Input
               value={endDate ? format(endDate, "MM/dd/yyyy") : ""}
               readOnly
-              placeholder="End date"
+              placeholder={t("endDate")}
               className="text-center bg-slate-50"
             />
           </div>
 
-          {/* Calendar */}
           <div>
-            {/* Month navigation */}
             <div className="flex items-center justify-between mb-4">
               <button
                 onClick={prevMonth}
@@ -208,7 +205,6 @@ export function DateFilterModal({
               </button>
             </div>
 
-            {/* Day headers */}
             <div className="grid grid-cols-7 gap-1 mb-2">
               {DAYS.map((day) => (
                 <div
@@ -220,7 +216,6 @@ export function DateFilterModal({
               ))}
             </div>
 
-            {/* Days grid */}
             <div className="grid grid-cols-7 gap-1">
               {days.map((day, index) => (
                 <div key={index} className="aspect-square">
@@ -246,7 +241,6 @@ export function DateFilterModal({
             </div>
           </div>
 
-          {/* Quick options */}
           <div className="flex flex-wrap gap-2">
             {QUICK_OPTIONS.map((option) => (
               <button
@@ -260,20 +254,19 @@ export function DateFilterModal({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-between p-6 pt-4 border-t bg-slate-50">
           <button
             onClick={handleClearAll}
             className="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-800"
           >
             <X className="h-4 w-4" />
-            Clear all filters
+            {t("clearAllFilters")}
           </button>
           <div className="flex gap-2">
             <Button variant="outline" onClick={onClose}>
-              Cancel
+              {t("common.cancel")}
             </Button>
-            <Button onClick={handleApply}>Apply</Button>
+            <Button onClick={handleApply}>{t("apply")}</Button>
           </div>
         </div>
       </DialogContent>

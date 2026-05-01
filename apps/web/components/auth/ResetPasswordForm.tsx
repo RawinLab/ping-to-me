@@ -1,32 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button, Input, Label, Alert, AlertDescription } from "@pingtome/ui";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
-const resetPasswordSchema = z
-  .object({
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
+const createResetPasswordSchema = (t: (key: string) => string) =>
+  z
+    .object({
+      password: z.string().min(8, t("passwordMinLength")),
+      confirmPassword: z.string(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t("passwordsDontMatch"),
+      path: ["confirmPassword"],
+    });
 
-type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
+type ResetPasswordFormData = z.infer<ReturnType<typeof createResetPasswordSchema>>;
 
 export function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams?.get("token");
+  const t = useTranslations("auth.resetPassword");
+  const tv = useTranslations("auth.resetPassword.validation");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const resetPasswordSchema = useMemo(() => createResetPasswordSchema(tv), [tv]);
 
   const {
     register,
@@ -38,7 +44,7 @@ export function ResetPasswordForm() {
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     if (!token) {
-      setError("Missing reset token");
+      setError(t("invalidToken"));
       return;
     }
 
@@ -75,7 +81,7 @@ export function ResetPasswordForm() {
     return (
       <Alert className="bg-green-50 border-green-200 text-green-800">
         <AlertDescription>
-          Password reset successfully! Redirecting to login...
+          {t("successMessage")}
         </AlertDescription>
       </Alert>
     );
@@ -84,7 +90,7 @@ export function ResetPasswordForm() {
   if (!token) {
     return (
       <Alert variant="destructive">
-        <AlertDescription>Invalid or missing reset token.</AlertDescription>
+        <AlertDescription>{t("invalidToken")}</AlertDescription>
       </Alert>
     );
   }
@@ -94,7 +100,7 @@ export function ResetPasswordForm() {
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="password">New Password</Label>
+            <Label htmlFor="password">{t("newPasswordLabel")}</Label>
             <Input
               id="password"
               type="password"
@@ -106,7 +112,7 @@ export function ResetPasswordForm() {
             )}
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword">{t("confirmPasswordLabel")}</Label>
             <Input
               id="confirmPassword"
               type="password"
@@ -128,7 +134,7 @@ export function ResetPasswordForm() {
             {isLoading && (
               <span className="mr-2 h-4 w-4 animate-spin">...</span>
             )}
-            Reset Password
+            {t("resetButton")}
           </Button>
         </div>
       </form>

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import {
   DndContext,
   closestCenter,
@@ -90,6 +91,7 @@ function SortableLinkItem({
   onDelete,
   onToggleVisibility,
 }: SortableLinkItemProps) {
+  const t = useTranslations("bio");
   const {
     attributes,
     listeners,
@@ -154,7 +156,7 @@ function SortableLinkItem({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="left">
-                  <p>Drag to reorder</p>
+                  <p>{t("dragToReorder")}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -224,7 +226,7 @@ function SortableLinkItem({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>{link.isVisible ? "Hide link" : "Show link"}</p>
+                    <p>{link.isVisible ? t("hideLink") : t("showLink")}</p>
                   </TooltipContent>
                 </Tooltip>
 
@@ -246,7 +248,7 @@ function SortableLinkItem({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Edit link</p>
+                    <p>{t("editLink")}</p>
                   </TooltipContent>
                 </Tooltip>
 
@@ -268,7 +270,7 @@ function SortableLinkItem({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Delete link</p>
+                    <p>{t("deleteLink")}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -297,6 +299,7 @@ export function SortableLinkList({
   onDelete,
   onToggleVisibility,
 }: SortableLinkListProps) {
+  const t = useTranslations("bio");
   const [activeId, setActiveId] = React.useState<string | null>(null);
 
   // Sort links by order property
@@ -384,7 +387,7 @@ export function SortableLinkList({
             "animate-in fade-in-0 slide-in-from-bottom-4 duration-500 delay-200",
           )}
         >
-          No links yet
+          {t("noLinksYet")}
         </h3>
         <p
           className={cn(
@@ -392,8 +395,7 @@ export function SortableLinkList({
             "animate-in fade-in-0 slide-in-from-bottom-4 duration-500 delay-300",
           )}
         >
-          Add your first link to get started. Links will appear here and can be
-          reordered by dragging.
+          {t("addFirstLink")}
         </p>
       </div>
     );

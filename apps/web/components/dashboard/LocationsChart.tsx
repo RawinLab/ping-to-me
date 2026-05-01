@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, Button } from "@pingtome/ui";
 import { Download, ChevronDown, ChevronUp } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface LocationData {
   name: string;
@@ -30,6 +31,7 @@ export function LocationsChart({
     "countries",
   );
   const [expanded, setExpanded] = useState(false);
+  const t = useTranslations("dashboard.charts");
   const data = activeTab === "countries" ? countries : cities;
   const maxValue = Math.max(...data.map((d) => d.value), 1);
 
@@ -39,7 +41,7 @@ export function LocationsChart({
   return (
     <Card className="overflow-hidden h-full">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-xl font-semibold">Locations</CardTitle>
+        <CardTitle className="text-xl font-semibold">{t("locations")}</CardTitle>
         <div className="flex items-center gap-2">
           <div className="flex bg-muted rounded-full p-1">
             <button
@@ -53,7 +55,7 @@ export function LocationsChart({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Countries
+              {t("countries")}
             </button>
             <button
               onClick={() => {
@@ -66,7 +68,7 @@ export function LocationsChart({
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Cities
+              {t("cities")}
             </button>
           </div>
           {onExport && (
@@ -80,8 +82,8 @@ export function LocationsChart({
         <div className="space-y-3">
           <div className="grid grid-cols-[auto_1fr_auto_auto] gap-x-4 items-center text-sm text-muted-foreground pb-2 border-b">
             <span className="w-6">#</span>
-            <span>{activeTab === "countries" ? "Country" : "City"}</span>
-            <span className="text-right">Clicks</span>
+            <span>{activeTab === "countries" ? t("country") : t("city")}</span>
+            <span className="text-right">{t("clicksCol")}</span>
             <span className="w-12 text-right">%</span>
           </div>
           <div
@@ -118,7 +120,7 @@ export function LocationsChart({
           </div>
           {data.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-8">
-              No location data available
+              {t("noLocationData")}
             </p>
           )}
           {hasMore && (
@@ -127,16 +129,16 @@ export function LocationsChart({
               className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
             >
               {expanded ? (
-                <>
-                  <ChevronUp className="h-4 w-4" />
-                  Show less
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-4 w-4" />
-                  Show {data.length - 5} more
-                </>
-              )}
+                 <>
+                   <ChevronUp className="h-4 w-4" />
+                   {t("showLess")}
+                 </>
+               ) : (
+                 <>
+                   <ChevronDown className="h-4 w-4" />
+                   {t("showMore", { count: data.length - 5 })}
+                 </>
+               )}
             </button>
           )}
         </div>

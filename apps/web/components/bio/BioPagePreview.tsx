@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   Avatar,
   AvatarFallback,
@@ -79,6 +80,8 @@ export function BioPagePreview({
   socialLinks = [],
   showBranding,
 }: BioPagePreviewProps) {
+  const t = useTranslations("bio");
+
   // Determine background style based on theme
   const getBackgroundStyle = (): React.CSSProperties => {
     if (theme.backgroundType === "gradient" && theme.backgroundGradient) {
@@ -353,7 +356,7 @@ export function BioPagePreview({
                       className="text-center py-12 px-4 text-sm opacity-60"
                       style={{ color: theme.textColor }}
                     >
-                      Add links to preview them here
+                      {t("addLinksToPreview")}
                     </div>
                   )}
                 </div>
@@ -367,7 +370,7 @@ export function BioPagePreview({
                       style={{ color: theme.textColor }}
                       onClick={(e) => e.preventDefault()}
                     >
-                      Powered by PingTO.Me
+                      {t("poweredBy")}
                     </a>
                   </div>
                 )}

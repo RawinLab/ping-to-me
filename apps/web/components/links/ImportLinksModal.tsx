@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { apiRequest } from "@/lib/api";
 import {
   Dialog,
@@ -28,6 +29,7 @@ export function ImportLinksModal({
   children,
   onSuccess,
 }: ImportLinksModalProps) {
+  const t = useTranslations("links.import");
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -61,12 +63,11 @@ export function ImportLinksModal({
     const files = e.dataTransfer.files;
     if (files && files[0]) {
       const droppedFile = files[0];
-      // Validate CSV file
       if (droppedFile.type === "text/csv" || droppedFile.name.endsWith(".csv")) {
         setFile(droppedFile);
         setResult(null);
       } else {
-        alert("Please drop a valid CSV file");
+        alert(t("pleaseDropCsv"));
       }
     }
   };
@@ -79,9 +80,7 @@ export function ImportLinksModal({
     formData.append("file", file);
 
     try {
-      // apiRequest helper might assume JSON, so we use fetch directly or adjust helper
-      // Assuming apiRequest handles FormData if body is FormData, but standard fetch is safer here
-      const token = localStorage.getItem("token"); // Or get from auth hook
+      const token = localStorage.getItem("token");
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/links/import`,
         {
@@ -102,7 +101,7 @@ export function ImportLinksModal({
       }
     } catch (error) {
       console.error("Import failed", error);
-      alert("Import failed");
+      alert(t("importFailed"));
     } finally {
       setUploading(false);
     }
@@ -129,7 +128,7 @@ export function ImportLinksModal({
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Template download failed", error);
-      alert("Failed to download template");
+      alert(t("failedDownloadTemplate"));
     }
   };
 
@@ -138,7 +137,7 @@ export function ImportLinksModal({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Import Links from CSV</DialogTitle>
+          <DialogTitle>{t("importLinksCsv")}</DialogTitle>
         </DialogHeader>
 
         {!result ? (
@@ -159,7 +158,7 @@ export function ImportLinksModal({
                   htmlFor="file"
                   className="cursor-pointer text-primary hover:underline"
                 >
-                  {isDragging ? "Drop CSV file here" : "Choose CSV file or drag and drop"}
+                  {isDragging ? t("dropCsvHere") : t("chooseCsv")}
                 </Label>
                 <Input
                   id="file"
@@ -169,19 +168,19 @@ export function ImportLinksModal({
                   onChange={handleFileChange}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  {file ? file.name : "No file selected"}
+                  {file ? file.name : t("noFileSelected")}
                 </p>
               </div>
             </div>
 
             <div className="text-sm text-muted-foreground">
               <p>
-                Need a template?{" "}
+                {t("needTemplate")}{" "}
                 <button
                   onClick={downloadTemplate}
                   className="text-primary hover:underline"
                 >
-                  Download CSV Template
+                  {t("downloadCsvTemplate")}
                 </button>
               </p>
             </div>
@@ -191,31 +190,31 @@ export function ImportLinksModal({
               disabled={!file || uploading}
               className="w-full"
             >
-              {uploading ? "Importing..." : "Import Links"}
+              {uploading ? t("importing") : t("importLinks")}
             </Button>
           </div>
         ) : (
           <div className="space-y-4 py-4">
             <div className="flex items-center gap-2 text-green-600">
               <CheckCircle className="h-5 w-5" />
-              <span className="font-medium">Import Completed</span>
+              <span className="font-medium">{t("importCompleted")}</span>
             </div>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div className="bg-gray-50 p-2 rounded">
                 <div className="text-2xl font-bold">{result.total}</div>
-                <div className="text-xs text-muted-foreground">Total</div>
+                <div className="text-xs text-muted-foreground">{t("total")}</div>
               </div>
               <div className="bg-green-50 p-2 rounded">
                 <div className="text-2xl font-bold text-green-600">
                   {result.success}
                 </div>
-                <div className="text-xs text-muted-foreground">Success</div>
+                <div className="text-xs text-muted-foreground">{t("success")}</div>
               </div>
               <div className="bg-red-50 p-2 rounded">
                 <div className="text-2xl font-bold text-red-600">
                   {result.failed}
                 </div>
-                <div className="text-xs text-muted-foreground">Failed</div>
+                <div className="text-xs text-muted-foreground">{t("failed")}</div>
               </div>
             </div>
 
@@ -223,7 +222,7 @@ export function ImportLinksModal({
               <div className="max-h-40 overflow-y-auto border rounded p-2 text-xs space-y-1">
                 {result.errors.map((err: any, i: number) => (
                   <div key={i} className="text-red-600">
-                    Row {i + 1}: {err.error}
+                    {t("row")} {i + 1}: {err.error}
                   </div>
                 ))}
               </div>
@@ -237,7 +236,7 @@ export function ImportLinksModal({
               }}
               className="w-full"
             >
-              Done
+              {t("done")}
             </Button>
           </div>
         )}

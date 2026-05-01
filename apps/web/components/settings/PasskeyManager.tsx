@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { startRegistration, startAuthentication } from "@simplewebauthn/browser";
 import {
   Button,
@@ -32,6 +33,7 @@ interface Passkey {
 }
 
 export function PasskeyManager() {
+  const t = useTranslations("settings.passkeys");
   const [passkeys, setPasskeys] = useState<Passkey[]>([]);
   const [loading, setLoading] = useState(true);
   const [registering, setRegistering] = useState(false);
@@ -58,7 +60,7 @@ export function PasskeyManager() {
       setPasskeys(response.data.passkeys || []);
     } catch (error) {
       console.error("Failed to load passkeys:", error);
-      toast.error("Failed to load passkeys");
+      toast.error(t("loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -66,7 +68,7 @@ export function PasskeyManager() {
 
   const checkWebAuthnSupport = () => {
     if (!window.PublicKeyCredential) {
-      toast.error("WebAuthn is not supported in this browser");
+      toast.error(t("webauthnNotSupported"));
       return false;
     }
     return true;
@@ -78,7 +80,6 @@ export function PasskeyManager() {
     try {
       setRegistering(true);
 
-      // Get registration options from server
       const optionsResponse = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/auth/passkey/register/options`,
         {},
@@ -91,10 +92,8 @@ export function PasskeyManager() {
 
       const { options } = optionsResponse.data;
 
-      // Start WebAuthn registration
       const registrationResponse = await startRegistration({ optionsJSON: options });
 
-      // Verify registration with server
       const verifyResponse = await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/auth/passkey/register/verify`,
         {
@@ -108,21 +107,21 @@ export function PasskeyManager() {
         }
       );
 
-      toast.success("Passkey added successfully");
+      toast.success(t("addedSuccess"));
 
       setShowAddDialog(false);
       setPasskeyName("");
       loadPasskeys();
     } catch (error: any) {
       console.error("Passkey registration failed:", error);
-      toast.error(error.response?.data?.message || "Failed to add passkey");
+      toast.error(error.response?.data?.message || t("addFailed"));
     } finally {
       setRegistering(false);
     }
   };
 
   const handleDeletePasskey = async (passkeyId: string) => {
-    if (!confirm("Are you sure you want to delete this passkey?")) return;
+    if (!confirm(t("deleteConfirm"))) return;
 
     try {
       await axios.delete(
@@ -134,11 +133,11 @@ export function PasskeyManager() {
         }
       );
 
-      toast.success("Passkey deleted successfully");
+      toast.success(t("deletedSuccess"));
       loadPasskeys();
     } catch (error) {
       console.error("Failed to delete passkey:", error);
-      toast.error("Failed to delete passkey");
+      toast.error(t("deleteFailed"));
     }
   };
 
@@ -156,13 +155,13 @@ export function PasskeyManager() {
         }
       );
 
-      toast.success("Passkey renamed successfully");
+      toast.success(t("renamedSuccess"));
       setEditingId(null);
       setEditingName("");
       loadPasskeys();
     } catch (error) {
       console.error("Failed to rename passkey:", error);
-      toast.error("Failed to rename passkey");
+      toast.error(t("renameFailed"));
     }
   };
 
@@ -175,7 +174,7 @@ export function PasskeyManager() {
   };
 
   const getAuthenticatorLabel = (type: string) => {
-    return type === "platform" ? "This Device" : "Security Key";
+    return type === "platform" ? t("thisDevice") : t("securityKey");
   };
 
   const formatDate = (dateString: string) => {
@@ -191,14 +190,14 @@ export function PasskeyManager() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Passkeys</CardTitle>
+            <CardTitle>{t("title")}</CardTitle>
             <CardDescription>
-              Manage your passkeys and hardware security keys for passwordless login
+              {t("subtitle")}
             </CardDescription>
           </div>
           <Button onClick={() => setShowAddDialog(true)} size="sm">
             <Key className="h-4 w-4 mr-2" />
-            Add Passkey
+            {t("addPasskey")}
           </Button>
         </div>
       </CardHeader>
@@ -210,10 +209,9 @@ export function PasskeyManager() {
         ) : passkeys.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Key className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No passkeys registered</p>
+            <p>{t("noPasskeys")}</p>
             <p className="text-sm mt-2">
-              Add a passkey to enable passwordless login with Touch ID, Face ID, or a hardware
-              security key
+              {t("noPasskeysDesc")}
             </p>
           </div>
         ) : (
@@ -256,10 +254,10 @@ export function PasskeyManager() {
                       <div className="font-medium">{passkey.name}</div>
                     )}
                     <div className="text-sm text-muted-foreground">
-                      {getAuthenticatorLabel(passkey.authenticatorType)} • Added{" "}
+                      {getAuthenticatorLabel(passkey.authenticatorType)} • {t("added")}{" "}
                       {formatDate(passkey.createdAt)}
                       {passkey.lastUsedAt && (
-                        <> • Last used {formatDate(passkey.lastUsedAt)}</>
+                        <> • {t("lastUsed")} {formatDate(passkey.lastUsedAt)}</>
                       )}
                     </div>
                   </div>
@@ -294,24 +292,24 @@ export function PasskeyManager() {
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add a Passkey</DialogTitle>
+            <DialogTitle>{t("addDialogTitle")}</DialogTitle>
             <DialogDescription>
-              Register a new passkey or hardware security key for passwordless authentication
+              {t("addDialogDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="passkey-name">
-                Name (optional)
+                {t("nameOptional")}
               </Label>
               <Input
                 id="passkey-name"
-                placeholder="e.g., MacBook Pro, YubiKey"
+                placeholder={t("namePlaceholder")}
                 value={passkeyName}
                 onChange={(e) => setPasskeyName(e.target.value)}
               />
               <p className="text-sm text-muted-foreground">
-                Give your passkey a memorable name to identify it later
+                {t("nameHint")}
               </p>
             </div>
           </div>
@@ -330,12 +328,12 @@ export function PasskeyManager() {
               {registering ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Registering...
+                  {t("registering")}
                 </>
               ) : (
                 <>
                   <Key className="h-4 w-4 mr-2" />
-                  Add Passkey
+                  {t("addPasskey")}
                 </>
               )}
             </Button>

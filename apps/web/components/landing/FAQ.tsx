@@ -4,55 +4,51 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@pingtome/ui";
-
-const faqs = [
-  {
-    question: "How do I get started with PingTO.Me?",
-    answer:
-      "Getting started is easy! Simply sign up for a free account, and you can start creating short links immediately. No credit card required.",
-  },
-  {
-    question: "Can I use my own domain?",
-    answer:
-      "Yes! With our Pro and Enterprise plans, you can connect your own custom domain to create branded short links that build trust with your audience.",
-  },
-  {
-    question: "What analytics are available?",
-    answer:
-      "We provide comprehensive analytics including click counts, geographic data, device types, browsers, referrers, and time-based trends. All in real-time.",
-  },
-  {
-    question: "Is there an API available?",
-    answer:
-      "Yes, we offer a full REST API that allows you to integrate link shortening into your applications. API access is available on Pro and Enterprise plans.",
-  },
-  {
-    question: "How secure are my links?",
-    answer:
-      "Security is our priority. We use enterprise-grade encryption, malicious link detection, and provide features like password protection and link expiration.",
-  },
-  {
-    question: "Can I cancel my subscription anytime?",
-    answer:
-      "Absolutely! You can upgrade, downgrade, or cancel your subscription at any time. No long-term contracts or hidden fees.",
-  },
-];
+import { useTranslations } from "next-intl";
 
 export function FAQ() {
+  const t = useTranslations("landing.faq");
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  const faqs = [
+    {
+      question: t("q1.question"),
+      answer: t("q1.answer"),
+    },
+    {
+      question: t("q2.question"),
+      answer: t("q2.answer"),
+    },
+    {
+      question: t("q3.question"),
+      answer: t("q3.answer"),
+    },
+    {
+      question: t("q4.question"),
+      answer: t("q4.answer"),
+    },
+    {
+      question: t("q5.question"),
+      answer: t("q5.answer"),
+    },
+    {
+      question: t("q6.question"),
+      answer: t("q6.answer"),
+    },
+  ];
 
   return (
     <section className="section-padding gradient-bg-soft">
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center justify-center space-y-4 text-center mb-16">
           <div className="inline-block rounded-full bg-blue-100 px-4 py-1.5 text-sm font-medium text-blue-700">
-            FAQ
+            {t("badge")}
           </div>
           <h2 className="text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl">
-            Frequently asked questions
+            {t("heading")}
           </h2>
           <p className="max-w-[600px] text-muted-foreground md:text-lg">
-            Can&apos;t find what you&apos;re looking for?
+            {t("description")}
           </p>
         </div>
 
@@ -87,10 +83,10 @@ export function FAQ() {
         </div>
 
         <div className="text-center mt-12">
-          <p className="text-muted-foreground mb-4">Still have questions?</p>
+          <p className="text-muted-foreground mb-4">{t("stillHaveQuestions")}</p>
           <Link href="/contact">
             <Button variant="outline" size="lg">
-              Contact Support
+              {t("contactSupport")}
             </Button>
           </Link>
         </div>

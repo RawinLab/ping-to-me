@@ -9,6 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useTranslations } from "next-intl";
 
 interface AnalyticsViewProps {
   data: any[];
@@ -16,6 +17,7 @@ interface AnalyticsViewProps {
 }
 
 export function AnalyticsView({ data, totalClicks }: AnalyticsViewProps) {
+  const t = useTranslations("analytics");
   // Process data for chart (group by date/hour)
   // For MVP, just show raw points or simple grouping
   const chartData = data.map((click) => ({
@@ -27,14 +29,14 @@ export function AnalyticsView({ data, totalClicks }: AnalyticsViewProps) {
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="p-6 bg-white rounded-lg shadow-sm border">
-          <h3 className="text-sm font-medium text-gray-500">Total Clicks</h3>
+          <h3 className="text-sm font-medium text-gray-500">{t("totalClicks")}</h3>
           <p className="text-3xl font-bold mt-2">{totalClicks}</p>
         </div>
         {/* Add more stats cards here */}
       </div>
 
       <div className="p-6 bg-white rounded-lg shadow-sm border h-[400px]">
-        <h3 className="text-lg font-medium mb-4">Clicks Over Time</h3>
+        <h3 className="text-lg font-medium mb-4">{t("clicksOverTime")}</h3>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -52,15 +54,15 @@ export function AnalyticsView({ data, totalClicks }: AnalyticsViewProps) {
       </div>
 
       <div className="p-6 bg-white rounded-lg shadow-sm border">
-        <h3 className="text-lg font-medium mb-4">Recent Activity</h3>
+        <h3 className="text-lg font-medium mb-4">{t("recentActivity")}</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3">Time</th>
-                <th className="px-4 py-3">IP Address</th>
-                <th className="px-4 py-3">Country</th>
-                <th className="px-4 py-3">User Agent</th>
+                <th className="px-4 py-3">{t("time")}</th>
+                <th className="px-4 py-3">{t("ipAddress")}</th>
+                <th className="px-4 py-3">{t("country")}</th>
+                <th className="px-4 py-3">{t("userAgent")}</th>
               </tr>
             </thead>
             <tbody>

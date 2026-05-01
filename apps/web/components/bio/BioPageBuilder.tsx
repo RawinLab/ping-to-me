@@ -63,6 +63,7 @@ import { BioAnalyticsDashboard } from "@/components/bio/BioAnalyticsDashboard";
 import { AvatarUploader } from "@/components/bio/AvatarUploader";
 import { useLinkReorder } from "@/hooks/useLinkReorder";
 import type { SocialLink } from "@pingtome/types";
+import { useTranslations } from "next-intl";
 import {
   THEME_PRESETS,
   DEFAULT_THEME,
@@ -87,6 +88,8 @@ export function BioPageBuilder({
   onSuccess?: () => void;
 }) {
   const { user, loading: authLoading } = useAuth();
+  const t = useTranslations("bio");
+  const tc = useTranslations("common");
   const [loading, setLoading] = useState(false);
   const [availableLinks, setAvailableLinks] = useState<any[]>([]);
   const [currentOrgId, setCurrentOrgId] = useState<string | null>(null);
@@ -195,7 +198,7 @@ export function BioPageBuilder({
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!currentOrgId) {
-      toast.error("No organization found. Please try again.");
+      toast.error(t("noOrganization"));
       return;
     }
 
@@ -222,10 +225,10 @@ export function BioPageBuilder({
         });
       }
       if (onSuccess) onSuccess();
-      toast.success("Bio Page saved successfully!");
+      toast.success(t("bioPageSaved"));
     } catch (error: any) {
       console.error("Failed to save bio page", error);
-      const errorMessage = error?.message || "Failed to save bio page";
+      const errorMessage = error?.message || t("failedToSaveBioPage");
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -235,7 +238,7 @@ export function BioPageBuilder({
   // Add a new link to the bio page
   const addLink = async (linkId: string) => {
     if (!existingPage?.id) {
-      toast.warning("Please save the bio page first before adding links.");
+      toast.warning(t("pleaseSaveBeforeAddingLinks"));
       return;
     }
 
@@ -263,7 +266,7 @@ export function BioPageBuilder({
       setBioLinks([...bioLinks, newBioLink]);
     } catch (error) {
       console.error("Failed to add link:", error);
-      toast.error("Failed to add link");
+      toast.error(t("failedToAddLink"));
     }
   };
 
@@ -282,10 +285,10 @@ export function BioPageBuilder({
         method: "DELETE",
       });
       setBioLinks(bioLinks.filter((l) => l.id !== linkToDelete));
-      toast.success("Link deleted successfully");
+      toast.success(t("linkDeletedSuccessfully"));
     } catch (error) {
       console.error("Failed to delete link:", error);
-      toast.error("Failed to delete link");
+      toast.error(t("failedToDeleteLink"));
     } finally {
       setDeleteDialogOpen(false);
       setLinkToDelete(null);
@@ -334,7 +337,7 @@ export function BioPageBuilder({
       setBioLinks(bioLinks.map((l) => (l.id === editingLink.id ? updated : l)));
     } catch (error) {
       console.error("Failed to update link:", error);
-      toast.error("Failed to update link");
+      toast.error(t("failedToUpdateLink"));
     }
   };
 
@@ -375,10 +378,10 @@ export function BioPageBuilder({
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">
-              Bio Page Editor
+              {t("bioPageEditor")}
             </h2>
             <p className="text-sm text-muted-foreground">
-              Customize your link-in-bio page with live preview
+              {t("bioPageEditorSubtitle")}
             </p>
           </div>
           <Button
@@ -389,7 +392,7 @@ export function BioPageBuilder({
           >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             <Save className="mr-2 h-4 w-4" />
-            Save Changes
+            {t("saveChanges")}
           </Button>
         </div>
       </div>
@@ -403,7 +406,7 @@ export function BioPageBuilder({
             <CardHeader className="border-b bg-muted/30">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
-                <CardTitle>Page Details</CardTitle>
+                <CardTitle>{t("pageDetails")}</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="pt-6">
@@ -413,7 +416,7 @@ export function BioPageBuilder({
               >
                 <div className="space-y-2">
                   <Label htmlFor="slug" className="text-sm font-medium">
-                    Slug
+                    {t("slug")}
                   </Label>
                   <div className="flex items-center gap-2">
                     <span className="text-muted-foreground text-sm whitespace-nowrap">
@@ -435,7 +438,7 @@ export function BioPageBuilder({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="title" className="text-sm font-medium">
-                    Page Title
+                    {t("pageTitle")}
                   </Label>
                   <Input
                     id="title"
@@ -450,7 +453,7 @@ export function BioPageBuilder({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="description" className="text-sm font-medium">
-                    Description
+                    {t("description")}
                   </Label>
                   <Textarea
                     id="description"
@@ -464,18 +467,18 @@ export function BioPageBuilder({
                 {existingPage?.id && (
                   <div className="space-y-2 pt-2">
                     <Label className="text-sm font-medium">
-                      Profile Picture
+                      {t("profilePicture")}
                     </Label>
                     <AvatarUploader
                       bioPageId={existingPage.id}
                       currentAvatar={avatarUrl}
                       onUploadSuccess={(url) => {
                         setAvatarUrl(url);
-                        toast.success("Avatar uploaded successfully!");
+                        toast.success(t("avatarUploaded"));
                       }}
                       onDeleteSuccess={() => {
                         setAvatarUrl(undefined);
-                        toast.success("Avatar removed successfully!");
+                        toast.success(t("avatarRemoved"));
                       }}
                     />
                   </div>
@@ -494,21 +497,21 @@ export function BioPageBuilder({
                     className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
                   >
                     <LinkIcon className="h-4 w-4" />
-                    <span className="hidden sm:inline">Links</span>
+                    <span className="hidden sm:inline">{t("links")}</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="theme"
                     className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
                   >
                     <Palette className="h-4 w-4" />
-                    <span className="hidden sm:inline">Theme</span>
+                    <span className="hidden sm:inline">{t("theme")}</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="settings"
                     className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
                   >
                     <Settings className="h-4 w-4" />
-                    <span className="hidden sm:inline">Settings</span>
+                    <span className="hidden sm:inline">{t("settings")}</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="analytics"
@@ -516,7 +519,7 @@ export function BioPageBuilder({
                     disabled={!existingPage?.id}
                   >
                     <BarChart3 className="h-4 w-4" />
-                    <span className="hidden sm:inline">Analytics</span>
+                    <span className="hidden sm:inline">{t("analytics")}</span>
                   </TabsTrigger>
                 </TabsList>
 
@@ -527,7 +530,7 @@ export function BioPageBuilder({
                       <div className="flex gap-2">
                         <Select onValueChange={addLink}>
                           <SelectTrigger className="flex-1">
-                            <SelectValue placeholder="Add a link..." />
+                            <SelectValue placeholder={t("addLinkPlaceholder")} />
                           </SelectTrigger>
                           <SelectContent>
                             {availableLinks
@@ -549,7 +552,7 @@ export function BioPageBuilder({
                       {isReordering && (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          Saving order...
+                          {t("savingOrder")}
                         </div>
                       )}
 
@@ -564,9 +567,9 @@ export function BioPageBuilder({
                   ) : (
                     <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg bg-muted/20">
                       <FileText className="h-12 w-12 mx-auto mb-3 opacity-40" />
-                      <p className="font-medium">Save the bio page first</p>
+                      <p className="font-medium">{t("saveBioPageFirst")}</p>
                       <p className="text-sm mt-1">
-                        Then you can add and manage links
+                        {t("thenAddLinks")}
                       </p>
                     </div>
                   )}
@@ -578,7 +581,7 @@ export function BioPageBuilder({
                     <div>
                       <Label className="text-base font-semibold mb-4 block flex items-center gap-2">
                         <Palette className="h-4 w-4" />
-                        Choose a Preset Theme
+                        {t("choosePresetTheme")}
                       </Label>
                       <ThemeSelector
                         value={selectedTheme}
@@ -590,11 +593,11 @@ export function BioPageBuilder({
                       <div className="space-y-6 pt-6 border-t">
                         <h3 className="text-base font-semibold flex items-center gap-2">
                           <Settings className="h-4 w-4" />
-                          Custom Theme Settings
+                          {t("customThemeSettings")}
                         </h3>
 
                         <ColorPicker
-                          label="Primary Color"
+                          label={t("primaryColor")}
                           value={customTheme.primaryColor}
                           onChange={(color) =>
                             handleCustomThemeUpdate({ primaryColor: color })
@@ -602,7 +605,7 @@ export function BioPageBuilder({
                         />
 
                         <ColorPicker
-                          label="Button Color"
+                          label={t("buttonColor")}
                           value={customTheme.buttonColor}
                           onChange={(color) =>
                             handleCustomThemeUpdate({ buttonColor: color })
@@ -610,7 +613,7 @@ export function BioPageBuilder({
                         />
 
                         <ColorPicker
-                          label="Text Color"
+                          label={t("textColor")}
                           value={customTheme.textColor}
                           onChange={(color) =>
                             handleCustomThemeUpdate({ textColor: color })
@@ -619,7 +622,7 @@ export function BioPageBuilder({
 
                         <div className="space-y-2">
                           <Label className="text-sm font-medium">
-                            Background
+                            {t("background")}
                           </Label>
                           <BackgroundPicker
                             backgroundType={customTheme.backgroundType}
@@ -642,7 +645,7 @@ export function BioPageBuilder({
 
                         <div className="space-y-2">
                           <Label className="text-sm font-medium">
-                            Font Family
+                            {t("fontFamily")}
                           </Label>
                           <FontSelector
                             value={customTheme.fontFamily}
@@ -663,7 +666,7 @@ export function BioPageBuilder({
                     <div>
                       <Label className="text-base font-semibold mb-4 block flex items-center gap-2">
                         <Settings className="h-4 w-4" />
-                        Layout Options
+                        {t("layoutOptions")}
                       </Label>
                       <LayoutSelector value={layout} onChange={setLayout} />
                     </div>
@@ -683,11 +686,10 @@ export function BioPageBuilder({
                           htmlFor="show-branding"
                           className="text-sm font-medium cursor-pointer"
                         >
-                          Show PingTO.Me Branding
+                          {t("showBranding")}
                         </Label>
                         <p className="text-xs text-muted-foreground">
-                          Display &quot;Powered by PingTO.Me&quot; at the bottom
-                          of your page
+                          {t("showBrandingDescription")}
                         </p>
                       </div>
                       <Switch
@@ -706,9 +708,9 @@ export function BioPageBuilder({
                   ) : (
                     <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg bg-muted/20">
                       <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-40" />
-                      <p className="font-medium">Save the bio page first</p>
+                      <p className="font-medium">{t("saveBioPageFirstAnalytics")}</p>
                       <p className="text-sm mt-1">
-                        Analytics will be available after saving
+                        {t("analyticsAvailableAfterSaving")}
                       </p>
                     </div>
                   )}
@@ -724,10 +726,10 @@ export function BioPageBuilder({
             <CardHeader className="border-b bg-gradient-to-r from-primary/10 to-primary/5">
               <div className="flex items-center gap-2">
                 <Smartphone className="h-5 w-5 text-primary" />
-                <CardTitle>Live Preview</CardTitle>
+                <CardTitle>{t("livePreview")}</CardTitle>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
-                See your changes in real-time
+                {t("seeChangesRealtime")}
               </p>
             </CardHeader>
             <CardContent className="p-0">
@@ -769,21 +771,20 @@ export function BioPageBuilder({
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Link</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteLinkTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this link? This action cannot be
-              undone.
+              {t("deleteLinkDescription")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setLinkToDelete(null)}>
-              Cancel
+              {tc("cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteLink}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {tc("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

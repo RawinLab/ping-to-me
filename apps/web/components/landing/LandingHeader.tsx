@@ -5,17 +5,20 @@ import Link from "next/link";
 import { Button } from "@pingtome/ui";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-
-const navigation = [
-  { name: "Features", href: "#features" },
-  { name: "How it Works", href: "#how-it-works" },
-  { name: "Pricing", href: "#pricing" },
-  { name: "Integrations", href: "#integrations" },
-  { name: "FAQ", href: "#faq" },
-];
+import { useTranslations } from "next-intl";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export function LandingHeader() {
+  const t = useTranslations("landing.header");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const navigation = [
+    { name: t("features"), href: "#features" },
+    { name: t("howItWorks"), href: "#how-it-works" },
+    { name: t("pricing"), href: "#pricing" },
+    { name: t("integrations"), href: "#integrations" },
+    { name: t("faq"), href: "#faq" },
+  ];
 
   const scrollToSection = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -68,6 +71,7 @@ export function LandingHeader() {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
+          <LanguageSwitcher />
           <UserMenu />
         </div>
 
@@ -103,13 +107,16 @@ export function LandingHeader() {
             ))}
           </nav>
           <div className="flex flex-col gap-2 pt-4 border-t">
+            <div className="flex justify-center py-1">
+              <LanguageSwitcher variant="outline" />
+            </div>
             <Link href="/login">
               <Button
                 variant="outline"
                 className="w-full font-medium"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Log in
+                {t("logIn")}
               </Button>
             </Link>
             <Link href="/register">
@@ -117,7 +124,7 @@ export function LandingHeader() {
                 className="w-full font-medium bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Get Started Free
+                {t("getStartedFree")}
               </Button>
             </Link>
           </div>
@@ -129,6 +136,7 @@ export function LandingHeader() {
 
 function UserMenu() {
   const { user, loading } = useAuth();
+  const t = useTranslations("landing.header");
 
   if (loading) return null;
 
@@ -137,12 +145,12 @@ function UserMenu() {
       <div className="flex items-center gap-3">
         <Link href="/dashboard">
           <Button variant="ghost" size="sm" className="font-medium">
-            Dashboard
+            {t("dashboard")}
           </Button>
         </Link>
         <Link href="/login">
           <Button size="sm" variant="outline" className="font-medium">
-            Sign out
+            {t("signOut")}
           </Button>
         </Link>
       </div>
@@ -153,7 +161,7 @@ function UserMenu() {
     <>
       <Link href="/login">
         <Button variant="ghost" size="sm" className="font-medium">
-          Log in
+          {t("logIn")}
         </Button>
       </Link>
       <Link href="/register">
@@ -161,7 +169,7 @@ function UserMenu() {
           size="sm"
           className="font-medium bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25"
         >
-          Get Started Free
+          {t("getStartedFree")}
         </Button>
       </Link>
     </>

@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle, Button } from "@pingtome/ui";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { Download } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface DeviceData {
   name: string;
@@ -28,6 +29,7 @@ export function DevicesChart({
   totalClicks,
   onExport,
 }: DevicesChartProps) {
+  const t = useTranslations("dashboard.charts");
   // Add colors to data if not present
   const chartData = data.map((item, index) => ({
     ...item,
@@ -39,7 +41,7 @@ export function DevicesChart({
   return (
     <Card className="overflow-hidden h-full">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-xl font-semibold">Devices</CardTitle>
+        <CardTitle className="text-xl font-semibold">{t("devices")}</CardTitle>
         {onExport && (
           <Button variant="ghost" size="icon" onClick={onExport}>
             <Download className="h-4 w-4 text-primary" />
@@ -72,7 +74,7 @@ export function DevicesChart({
                 {totalClicks.toLocaleString()}
               </span>
               <span className="text-xs text-muted-foreground uppercase tracking-wider">
-                CLICKS
+                {t("clicksLabel")}
               </span>
             </div>
           </div>

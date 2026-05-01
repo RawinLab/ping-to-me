@@ -16,6 +16,7 @@ import {
   ExternalLink,
   Zap,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export interface EmptyDashboardProps {
   hasLinks: boolean;
@@ -42,13 +43,13 @@ export function EmptyDashboard({
   hasQrCode,
   hasBioPage,
 }: EmptyDashboardProps) {
+  const t = useTranslations("dashboard.empty");
   const checklist: ChecklistItem[] = useMemo(
     () => [
       {
         id: "create-link",
-        title: "Create your first link",
-        description:
-          "Shorten a URL with custom slug and start tracking clicks",
+        title: t("createFirstLink"),
+        description: t("createFirstLinkDesc"),
         icon: <Link2 className="h-5 w-5" />,
         link: "/dashboard/links/new",
         completed: hasLinks,
@@ -58,9 +59,8 @@ export function EmptyDashboard({
       },
       {
         id: "setup-domain",
-        title: "Set up custom domain",
-        description:
-          "Use your own branded domain for professional short links",
+        title: t("setupDomain"),
+        description: t("setupDomainDesc"),
         icon: <Globe className="h-5 w-5" />,
         link: "/dashboard/domains",
         completed: hasDomain,
@@ -70,8 +70,8 @@ export function EmptyDashboard({
       },
       {
         id: "generate-qr",
-        title: "Generate QR code",
-        description: "Create branded QR codes with your logo and colors",
+        title: t("generateQr"),
+        description: t("generateQrDesc"),
         icon: <QrCode className="h-5 w-5" />,
         link: "/dashboard/qr-codes",
         completed: hasQrCode,
@@ -81,8 +81,8 @@ export function EmptyDashboard({
       },
       {
         id: "create-bio",
-        title: "Create bio page",
-        description: "Build your link-in-bio landing page with multiple links",
+        title: t("createBio"),
+        description: t("createBioDesc"),
         icon: <FileText className="h-5 w-5" />,
         link: "/dashboard/bio",
         completed: hasBioPage,
@@ -91,7 +91,7 @@ export function EmptyDashboard({
         hoverColor: "hover:border-cyan-300",
       },
     ],
-    [hasLinks, hasDomain, hasQrCode, hasBioPage]
+    [hasLinks, hasDomain, hasQrCode, hasBioPage, t]
   );
 
   const completedCount = checklist.filter((item) => item.completed).length;
@@ -117,16 +117,15 @@ export function EmptyDashboard({
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-3">
                   <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-indigo-200 bg-clip-text text-transparent">
-                    Welcome to PingTO.Me
+                    {t("welcomeTitle")}
                   </h1>
                   <Badge className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white border-0 shadow-lg">
                     <Zap className="h-3 w-3 mr-1" />
-                    New
+                    {t("new")}
                   </Badge>
                 </div>
                 <p className="text-lg text-slate-300 mb-6 max-w-2xl">
-                  Get started by completing the steps below to unlock the full
-                  power of link shortening, analytics, and branded experiences.
+                  {t("welcomeDesc")}
                 </p>
 
                 {/* Progress Section */}
@@ -134,14 +133,14 @@ export function EmptyDashboard({
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-slate-200">
-                        Getting Started Progress
+                        {t("gettingStartedProgress")}
                       </span>
                       {completedCount === checklist.length && (
                         <CheckCircle2 className="h-4 w-4 text-emerald-400" />
                       )}
                     </div>
                     <span className="text-sm font-bold text-white">
-                      {completedCount} / {checklist.length} completed
+                      {t("completed", { count: completedCount, total: checklist.length })}
                     </span>
                   </div>
                   <Progress
@@ -151,7 +150,7 @@ export function EmptyDashboard({
                   {completedCount === checklist.length && (
                     <p className="text-xs text-emerald-400 mt-2 flex items-center gap-1.5">
                       <CheckCircle2 className="h-3.5 w-3.5" />
-                      Congratulations! You&apos;ve completed all setup steps
+                      {t("congratulations")}
                     </p>
                   )}
                 </div>
@@ -164,7 +163,7 @@ export function EmptyDashboard({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-slate-900">
-              Quick Start Checklist
+              {t("quickStartChecklist")}
             </h2>
             <Badge variant="secondary" className="bg-slate-100 text-slate-700">
               {completedCount} of {checklist.length}
@@ -269,7 +268,7 @@ export function EmptyDashboard({
                     <Play className="h-6 w-6 text-blue-600 ml-0.5" />
                   </div>
                   <span className="text-xs font-medium text-slate-600">
-                    Watch Tutorial
+                    {t("watchTutorial")}
                   </span>
                 </div>
               </div>
@@ -277,12 +276,10 @@ export function EmptyDashboard({
               {/* Content */}
               <div className="flex-1">
                 <h3 className="font-semibold text-lg text-slate-900 mb-2">
-                  New to PingTO.Me?
+                  {t("newToPingToMe")}
                 </h3>
                 <p className="text-sm text-slate-600 mb-4">
-                  Watch our quick start video to learn how to create your first
-                  short link, customize it, and track analytics in under 3
-                  minutes.
+                  {t("tutorialDesc")}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -297,7 +294,7 @@ export function EmptyDashboard({
                       rel="noopener noreferrer"
                     >
                       <ExternalLink className="h-4 w-4" />
-                      View Documentation
+                      {t("viewDocumentation")}
                     </a>
                   </Button>
                   <Button
@@ -312,7 +309,7 @@ export function EmptyDashboard({
                       rel="noopener noreferrer"
                     >
                       <Play className="h-4 w-4" />
-                      Watch Video
+                      {t("watchVideo")}
                     </a>
                   </Button>
                 </div>
@@ -330,10 +327,10 @@ export function EmptyDashboard({
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-slate-900 mb-1">
-                  Need help getting started?
+                  {t("needHelp")}
                 </h3>
                 <p className="text-sm text-slate-600 mb-3">
-                  Our support team is here to help you every step of the way.
+                  {t("needHelpDesc")}
                 </p>
                 <Button
                   variant="outline"
@@ -346,7 +343,7 @@ export function EmptyDashboard({
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Contact Support
+                    {t("contactSupport")}
                     <ExternalLink className="h-3.5 w-3.5" />
                   </a>
                 </Button>

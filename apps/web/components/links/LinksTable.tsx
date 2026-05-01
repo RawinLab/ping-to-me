@@ -65,6 +65,7 @@ import {
 import { format } from "date-fns";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 import { QrCodeModal } from "./QrCodeModal";
 import { EditLinkModal } from "./EditLinkModal";
@@ -136,6 +137,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
     },
     ref,
   ) {
+    const t = useTranslations("links.table");
     const [links, setLinks] = useState<LinkResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [qrModalLink, setQrModalLink] = useState<{
@@ -292,8 +294,8 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
       } catch (error: any) {
         console.error("Failed to fetch links:", error);
         if (error?.response?.status === 403) {
-          toast.error("Permission denied", {
-            description: "You don't have permission to view links",
+          toast.error(t("permissionDenied"), {
+            description: t("noPermissionView"),
           });
         }
       } finally {
@@ -308,32 +310,32 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
     };
 
     const handleDelete = async (id: string) => {
-      if (!confirm("Are you sure you want to delete this link?")) return;
+      if (!confirm(t("confirmDelete"))) return;
       try {
         await apiRequest(`/links/${id}`, { method: "DELETE" });
-        toast.success("Link deleted successfully");
+        toast.success(t("linkDeleted"));
         fetchLinks();
       } catch (error: any) {
         console.error("Failed to delete link:", error);
         if (error?.response?.status === 403) {
-          toast.error("Permission denied", {
-            description: "You don't have permission to delete this link",
+          toast.error(t("permissionDenied"), {
+            description: t("noPermissionDelete"),
           });
         } else {
-          toast.error("Failed to delete link");
+          toast.error(t("failedDeleteLink"));
         }
       }
     };
 
     const handleBulkDelete = async () => {
       if (!canBulkLinks()) {
-        toast.error("Permission denied", {
-          description: "You don't have permission to perform bulk operations",
+        toast.error(t("permissionDenied"), {
+          description: t("noPermissionBulk"),
         });
         return;
       }
       if (
-        !confirm(`Are you sure you want to delete ${selectedIds.size} links?`)
+        !confirm(t("confirmBulkDelete", { count: selectedIds.size }))
       )
         return;
       try {
@@ -341,23 +343,23 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
           method: "POST",
           body: JSON.stringify({ ids: Array.from(selectedIds) }),
         });
-        toast.success(`${selectedIds.size} links deleted successfully`);
+        toast.success(t("linksDeleted", { count: selectedIds.size }));
         fetchLinks();
       } catch (error: any) {
         if (error?.response?.status === 403) {
-          toast.error("Permission denied", {
-            description: "You don't have permission to delete these links",
+          toast.error(t("permissionDenied"), {
+            description: t("noPermissionDeleteLinks"),
           });
         } else {
-          toast.error("Failed to delete links");
+          toast.error(t("failedDeleteLinks"));
         }
       }
     };
 
     const handleBulkStatusChange = async (status: string) => {
       if (!canBulkLinks()) {
-        toast.error("Permission denied", {
-          description: "You don't have permission to perform bulk operations",
+        toast.error(t("permissionDenied"), {
+          description: t("noPermissionBulk"),
         });
         return;
       }
@@ -370,21 +372,16 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
             status,
           }),
         });
-        const statusLabel =
-          status === "ACTIVE"
-            ? "enabled"
-            : status === "DISABLED"
-              ? "disabled"
-              : "archived";
-        toast.success(`${selectedIds.size} links ${statusLabel} successfully`);
+        const statusLabel = status === "ACTIVE" ? "linksEnabled" : status === "DISABLED" ? "linksDisabled" : "linksArchived";
+        toast.success(t(statusLabel, { count: selectedIds.size }));
         fetchLinks();
       } catch (error: any) {
         if (error?.response?.status === 403) {
-          toast.error("Permission denied", {
-            description: "You don't have permission to update these links",
+          toast.error(t("permissionDenied"), {
+            description: t("noPermissionUpdate"),
           });
         } else {
-          toast.error("Failed to update link status");
+          toast.error(t("failedUpdateStatus"));
         }
       } finally {
         setBulkActionLoading(false);
@@ -394,8 +391,8 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
     const handleBulkTag = async () => {
       if (!bulkTagValue) return;
       if (!canBulkLinks()) {
-        toast.error("Permission denied", {
-          description: "You don't have permission to perform bulk operations",
+        toast.error(t("permissionDenied"), {
+          description: t("noPermissionBulk"),
         });
         return;
       }
@@ -407,17 +404,17 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
             tagName: bulkTagValue,
           }),
         });
-        toast.success("Tags added successfully");
+        toast.success(t("tagsAdded"));
         setBulkTagDialogOpen(false);
         setBulkTagValue("");
         fetchLinks();
       } catch (error: any) {
         if (error?.response?.status === 403) {
-          toast.error("Permission denied", {
-            description: "You don't have permission to add tags to these links",
+          toast.error(t("permissionDenied"), {
+            description: t("noPermissionAddTags"),
           });
         } else {
-          toast.error("Failed to add tags");
+          toast.error(t("failedAddTags"));
         }
       }
     };
@@ -425,8 +422,8 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
     const handleBulkMoveToFolder = async () => {
       if (!bulkMoveToFolderId) return;
       if (!canBulkLinks()) {
-        toast.error("Permission denied", {
-          description: "You don't have permission to perform bulk operations",
+        toast.error(t("permissionDenied"), {
+          description: t("noPermissionBulk"),
         });
         return;
       }
@@ -445,11 +442,11 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
         });
 
         const folderName = bulkMoveToFolderId === "none"
-          ? "root"
+          ? t("root")
           : folders.find((f) => f.id === bulkMoveToFolderId)?.name || "folder";
 
         toast.success(
-          `${selectedIds.size} link${selectedIds.size > 1 ? "s" : ""} moved to ${folderName}`
+          t("linksMoved", { count: selectedIds.size, plural: selectedIds.size > 1 ? "s" : "", folder: folderName })
         );
 
         setSelectedIds(new Set());
@@ -458,11 +455,11 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
         fetchLinks();
       } catch (error: any) {
         if (error?.response?.status === 403) {
-          toast.error("Permission denied", {
-            description: "You don't have permission to move these links",
+          toast.error(t("permissionDenied"), {
+            description: t("noPermissionMove"),
           });
         } else {
-          toast.error("Failed to move links");
+          toast.error(t("failedMoveLinks"));
         }
       } finally {
         setBulkActionLoading(false);
@@ -472,7 +469,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
     const handleBulkQrDownload = async () => {
       if (selectedIds.size === 0) return;
       if (selectedIds.size > 100) {
-        toast.error("Maximum 100 QR codes per batch download");
+        toast.error(t("maxQrDownload"));
         return;
       }
 
@@ -494,10 +491,10 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
 
-        toast.success(`${selectedIds.size} QR codes downloaded`);
+        toast.success(t("qrDownloaded", { count: selectedIds.size }));
       } catch (error) {
         console.error('QR download failed:', error);
-        toast.error('Failed to download QR codes');
+        toast.error(t('failedDownloadQr'));
       } finally {
         setQrDownloading(false);
       }
@@ -517,15 +514,15 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
         a.download = "links.csv";
         a.click();
         window.URL.revokeObjectURL(url);
-        toast.success("Links exported successfully");
+        toast.success(t("linksExported"));
       } catch (error: any) {
         console.error("Export failed:", error);
         if (error?.response?.status === 403) {
-          toast.error("Permission denied", {
-            description: "You don't have permission to export links",
+          toast.error(t("permissionDenied"), {
+            description: t("noPermissionExport"),
           });
         } else {
-          toast.error("Failed to export links");
+          toast.error(t("failedExport"));
         }
       }
     };
@@ -585,21 +582,21 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
 
         // Provide specific success messages based on the status change
         const statusMessages: Record<string, string> = {
-          ACTIVE: "Link restored successfully",
-          DISABLED: "Link disabled successfully",
-          ARCHIVED: "Link archived successfully",
-        };
+      ACTIVE: t("linkRestored"),
+      DISABLED: t("linkDisabled"),
+      ARCHIVED: t("linkArchived"),
+    };
 
-        toast.success(statusMessages[status] || "Link status updated");
+        toast.success(statusMessages[status] || t("linkStatusUpdated"));
         fetchLinks();
       } catch (error: any) {
         console.error("Failed to update status", error);
         if (error?.response?.status === 403) {
-          toast.error("Permission denied", {
-            description: "You don't have permission to update this link",
+          toast.error(t("permissionDenied"), {
+            description: t("noPermissionUpdateLink"),
           });
         } else {
-          toast.error("Failed to update status");
+          toast.error(t("failedUpdateStatus"));
         }
       }
     };
@@ -685,22 +682,22 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
               {/* Title with status badge */}
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold text-slate-900 truncate">
-                  {link.title || `${domain} – untitled`}
+                  {link.title || `${domain} – ${t("untitled")}`}
                 </h3>
                 {isExpired && (
                   <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 rounded-full">
-                    Expired
-                  </span>
+                      {t("expired")}
+                    </span>
                 )}
                 {isDisabled && (
                   <span className="px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-600 rounded-full">
-                    Disabled
-                  </span>
+                      {t("disabled")}
+                    </span>
                 )}
                 {isArchived && (
                   <Badge variant="secondary" className="ml-0 bg-slate-200 text-slate-700">
-                    Archived
-                  </Badge>
+                      {t("archived")}
+                    </Badge>
                 )}
               </div>
 
@@ -717,7 +714,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                 <button
                   onClick={() => copyToClipboard(link.shortUrl, link.id)}
                   className="p-1.5 hover:bg-blue-50 rounded-lg transition-all"
-                  title="Copy to clipboard"
+                  title={t("copyToClipboard")}
                 >
                   {copiedId === link.id ? (
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -740,7 +737,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                 <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg">
                   <BarChart2 className="h-4 w-4" />
                   <span className="font-semibold">{link.clicks || 0}</span>
-                  <span className="text-emerald-600">engagements</span>
+                  <span className="text-emerald-600">{t("engagements")}</span>
                 </span>
                 <span className="flex items-center gap-1.5 text-slate-500">
                   <Calendar className="h-4 w-4 text-slate-400" />
@@ -779,7 +776,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                       onValueChange={setInlineTagValue}
                     >
                       <SelectTrigger className="h-8 w-[140px] text-xs border-slate-200 rounded-md bg-white focus:ring-2 focus:ring-blue-500">
-                        <SelectValue placeholder="Select tag" />
+                        <SelectValue placeholder={t("selectTag")} />
                       </SelectTrigger>
                       <SelectContent className="bg-white border-slate-200 rounded-lg shadow-lg max-h-[200px]">
                         {tags.map((t) => (
@@ -799,7 +796,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                       }
                       className="text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-md transition-colors"
                     >
-                      Add
+                      {t("add")}
                     </button>
                     <button
                       onClick={() => {
@@ -808,7 +805,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                       }}
                       className="text-xs text-slate-500 hover:text-slate-700 px-1"
                     >
-                      Cancel
+                      {t("cancel")}
                     </button>
                   </div>
                 ) : (
@@ -817,7 +814,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                     className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2 py-1 rounded-lg transition-colors"
                   >
                     <Plus className="h-3.5 w-3.5" />
-                    <span className="text-sm">Add tag</span>
+                    <span className="text-sm">{t("addTag")}</span>
                   </button>
                 )}
               </div>
@@ -890,19 +887,19 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                     >
                       <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                         <Pencil className="mr-2 h-4 w-4" />
-                        Edit link
+                        {t("editLink")}
                       </DropdownMenuItem>
                     </EditLinkModal>
                   )}
                   <DropdownMenuItem onClick={() => setQrModalLink(link)}>
-                    <QrCode className="mr-2 h-4 w-4" />
-                    QR Code
-                  </DropdownMenuItem>
+                      <QrCode className="mr-2 h-4 w-4" />
+                      {t("qrCode")}
+                    </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href={`/dashboard/links/${link.id}/analytics`}>
                       <BarChart2 className="mr-2 h-4 w-4" />
-                      View analytics
-                    </Link>
+                        {t("viewAnalytics")}
+                      </Link>
                   </DropdownMenuItem>
                   {canEditLink() && canModifyLink(link) && (
                     <>
@@ -911,13 +908,13 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                         onClick={() => handleOpenMoveFolder(link.id, (link as any).folderId)}
                       >
                         <Folder className="mr-2 h-4 w-4" />
-                        Move to folder
+                        {t("moveToFolder")}
                       </DropdownMenuItem>
                       {link.status === "ARCHIVED" ? (
                         <DropdownMenuItem
                           onClick={() => handleStatusChange(link.id, "ACTIVE")}
                         >
-                          <ArchiveRestore className="mr-2 h-4 w-4" /> Restore
+                          <ArchiveRestore className="mr-2 h-4 w-4" /> {t("restore")}
                         </DropdownMenuItem>
                       ) : (
                         <>
@@ -931,14 +928,12 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                           >
                             {link.status === "ACTIVE" ? (
                               <>
-                                <PauseCircle className="mr-2 h-4 w-4" /> Disable
-                                link
-                              </>
+                                <PauseCircle className="mr-2 h-4 w-4" /> {t("disableLink")}
+                        </>
                             ) : (
                               <>
-                                <PlayCircle className="mr-2 h-4 w-4" /> Enable
-                                link
-                              </>
+                                <PlayCircle className="mr-2 h-4 w-4" /> {t("enableLink")}
+                        </>
                             )}
                           </DropdownMenuItem>
                           <DropdownMenuItem
@@ -946,8 +941,8 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                               handleStatusChange(link.id, "ARCHIVED")
                             }
                           >
-                            <Archive className="mr-2 h-4 w-4" /> Archive
-                          </DropdownMenuItem>
+                            <Archive className="mr-2 h-4 w-4" /> {t("archiveLink")}
+                      </DropdownMenuItem>
                         </>
                       )}
                     </>
@@ -960,7 +955,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                         onClick={() => handleDelete(link.id)}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
+                        {t("delete")}
                       </DropdownMenuItem>
                     </>
                   )}
@@ -1050,20 +1045,20 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                     >
                       <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                         <Pencil className="mr-2 h-4 w-4" />
-                        Edit link
+                        {t("editLink")}
                       </DropdownMenuItem>
                     </EditLinkModal>
                   )}
                   <DropdownMenuItem asChild>
                     <Link href={`/dashboard/links/${link.id}/analytics`}>
                       <BarChart2 className="mr-2 h-4 w-4" />
-                      View analytics
-                    </Link>
+                        {t("viewAnalytics")}
+                      </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setQrModalLink(link)}>
-                    <QrCode className="mr-2 h-4 w-4" />
-                    QR Code
-                  </DropdownMenuItem>
+                      <QrCode className="mr-2 h-4 w-4" />
+                      {t("qrCode")}
+                    </DropdownMenuItem>
                   {canEditLink() && canModifyLink(link) && (
                     <>
                       <DropdownMenuSeparator />
@@ -1071,13 +1066,13 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                         onClick={() => handleOpenMoveFolder(link.id, (link as any).folderId)}
                       >
                         <Folder className="mr-2 h-4 w-4" />
-                        Move to folder
+                        {t("moveToFolder")}
                       </DropdownMenuItem>
                       {link.status === "ARCHIVED" ? (
                         <DropdownMenuItem
                           onClick={() => handleStatusChange(link.id, "ACTIVE")}
                         >
-                          <ArchiveRestore className="mr-2 h-4 w-4" /> Restore
+                          <ArchiveRestore className="mr-2 h-4 w-4" /> {t("restore")}
                         </DropdownMenuItem>
                       ) : (
                         <>
@@ -1091,14 +1086,12 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                           >
                             {link.status === "ACTIVE" ? (
                               <>
-                                <PauseCircle className="mr-2 h-4 w-4" /> Disable
-                                link
-                              </>
+                                <PauseCircle className="mr-2 h-4 w-4" /> {t("disableLink")}
+                        </>
                             ) : (
                               <>
-                                <PlayCircle className="mr-2 h-4 w-4" /> Enable
-                                link
-                              </>
+                                <PlayCircle className="mr-2 h-4 w-4" /> {t("enableLink")}
+                        </>
                             )}
                           </DropdownMenuItem>
                           <DropdownMenuItem
@@ -1106,8 +1099,8 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                               handleStatusChange(link.id, "ARCHIVED")
                             }
                           >
-                            <Archive className="mr-2 h-4 w-4" /> Archive
-                          </DropdownMenuItem>
+                            <Archive className="mr-2 h-4 w-4" /> {t("archiveLink")}
+                      </DropdownMenuItem>
                         </>
                       )}
                     </>
@@ -1120,7 +1113,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                         onClick={() => handleDelete(link.id)}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
+                        {t("delete")}
                       </DropdownMenuItem>
                     </>
                   )}
@@ -1132,21 +1125,21 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
           {/* Title with status badge */}
           <div className="flex items-center gap-2 mb-2">
             <h3 className="font-semibold text-slate-900 truncate flex-1">
-              {link.title || `${domain} – untitled`}
+              {link.title || `${domain} – ${t("untitled")}`}
             </h3>
             {isExpired && (
               <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 rounded-full flex-shrink-0">
-                Expired
+                {t("expired")}
               </span>
             )}
             {isDisabled && (
               <span className="px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-600 rounded-full flex-shrink-0">
-                Disabled
+                {t("disabled")}
               </span>
             )}
             {isArchived && (
               <Badge variant="secondary" className="ml-0 bg-slate-200 text-slate-700 flex-shrink-0">
-                Archived
+                {t("archived")}
               </Badge>
             )}
           </div>
@@ -1209,7 +1202,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
               className="flex items-center gap-0.5 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2 py-0.5 rounded-full transition-colors"
             >
               <Plus className="h-3 w-3" />
-              Add tag
+              {t("addTag")}
             </button>
           </div>
 
@@ -1217,7 +1210,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
           <div className="flex items-center justify-between text-sm border-t border-slate-100 pt-4">
             <span
               className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg"
-              title="engagements"
+              title={t("engagements")}
             >
               <BarChart2 className="h-4 w-4" />
               <span className="font-semibold">{link.clicks || 0}</span>
@@ -1238,14 +1231,13 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
           <Sparkles className="h-5 w-5 text-white" />
         </div>
         <p className="text-sm text-slate-700 flex-1">
-          <span className="font-medium text-slate-900">Pro tip:</span> Change a
-          link&apos;s destination, even after you&apos;ve shared it. Get
-          redirects with every plan.{" "}
+          <span className="font-medium text-slate-900">{t("proTip")}</span>{" "}
+          {t("proTipDesc")}{" "}
           <Link
             href="/dashboard/billing"
             className="text-blue-600 hover:text-blue-700 font-semibold hover:underline"
           >
-            View plans →
+            {t("viewPlans")}
           </Link>
         </p>
       </div>
@@ -1257,9 +1249,9 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
         <Dialog open={bulkTagDialogOpen} onOpenChange={setBulkTagDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add Tag to Links</DialogTitle>
+              <DialogTitle>{t("addTagToLinks")}</DialogTitle>
               <DialogDescription>
-                Add a tag to {selectedIds.size} selected link(s). Select an existing tag or create a new one.
+                {t("addTagToLinksDesc", { count: selectedIds.size })}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -1271,14 +1263,14 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                     aria-expanded={bulkTagComboOpen}
                     className="w-full justify-between"
                   >
-                    {bulkTagValue || "Select or create a tag..."}
+                    {bulkTagValue || t("selectOrCreateTag")}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-full p-0" align="start">
                   <Command>
                     <CommandInput
-                      placeholder="Search or type to create..."
+                      placeholder={t("searchOrCreate")}
                       value={bulkTagSearchValue}
                       onValueChange={setBulkTagSearchValue}
                     />
@@ -1286,16 +1278,16 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                       <CommandEmpty>
                         {bulkTagSearchValue.trim() ? (
                           <div className="py-2 text-center text-sm">
-                            Press Enter to create &quot;{bulkTagSearchValue}&quot;
+                            {t("pressEnterCreate", { value: bulkTagSearchValue })}
                           </div>
                         ) : (
                           <div className="py-2 text-center text-sm">
-                            Type to create a new tag
+                            {t("typeToCreate")}
                           </div>
                         )}
                       </CommandEmpty>
                       {tags.length > 0 && (
-                        <CommandGroup heading="Existing tags">
+                        <CommandGroup heading={t("existingTags")}>
                           {tags
                             .filter(tag =>
                               tag.name.toLowerCase().includes(bulkTagSearchValue.toLowerCase())
@@ -1324,7 +1316,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                       )}
                       {bulkTagSearchValue.trim() &&
                        !tags.some(tag => tag.name.toLowerCase() === bulkTagSearchValue.toLowerCase()) && (
-                        <CommandGroup heading="Create new">
+                        <CommandGroup heading={t("createNew")}>
                           <CommandItem
                             value={bulkTagSearchValue}
                             onSelect={(currentValue) => {
@@ -1334,7 +1326,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                             }}
                           >
                             <Plus className="mr-2 h-4 w-4" />
-                            Create &quot;{bulkTagSearchValue}&quot;
+                            {t("create", { value: bulkTagSearchValue })}
                           </CommandItem>
                         </CommandGroup>
                       )}
@@ -1352,10 +1344,10 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                   setBulkTagSearchValue("");
                 }}
               >
-                Cancel
+                {t("cancel")}
               </Button>
               <Button onClick={handleBulkTag} disabled={!bulkTagValue}>
-                Add Tag
+                {t("addTag")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1365,18 +1357,18 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
         <Dialog open={bulkMoveToFolderDialogOpen} onOpenChange={setBulkMoveToFolderDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Move Links to Folder</DialogTitle>
+              <DialogTitle>{t("moveLinksToFolder")}</DialogTitle>
               <DialogDescription>
-                Move {selectedIds.size} selected link(s) to a folder.
+                {t("moveLinksToFolderDesc", { count: selectedIds.size })}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <Select value={bulkMoveToFolderId} onValueChange={setBulkMoveToFolderId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a folder" />
+                  <SelectValue placeholder={t("selectFolder")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No Folder (Root)</SelectItem>
+                  <SelectItem value="none">{t("noFolderRoot")}</SelectItem>
                   {folders.map((f) => (
                     <SelectItem key={f.id} value={f.id}>
                       <div
@@ -1398,10 +1390,10 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setBulkMoveToFolderDialogOpen(false)}>
-                Cancel
+                {t("cancel")}
               </Button>
               <Button onClick={handleBulkMoveToFolder} disabled={!bulkMoveToFolderId}>
-                Move to Folder
+                {t("moveToFolderBtn")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1413,15 +1405,14 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
             className="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-2xl p-4 px-6 flex justify-between items-center shadow-xl shadow-slate-900/20"
             data-bulk-actions
             role="toolbar"
-            aria-label="Bulk actions"
+            aria-label="bulk actions"
           >
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center">
                 <CheckCircle2 className="h-4 w-4 text-blue-400" />
               </div>
               <span className="text-sm font-medium">
-                {selectedIds.size} link{selectedIds.size > 1 ? "s" : ""}{" "}
-                selected
+                {t("linksSelected", { count: selectedIds.size })}
               </span>
               {selectedIds.size < links.length && links.length > 0 && (
                 <Button
@@ -1430,7 +1421,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                   onClick={toggleSelectAll}
                   className="text-blue-400 hover:text-blue-300 hover:bg-white/10 text-xs rounded-lg"
                 >
-                  Select all {links.length} links
+                  {t("selectAllLinks", { count: links.length })}
                 </Button>
               )}
               {selectedIds.size === links.length && links.length > 0 && (
@@ -1440,7 +1431,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                   onClick={() => setSelectedIds(new Set())}
                   className="text-blue-400 hover:text-blue-300 hover:bg-white/10 text-xs rounded-lg"
                 >
-                  Deselect all
+                  {t("deselectAll")}
                 </Button>
               )}
             </div>
@@ -1453,9 +1444,9 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                 className="bg-white/10 hover:bg-white/20 text-white border-0 rounded-lg"
               >
                 {qrDownloading ? (
-                  <><span className="animate-spin mr-2">⏳</span> Downloading...</>
+                  <><span className="animate-spin mr-2">⏳</span> {t("downloading")}</>
                 ) : (
-                  <><QrCode className="mr-2 h-4 w-4" /> Download QR</>
+                  <><QrCode className="mr-2 h-4 w-4" /> {t("downloadQr")}</>
                 )}
               </Button>
               <Button
@@ -1465,7 +1456,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                 disabled={bulkActionLoading}
                 className="bg-white/10 hover:bg-white/20 text-white border-0 rounded-lg"
               >
-                <Tags className="mr-2 h-4 w-4" /> Add tag
+                <Tags className="mr-2 h-4 w-4" /> {t("addTagBtn")}
               </Button>
               <Button
                 variant="secondary"
@@ -1474,7 +1465,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                 disabled={bulkActionLoading}
                 className="bg-white/10 hover:bg-white/20 text-white border-0 rounded-lg"
               >
-                <FolderInput className="mr-2 h-4 w-4" /> Move to Folder
+                <FolderInput className="mr-2 h-4 w-4" /> {t("moveToFolderBtn")}
               </Button>
               <Button
                 variant="secondary"
@@ -1483,7 +1474,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                 disabled={bulkActionLoading}
                 className="bg-white/10 hover:bg-white/20 text-white border-0 rounded-lg"
               >
-                <CheckCircle className="mr-2 h-4 w-4" /> Enable
+                <CheckCircle className="mr-2 h-4 w-4" /> {t("enableBtn")}
               </Button>
               <Button
                 variant="secondary"
@@ -1492,7 +1483,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                 disabled={bulkActionLoading}
                 className="bg-white/10 hover:bg-white/20 text-white border-0 rounded-lg"
               >
-                <XCircle className="mr-2 h-4 w-4" /> Disable
+                <XCircle className="mr-2 h-4 w-4" /> {t("disableBtn")}
               </Button>
               <Button
                 variant="secondary"
@@ -1501,7 +1492,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                 disabled={bulkActionLoading}
                 className="bg-white/10 hover:bg-white/20 text-white border-0 rounded-lg"
               >
-                <Archive className="mr-2 h-4 w-4" /> Archive
+                <Archive className="mr-2 h-4 w-4" /> {t("archiveBtn")}
               </Button>
               <Button
                 variant="destructive"
@@ -1510,7 +1501,7 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
                 disabled={bulkActionLoading}
                 className="rounded-lg"
               >
-                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                <Trash2 className="mr-2 h-4 w-4" /> {t("deleteBtn")}
               </Button>
             </div>
           </div>
@@ -1547,19 +1538,19 @@ export const LinksTable = forwardRef<LinksTableRef, LinksTableProps>(
               <Link2 className="h-10 w-10 text-blue-500" />
             </div>
             <h3 className="text-xl font-semibold text-slate-900 mb-2">
-              No links yet
+              {t("noLinksYet")}
             </h3>
             <p className="text-slate-500 mb-8 max-w-sm mx-auto">
               {canEditLink()
-                ? "Create your first short link to start tracking clicks and engagement"
-                : "You have view-only access. Links created by your team will appear here."}
+                ? t("noLinksDescEditor")
+                : t("noLinksDescViewer")}
             </p>
             {canEditLink() && (
               <Button
                 asChild
                 className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full px-8 shadow-lg shadow-blue-500/25"
               >
-                <Link href="/dashboard/links/new">Create your first link</Link>
+                <Link href="/dashboard/links/new">{t("createFirstLink")}</Link>
               </Button>
             )}
           </div>

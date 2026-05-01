@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   Card,
   CardContent,
@@ -62,6 +63,7 @@ interface LinkVariantsManagerProps {
 }
 
 export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
+  const t = useTranslations("links.variants");
   const [variants, setVariants] = useState<LinkVariant[]>([]);
   const [stats, setStats] = useState<VariantStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,7 +90,7 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
       const data = await apiRequest(`/links/${linkId}/variants`);
       setVariants(data);
     } catch (error: any) {
-      toast.error(error?.message || "Failed to fetch variants");
+      toast.error(error?.message || t("failedToFetchVariants"));
     } finally {
       setLoading(false);
     }
@@ -131,18 +133,18 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      toast.error("Variant name is required");
+      toast.error(t("variantNameRequired"));
       return;
     }
     if (!targetUrl.trim()) {
-      toast.error("Target URL is required");
+      toast.error(t("targetUrlRequired"));
       return;
     }
 
     try {
       new URL(targetUrl);
     } catch {
-      toast.error("Please enter a valid URL");
+      toast.error(t("enterValidUrl"));
       return;
     }
 
@@ -152,7 +154,7 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
 
     if (totalWeight + weight[0] > 100) {
       toast.error(
-        `Total weight cannot exceed 100%. Available: ${100 - totalWeight}%`,
+        t("weightExceeds100", { weight: 100 - totalWeight }),
       );
       return;
     }
@@ -169,7 +171,7 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
             isActive,
           }),
         });
-        toast.success("Variant updated successfully");
+        toast.success(t("variantUpdated"));
       } else {
         await apiRequest(`/links/${linkId}/variants`, {
           method: "POST",
@@ -180,13 +182,13 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
             isActive,
           }),
         });
-        toast.success("Variant created successfully");
+        toast.success(t("variantCreated"));
       }
       setDialogOpen(false);
       await fetchVariants();
       await fetchStats();
     } catch (error: any) {
-      toast.error(error?.message || "Failed to save variant");
+      toast.error(error?.message || t("failedToSave"));
     } finally {
       setSubmitting(false);
     }
@@ -194,9 +196,7 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
 
   const handleDelete = async (variantId: string) => {
     if (
-      !confirm(
-        "Are you sure you want to delete this variant? This action cannot be undone.",
-      )
+      !confirm(t("confirmDeleteVariant"))
     ) {
       return;
     }
@@ -205,11 +205,11 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
       await apiRequest(`/links/${linkId}/variants/${variantId}`, {
         method: "DELETE",
       });
-      toast.success("Variant deleted successfully");
+      toast.success(t("variantDeleted"));
       await fetchVariants();
       await fetchStats();
     } catch (error: any) {
-      toast.error(error?.message || "Failed to delete variant");
+      toast.error(error?.message || t("failedToDelete"));
     }
   };
 
@@ -225,11 +225,11 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
         }),
       });
       toast.success(
-        `Variant ${!variant.isActive ? "activated" : "deactivated"}`,
+        !variant.isActive ? t("variantActivated") : t("variantDeactivated"),
       );
       await fetchVariants();
     } catch (error: any) {
-      toast.error(error?.message || "Failed to update variant");
+      toast.error(error?.message || t("failedToUpdateVariant"));
     }
   };
 
@@ -265,16 +265,15 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5" />
-                A/B Testing Variants
+                {t("abTestingVariants")}
               </CardTitle>
               <CardDescription className="mt-1.5">
-                Split traffic between multiple destination URLs to test which
-                performs better
+                {t("abTestingDesc")}
               </CardDescription>
             </div>
             <Button onClick={openCreateDialog} disabled={remainingWeight <= 0}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Variant
+              {t("addVariant")}
             </Button>
           </div>
         </CardHeader>
@@ -282,7 +281,7 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
           {/* Weight Distribution Summary */}
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">Total Weight Distribution</span>
+              <span className="font-medium">{t("totalWeightDistribution")}</span>
               <span
                 className={`font-bold ${weightWarning ? "text-amber-600" : "text-green-600"}`}
               >
@@ -296,14 +295,11 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
                 <p>
                   {totalWeight < 100 ? (
                     <>
-                      Weight distribution is incomplete ({totalWeight}%).
-                      Remaining {100 - totalWeight}% of traffic will receive an
-                      error or default behavior.
+                      {t("weightIncomplete", { weight: totalWeight, remaining: 100 - totalWeight })}
                     </>
                   ) : totalWeight > 100 ? (
                     <>
-                      Total weight exceeds 100% ({totalWeight}%). Please adjust
-                      variant weights.
+                      {t("weightExceeds", { weight: totalWeight })}
                     </>
                   ) : null}
                 </p>
@@ -319,13 +315,13 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <BarChart3 className="h-4 w-4" />
-              Performance Overview
+              {t("performanceOverview")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Total Clicks</span>
+                <span className="text-muted-foreground">{t("totalClicks")}</span>
                 <span className="font-bold">{stats.totalClicks}</span>
               </div>
               <div className="space-y-2">
@@ -367,13 +363,13 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
                       </div>
                       <div className="flex items-center gap-4 text-xs">
                         <span className="text-muted-foreground">
-                          Expected: {variantStat.expectedPercentage.toFixed(1)}%
+                          {t("expected")} {variantStat.expectedPercentage.toFixed(1)}%
                         </span>
                         <span className="font-bold">
-                          Actual: {variantStat.percentage.toFixed(1)}%
+                          {t("actual")} {variantStat.percentage.toFixed(1)}%
                         </span>
                         <span className="text-muted-foreground">
-                          ({variantStat.clicks} clicks)
+                          {t("clicksCount", { count: variantStat.clicks })}
                         </span>
                       </div>
                     </div>
@@ -394,15 +390,14 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
                 <Target className="h-12 w-12 text-muted-foreground" />
               </div>
               <div>
-                <p className="text-lg font-medium">No variants yet</p>
+                <p className="text-lg font-medium">{t("noVariantsYet")}</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Create your first A/B test variant to split traffic between
-                  multiple URLs
+                  {t("noVariantsDesc")}
                 </p>
               </div>
               <Button onClick={openCreateDialog} className="mt-4">
                 <Plus className="h-4 w-4 mr-2" />
-                Create First Variant
+                {t("createFirstVariant")}
               </Button>
             </div>
           </CardContent>
@@ -422,7 +417,7 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
                         <Badge
                           variant={variant.isActive ? "default" : "secondary"}
                         >
-                          {variant.isActive ? "Active" : "Inactive"}
+                           {variant.isActive ? t("active") : t("inactive")}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -446,7 +441,7 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {variant.clicks} clicks
+                          {t("clicks", { count: variant.clicks })}
                         </p>
                       </div>
                       <div className="flex items-center gap-1">
@@ -455,7 +450,7 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
                             htmlFor={`active-${variant.id}`}
                             className="text-xs cursor-pointer"
                           >
-                            {variant.isActive ? "On" : "Off"}
+                             {variant.isActive ? t("active") : t("inactive")}
                           </Label>
                           <Switch
                             id={`active-${variant.id}`}
@@ -484,12 +479,10 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
                     <Progress value={variant.weight} className="h-2" />
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>
-                        {variant.weight}% of traffic will be directed to this
-                        variant
+                        {t("trafficToVariant", { weight: variant.weight })}
                       </span>
                       <span>
-                        Created{" "}
-                        {new Date(variant.createdAt).toLocaleDateString()}
+                        {t("created", { date: new Date(variant.createdAt).toLocaleDateString() })}
                       </span>
                     </div>
                   </div>
@@ -505,23 +498,23 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              {editingVariant ? "Edit Variant" : "Create New Variant"}
+              {editingVariant ? t("editVariant") : t("createNewVariant")}
             </DialogTitle>
             <DialogDescription>
               {editingVariant
-                ? "Update the variant configuration"
-                : "Configure a new A/B test variant for this link"}
+                ? t("editVariantDesc")
+                : t("createVariantDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-5 py-4">
             {/* Variant Name */}
             <div className="space-y-2">
               <Label htmlFor="variant-name">
-                Variant Name <span className="text-red-500">*</span>
+                {t("variantName")} <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="variant-name"
-                placeholder="e.g., Control, Variant A, Blue CTA"
+                placeholder={t("variantNamePlaceholder")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -530,7 +523,7 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
             {/* Target URL */}
             <div className="space-y-2">
               <Label htmlFor="variant-url">
-                Target URL <span className="text-red-500">*</span>
+                {t("targetUrl")} <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="variant-url"
@@ -540,19 +533,19 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
                 onChange={(e) => setTargetUrl(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                The destination URL for this variant
+                {t("targetUrlHelp")}
               </p>
             </div>
 
             {/* Weight Slider */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label htmlFor="variant-weight">Traffic Weight</Label>
+                <Label htmlFor="variant-weight">{t("trafficWeight")}</Label>
                 <div className="flex items-center gap-2">
                   <span className="text-2xl font-bold">{weight[0]}%</span>
                   {!editingVariant && (
                     <span className="text-sm text-muted-foreground">
-                      (Available: {remainingWeight}%)
+                      {t("availableWeight", { weight: remainingWeight })}
                     </span>
                   )}
                 </div>
@@ -567,7 +560,7 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
                 className="py-4"
               />
               <p className="text-xs text-muted-foreground">
-                Percentage of traffic that will be directed to this variant
+                {t("weightHelp")}
               </p>
             </div>
 
@@ -575,10 +568,10 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
             <div className="flex items-center justify-between p-3 rounded-md border">
               <div className="space-y-0.5">
                 <Label htmlFor="variant-active" className="cursor-pointer">
-                  Active
+                  {t("activeToggle")}
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Enable or disable this variant
+                  {t("activeToggleDesc")}
                 </p>
               </div>
               <Switch
@@ -594,16 +587,16 @@ export function LinkVariantsManager({ linkId }: LinkVariantsManagerProps) {
               onClick={() => setDialogOpen(false)}
               disabled={submitting}
             >
-              Cancel
+              {t("cancel")}
             </Button>
             <Button onClick={handleSubmit} disabled={submitting}>
               {submitting
                 ? editingVariant
-                  ? "Updating..."
-                  : "Creating..."
+                  ? t("updating")
+                  : t("creating")
                 : editingVariant
-                  ? "Update Variant"
-                  : "Create Variant"}
+                  ? t("updateVariant")
+                  : t("createVariant")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -13,8 +13,11 @@ import {
   Zap,
   MousePointerClick,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export function Hero() {
+  const t = useTranslations("landing.hero");
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 via-white to-blue-50/30">
       {/* Background Elements */}
@@ -38,19 +41,21 @@ export function Hero() {
           <div className="flex flex-col justify-center space-y-8">
             <div className="inline-flex items-center gap-2 w-fit rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 px-4 py-2 text-sm font-medium text-blue-700 shadow-sm">
               <Zap className="h-4 w-4 text-blue-500" />
-              <span>Free forever, no credit card required</span>
+              <span>{t("badge")}</span>
             </div>
 
             <div className="space-y-6">
               <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl leading-[1.1]">
-                Shorten links,{" "}
-                <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 bg-clip-text text-transparent">
-                  amplify results
-                </span>
+                {t.rich("heading", {
+                  highlight: (chunks) => (
+                    <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 bg-clip-text text-transparent">
+                      {chunks}
+                    </span>
+                  ),
+                })}
               </h1>
               <p className="max-w-[540px] text-lg text-muted-foreground md:text-xl leading-relaxed">
-                Transform long URLs into powerful short links. Track every click
-                with real-time analytics and boost your marketing ROI.
+                {t("description")}
               </p>
             </div>
 
@@ -60,7 +65,7 @@ export function Hero() {
                   size="lg"
                   className="h-14 px-8 text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300"
                 >
-                  Start for free
+                  {t("startFree")}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
@@ -71,7 +76,7 @@ export function Hero() {
                   className="h-14 px-8 text-base font-semibold border-2 hover:bg-slate-50"
                 >
                   <Play className="mr-2 h-5 w-5" />
-                  See how it works
+                  {t("seeHowItWorks")}
                 </Button>
               </Link>
             </div>
@@ -100,10 +105,10 @@ export function Hero() {
                         className="h-4 w-4 fill-yellow-400 text-yellow-400"
                       />
                     ))}
-                    <span className="ml-2 text-sm font-semibold">4.9</span>
+                    <span className="ml-2 text-sm font-semibold">{t("rating")}</span>
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    Loved by 10,000+ users
+                    {t("lovedByUsers")}
                   </span>
                 </div>
               </div>
@@ -121,6 +126,8 @@ export function Hero() {
 }
 
 function HeroIllustration() {
+  const t = useTranslations("landing.hero.illustration");
+
   return (
     <div className="relative w-full max-w-lg mx-auto lg:max-w-none">
       {/* Main Dashboard Card */}
@@ -160,12 +167,12 @@ function HeroIllustration() {
               <Link2 className="h-5 w-5 text-blue-600" />
               <input
                 type="text"
-                placeholder="Paste your long URL here..."
+                placeholder={t("placeholder")}
                 className="flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400"
                 disabled
               />
               <button className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-lg shadow-lg shadow-blue-500/25">
-                Shorten
+                {t("shorten")}
               </button>
             </div>
           </div>
@@ -175,26 +182,26 @@ function HeroIllustration() {
             <StatCard
               icon={MousePointerClick}
               value="24.5K"
-              label="Total Clicks"
+              label={t("totalClicks")}
               trend="+12%"
             />
             <StatCard
               icon={Link2}
               value="156"
-              label="Active Links"
+              label={t("activeLinks")}
               trend="+8"
             />
-            <StatCard icon={Globe} value="89" label="Countries" trend="+5" />
+            <StatCard icon={Globe} value="89" label={t("countries")} trend="+5" />
           </div>
 
           {/* Recent Links */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-semibold text-slate-700">
-                Recent Links
+                {t("recentLinks")}
               </h4>
               <span className="text-xs text-blue-600 font-medium">
-                View all
+                {t("viewAll")}
               </span>
             </div>
             <div className="space-y-2">
@@ -295,6 +302,8 @@ function LinkRow({
 }
 
 function FloatingAnalyticsCard() {
+  const t = useTranslations("landing.hero.illustration");
+
   return (
     <div className="absolute -right-4 md:-right-8 top-16 bg-white rounded-xl p-4 shadow-xl border border-slate-200/60 transform rotate-3 hover:rotate-0 transition-transform duration-300">
       <div className="flex items-center gap-2 mb-3">
@@ -302,7 +311,7 @@ function FloatingAnalyticsCard() {
           <BarChart3 className="h-4 w-4 text-green-600" />
         </div>
         <span className="text-sm font-semibold text-slate-700">
-          Click Analytics
+          {t("clickAnalytics")}
         </span>
       </div>
       <div className="flex items-end gap-1 h-12">
@@ -319,13 +328,15 @@ function FloatingAnalyticsCard() {
 }
 
 function FloatingQRCard() {
+  const t = useTranslations("landing.hero.illustration");
+
   return (
     <div className="absolute -left-4 md:-left-8 bottom-24 bg-white rounded-xl p-4 shadow-xl border border-slate-200/60 transform -rotate-3 hover:rotate-0 transition-transform duration-300">
       <div className="flex items-center gap-2 mb-3">
         <div className="p-1.5 bg-purple-100 rounded-lg">
           <QrCode className="h-4 w-4 text-purple-600" />
         </div>
-        <span className="text-sm font-semibold text-slate-700">QR Code</span>
+        <span className="text-sm font-semibold text-slate-700">{t("qrCode")}</span>
       </div>
       <div className="w-16 h-16 bg-slate-100 rounded-lg p-2">
         <div className="w-full h-full grid grid-cols-6 gap-0.5">
@@ -353,13 +364,15 @@ function FloatingQRCard() {
 }
 
 function FloatingNotificationCard() {
+  const t = useTranslations("landing.hero.illustration");
+
   return (
     <div className="absolute right-8 -bottom-4 bg-white rounded-xl px-4 py-3 shadow-xl border border-slate-200/60 flex items-center gap-3 animate-bounce-slow">
       <div className="p-2 bg-green-100 rounded-full">
         <MousePointerClick className="h-4 w-4 text-green-600" />
       </div>
       <div>
-        <p className="text-sm font-medium text-slate-700">New click!</p>
+        <p className="text-sm font-medium text-slate-700">{t("newClick")}</p>
         <p className="text-xs text-slate-500">pingto.me/launch - USA</p>
       </div>
     </div>

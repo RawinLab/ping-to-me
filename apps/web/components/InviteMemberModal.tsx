@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@pingtome/ui";
 import { apiRequest } from "../lib/api";
 import { usePermission } from "../hooks/usePermission";
@@ -19,6 +20,7 @@ export function InviteMemberModal({
   onSuccess,
   orgId,
 }: InviteMemberModalProps) {
+  const t = useTranslations("shared");
   const { role: currentUserRole } = usePermission();
   const assignableRoles = getAssignableRoles(currentUserRole as MemberRole);
 
@@ -41,7 +43,7 @@ export function InviteMemberModal({
       setEmail("");
       setRole("VIEWER");
     } catch (err) {
-      alert("Failed to invite member. Ensure user exists.");
+      alert(t("failedToInvite"));
     } finally {
       setLoading(false);
     }
@@ -53,7 +55,7 @@ export function InviteMemberModal({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white p-6 rounded-lg w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold">Invite Member</h3>
+          <h3 className="text-lg font-bold">{t("inviteMemberTitle")}</h3>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
@@ -64,7 +66,7 @@ export function InviteMemberModal({
 
         <form onSubmit={handleInvite} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
+            <label className="block text-sm font-medium mb-1">{t("emailLabel")}</label>
             <input
               type="email"
               value={email}
@@ -74,7 +76,7 @@ export function InviteMemberModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Role</label>
+            <label className="block text-sm font-medium mb-1">{t("roleLabel")}</label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
@@ -87,11 +89,11 @@ export function InviteMemberModal({
               ))}
             </select>
             <p className="text-xs text-gray-500 mt-1">
-              You can only invite members with roles at or below your level.
+              {t("inviteRoleNote")}
             </p>
           </div>
           <Button disabled={loading} className="w-full">
-            {loading ? "Sending Invite..." : "Send Invite"}
+            {loading ? t("sendingInvite") : t("sendInvite")}
           </Button>
         </form>
       </div>

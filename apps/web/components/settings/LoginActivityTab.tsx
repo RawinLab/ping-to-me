@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { securityApi, LoginActivity } from "@/lib/api/security";
 import {
   Card,
@@ -91,6 +92,7 @@ const isSuspiciousActivity = (
 };
 
 export function LoginActivityTab() {
+  const t = useTranslations("settings.activity");
   const [activities, setActivities] = useState<LoginActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "success" | "failed">("all");
@@ -130,9 +132,9 @@ export function LoginActivityTab() {
       {/* Header Card */}
       <Card className="border-slate-200 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">Login Activity</CardTitle>
+          <CardTitle className="text-lg">{t("title")}</CardTitle>
           <CardDescription>
-            Review your recent login attempts and security events.
+            {t("subtitle")}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -147,7 +149,7 @@ export function LoginActivityTab() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-slate-900">{total}</p>
-                <p className="text-sm text-slate-500">Total Attempts</p>
+                <p className="text-sm text-slate-500">{t("totalAttempts")}</p>
               </div>
             </div>
           </CardContent>
@@ -162,7 +164,7 @@ export function LoginActivityTab() {
                 <p className="text-2xl font-bold text-emerald-900">
                   {successCount}
                 </p>
-                <p className="text-sm text-emerald-600">Successful</p>
+                <p className="text-sm text-emerald-600">{t("successful")}</p>
               </div>
             </div>
           </CardContent>
@@ -175,7 +177,7 @@ export function LoginActivityTab() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-red-900">{failedCount}</p>
-                <p className="text-sm text-red-600">Failed</p>
+                <p className="text-sm text-red-600">{t("failed")}</p>
               </div>
             </div>
           </CardContent>
@@ -193,9 +195,9 @@ export function LoginActivityTab() {
             }}
           >
             <TabsList className="grid w-full max-w-md grid-cols-3">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="success">Successful</TabsTrigger>
-              <TabsTrigger value="failed">Failed</TabsTrigger>
+              <TabsTrigger value="all">{t("all")}</TabsTrigger>
+              <TabsTrigger value="success">{t("successful")}</TabsTrigger>
+              <TabsTrigger value="failed">{t("failed")}</TabsTrigger>
             </TabsList>
           </Tabs>
         </CardHeader>
@@ -247,8 +249,8 @@ export function LoginActivityTab() {
                           }`}
                         >
                           {activity.success
-                            ? "Successful Login"
-                            : "Failed Login Attempt"}
+                            ? t("successfulLogin")
+                            : t("failedLogin")}
                         </h4>
                         {suspicious && (
                           <Badge className="bg-red-600 text-white hover:bg-red-600 text-xs">
@@ -269,18 +271,18 @@ export function LoginActivityTab() {
                         </div>
                         <div className="flex items-center gap-2 text-sm text-slate-600">
                           <MapPin className="h-3.5 w-3.5" />
-                          <span>{activity.location || "Unknown location"}</span>
+                          <span>{activity.location || t("unknownLocation")}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-slate-600">
                           <Shield className="h-3.5 w-3.5" />
-                          <span>IP: {activity.ipAddress || "Unknown"}</span>
+                          <span>IP: {activity.ipAddress || t("unknown")}</span>
                         </div>
                       </div>
                       {!activity.success && activity.reason && (
                         <div className="mt-2 flex items-start gap-2 p-2 bg-red-100 rounded-lg">
                           <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5" />
                           <p className="text-sm text-red-700">
-                            <span className="font-medium">Reason:</span>{" "}
+                            <span className="font-medium">{t("reason")}</span>{" "}
                             {activity.reason}
                           </p>
                         </div>
@@ -296,10 +298,10 @@ export function LoginActivityTab() {
                 <Shield className="h-8 w-8 text-slate-400" />
               </div>
               <p className="text-slate-600 font-medium mb-1">
-                No login activity
+                {t("noActivity")}
               </p>
               <p className="text-sm text-slate-500">
-                No login attempts found for the selected filter
+                {t("noActivityDesc")}
               </p>
             </div>
           )}
@@ -308,8 +310,7 @@ export function LoginActivityTab() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-6 pt-6 border-t border-slate-200">
               <p className="text-sm text-slate-600">
-                Showing {(page - 1) * limit + 1} to{" "}
-                {Math.min(page * limit, total)} of {total} results
+                {t("showingResults", { from: (page - 1) * limit + 1, to: Math.min(page * limit, total), total })}
               </p>
               <div className="flex gap-2">
                 <Button
@@ -320,7 +321,7 @@ export function LoginActivityTab() {
                   className="rounded-lg"
                 >
                   <ChevronLeft className="h-4 w-4 mr-1" />
-                  Previous
+                  {t("previous")}
                 </Button>
                 <Button
                   variant="outline"
@@ -329,7 +330,7 @@ export function LoginActivityTab() {
                   disabled={page === totalPages}
                   className="rounded-lg"
                 >
-                  Next
+                  {t("next")}
                   <ChevronRightIcon className="h-4 w-4 ml-1" />
                 </Button>
               </div>
@@ -346,11 +347,9 @@ export function LoginActivityTab() {
               <Shield className="h-6 w-6 text-blue-600" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-blue-900 mb-1">Security Tip</h3>
+              <h3 className="font-semibold text-blue-900 mb-1">{t("securityTip")}</h3>
               <p className="text-sm text-blue-700 mb-3">
-                If you notice any suspicious login attempts or activity from
-                unfamiliar locations, change your password immediately and
-                enable two-factor authentication.
+                {t("securityTipDesc")}
               </p>
               <Link href="/dashboard/settings/two-factor">
                 <Button
@@ -358,7 +357,7 @@ export function LoginActivityTab() {
                   variant="outline"
                   className="bg-white border-blue-200 text-blue-700 hover:bg-blue-100 rounded-lg"
                 >
-                  Enable 2FA
+                  {t("enable2fa")}
                 </Button>
               </Link>
             </div>

@@ -1,42 +1,42 @@
 import { Star } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
-const testimonials = [
-  {
-    quote:
-      "PingTO.Me has transformed how we track our marketing campaigns. The analytics are incredibly detailed and the interface is so easy to use.",
-    author: "Sarah Chen",
-    role: "Marketing Director",
-    company: "TechFlow",
-    rating: 5,
-  },
-  {
-    quote:
-      "We switched from Bitly and haven't looked back. The custom domain support and team features are exactly what we needed.",
-    author: "Michael Rodriguez",
-    role: "Growth Lead",
-    company: "StartupXYZ",
-    rating: 5,
-  },
-  {
-    quote:
-      "The QR code generator and bio pages have been game-changers for our offline marketing. Highly recommend!",
-    author: "Emily Johnson",
-    role: "Brand Manager",
-    company: "CreativeHub",
-    rating: 5,
-  },
-];
+export async function Testimonials() {
+  const t = await getTranslations("landing.testimonials");
 
-export function Testimonials() {
+  const testimonials = [
+    {
+      quote: t("testimony1.quote"),
+      author: t("testimony1.author"),
+      role: t("testimony1.role"),
+      company: t("testimony1.company"),
+      rating: 5,
+    },
+    {
+      quote: t("testimony2.quote"),
+      author: t("testimony2.author"),
+      role: t("testimony2.role"),
+      company: t("testimony2.company"),
+      rating: 5,
+    },
+    {
+      quote: t("testimony3.quote"),
+      author: t("testimony3.author"),
+      role: t("testimony3.role"),
+      company: t("testimony3.company"),
+      rating: 5,
+    },
+  ];
+
   return (
     <section className="section-padding bg-white">
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center justify-center space-y-4 text-center mb-16">
           <h2 className="text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl">
-            Loved by teams worldwide
+            {t("heading")}
           </h2>
           <p className="max-w-[600px] text-muted-foreground md:text-lg">
-            See what our customers have to say about PingTO.Me
+            {t("description")}
           </p>
         </div>
 
@@ -64,7 +64,7 @@ export function Testimonials() {
                 <div>
                   <p className="font-semibold">{testimonial.author}</p>
                   <p className="text-sm text-muted-foreground">
-                    {testimonial.role} at {testimonial.company}
+                    {t("roleAt", { role: testimonial.role, company: testimonial.company })}
                   </p>
                 </div>
               </div>

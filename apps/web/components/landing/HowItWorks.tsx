@@ -2,57 +2,60 @@
 
 import { useState } from "react";
 import { Check, Link2, BarChart3, Share2 } from "lucide-react";
-
-const steps = [
-  {
-    id: 1,
-    icon: Link2,
-    title: "Create your link",
-    description:
-      "Paste your long URL and get a short, branded link instantly. Customize it with your own alias.",
-    features: [
-      "Custom branded domains",
-      "Custom aliases",
-      "Link expiration settings",
-    ],
-  },
-  {
-    id: 2,
-    icon: BarChart3,
-    title: "Track performance",
-    description:
-      "Monitor clicks, geographic data, and device types. Get real-time insights into your link performance.",
-    features: [
-      "Real-time click tracking",
-      "Geographic analytics",
-      "Device & browser stats",
-    ],
-  },
-  {
-    id: 3,
-    icon: Share2,
-    title: "Share & grow",
-    description:
-      "Share your links everywhere. Use QR codes for offline marketing and bio pages for social media.",
-    features: ["Generate QR codes", "Social media sharing", "Bio page builder"],
-  },
-];
+import { useTranslations } from "next-intl";
 
 export function HowItWorks() {
+  const t = useTranslations("landing.howItWorks");
   const [activeStep, setActiveStep] = useState(1);
+
+  const steps = [
+    {
+      id: 1,
+      icon: Link2,
+      title: t("step1.title"),
+      description: t("step1.description"),
+      features: [
+        t("step1.feature1"),
+        t("step1.feature2"),
+        t("step1.feature3"),
+      ],
+    },
+    {
+      id: 2,
+      icon: BarChart3,
+      title: t("step2.title"),
+      description: t("step2.description"),
+      features: [
+        t("step2.feature1"),
+        t("step2.feature2"),
+        t("step2.feature3"),
+      ],
+    },
+    {
+      id: 3,
+      icon: Share2,
+      title: t("step3.title"),
+      description: t("step3.description"),
+      features: [
+        t("step3.feature1"),
+        t("step3.feature2"),
+        t("step3.feature3"),
+      ],
+    },
+  ];
 
   return (
     <section id="how-it-works" className="section-padding gradient-bg-soft">
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center justify-center space-y-4 text-center mb-16">
           <div className="inline-block rounded-full bg-blue-100 px-4 py-1.5 text-sm font-medium text-blue-700">
-            How it works
+            {t("badge")}
           </div>
           <h2 className="text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl">
-            See PingTO.Me in action
+            {t("heading")}
           </h2>
           <p className="max-w-[800px] text-muted-foreground md:text-lg">
-            Discover how easy it is to create, manage, and track your links.
+            {t("description")}
           </p>
         </div>
 
@@ -117,7 +120,7 @@ export function HowItWorks() {
                   <div className="space-y-4">
                     <div className="bg-slate-800 rounded-lg p-4">
                       <label className="text-slate-400 text-sm block mb-2">
-                        Enter your long URL
+                        {t("illustration.enterUrl")}
                       </label>
                       <div className="flex gap-2">
                         <input
@@ -127,20 +130,20 @@ export function HowItWorks() {
                           className="flex-1 bg-slate-700 text-white px-3 py-2 rounded-lg text-sm"
                         />
                         <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">
-                          Shorten
+                          {t("illustration.shorten")}
                         </button>
                       </div>
                     </div>
                     <div className="bg-slate-800 rounded-lg p-4">
                       <p className="text-slate-400 text-sm mb-2">
-                        Your short link
+                        {t("illustration.yourShortLink")}
                       </p>
                       <div className="flex items-center justify-between">
                         <span className="text-blue-400 font-medium">
                           ping.to/my-link
                         </span>
                         <button className="text-slate-400 hover:text-white text-sm">
-                          Copy
+                          {t("illustration.copy")}
                         </button>
                       </div>
                     </div>
@@ -152,15 +155,15 @@ export function HowItWorks() {
                     <div className="grid grid-cols-3 gap-3">
                       <div className="bg-slate-800 rounded-lg p-3 text-center">
                         <p className="text-2xl font-bold text-white">12.5K</p>
-                        <p className="text-xs text-slate-400">Total Clicks</p>
+                        <p className="text-xs text-slate-400">{t("illustration.totalClicks")}</p>
                       </div>
                       <div className="bg-slate-800 rounded-lg p-3 text-center">
                         <p className="text-2xl font-bold text-white">45</p>
-                        <p className="text-xs text-slate-400">Countries</p>
+                        <p className="text-xs text-slate-400">{t("illustration.countries")}</p>
                       </div>
                       <div className="bg-slate-800 rounded-lg p-3 text-center">
                         <p className="text-2xl font-bold text-white">8.2%</p>
-                        <p className="text-xs text-slate-400">CTR</p>
+                        <p className="text-xs text-slate-400">{t("illustration.ctr")}</p>
                       </div>
                     </div>
                     <div className="bg-slate-800 rounded-lg p-4">

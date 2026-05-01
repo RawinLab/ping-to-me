@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { usePermission } from "@/hooks/usePermission";
 import type { Resource, Action } from "@/lib/permissions";
 
@@ -57,8 +58,10 @@ export function PermissionGate({
   children,
   fallback = null,
   showError = false,
-  errorMessage = "You do not have permission to access this feature",
+  errorMessage,
 }: PermissionGateProps) {
+  const t = useTranslations("shared");
+  const defaultMessage = t("permissionDenied");
   const { can, canAny, canAll } = usePermission();
 
   let hasAccess = false;
@@ -81,7 +84,7 @@ export function PermissionGate({
   }
 
   if (showError) {
-    return <PermissionDenied message={errorMessage} />;
+    return <PermissionDenied message={errorMessage || defaultMessage} />;
   }
 
   return <>{fallback}</>;

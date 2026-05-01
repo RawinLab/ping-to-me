@@ -22,6 +22,7 @@ import {
   Mail,
   Share2,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface ShareModalProps {
   open: boolean;
@@ -38,6 +39,7 @@ export function ShareModal({
   bioPageUrl,
   bioPageTitle,
 }: ShareModalProps) {
+  const t = useTranslations("bio");
   const [copied, setCopied] = useState(false);
   const [qrLoading, setQrLoading] = useState(true);
   const [qrError, setQrError] = useState(false);
@@ -80,7 +82,7 @@ export function ShareModal({
     }
   };
 
-  const shareText = `Check out ${bioPageTitle}`;
+  const shareText = t("checkOut", { title: bioPageTitle });
 
   const socialShareLinks = {
     twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(bioPageUrl)}&text=${encodeURIComponent(shareText)}`,
@@ -99,17 +101,17 @@ export function ShareModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Share2 className="h-5 w-5" />
-            Share Bio Page
+            {t("shareBioPage")}
           </DialogTitle>
           <DialogDescription>
-            Share your bio page link and QR code with others.
+            {t("shareDescription")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* URL Section */}
           <div className="space-y-2">
-            <Label htmlFor="bio-url">Bio Page URL</Label>
+            <Label htmlFor="bio-url">{t("bioPageUrl")}</Label>
             <div className="flex gap-2">
               <Input
                 id="bio-url"
@@ -131,7 +133,7 @@ export function ShareModal({
               </Button>
             </div>
             {copied && (
-              <p className="text-xs text-green-600">Copied to clipboard!</p>
+              <p className="text-xs text-green-600">{t("copiedToClipboard")}</p>
             )}
           </div>
 
@@ -139,26 +141,26 @@ export function ShareModal({
 
           {/* QR Code Section */}
           <div className="space-y-3">
-            <Label>QR Code</Label>
+            <Label>{t("qrCode")}</Label>
             <div className="flex flex-col items-center gap-4 p-6 bg-slate-50 rounded-lg">
               {qrLoading && !qrError && (
                 <div className="w-[200px] h-[200px] flex items-center justify-center bg-white rounded border-2 border-dashed border-slate-300">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 mx-auto mb-2"></div>
-                    <p className="text-sm text-slate-600">Loading QR Code...</p>
+                    <p className="text-sm text-slate-600">{t("loadingQrCode")}</p>
                   </div>
                 </div>
               )}
               {qrError && (
                 <div className="w-[200px] h-[200px] flex items-center justify-center bg-white rounded border-2 border-dashed border-red-300">
-                  <p className="text-sm text-red-600 text-center px-4">
-                    Failed to load QR code
-                  </p>
+                    <p className="text-sm text-red-600 text-center px-4">
+                      {t("failedToLoadQrCode")}
+                    </p>
                 </div>
               )}
               <img
                 src={qrCodeUrl}
-                alt="QR Code"
+                alt={t("qrCode")}
                 width={200}
                 height={200}
                 className={`rounded border-2 border-white shadow-sm ${qrLoading && !qrError ? "hidden" : ""}`}
@@ -177,7 +179,7 @@ export function ShareModal({
                   className="gap-2"
                 >
                   <Download className="h-4 w-4" />
-                  Download QR Code
+                  {t("downloadQrCode")}
                 </Button>
               )}
             </div>
@@ -187,7 +189,7 @@ export function ShareModal({
 
           {/* Social Share Section */}
           <div className="space-y-3">
-            <Label>Share on Social Media</Label>
+            <Label>{t("shareOnSocialMedia")}</Label>
             <div className="grid grid-cols-2 gap-3">
               <Button
                 variant="outline"

@@ -1,21 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button, Input, Label, Alert, AlertDescription } from "@pingtome/ui";
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
-import { Icons } from "@/components/icons"; // Assuming Icons component is available for social buttons
+import { Icons } from "@/components/icons";
+import { useTranslations } from "next-intl";
 
-const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required"),
-});
+const createLoginSchema = (t: (key: string) => string) =>
+  z.object({
+    email: z.string().email(t("invalidEmail")),
+    password: z.string().min(1, t("passwordRequired")),
+  });
 
-type LoginFormData = z.infer<typeof loginSchema>;
+type LoginFormData = z.infer<ReturnType<typeof createLoginSchema>>;
 
 interface LockStatus {
   locked: boolean;
@@ -25,10 +28,15 @@ interface LockStatus {
 export function LoginForm() {
   const { login } = useAuth();
   const router = useRouter();
+  const t = useTranslations("auth.login");
+  const tv = useTranslations("auth.login.validation");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [lockStatus, setLockStatus] = useState<LockStatus | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const loginSchema = useMemo(() => createLoginSchema(tv), [tv]);
 
   const {
     register,
@@ -41,15 +49,13 @@ export function LoginForm() {
 
   const email = watch("email");
 
-  // Countdown timer effect
   useEffect(() => {
     if (countdown !== null && countdown > 0) {
       const timer = setTimeout(() => {
         setCountdown(countdown - 1);
-      }, 60000); // Update every minute
+      }, 60000);
       return () => clearTimeout(timer);
     } else if (countdown === 0) {
-      // Reset lock status when countdown reaches 0
       setLockStatus(null);
       setCountdown(null);
       setError(null);
@@ -74,7 +80,6 @@ export function LoginForm() {
     } catch (err: any) {
       const errorData = err.response?.data;
 
-      // Check if account is locked
       if (errorData?.locked) {
         const remainingMinutes = errorData.remainingMinutes || 0;
         setLockStatus({
@@ -82,7 +87,7 @@ export function LoginForm() {
           remainingMinutes,
         });
         setCountdown(remainingMinutes);
-        setError(errorData.message || `Account is locked. Try again in ${remainingMinutes} minute(s).`);
+        setError(t("accountLockedMessage", { count: remainingMinutes, plural: remainingMinutes !== 1 ? "s" : "" }));
       } else {
         setError(errorData?.message || "Login failed");
       }
@@ -96,10 +101,10 @@ export function LoginForm() {
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("emailLabel")}</Label>
             <Input
               id="email"
-              placeholder="name@example.com"
+              placeholder={t("emailPlaceholder")}
               type="email"
               autoCapitalize="none"
               autoComplete="email"
@@ -113,20 +118,36 @@ export function LoginForm() {
           </div>
           <div className="grid gap-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("passwordLabel")}</Label>
               <Link
                 href="/forgot-password"
                 className="text-sm font-medium text-primary hover:underline"
               >
-                Forgot password?
+                {t("forgotPassword")}
               </Link>
             </div>
-            <Input
-              id="password"
-              type="password"
-              disabled={isLoading}
-              {...register("password")}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                disabled={isLoading}
+                className="pr-10"
+                {...register("password")}
+              />
+              <button
+                type="button"
+                tabIndex={-1}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? t("hidePassword") : t("showPassword")}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
             {errors.password && (
               <p className="text-sm text-red-500">{errors.password.message}</p>
             )}
@@ -136,10 +157,9 @@ export function LoginForm() {
               <AlertDescription>
                 {lockStatus?.locked && countdown !== null && countdown > 0 ? (
                   <div>
-                    <p className="font-semibold">Account Locked</p>
+                    <p className="font-semibold">{t("accountLocked")}</p>
                     <p className="mt-1">
-                      Too many failed login attempts. Please try again in{" "}
-                      <span className="font-bold">{countdown}</span> minute{countdown !== 1 ? "s" : ""}.
+                      {t("accountLockedMessage", { count: countdown, plural: countdown !== 1 ? "s" : "" })}
                     </p>
                   </div>
                 ) : (
@@ -152,9 +172,8 @@ export function LoginForm() {
             {isLoading && (
               <span className="mr-2 h-4 w-4 animate-spin">...</span>
             )}
-            {lockStatus?.locked && (countdown || 0) > 0 ? "Account Locked" : "Sign In with Email"}
+            {lockStatus?.locked && (countdown || 0) > 0 ? t("accountLockedShort") : t("signIn")}
           </Button>
-          {/* Removed "Email me a login link" button as per instruction */}
         </div>
       </form>
       <div className="relative">
@@ -163,7 +182,7 @@ export function LoginForm() {
         </div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-background px-2 text-muted-foreground">
-            Or continue with
+            {t("orContinueWith")}
           </span>
         </div>
       </div>
@@ -198,7 +217,7 @@ export function LoginForm() {
           href="/register"
           className="underline underline-offset-4 hover:text-primary"
         >
-          Don&apos;t have an account? Sign Up
+          {t("noAccount")}
         </Link>
       </div>
     </div>

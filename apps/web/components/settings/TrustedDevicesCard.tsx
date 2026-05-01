@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
   Card,
@@ -57,6 +58,7 @@ interface TrustedDevice {
 }
 
 export function TrustedDevicesCard() {
+  const t = useTranslations("settings.trustedDevices");
   const [devices, setDevices] = useState<TrustedDevice[]>([]);
   const [currentDeviceId, setCurrentDeviceId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -78,14 +80,11 @@ export function TrustedDevicesCard() {
     try {
       setLoading(true);
 
-      // Get current device fingerprint
       const fingerprint = await getOrCreateFingerprint();
 
-      // Fetch all trusted devices
       const response = await api.get("/auth/devices");
       const allDevices = response.data;
 
-      // Fetch current device to mark it
       const currentResponse = await api.get("/auth/devices/current", {
         params: { fingerprint },
       });
@@ -95,7 +94,7 @@ export function TrustedDevicesCard() {
       setCurrentDeviceId(currentDevice?.id || null);
     } catch (error: any) {
       toast.error(
-        error.response?.data?.message || "Failed to load trusted devices"
+        error.response?.data?.message || t("loadFailed")
       );
     } finally {
       setLoading(false);
@@ -105,12 +104,12 @@ export function TrustedDevicesCard() {
   const handleRemoveDevice = async (device: TrustedDevice) => {
     try {
       await api.delete(`/auth/devices/${device.id}`);
-      toast.success("Device removed successfully");
+      toast.success(t("removeSuccess"));
       loadDevices();
       setDeviceToDelete(null);
     } catch (error: any) {
       toast.error(
-        error.response?.data?.message || "Failed to remove device"
+        error.response?.data?.message || t("removeFailed")
       );
     }
   };
@@ -122,13 +121,13 @@ export function TrustedDevicesCard() {
       await api.patch(`/auth/devices/${deviceToRename.id}/name`, {
         name: newName.trim(),
       });
-      toast.success("Device name updated successfully");
+      toast.success(t("renameSuccess"));
       loadDevices();
       setDeviceToRename(null);
       setNewName("");
     } catch (error: any) {
       toast.error(
-        error.response?.data?.message || "Failed to update device name"
+        error.response?.data?.message || t("renameFailed")
       );
     }
   };
@@ -139,12 +138,12 @@ export function TrustedDevicesCard() {
       await api.post("/auth/devices/revoke-all", {
         exceptFingerprint: fingerprint,
       });
-      toast.success("All other devices have been revoked");
+      toast.success(t("revokeAllSuccess"));
       loadDevices();
       setShowRevokeAllDialog(false);
     } catch (error: any) {
       toast.error(
-        error.response?.data?.message || "Failed to revoke devices"
+        error.response?.data?.message || t("revokeAllFailed")
       );
     }
   };
@@ -175,9 +174,9 @@ export function TrustedDevicesCard() {
     if (device.name) return device.name;
     const parts: string[] = [];
     if (device.browser) parts.push(device.browser);
-    if (device.os) parts.push(`on ${device.os}`);
+    if (device.os) parts.push(`${t("on")} ${device.os}`);
     if (device.deviceType) parts.push(`(${device.deviceType})`);
-    return parts.length > 0 ? parts.join(" ") : "Unknown Device";
+    return parts.length > 0 ? parts.join(" ") : t("unknownDevice");
   };
 
   return (
@@ -185,9 +184,9 @@ export function TrustedDevicesCard() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Trusted Devices</CardTitle>
+            <CardTitle>{t("title")}</CardTitle>
             <CardDescription>
-              Manage devices that have access to your account
+              {t("subtitle")}
             </CardDescription>
           </div>
           {devices.length > 1 && (
@@ -197,7 +196,7 @@ export function TrustedDevicesCard() {
               onClick={() => setShowRevokeAllDialog(true)}
             >
               <AlertTriangle className="h-4 w-4 mr-2" />
-              Revoke All Other Devices
+              {t("revokeAll")}
             </Button>
           )}
         </div>
@@ -215,9 +214,9 @@ export function TrustedDevicesCard() {
         ) : devices.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Monitor className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No trusted devices yet</p>
+            <p>{t("noDevices")}</p>
             <p className="text-sm mt-1">
-              Devices will appear here after successful logins
+              {t("noDevicesDesc")}
             </p>
           </div>
         ) : (
@@ -244,7 +243,7 @@ export function TrustedDevicesCard() {
                             {getDeviceName(device)}
                           </h4>
                           {isCurrentDevice && (
-                            <Badge variant="secondary">This device</Badge>
+                            <Badge variant="secondary">{t("thisDevice")}</Badge>
                           )}
                         </div>
                         <div className="mt-2 space-y-1 text-sm text-muted-foreground">
@@ -253,7 +252,7 @@ export function TrustedDevicesCard() {
                               <Chrome className="h-3 w-3" />
                               <span>
                                 {device.browser}
-                                {device.os && ` on ${device.os}`}
+                                {device.os && ` ${t("on")} ${device.os}`}
                               </span>
                             </div>
                           )}
@@ -272,7 +271,7 @@ export function TrustedDevicesCard() {
                           <div className="flex items-center gap-2">
                             <Clock className="h-3 w-3" />
                             <span>
-                              Last seen: {formatDate(device.lastSeenAt)}
+                              {t("lastSeen")} {formatDate(device.lastSeenAt)}
                             </span>
                           </div>
                         </div>
@@ -306,17 +305,15 @@ export function TrustedDevicesCard() {
         )}
       </CardContent>
 
-      {/* Delete Device Dialog */}
       <AlertDialog
         open={!!deviceToDelete}
         onOpenChange={() => setDeviceToDelete(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Trusted Device</AlertDialogTitle>
+            <AlertDialogTitle>{t("removeTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove this device? You will need to
-              verify this device again on your next login.
+              {t("removeDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -330,7 +327,6 @@ export function TrustedDevicesCard() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Rename Device Dialog */}
       <Dialog
         open={!!deviceToRename}
         onOpenChange={() => {
@@ -340,19 +336,19 @@ export function TrustedDevicesCard() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rename Device</DialogTitle>
+            <DialogTitle>{t("renameTitle")}</DialogTitle>
             <DialogDescription>
-              Give this device a memorable name to easily identify it.
+              {t("renameDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="device-name">Device Name</Label>
+              <Label htmlFor="device-name">{t("deviceName")}</Label>
               <Input
                 id="device-name"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder="My MacBook Pro"
+                placeholder={t("deviceNamePlaceholder")}
               />
             </div>
           </div>
@@ -367,24 +363,21 @@ export function TrustedDevicesCard() {
               Cancel
             </Button>
             <Button onClick={handleRenameDevice} disabled={!newName.trim()}>
-              Save
+              {t("save")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Revoke All Devices Dialog */}
       <AlertDialog
         open={showRevokeAllDialog}
         onOpenChange={setShowRevokeAllDialog}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Revoke All Other Devices</AlertDialogTitle>
+            <AlertDialogTitle>{t("revokeAllTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove all trusted devices except your current one. You
-              will need to verify those devices again on your next login from
-              them.
+              {t("revokeAllDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -393,7 +386,7 @@ export function TrustedDevicesCard() {
               onClick={handleRevokeAllDevices}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Revoke All
+              {t("revokeAllButton")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

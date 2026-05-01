@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import {
   Popover,
   PopoverContent,
@@ -67,6 +68,7 @@ function normalizeHexColor(color: string): string {
  * Displays a color swatch button that opens a popover with color options
  */
 export function ColorPicker({ value, onChange, label }: ColorPickerProps) {
+  const t = useTranslations("bio");
   const [hexInput, setHexInput] = React.useState(value);
   const [open, setOpen] = React.useState(false);
   const [recentColors, setRecentColors] = React.useState<string[]>([]);

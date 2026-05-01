@@ -1,22 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button, Input, Label, Alert, AlertDescription } from "@pingtome/ui";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
-const forgotPasswordSchema = z.object({
-  email: z.string().email("Invalid email address"),
-});
+const createForgotPasswordSchema = (t: (key: string) => string) =>
+  z.object({
+    email: z.string().email(t("invalidEmail")),
+  });
 
-type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
+type ForgotPasswordFormData = z.infer<ReturnType<typeof createForgotPasswordSchema>>;
 
 export function ForgotPasswordForm() {
+  const t = useTranslations("auth.forgotPassword");
+  const tv = useTranslations("auth.forgotPassword.validation");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const forgotPasswordSchema = useMemo(() => createForgotPasswordSchema(tv), [tv]);
 
   const {
     register,
@@ -56,8 +62,7 @@ export function ForgotPasswordForm() {
     return (
       <Alert className="bg-green-50 border-green-200 text-green-800">
         <AlertDescription>
-          If an account exists with that email, we have sent a password reset
-          link.
+          {t("successMessage")}
         </AlertDescription>
       </Alert>
     );
@@ -68,10 +73,10 @@ export function ForgotPasswordForm() {
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("emailLabel")}</Label>
             <Input
               id="email"
-              placeholder="name@example.com"
+              placeholder={t("emailPlaceholder")}
               type="email"
               autoCapitalize="none"
               autoComplete="email"
@@ -92,7 +97,7 @@ export function ForgotPasswordForm() {
             {isLoading && (
               <span className="mr-2 h-4 w-4 animate-spin">...</span>
             )}
-            Send Reset Link
+            {t("sendResetLink")}
           </Button>
         </div>
       </form>
@@ -101,7 +106,7 @@ export function ForgotPasswordForm() {
           href="/login"
           className="underline underline-offset-4 hover:text-primary"
         >
-          Back to Login
+          {t("backToLogin")}
         </Link>
       </div>
     </div>

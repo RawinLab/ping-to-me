@@ -1,40 +1,43 @@
 import Link from "next/link";
 import { Github, Twitter, Linkedin } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
-const footerLinks = {
-  Product: [
-    { name: "Features", href: "#features" },
-    { name: "Pricing", href: "#pricing" },
-    { name: "Integrations", href: "#integrations" },
-    { name: "API", href: "/api" },
-    { name: "Changelog", href: "/changelog" },
-  ],
-  Resources: [
-    { name: "Documentation", href: "/docs" },
-    { name: "Blog", href: "/blog" },
-    { name: "Help Center", href: "/help" },
-    { name: "Status", href: "/status" },
-  ],
-  Company: [
-    { name: "About", href: "/about" },
-    { name: "Careers", href: "/careers" },
-    { name: "Contact", href: "/contact" },
-    { name: "Partners", href: "/partners" },
-  ],
-  Legal: [
-    { name: "Privacy", href: "/privacy" },
-    { name: "Terms", href: "/terms" },
-    { name: "Cookies", href: "/cookies" },
-  ],
-};
+export async function LandingFooter() {
+  const t = await getTranslations("landing.footer");
 
-const socialLinks = [
-  { name: "Twitter", href: "https://twitter.com", icon: Twitter },
-  { name: "GitHub", href: "https://github.com", icon: Github },
-  { name: "LinkedIn", href: "https://linkedin.com", icon: Linkedin },
-];
+  const footerLinks = {
+    [t("product")]: [
+      { name: t("productLinks.features"), href: "#features" },
+      { name: t("productLinks.pricing"), href: "#pricing" },
+      { name: t("productLinks.integrations"), href: "#integrations" },
+      { name: t("productLinks.api"), href: "/api" },
+      { name: t("productLinks.changelog"), href: "/changelog" },
+    ],
+    [t("resources")]: [
+      { name: t("resourceLinks.documentation"), href: "/docs" },
+      { name: t("resourceLinks.blog"), href: "/blog" },
+      { name: t("resourceLinks.helpCenter"), href: "/help" },
+      { name: t("resourceLinks.status"), href: "/status" },
+    ],
+    [t("company")]: [
+      { name: t("companyLinks.about"), href: "/about" },
+      { name: t("companyLinks.careers"), href: "/careers" },
+      { name: t("companyLinks.contact"), href: "/contact" },
+      { name: t("companyLinks.partners"), href: "/partners" },
+    ],
+    [t("legal")]: [
+      { name: t("legalLinks.privacy"), href: "/privacy" },
+      { name: t("legalLinks.terms"), href: "/terms" },
+      { name: t("legalLinks.cookies"), href: "/cookies" },
+    ],
+  };
 
-export function LandingFooter() {
+  const socialLinks = [
+    { name: "Twitter", href: "https://twitter.com", icon: Twitter },
+    { name: "GitHub", href: "https://github.com", icon: Github },
+    { name: "LinkedIn", href: "https://linkedin.com", icon: Linkedin },
+  ];
+
   return (
     <footer className="bg-slate-900 text-slate-300">
       <div className="container px-4 md:px-6 py-16">
@@ -49,8 +52,7 @@ export function LandingFooter() {
               </span>
             </Link>
             <p className="text-sm text-slate-400 mb-6 max-w-xs">
-              The most powerful link management platform for modern teams.
-              Shorten, track, and optimize your links.
+              {t("description")}
             </p>
             <div className="flex gap-4">
               {socialLinks.map((social) => (
@@ -89,20 +91,20 @@ export function LandingFooter() {
 
         <div className="border-t border-slate-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-slate-400">
-            &copy; {new Date().getFullYear()} PingTO.Me. All rights reserved.
+            {t("copyright", { year: new Date().getFullYear().toString() })}
           </p>
           <div className="flex items-center gap-6">
             <Link
               href="/privacy"
               className="text-sm text-slate-400 hover:text-white transition-colors"
             >
-              Privacy Policy
+              {t("privacyPolicy")}
             </Link>
             <Link
               href="/terms"
               className="text-sm text-slate-400 hover:text-white transition-colors"
             >
-              Terms of Service
+              {t("termsOfService")}
             </Link>
           </div>
         </div>

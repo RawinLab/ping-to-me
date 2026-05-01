@@ -1,0 +1,516 @@
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { apiRequest } from "@/lib/api";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@pingtome/ui";
+import { format } from "date-fns";
+import {
+  Download,
+  Calendar,
+  ExternalLink,
+  TrendingUp,
+  TrendingDown,
+  BarChart3,
+  Link2,
+  MousePointerClick,
+  FileText,
+  ChevronDown,
+} from "lucide-react";
+import {
+  EngagementsChart,
+  LocationsChart,
+  DevicesChart,
+  ReferrersChart,
+  BrowserChart,
+  OSChart,
+} from "@/components/dashboard";
+
+const DEVICE_COLORS = {
+  Desktop: "#3B82F6",
+  Mobile: "#06B6D4",
+  Tablet: "#F97316",
+  Other: "#8B5CF6",
+};
+
+export default function AnalyticsPage() {
+  const t = useTranslations("analytics");
+  const router = useRouter();
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState<"7d" | "30d" | "90d">("30d");
+  const { currentOrg, isLoading: orgLoading } = useOrganization();
+
+  const fetchAnalytics = useCallback(async () => {
+    if (!currentOrg) return;
+    try {
+      setLoading(true);
+      const days = dateRange === "7d" ? 7 : dateRange === "30d" ? 30 : 90;
+      const res = await apiRequest(`/analytics/dashboard?days=${days}`);
+      setData(res);
+    } catch (err) {
+      console.error("Failed to load analytics");
+    } finally {
+      setLoading(false);
+    }
+  }, [dateRange, currentOrg]);
+
+  useEffect(() => {
+    if (!orgLoading && currentOrg) {
+      fetchAnalytics();
+    }
+  }, [fetchAnalytics, orgLoading, currentOrg]);
+
+  const handleExport = async (format: 'csv' | 'pdf' = 'csv') => {
+    try {
+      const token = localStorage.getItem("token");
+      const days = dateRange === "7d" ? 7 : dateRange === "30d" ? 30 : 90;
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      let endpoint: string;
+      if (format === 'pdf') {
+        endpoint = `/analytics/export/pdf?days=${days}`;
+      } else {
+        const params = new URLSearchParams({
+          startDate: startDate.toISOString(),
+          format: "csv",
+        });
+        endpoint = `/analytics/export?${params}`;
+      }
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}${endpoint}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const extension = format === 'pdf' ? 'pdf' : 'csv';
+      a.download = `dashboard-analytics-${new Date().toISOString().split("T")[0]}.${extension}`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(t("failedToExport"));
+    }
+  };
+
+  if (loading && !data) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-pulse text-muted-foreground">
+          {t("loadingAnalytics")}
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-muted-foreground">{t("noData")}</div>
+      </div>
+    );
+  }
+
+  // Process data
+  const totalClicks = data.totalClicks || 0;
+  const allTimeClicks = data.allTimeClicks || totalClicks;
+  const totalLinks = data.totalLinks || 0;
+  const chartData = data.clicksByDate || [];
+  const periodChange = data.periodChange ?? 0;
+
+  // Process location data
+  const countriesData = Object.entries(data.countries || {})
+    .map(([name, value]) => ({
+      name,
+      value: value as number,
+      percentage:
+        totalClicks > 0
+          ? Math.round(((value as number) / totalClicks) * 100)
+          : 0,
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  // Process device data
+  const devicesData = Object.entries(data.devices || {}).map(
+    ([name, value]) => ({
+      name,
+      value: value as number,
+      color:
+        DEVICE_COLORS[name as keyof typeof DEVICE_COLORS] ||
+        DEVICE_COLORS.Other,
+    }),
+  );
+
+  // Process browser data
+  const browsersData = Object.entries(data.browsers || {}).map(
+    ([name, value]) => ({
+      name,
+      value: value as number,
+    }),
+  );
+
+  // Process OS data
+  const osData = Object.entries(data.os || {}).map(([name, value]) => ({
+    name,
+    value: value as number,
+  }));
+
+  // Process referrers data
+  const referrersData = Object.entries(data.referrers || {})
+    .map(([name, value]) => ({
+      name,
+      value: value as number,
+      percentage:
+        totalClicks > 0
+          ? Math.round(((value as number) / totalClicks) * 100)
+          : 0,
+    }))
+    .sort((a, b) => b.value - a.value);
+
+  return (
+    <div className="p-6 lg:p-8 space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-slate-900">
+              {t("analyticsOverview")}
+            </h1>
+            <p className="text-slate-500 mt-1">
+              {t("trackPerformance")}
+            </p>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Download className="h-4 w-4 mr-2" />
+                {t("export")}
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport('csv')}>
+                <Download className="h-4 w-4 mr-2" />
+                {t("exportCsv")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                <FileText className="h-4 w-4 mr-2" />
+                {t("exportPdf")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-blue-600">
+                    {t("totalEngagements")}
+                  </p>
+                  <p className="text-4xl font-bold tracking-tight">
+                    {totalClicks.toLocaleString()}
+                  </p>
+                  {periodChange !== undefined && (
+                    <div className="flex items-center gap-1 text-sm">
+                      {periodChange > 0 ? (
+                        <TrendingUp className="h-4 w-4 text-emerald-500" />
+                      ) : periodChange < 0 ? (
+                        <TrendingDown className="h-4 w-4 text-red-500" />
+                      ) : null}
+                      <span
+                        className={
+                          periodChange > 0
+                            ? "text-emerald-500"
+                            : periodChange < 0
+                              ? "text-red-500"
+                              : "text-muted-foreground"
+                        }
+                      >
+                        {periodChange > 0 ? "+" : ""}
+                        {periodChange}% {t("vsPreviousPeriod")}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="p-3 bg-blue-50 rounded-xl">
+                  <MousePointerClick className="h-6 w-6 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-slate-500">
+                    {t("activeLinks")}
+                  </p>
+                  <p className="text-4xl font-bold tracking-tight">
+                    {totalLinks.toLocaleString()}
+                  </p>
+                </div>
+                <div className="p-3 bg-emerald-50 rounded-xl">
+                  <Link2 className="h-6 w-6 text-emerald-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="overflow-hidden border-0 shadow-md hover:shadow-lg transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-slate-500">
+                    {t("avgPerLink")}
+                  </p>
+                  <p className="text-4xl font-bold tracking-tight">
+                    {totalLinks > 0
+                      ? Math.round(totalClicks / totalLinks).toLocaleString()
+                      : 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("clicksInDays", {
+                      days: dateRange === "7d"
+                        ? "7"
+                        : dateRange === "30d"
+                          ? "30"
+                          : "90"
+                    })}
+                  </p>
+                </div>
+                <div className="p-3 bg-purple-50 rounded-xl">
+                  <BarChart3 className="h-6 w-6 text-purple-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Date Range Selector */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <Calendar className="h-4 w-4" />
+            <span>
+              {format(
+                new Date(
+                  Date.now() -
+                    (dateRange === "7d" ? 7 : dateRange === "30d" ? 30 : 90) *
+                      24 *
+                      60 *
+                      60 *
+                      1000,
+                ),
+                "MMM d, yyyy",
+              )}
+              {" → "}
+              {format(new Date(), "MMM d, yyyy")}
+            </span>
+          </div>
+          <div className="flex bg-slate-100 rounded-lg p-1">
+            {(["7d", "30d", "90d"] as const).map((range) => (
+              <button
+                key={range}
+                onClick={() => setDateRange(range)}
+                disabled={loading}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  dateRange === range
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                } ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                {range === "7d"
+                  ? t("7days")
+                  : range === "30d"
+                    ? t("30days")
+                    : t("90days")}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Engagements Chart */}
+        <EngagementsChart data={chartData} onExport={handleExport} />
+
+        {/* Top Performing Links */}
+        {data.topLinks && data.topLinks.length > 0 && (
+          <Card className="overflow-hidden border-0 shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between border-b bg-slate-50/50">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-emerald-600" />
+                {t("topPerformingLinks")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50/50">
+                    <TableHead className="font-semibold">#</TableHead>
+                    <TableHead className="font-semibold">{t("link")}</TableHead>
+                    <TableHead className="font-semibold text-right">
+                      {t("clicks")}
+                    </TableHead>
+                    <TableHead className="font-semibold text-right">
+                      {t("actions")}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.topLinks.map((link: any, index: number) => (
+                    <TableRow key={link.id} className="hover:bg-slate-50/50">
+                      <TableCell className="font-medium text-muted-foreground w-12">
+                        {index + 1}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center border border-slate-200">
+                            <img
+                              src={`https://www.google.com/s2/favicons?domain=${link.originalUrl ? new URL(link.originalUrl).hostname : ""}&sz=16`}
+                              alt=""
+                              className="w-4 h-4"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display =
+                                  "none";
+                              }}
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-slate-900 truncate">
+                              {link.title ||
+                                (link.originalUrl
+                                  ? new URL(link.originalUrl).hostname
+                                  : link.slug)}
+                            </p>
+                            <p className="text-xs text-blue-600 truncate">
+                              pingto.me/{link.slug}
+                            </p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-blue-50 text-blue-700">
+                          {link.clicks.toLocaleString()}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            router.push(`/dashboard/links/${link.id}/analytics`)
+                          }
+                        >
+                          {t("view")}
+                          <ExternalLink className="h-3 w-3 ml-1" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Locations */}
+        <LocationsChart
+          countries={countriesData}
+          cities={[]}
+          onExport={handleExport}
+        />
+
+        {/* Referrers and Devices */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <ReferrersChart
+            data={referrersData}
+            totalClicks={totalClicks}
+            onExport={handleExport}
+          />
+          <DevicesChart
+            data={devicesData}
+            totalClicks={totalClicks}
+            onExport={handleExport}
+          />
+        </div>
+
+        {/* Browsers and Operating Systems */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <BrowserChart
+            data={browsersData}
+            totalClicks={totalClicks}
+            onExport={handleExport}
+          />
+          <OSChart
+            data={osData}
+            totalClicks={totalClicks}
+            onExport={handleExport}
+          />
+        </div>
+
+        {/* Recent Activity */}
+        {data.recentClicks && data.recentClicks.length > 0 && (
+          <Card className="overflow-hidden border-0 shadow-md">
+            <CardHeader className="flex flex-row items-center justify-between border-b bg-slate-50/50">
+              <CardTitle className="text-lg font-semibold">
+                {t("recentActivity")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50/50">
+                    <TableHead className="font-semibold">{t("time")}</TableHead>
+                    <TableHead className="font-semibold">{t("linkCol")}</TableHead>
+                    <TableHead className="font-semibold">{t("country")}</TableHead>
+                    <TableHead className="font-semibold">{t("referrer")}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.recentClicks.map((click: any) => (
+                    <TableRow key={click.id} className="hover:bg-slate-50/50">
+                      <TableCell className="font-medium">
+                        {format(new Date(click.timestamp), "MMM d, HH:mm")}
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-blue-600 text-sm">
+                          pingto.me/{click.link?.slug || "—"}
+                        </span>
+                      </TableCell>
+                      <TableCell>{click.country || t("unknown")}</TableCell>
+                      <TableCell className="max-w-xs truncate text-slate-500">
+                        {click.referrer || t("direct")}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+    </div>
+  );
+}

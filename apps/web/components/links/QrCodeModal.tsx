@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { apiRequest } from "@/lib/api";
 import {
   Dialog,
@@ -23,6 +24,7 @@ interface QrCodeModalProps {
 }
 
 export function QrCodeModal({ isOpen, onClose, link }: QrCodeModalProps) {
+  const t = useTranslations("qr");
   const [color, setColor] = useState("#000000");
   const [bgcolor, setBgcolor] = useState("#ffffff");
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -67,7 +69,7 @@ export function QrCodeModal({ isOpen, onClose, link }: QrCodeModalProps) {
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Customize QR Code</DialogTitle>
+          <DialogTitle>{t("customizeQrCode")}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="flex justify-center p-4 bg-gray-50 rounded-lg border min-h-[200px] items-center">
@@ -76,12 +78,12 @@ export function QrCodeModal({ isOpen, onClose, link }: QrCodeModalProps) {
             ) : qrDataUrl ? (
               <img src={qrDataUrl} alt="QR Code" className="w-48 h-48" />
             ) : (
-              <p className="text-sm text-muted-foreground">Generating...</p>
+              <p className="text-sm text-muted-foreground">{t("generating")}</p>
             )}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="color">Foreground Color</Label>
+              <Label htmlFor="color">{t("foregroundColor")}</Label>
               <div className="flex gap-2">
                 <Input
                   id="color"
@@ -98,7 +100,7 @@ export function QrCodeModal({ isOpen, onClose, link }: QrCodeModalProps) {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="bgcolor">Background Color</Label>
+              <Label htmlFor="bgcolor">{t("backgroundColor")}</Label>
               <div className="flex gap-2">
                 <Input
                   id="bgcolor"
@@ -121,7 +123,7 @@ export function QrCodeModal({ isOpen, onClose, link }: QrCodeModalProps) {
             Close
           </Button>
           <Button onClick={handleDownload} disabled={!qrDataUrl || loading}>
-            <Download className="mr-2 h-4 w-4" /> Download PNG
+            <Download className="mr-2 h-4 w-4" /> {t("downloadPng")}
           </Button>
         </div>
       </DialogContent>

@@ -1,36 +1,52 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import createMiddleware from 'next-intl/middleware';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { routing } from './i18n/routing';
 
-export function middleware(request: NextRequest) {
-  // Check for refresh token cookie
-  const refreshToken = request.cookies.get("refresh_token");
+const intlMiddleware = createMiddleware(routing);
+
+function stripLocalePrefix(pathname: string): string {
+  for (const locale of routing.locales) {
+    if (pathname === `/${locale}` || pathname.startsWith(`/${locale}/`)) {
+      return pathname.slice(`/${locale}`.length) || '/';
+    }
+  }
+  return pathname;
+}
+
+export default async function middleware(request: NextRequest) {
+  const refreshToken = request.cookies.get('refresh_token');
+  const pathnameWithoutLocale = stripLocalePrefix(request.nextUrl.pathname);
+
   const isAuthPage =
-    request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/register") ||
-    request.nextUrl.pathname.startsWith("/forgot-password") ||
-    request.nextUrl.pathname.startsWith("/reset-password");
+    pathnameWithoutLocale.startsWith('/login') ||
+    pathnameWithoutLocale.startsWith('/register') ||
+    pathnameWithoutLocale.startsWith('/forgot-password') ||
+    pathnameWithoutLocale.startsWith('/reset-password');
 
   if (
     !refreshToken &&
     !isAuthPage &&
-    request.nextUrl.pathname.startsWith("/dashboard")
+    pathnameWithoutLocale.startsWith('/dashboard')
   ) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    const url = request.nextUrl.clone();
+    url.pathname = '/login';
+    return NextResponse.redirect(url);
   }
 
   if (refreshToken && isAuthPage) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    const url = request.nextUrl.clone();
+    url.pathname = '/dashboard';
+    return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  return intlMiddleware(request);
 }
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
-    "/login",
-    "/register",
-    "/forgot-password",
-    "/reset-password",
+    '/((?!api|trpc|_next|_vercel|.*\\..*).*)',
+    '/',
+    '/(th|en)/:path*',
   ],
 };

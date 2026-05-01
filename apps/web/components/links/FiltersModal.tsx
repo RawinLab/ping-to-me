@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -32,36 +33,13 @@ export interface FilterValues {
   folderId: string;
 }
 
-const LINK_TYPES = [
-  { value: "all", label: "All" },
-  { value: "standard", label: "Standard links" },
-  { value: "bio", label: "Bio page links" },
-];
-
-const QR_CODE_OPTIONS = [
-  { value: "all", label: "Links with or without attached QR Codes" },
-  { value: "with", label: "Links with attached QR Codes" },
-  { value: "without", label: "Links without attached QR Codes" },
-];
-
-interface Campaign {
-  id: string;
-  name: string;
-  status: string;
-}
-
-interface FolderItem {
-  id: string;
-  name: string;
-  color: string;
-}
-
 export function FiltersModal({
   isOpen,
   onClose,
   onApply,
   initialFilters,
 }: FiltersModalProps) {
+  const t = useTranslations("links.filters");
   const [tags, setTags] = useState<{ id: string; name: string }[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [folders, setFolders] = useState<FolderItem[]>([]);
@@ -77,6 +55,30 @@ export function FiltersModal({
   );
   const [folderId, setFolderId] = useState(initialFilters?.folderId || "all");
   const [tagsDropdownOpen, setTagsDropdownOpen] = useState(false);
+
+  const LINK_TYPES = [
+    { value: "all", label: t("all") },
+    { value: "standard", label: t("standardLinks") },
+    { value: "bio", label: t("bioPageLinks") },
+  ];
+
+  const QR_CODE_OPTIONS = [
+    { value: "all", label: t("qrAll") },
+    { value: "with", label: t("qrWith") },
+    { value: "without", label: t("qrWithout") },
+  ];
+
+  interface Campaign {
+    id: string;
+    name: string;
+    status: string;
+  }
+
+  interface FolderItem {
+    id: string;
+    name: string;
+    color: string;
+  }
 
   useEffect(() => {
     if (isOpen) {
@@ -145,14 +147,13 @@ export function FiltersModal({
       <DialogContent className="sm:max-w-[420px] p-0">
         <DialogHeader className="p-6 pb-4 border-b">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold">Filters</DialogTitle>
+            <DialogTitle className="text-xl font-semibold">{t("filters")}</DialogTitle>
           </div>
         </DialogHeader>
 
         <div className="p-6 space-y-6">
-          {/* Tags filter */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Tags</label>
+            <label className="text-sm font-medium text-slate-700">{t("tags")}</label>
             <div className="relative">
               <button
                 onClick={() => setTagsDropdownOpen(!tagsDropdownOpen)}
@@ -160,8 +161,8 @@ export function FiltersModal({
               >
                 <span className="text-slate-600">
                   {selectedTags.length > 0
-                    ? `${selectedTags.length} tag(s) selected`
-                    : "Select tags"}
+                    ? t("tagsSelected", { count: selectedTags.length })
+                    : t("selectTags")}
                 </span>
                 <ChevronDown
                   className={`h-4 w-4 text-slate-400 transition-transform ${tagsDropdownOpen ? "rotate-180" : ""}`}
@@ -172,7 +173,7 @@ export function FiltersModal({
                 <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-auto">
                   {tags.length === 0 ? (
                     <div className="px-3 py-2 text-sm text-slate-500">
-                      No tags available
+                      {t("noTagsAvailable")}
                     </div>
                   ) : (
                     tags.map((tag) => (
@@ -211,17 +212,16 @@ export function FiltersModal({
             </div>
           </div>
 
-          {/* Campaign filter */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">
-              Campaign
+              {t("campaign")}
             </label>
             <Select value={campaignId} onValueChange={setCampaignId}>
               <SelectTrigger>
-                <SelectValue placeholder="All campaigns" />
+                <SelectValue placeholder={t("allCampaigns")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All campaigns</SelectItem>
+                <SelectItem value="all">{t("allCampaigns")}</SelectItem>
                 {campaigns.map((campaign) => (
                   <SelectItem key={campaign.id} value={campaign.id}>
                     <div className="flex items-center gap-2">
@@ -245,15 +245,14 @@ export function FiltersModal({
             </Select>
           </div>
 
-          {/* Folder filter */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-700">Folder</label>
+            <label className="text-sm font-medium text-slate-700">{t("folder")}</label>
             <Select value={folderId} onValueChange={setFolderId}>
               <SelectTrigger>
-                <SelectValue placeholder="All folders" />
+                <SelectValue placeholder={t("allFolders")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All folders</SelectItem>
+                <SelectItem value="all">{t("allFolders")}</SelectItem>
                 {folders.map((folder) => (
                   <SelectItem key={folder.id} value={folder.id}>
                     <div className="flex items-center gap-2">
@@ -269,10 +268,9 @@ export function FiltersModal({
             </Select>
           </div>
 
-          {/* Link type filter */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">
-              Link type
+              {t("linkType")}
             </label>
             <Select value={linkType} onValueChange={setLinkType}>
               <SelectTrigger>
@@ -288,10 +286,9 @@ export function FiltersModal({
             </Select>
           </div>
 
-          {/* QR Code filter */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700">
-              Attached QR Code
+              {t("attachedQrCode")}
             </label>
             <Select value={hasQrCode} onValueChange={setHasQrCode}>
               <SelectTrigger>
@@ -308,20 +305,19 @@ export function FiltersModal({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex items-center justify-between p-6 pt-4 border-t bg-slate-50">
           <button
             onClick={handleClearAll}
             className="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-800"
           >
             <X className="h-4 w-4" />
-            Clear all filters
+            {t("clearAllFilters")}
           </button>
           <div className="flex gap-2">
             <Button variant="outline" onClick={onClose}>
-              Cancel
+              {t("common.cancel")}
             </Button>
-            <Button onClick={handleApply}>Apply</Button>
+            <Button onClick={handleApply}>{t("apply")}</Button>
           </div>
         </div>
       </DialogContent>

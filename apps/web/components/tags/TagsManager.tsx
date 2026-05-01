@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { apiRequest } from "@/lib/api";
 import {
   Button,
@@ -22,6 +23,7 @@ interface Tag {
 }
 
 export function TagsManager() {
+  const t = useTranslations("tags");
   const { currentOrg } = useOrganization();
   const [tags, setTags] = useState<Tag[]>([]);
   const [newTag, setNewTag] = useState("");
@@ -60,17 +62,17 @@ export function TagsManager() {
       setNewTag("");
       fetchTags();
     } catch (error) {
-      alert("Failed to create tag");
+      alert(t("failedToCreateTag"));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this tag?")) return;
+    if (!confirm(t("deleteThisTag"))) return;
     try {
       await apiRequest(`/tags/${id}`, { method: "DELETE" });
       fetchTags();
     } catch (error) {
-      alert("Failed to delete tag");
+      alert(t("failedToDeleteTag"));
     }
   };
 
@@ -78,15 +80,15 @@ export function TagsManager() {
     <div className="space-y-4">
       <div className="flex items-end gap-4">
         <div className="grid gap-2">
-          <label className="text-sm font-medium">Tag Name</label>
+          <label className="text-sm font-medium">{t("tagName")}</label>
           <Input
             value={newTag}
             onChange={(e) => setNewTag(e.target.value)}
-            placeholder="e.g. Marketing"
+            placeholder={t("tagNamePlaceholder2")}
           />
         </div>
         <div className="grid gap-2">
-          <label className="text-sm font-medium">Color</label>
+          <label className="text-sm font-medium">{t("tagColor")}</label>
           <div className="flex items-center gap-2">
             <Input
               type="color"
@@ -102,7 +104,7 @@ export function TagsManager() {
           </div>
         </div>
         <Button onClick={handleCreate}>
-          <Plus className="mr-2 h-4 w-4" /> Add Tag
+          <Plus className="mr-2 h-4 w-4" /> {t("createTag")}
         </Button>
       </div>
 
@@ -110,16 +112,16 @@ export function TagsManager() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Color</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>{t("tagColor")}</TableHead>
+              <TableHead>{t("tagName")}</TableHead>
+              <TableHead className="text-right">{t("actionsCol")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {tags.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={3} className="text-center h-24">
-                  No tags found.
+                  {t("noTagsFound")}
                 </TableCell>
               </TableRow>
             ) : (

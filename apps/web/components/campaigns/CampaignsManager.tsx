@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { apiRequest } from "@/lib/api";
 import {
   Button,
@@ -24,6 +25,7 @@ interface Campaign {
 }
 
 export function CampaignsManager() {
+  const t = useTranslations("campaigns");
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
@@ -59,17 +61,17 @@ export function CampaignsManager() {
       setNewDesc("");
       fetchCampaigns();
     } catch (error) {
-      alert("Failed to create campaign");
+      alert(t("failedToCreateCampaign"));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this campaign?")) return;
+    if (!confirm(t("deleteThisCampaign"))) return;
     try {
       await apiRequest(`/campaigns/${id}`, { method: "DELETE" });
       fetchCampaigns();
     } catch (error) {
-      alert("Failed to delete campaign");
+      alert(t("failedToDeleteCampaign"));
     }
   };
 
@@ -77,7 +79,7 @@ export function CampaignsManager() {
     <div className="space-y-4">
       <div className="flex items-end gap-4">
         <div className="grid gap-2">
-          <label className="text-sm font-medium">Campaign Name</label>
+          <label className="text-sm font-medium">{t("campaignName")}</label>
           <Input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
@@ -85,7 +87,7 @@ export function CampaignsManager() {
           />
         </div>
         <div className="grid gap-2 flex-1">
-          <label className="text-sm font-medium">Description</label>
+          <label className="text-sm font-medium">{t("description")}</label>
           <Input
             value={newDesc}
             onChange={(e) => setNewDesc(e.target.value)}
@@ -93,7 +95,7 @@ export function CampaignsManager() {
           />
         </div>
         <Button onClick={handleCreate}>
-          <Plus className="mr-2 h-4 w-4" /> Add Campaign
+          <Plus className="mr-2 h-4 w-4" /> {t("createCampaign")}
         </Button>
       </div>
 
@@ -101,9 +103,9 @@ export function CampaignsManager() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Links</TableHead>
+              <TableHead>{t("campaignName")}</TableHead>
+              <TableHead>{t("description")}</TableHead>
+              <TableHead>{t("links")}</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -111,7 +113,7 @@ export function CampaignsManager() {
             {campaigns.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center h-24">
-                  No campaigns found.
+                  {t("noCampaignsYet")}.
                 </TableCell>
               </TableRow>
             ) : (

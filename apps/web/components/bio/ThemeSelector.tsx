@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@pingtome/ui";
 import {
   THEME_PRESETS,
@@ -17,6 +18,7 @@ interface ThemeSelectorProps {
 }
 
 export function ThemeSelector({ value, onChange }: ThemeSelectorProps) {
+  const t = useTranslations("bio");
   const handleThemeClick = (themeName: string) => {
     onChange(themeName);
   };
@@ -76,10 +78,10 @@ export function ThemeSelector({ value, onChange }: ThemeSelectorProps) {
               </div>
               <div className="space-y-1">
                 <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100 transition-colors duration-200">
-                  Custom
+                  {t("custom")}
                 </h3>
                 <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 transition-colors duration-200">
-                  Create your own custom theme
+                  {t("createCustomTheme")}
                 </p>
               </div>
             </CardContent>

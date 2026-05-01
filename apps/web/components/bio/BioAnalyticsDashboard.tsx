@@ -12,6 +12,7 @@ import {
 } from "@pingtome/ui";
 import { apiRequest } from "@/lib/api";
 import { Eye, MousePointerClick, Users, TrendingUp, Calendar } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   LineChart,
   Line,
@@ -56,6 +57,7 @@ interface LinkClicksData {
 }
 
 export function BioAnalyticsDashboard({ bioPageId }: BioAnalyticsDashboardProps) {
+  const t = useTranslations("bio");
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
   const [timeSeries, setTimeSeries] = useState<TimeSeriesData | null>(null);
   const [linkClicks, setLinkClicks] = useState<LinkClicksData | null>(null);
@@ -103,7 +105,7 @@ export function BioAnalyticsDashboard({ bioPageId }: BioAnalyticsDashboardProps)
         <div className="bg-background border rounded-lg shadow-lg p-3">
           <p className="text-sm font-medium">{payload[0].payload.date}</p>
           <p className="text-sm text-muted-foreground">
-            Views: <span className="font-semibold text-primary">{payload[0].value}</span>
+            {t("viewsLabel")}: <span className="font-semibold text-primary">{payload[0].value}</span>
           </p>
         </div>
       );
@@ -159,7 +161,7 @@ export function BioAnalyticsDashboard({ bioPageId }: BioAnalyticsDashboardProps)
     return (
       <Card className="border-destructive">
         <CardHeader>
-          <CardTitle className="text-destructive">Error Loading Analytics</CardTitle>
+          <CardTitle className="text-destructive">{t("errorLoadingAnalytics")}</CardTitle>
           <CardDescription>{error}</CardDescription>
         </CardHeader>
         <CardContent>
@@ -167,7 +169,7 @@ export function BioAnalyticsDashboard({ bioPageId }: BioAnalyticsDashboardProps)
             onClick={fetchAnalytics}
             className="text-sm text-primary hover:underline"
           >
-            Try again
+            {t("tryAgain")}
           </button>
         </CardContent>
       </Card>
@@ -181,7 +183,7 @@ export function BioAnalyticsDashboard({ bioPageId }: BioAnalyticsDashboardProps)
         {/* Total Views */}
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("totalViews")}</CardTitle>
             <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
               <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </div>
@@ -189,7 +191,7 @@ export function BioAnalyticsDashboard({ bioPageId }: BioAnalyticsDashboardProps)
           <CardContent>
             <div className="text-2xl font-bold">{summary?.totalViews?.toLocaleString() || 0}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Last {days} days
+              {t("lastDays", { days: String(days) })}
             </p>
           </CardContent>
         </Card>
@@ -197,7 +199,7 @@ export function BioAnalyticsDashboard({ bioPageId }: BioAnalyticsDashboardProps)
         {/* Total Clicks */}
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Clicks</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("totalClicks")}</CardTitle>
             <div className="h-8 w-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
               <MousePointerClick className="h-4 w-4 text-green-600 dark:text-green-400" />
             </div>
@@ -205,7 +207,7 @@ export function BioAnalyticsDashboard({ bioPageId }: BioAnalyticsDashboardProps)
           <CardContent>
             <div className="text-2xl font-bold">{summary?.totalClicks?.toLocaleString() || 0}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Link clicks
+              {t("linkClicks")}
             </p>
           </CardContent>
         </Card>
@@ -213,7 +215,7 @@ export function BioAnalyticsDashboard({ bioPageId }: BioAnalyticsDashboardProps)
         {/* Unique Visitors */}
         <Card className="hover:shadow-md transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Unique Visitors</CardTitle>
+            <CardTitle className="text-sm font-medium">{t("uniqueVisitors")}</CardTitle>
             <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
               <Users className="h-4 w-4 text-purple-600 dark:text-purple-400" />
             </div>
@@ -221,7 +223,7 @@ export function BioAnalyticsDashboard({ bioPageId }: BioAnalyticsDashboardProps)
           <CardContent>
             <div className="text-2xl font-bold">{summary?.uniqueVisitors?.toLocaleString() || 0}</div>
             <p className="text-xs text-muted-foreground mt-1">
-              Distinct visitors
+              {t("distinctVisitors")}
             </p>
           </CardContent>
         </Card>
@@ -234,10 +236,10 @@ export function BioAnalyticsDashboard({ bioPageId }: BioAnalyticsDashboardProps)
             <div className="space-y-1">
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-primary" />
-                Views Over Time
+                {t("viewsOverTime")}
               </CardTitle>
               <CardDescription>
-                Daily page views for the last {days} days
+                {t("dailyViews", { days: String(days) })}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -287,7 +289,7 @@ export function BioAnalyticsDashboard({ bioPageId }: BioAnalyticsDashboardProps)
             <div className="h-64 flex items-center justify-center text-muted-foreground">
               <div className="text-center">
                 <Eye className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                <p>No view data available</p>
+                <p>{t("noViewData")}</p>
               </div>
             </div>
           )}
@@ -299,10 +301,10 @@ export function BioAnalyticsDashboard({ bioPageId }: BioAnalyticsDashboardProps)
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MousePointerClick className="h-5 w-5 text-primary" />
-            Top Links by Clicks
+            {t("topLinksByClicks")}
           </CardTitle>
           <CardDescription>
-            Most clicked links on your bio page
+            {t("mostClickedLinks")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -319,7 +321,7 @@ export function BioAnalyticsDashboard({ bioPageId }: BioAnalyticsDashboardProps)
                     </div>
                     <div className="flex items-center gap-3 ml-4">
                       <Badge variant="secondary" className="shrink-0">
-                        {link.clicks.toLocaleString()} clicks
+                        {link.clicks.toLocaleString()} {t("clicksLabel").toLowerCase()}
                       </Badge>
                       <span className="text-sm font-medium text-muted-foreground shrink-0">
                         {link.percentage.toFixed(1)}%
@@ -339,9 +341,9 @@ export function BioAnalyticsDashboard({ bioPageId }: BioAnalyticsDashboardProps)
           ) : (
             <div className="py-12 text-center text-muted-foreground">
               <MousePointerClick className="h-12 w-12 mx-auto mb-3 opacity-20" />
-              <p className="font-medium">No click data yet</p>
+              <p className="font-medium">{t("noClickDataYet")}</p>
               <p className="text-sm mt-1">
-                Clicks will appear here once visitors interact with your links
+                {t("clicksWillAppear")}
               </p>
             </div>
           )}
@@ -352,9 +354,9 @@ export function BioAnalyticsDashboard({ bioPageId }: BioAnalyticsDashboardProps)
       {linkClicks?.linkClicks && linkClicks.linkClicks.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Click Distribution</CardTitle>
+            <CardTitle>{t("clickDistribution")}</CardTitle>
             <CardDescription>
-              Visual breakdown of link clicks
+              {t("visualBreakdown")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -383,10 +385,10 @@ export function BioAnalyticsDashboard({ bioPageId }: BioAnalyticsDashboardProps)
                         <div className="bg-background border rounded-lg shadow-lg p-3">
                           <p className="text-sm font-medium">{payload[0].payload.title}</p>
                           <p className="text-sm text-muted-foreground">
-                            Clicks: <span className="font-semibold text-primary">{payload[0].value}</span>
+                            {t("clicksLabel")}: <span className="font-semibold text-primary">{payload[0].value}</span>
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {payload[0].payload.percentage.toFixed(1)}% of total
+                            {payload[0].payload.percentage.toFixed(1)}% {t("ofTotal")}
                           </p>
                         </div>
                       );

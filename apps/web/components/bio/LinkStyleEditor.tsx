@@ -16,6 +16,7 @@ import {
   CardContent,
 } from "@pingtome/ui";
 import { ColorPicker } from "@/components/bio/ColorPicker";
+import { useTranslations } from "next-intl";
 import {
   ExternalLink,
   Paintbrush,
@@ -67,6 +68,7 @@ export function LinkStyleEditor({
   onClose,
   open,
 }: LinkStyleEditorProps) {
+  const t = useTranslations("bio");
   // Form state
   const [title, setTitle] = React.useState("");
   const [description, setDescription] = React.useState("");
@@ -92,7 +94,7 @@ export function LinkStyleEditor({
     const newErrors: Record<string, string> = {};
 
     if (!title.trim()) {
-      newErrors.title = "Title is required";
+      newErrors.title = t("titleRequired");
     }
 
     setErrors(newErrors);
@@ -158,7 +160,7 @@ export function LinkStyleEditor({
             </div>
             <div>
               <DialogTitle className="text-xl font-semibold">
-                Customize Link Style
+                {t("customizeLinkStyle")}
               </DialogTitle>
               {link && getDisplayUrl() && (
                 <p className="text-sm text-muted-foreground mt-0.5">
@@ -168,8 +170,7 @@ export function LinkStyleEditor({
             </div>
           </div>
           <DialogDescription>
-            Customize the appearance of this link. Changes will be reflected in
-            the preview below.
+            {t("customizeLinkDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -179,7 +180,7 @@ export function LinkStyleEditor({
             {/* Content Section */}
             <div className="space-y-4">
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Content
+                {t("content")}
               </div>
 
               <div className="space-y-2">
@@ -191,7 +192,7 @@ export function LinkStyleEditor({
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter link title"
+                  placeholder={t("enterLinkTitle")}
                   className={`transition-all ${
                     errors.title
                       ? "border-red-500 focus:ring-red-500"
@@ -215,12 +216,12 @@ export function LinkStyleEditor({
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Optional description for the link"
+                  placeholder={t("optionalDescription")}
                   rows={3}
                   className="transition-all focus:ring-2 focus:ring-primary/20"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Optional. Displayed below the title.
+                  {t("optionalDisplayedBelowTitle")}
                 </p>
               </div>
 
@@ -230,7 +231,7 @@ export function LinkStyleEditor({
                   className="flex items-center gap-2"
                 >
                   <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                  Thumbnail URL
+                  {t("thumbnailUrl")}
                 </Label>
                 <Input
                   id="thumbnailUrl"
@@ -241,7 +242,7 @@ export function LinkStyleEditor({
                   className="transition-all focus:ring-2 focus:ring-primary/20"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Optional. URL to an image to display with the link.
+                  {t("optionalThumbnailDescription")}
                 </p>
               </div>
             </div>
@@ -250,7 +251,7 @@ export function LinkStyleEditor({
             <div className="space-y-4 pt-4 border-t">
               <div className="flex items-center justify-between">
                 <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Colors
+                  {t("colors")}
                 </div>
                 <Button
                   type="button"
@@ -260,19 +261,19 @@ export function LinkStyleEditor({
                   className="h-7 px-2 text-xs"
                 >
                   <ArrowLeftRight className="h-3 w-3 mr-1" />
-                  Swap
+                  {t("swap")}
                 </Button>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <ColorPicker
-                  label="Button Color"
+                  label={t("buttonColor")}
                   value={buttonColor}
                   onChange={setButtonColor}
                 />
 
                 <ColorPicker
-                  label="Text Color"
+                  label={t("textColor")}
                   value={textColor}
                   onChange={setTextColor}
                 />
@@ -284,7 +285,7 @@ export function LinkStyleEditor({
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Eye className="h-4 w-4 text-muted-foreground" />
-              <Label className="mb-0 font-semibold">Live Preview</Label>
+              <Label className="mb-0 font-semibold">{t("livePreview")}</Label>
             </div>
 
             {/* Phone frame with preview */}
@@ -337,7 +338,7 @@ export function LinkStyleEditor({
                               color: textColor,
                             }}
                           >
-                            {title || "Link Title"}
+                            {title || t("linkTitle")}
                           </div>
                           {description && (
                             <div
@@ -384,23 +385,23 @@ export function LinkStyleEditor({
                   <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
                   <div className="space-y-2">
                     <p className="text-sm font-semibold text-blue-900">
-                      Design Tips
+                      {t("designTips")}
                     </p>
                     <ul className="text-xs text-blue-800 space-y-1.5">
                       <li className="flex items-start gap-1.5">
                         <span className="text-blue-600 mt-0.5">•</span>
                         <span>
-                          Use contrasting colors for better readability
+                          {t("tipContrastingColors")}
                         </span>
                       </li>
                       <li className="flex items-start gap-1.5">
                         <span className="text-blue-600 mt-0.5">•</span>
-                        <span>Keep titles concise and descriptive</span>
+                        <span>{t("tipConciseTitles")}</span>
                       </li>
                       <li className="flex items-start gap-1.5">
                         <span className="text-blue-600 mt-0.5">•</span>
                         <span>
-                          Thumbnail images work best at square aspect ratios
+                          {t("tipSquareThumbnails")}
                         </span>
                       </li>
                     </ul>
@@ -421,7 +422,7 @@ export function LinkStyleEditor({
             className="gap-2 bg-primary hover:bg-primary/90"
           >
             <Check className="h-4 w-4" />
-            Save Changes
+            {t("saveChanges")}
           </Button>
         </DialogFooter>
       </DialogContent>

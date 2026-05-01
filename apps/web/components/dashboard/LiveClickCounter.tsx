@@ -5,6 +5,7 @@ import { Activity, MousePointerClick, Globe, Monitor } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Badge } from "@pingtome/ui";
 import { useAnalyticsSocket, LiveClickEvent } from "@/hooks/useAnalyticsSocket";
 import { formatDistanceToNow } from "date-fns";
+import { useTranslations } from "next-intl";
 
 interface LiveClickCounterProps {
   linkId?: string;
@@ -20,6 +21,7 @@ export function LiveClickCounter({ linkId, dashboard = false, showFeed = true }:
   });
 
   const [pulse, setPulse] = useState(false);
+  const t = useTranslations("dashboard.live");
 
   // Trigger pulse animation when new click arrives
   useEffect(() => {
@@ -46,7 +48,7 @@ export function LiveClickCounter({ linkId, dashboard = false, showFeed = true }:
           </div>
         </div>
         <span className="text-sm text-muted-foreground">
-          {isConnected ? "Live updates active" : "Connecting..."}
+          {isConnected ? t("liveUpdatesActive") : t("connecting")}
         </span>
 
         {/* Live click count badge */}
@@ -58,7 +60,7 @@ export function LiveClickCounter({ linkId, dashboard = false, showFeed = true }:
             }`}
           >
             <Activity className="mr-1 h-3 w-3" />
-            +{clickCount} live clicks
+            {t("liveClicks", { count: clickCount })}
           </Badge>
         )}
       </div>
@@ -69,10 +71,10 @@ export function LiveClickCounter({ linkId, dashboard = false, showFeed = true }:
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MousePointerClick className="h-5 w-5" />
-              Live Activity
+              {t("liveActivity")}
             </CardTitle>
             <CardDescription>
-              Recent clicks in real-time
+              {t("recentClicksRealtime")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -94,6 +96,7 @@ interface LiveClickItemProps {
 }
 
 function LiveClickItem({ click, isNew }: LiveClickItemProps) {
+  const t = useTranslations("dashboard.live");
   const timeAgo = formatDistanceToNow(new Date(click.timestamp), { addSuffix: true });
 
   return (
@@ -124,12 +127,12 @@ function LiveClickItem({ click, isNew }: LiveClickItemProps) {
 
         <div className="text-xs text-muted-foreground">
           {click.browser && <span>{click.browser}</span>}
-          {click.browser && click.os && <span> on </span>}
+          {click.browser && click.os && <span> {t("on")} </span>}
           {click.os && <span>{click.os}</span>}
           {click.referrer && click.referrer !== "direct" && (
             <>
               {" • "}
-              <span>from {new URL(click.referrer).hostname}</span>
+              <span>{t("from")} {new URL(click.referrer).hostname}</span>
             </>
           )}
         </div>
@@ -149,6 +152,7 @@ export function LiveClickIndicator({ linkId, dashboard = false }: Omit<LiveClick
     dashboard,
     enabled: true,
   });
+  const t = useTranslations("dashboard.live");
 
   const [pulse, setPulse] = useState(false);
 
@@ -174,7 +178,7 @@ export function LiveClickIndicator({ linkId, dashboard = false }: Omit<LiveClick
         </div>
       </div>
 
-      <span className="text-muted-foreground">Live</span>
+      <span className="text-muted-foreground">{t("live")}</span>
 
       {clickCount > 0 && (
         <Badge

@@ -1,29 +1,32 @@
 import { Zap, Shield, Globe, BarChart3 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
-const badges = [
-  {
-    icon: Zap,
-    title: "Free forever plan",
-    description: "No credit card required",
-  },
-  {
-    icon: Globe,
-    title: "Custom domains",
-    description: "Use your own brand",
-  },
-  {
-    icon: Shield,
-    title: "Link safety",
-    description: "Built-in protection",
-  },
-  {
-    icon: BarChart3,
-    title: "Rich analytics",
-    description: "Track every click",
-  },
-];
+export async function TrustBadges() {
+  const t = await getTranslations("landing.trustBadges");
 
-export function TrustBadges() {
+  const badges = [
+    {
+      icon: Zap,
+      title: t("freeForever.title"),
+      description: t("freeForever.description"),
+    },
+    {
+      icon: Globe,
+      title: t("customDomains.title"),
+      description: t("customDomains.description"),
+    },
+    {
+      icon: Shield,
+      title: t("linkSafety.title"),
+      description: t("linkSafety.description"),
+    },
+    {
+      icon: BarChart3,
+      title: t("richAnalytics.title"),
+      description: t("richAnalytics.description"),
+    },
+  ];
+
   return (
     <section className="border-y bg-white">
       <div className="container px-4 md:px-6 py-8">

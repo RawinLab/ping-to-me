@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   Card,
   CardContent,
@@ -108,12 +109,8 @@ const LANGUAGES = [
   { code: "ar", name: "Arabic" },
 ];
 
-const REDIRECT_TYPES = [
-  { value: 301, label: "301 - Permanent" },
-  { value: 302, label: "302 - Temporary" },
-];
-
 export function RedirectRulesManager({ linkId }: RedirectRulesManagerProps) {
+  const t = useTranslations("links.redirectRules");
   const [rules, setRules] = useState<RedirectRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -131,8 +128,8 @@ export function RedirectRulesManager({ linkId }: RedirectRulesManagerProps) {
       const response = await apiRequest(`/links/${linkId}/rules`);
       setRules(response || []);
     } catch (err: any) {
-      setError(err?.message || "Failed to load redirect rules");
-      toast.error("Failed to load redirect rules");
+      setError(err?.message || t("failedToLoad"));
+      toast.error(t("failedToLoad"));
     } finally {
       setLoading(false);
     }
@@ -149,7 +146,7 @@ export function RedirectRulesManager({ linkId }: RedirectRulesManagerProps) {
   };
 
   const handleDeleteRule = async (ruleId: string) => {
-    if (!confirm("Are you sure you want to delete this redirect rule?")) {
+    if (!confirm(t("confirmDeleteRule"))) {
       return;
     }
 
@@ -157,10 +154,10 @@ export function RedirectRulesManager({ linkId }: RedirectRulesManagerProps) {
       await apiRequest(`/links/${linkId}/rules/${ruleId}`, {
         method: "DELETE",
       });
-      toast.success("Redirect rule deleted");
+      toast.success(t("ruleDeleted"));
       fetchRules();
     } catch (err) {
-      toast.error("Failed to delete redirect rule");
+      toast.error(t("failedToDelete"));
     }
   };
 
@@ -172,12 +169,12 @@ export function RedirectRulesManager({ linkId }: RedirectRulesManagerProps) {
       });
       toast.success(
         rule.isActive
-          ? "Redirect rule deactivated"
-          : "Redirect rule activated"
+          ? t("ruleDeactivated")
+          : t("ruleActivated")
       );
       fetchRules();
     } catch (err) {
-      toast.error("Failed to update redirect rule");
+      toast.error(t("failedToUpdate"));
     }
   };
 
@@ -203,9 +200,9 @@ export function RedirectRulesManager({ linkId }: RedirectRulesManagerProps) {
         body: JSON.stringify({ ruleOrder }),
       });
       setRules(reorderedRules);
-      toast.success("Rules reordered");
+      toast.success(t("rulesReordered"));
     } catch (err) {
-      toast.error("Failed to reorder rules");
+      toast.error(t("failedToReorder"));
     }
   };
 
@@ -218,7 +215,7 @@ export function RedirectRulesManager({ linkId }: RedirectRulesManagerProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Smart Redirect Rules</CardTitle>
+          <CardTitle>{t("smartRedirectRules")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Skeleton className="h-32 w-full" />
@@ -233,22 +230,23 @@ export function RedirectRulesManager({ linkId }: RedirectRulesManagerProps) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div>
-            <CardTitle>Smart Redirect Rules</CardTitle>
+            <CardTitle>{t("smartRedirectRules")}</CardTitle>
             <p className="text-sm text-slate-500 mt-1">
-              Redirect users to different URLs based on conditions
+              {t("smartRedirectDesc")}
             </p>
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={handleAddRule}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Rule
+                {t("addRule")}
               </Button>
             </DialogTrigger>
             <RuleDialog
               linkId={linkId}
               rule={editingRule}
               onSuccess={handleDialogSuccess}
+              t={t}
             />
           </Dialog>
         </CardHeader>
@@ -263,10 +261,9 @@ export function RedirectRulesManager({ linkId }: RedirectRulesManagerProps) {
           {rules.length === 0 ? (
             <div className="text-center py-8 text-slate-500">
               <Globe className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>No redirect rules configured</p>
+              <p>{t("noRulesConfigured")}</p>
               <p className="text-sm mt-1">
-                Add rules to redirect users based on their location, device, or
-                other conditions
+                {t("noRulesDesc")}
               </p>
             </div>
           ) : (
@@ -281,6 +278,7 @@ export function RedirectRulesManager({ linkId }: RedirectRulesManagerProps) {
                   onDelete={handleDeleteRule}
                   onToggleActive={handleToggleActive}
                   onMove={handleMoveRule}
+                  t={t}
                 />
               ))}
             </div>
@@ -299,6 +297,7 @@ interface RuleCardProps {
   onDelete: (ruleId: string) => void;
   onToggleActive: (rule: RedirectRule) => void;
   onMove: (ruleId: string, direction: "up" | "down") => void;
+  t: any;
 }
 
 function RuleCard({
@@ -309,6 +308,7 @@ function RuleCard({
   onDelete,
   onToggleActive,
   onMove,
+  t,
 }: RuleCardProps) {
   const hasConditions =
     rule.countries ||
@@ -354,12 +354,12 @@ function RuleCard({
           <div className="flex-1 space-y-2">
             {/* Target URL */}
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Redirect to:</span>
+              <span className="text-sm font-medium">{t("redirectTo")}</span>
               <code className="text-sm bg-slate-100 px-2 py-1 rounded">
                 {rule.targetUrl}
               </code>
               <Badge variant="outline" className="ml-auto">
-                {rule.redirectType === 301 ? "301 Permanent" : "302 Temporary"}
+                {rule.redirectType === 301 ? t("permanent") : t("temporary")}
               </Badge>
             </div>
 
@@ -369,7 +369,7 @@ function RuleCard({
                 {rule.countries && rule.countries.length > 0 && (
                   <div className="flex items-center gap-1">
                     <Globe className="h-3 w-3 text-slate-500" />
-                    <span className="text-slate-600">Countries:</span>
+                    <span className="text-slate-600">{t("countries")}</span>
                     <span className="font-medium">
                       {rule.countries.join(", ")}
                     </span>
@@ -379,7 +379,7 @@ function RuleCard({
                 {rule.devices && rule.devices.length > 0 && (
                   <div className="flex items-center gap-1">
                     <Smartphone className="h-3 w-3 text-slate-500" />
-                    <span className="text-slate-600">Devices:</span>
+                    <span className="text-slate-600">{t("devices")}</span>
                     <span className="font-medium">
                       {rule.devices.join(", ")}
                     </span>
@@ -389,7 +389,7 @@ function RuleCard({
                 {rule.browsers && rule.browsers.length > 0 && (
                   <div className="flex items-center gap-1">
                     <Chrome className="h-3 w-3 text-slate-500" />
-                    <span className="text-slate-600">Browsers:</span>
+                    <span className="text-slate-600">{t("browsers")}</span>
                     <span className="font-medium">
                       {rule.browsers.join(", ")}
                     </span>
@@ -399,7 +399,7 @@ function RuleCard({
                 {rule.os && rule.os.length > 0 && (
                   <div className="flex items-center gap-1">
                     <Monitor className="h-3 w-3 text-slate-500" />
-                    <span className="text-slate-600">OS:</span>
+                    <span className="text-slate-600">{t("os")}</span>
                     <span className="font-medium">{rule.os.join(", ")}</span>
                   </div>
                 )}
@@ -407,7 +407,7 @@ function RuleCard({
                 {rule.languages && rule.languages.length > 0 && (
                   <div className="flex items-center gap-1">
                     <Globe className="h-3 w-3 text-slate-500" />
-                    <span className="text-slate-600">Languages:</span>
+                    <span className="text-slate-600">{t("languages")}</span>
                     <span className="font-medium">
                       {rule.languages.join(", ")}
                     </span>
@@ -417,9 +417,9 @@ function RuleCard({
                 {rule.dateRange && (rule.dateRange.start || rule.dateRange.end) && (
                   <div className="flex items-center gap-1">
                     <Calendar className="h-3 w-3 text-slate-500" />
-                    <span className="text-slate-600">Date:</span>
+                    <span className="text-slate-600">{t("date")}</span>
                     <span className="font-medium">
-                      {rule.dateRange.start || "..."} to{" "}
+                      {rule.dateRange.start || "..."} {t("to")}{" "}
                       {rule.dateRange.end || "..."}
                     </span>
                   </div>
@@ -428,9 +428,9 @@ function RuleCard({
                 {rule.timeRange && (rule.timeRange.start || rule.timeRange.end) && (
                   <div className="flex items-center gap-1">
                     <Clock className="h-3 w-3 text-slate-500" />
-                    <span className="text-slate-600">Time:</span>
+                    <span className="text-slate-600">{t("time")}</span>
                     <span className="font-medium">
-                      {rule.timeRange.start || "..."} to{" "}
+                      {rule.timeRange.start || "..."} {t("to")}{" "}
                       {rule.timeRange.end || "..."}
                     </span>
                   </div>
@@ -472,9 +472,10 @@ interface RuleDialogProps {
   linkId: string;
   rule: RedirectRule | null;
   onSuccess: () => void;
+  t: any;
 }
 
-function RuleDialog({ linkId, rule, onSuccess }: RuleDialogProps) {
+function RuleDialog({ linkId, rule, onSuccess, t }: RuleDialogProps) {
   const [saving, setSaving] = useState(false);
 
   // Form state
@@ -540,7 +541,7 @@ function RuleDialog({ linkId, rule, onSuccess }: RuleDialogProps) {
     e.preventDefault();
 
     if (!targetUrl) {
-      toast.error("Target URL is required");
+      toast.error(t("targetUrlRequired"));
       return;
     }
 
@@ -572,18 +573,18 @@ function RuleDialog({ linkId, rule, onSuccess }: RuleDialogProps) {
           method: "PUT",
           body: JSON.stringify(payload),
         });
-        toast.success("Redirect rule updated");
+        toast.success(t("ruleUpdated"));
       } else {
         // Create new rule
         await apiRequest(`/links/${linkId}/rules`, {
           method: "POST",
           body: JSON.stringify(payload),
         });
-        toast.success("Redirect rule created");
+        toast.success(t("ruleCreated"));
       }
       onSuccess();
     } catch (err: any) {
-      toast.error(err?.message || "Failed to save redirect rule");
+      toast.error(err?.message || t("failedToSave"));
     } finally {
       setSaving(false);
     }
@@ -593,10 +594,10 @@ function RuleDialog({ linkId, rule, onSuccess }: RuleDialogProps) {
     <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>
-          {rule ? "Edit Redirect Rule" : "Add Redirect Rule"}
+          {rule ? t("editRedirectRule") : t("addRedirectRule")}
         </DialogTitle>
         <DialogDescription>
-          Configure conditions to redirect users to different URLs
+          {t("configureConditions")}
         </DialogDescription>
       </DialogHeader>
 
@@ -604,7 +605,7 @@ function RuleDialog({ linkId, rule, onSuccess }: RuleDialogProps) {
         {/* Target URL */}
         <div className="space-y-2">
           <Label htmlFor="targetUrl">
-            Target URL <span className="text-red-500">*</span>
+            {t("targetUrl")} <span className="text-red-500">*</span>
           </Label>
           <Input
             id="targetUrl"
@@ -618,7 +619,7 @@ function RuleDialog({ linkId, rule, onSuccess }: RuleDialogProps) {
 
         {/* Redirect Type */}
         <div className="space-y-2">
-          <Label htmlFor="redirectType">Redirect Type</Label>
+          <Label htmlFor="redirectType">{t("redirectType")}</Label>
           <Select
             value={redirectType.toString()}
             onValueChange={(value) => setRedirectType(Number(value))}
@@ -627,18 +628,15 @@ function RuleDialog({ linkId, rule, onSuccess }: RuleDialogProps) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {REDIRECT_TYPES.map((type) => (
-                <SelectItem key={type.value} value={type.value.toString()}>
-                  {type.label}
-                </SelectItem>
-              ))}
+              <SelectItem value="301">{t("permanent301")}</SelectItem>
+              <SelectItem value="302">{t("temporary302")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Active Toggle */}
         <div className="flex items-center justify-between">
-          <Label htmlFor="isActive">Active</Label>
+          <Label htmlFor="isActive">{t("active")}</Label>
           <Switch
             id="isActive"
             checked={isActive}
@@ -648,14 +646,14 @@ function RuleDialog({ linkId, rule, onSuccess }: RuleDialogProps) {
 
         <div className="border-t pt-4">
           <h3 className="text-sm font-medium mb-4">
-            Conditions (leave empty to match all)
+            {t("conditionsEmpty")}
           </h3>
 
           {/* Countries */}
           <div className="space-y-2 mb-4">
             <Label className="flex items-center gap-2">
               <Globe className="h-4 w-4" />
-              Countries
+              {t("countriesLabel")}
             </Label>
             <Select
               value=""
@@ -666,7 +664,7 @@ function RuleDialog({ linkId, rule, onSuccess }: RuleDialogProps) {
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select countries" />
+                <SelectValue placeholder={t("selectCountries")} />
               </SelectTrigger>
               <SelectContent>
                 {COUNTRIES.filter(
@@ -704,7 +702,7 @@ function RuleDialog({ linkId, rule, onSuccess }: RuleDialogProps) {
           <div className="space-y-2 mb-4">
             <Label className="flex items-center gap-2">
               <Smartphone className="h-4 w-4" />
-              Devices
+              {t("devicesLabel")}
             </Label>
             <div className="flex flex-wrap gap-3">
               {DEVICES.map((device) => (
@@ -731,7 +729,7 @@ function RuleDialog({ linkId, rule, onSuccess }: RuleDialogProps) {
           <div className="space-y-2 mb-4">
             <Label className="flex items-center gap-2">
               <Chrome className="h-4 w-4" />
-              Browsers
+              {t("browsersLabel")}
             </Label>
             <div className="flex flex-wrap gap-3">
               {BROWSERS.map((browser) => (
@@ -762,7 +760,7 @@ function RuleDialog({ linkId, rule, onSuccess }: RuleDialogProps) {
           <div className="space-y-2 mb-4">
             <Label className="flex items-center gap-2">
               <Monitor className="h-4 w-4" />
-              Operating Systems
+              {t("operatingSystems")}
             </Label>
             <div className="flex flex-wrap gap-3">
               {OS_OPTIONS.map((os) => (
@@ -789,7 +787,7 @@ function RuleDialog({ linkId, rule, onSuccess }: RuleDialogProps) {
           <div className="space-y-2 mb-4">
             <Label className="flex items-center gap-2">
               <Globe className="h-4 w-4" />
-              Languages
+              {t("languagesLabel")}
             </Label>
             <Select
               value=""
@@ -800,7 +798,7 @@ function RuleDialog({ linkId, rule, onSuccess }: RuleDialogProps) {
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select languages" />
+                <SelectValue placeholder={t("selectLanguages")} />
               </SelectTrigger>
               <SelectContent>
                 {LANGUAGES.filter(
@@ -838,7 +836,7 @@ function RuleDialog({ linkId, rule, onSuccess }: RuleDialogProps) {
           <div className="space-y-2 mb-4">
             <Label className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              Date Range (optional)
+              {t("dateRangeOptional")}
             </Label>
             <div className="grid grid-cols-2 gap-2">
               <div>
@@ -864,7 +862,7 @@ function RuleDialog({ linkId, rule, onSuccess }: RuleDialogProps) {
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
-              Time Range (optional, HH:mm format)
+              {t("timeRangeOptional")}
             </Label>
             <div className="grid grid-cols-2 gap-2">
               <div>
@@ -889,7 +887,7 @@ function RuleDialog({ linkId, rule, onSuccess }: RuleDialogProps) {
 
         <DialogFooter>
           <Button type="submit" disabled={saving}>
-            {saving ? "Saving..." : rule ? "Update Rule" : "Create Rule"}
+            {saving ? t("saving") : rule ? t("updateRule") : t("createRule")}
           </Button>
         </DialogFooter>
       </form>

@@ -28,6 +28,7 @@ import {
   getButtonStyleClasses,
   getButtonShadowClasses,
 } from "@/lib/biopage-themes";
+import { useTranslations } from "next-intl";
 
 interface BioLink {
   id: string;
@@ -80,6 +81,7 @@ export function BioPageRenderer({
   pageData,
   onLinkClick,
 }: BioPageRendererProps) {
+  const t = useTranslations("bio");
   const {
     title,
     description,
@@ -413,7 +415,7 @@ export function BioPageRenderer({
               className="text-center py-8"
               style={{ color: theme.textColor, opacity: 0.6 }}
             >
-              No links to display.
+              {t("noLinksToDisplay")}
             </div>
           )}
         </div>
@@ -426,7 +428,7 @@ export function BioPageRenderer({
               className="text-xs hover:opacity-80 transition-opacity"
               style={{ color: theme.textColor, opacity: 0.5 }}
             >
-              Powered by PingTO.Me
+              {t("poweredBy")}
             </a>
           </div>
         )}

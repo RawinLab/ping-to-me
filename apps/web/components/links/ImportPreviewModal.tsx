@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -59,6 +60,7 @@ export function ImportPreviewModal({
   onCancel,
   isImporting = false,
 }: ImportPreviewModalProps) {
+  const t = useTranslations("links.importPreview");
   if (!previewData) return null;
 
   const { totalRows, validRows, invalidRows, preview, duplicateSlugs } = previewData;
@@ -68,54 +70,51 @@ export function ImportPreviewModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Import Preview</DialogTitle>
+          <DialogTitle>{t("importPreview")}</DialogTitle>
           <DialogDescription>
-            Review the data before importing. Only valid rows will be imported.
+            {t("importPreviewDesc")}
           </DialogDescription>
         </DialogHeader>
 
-        {/* Summary Stats */}
         <div className="flex gap-4 py-4">
           <div className="flex items-center gap-2 px-4 py-2 bg-muted rounded-lg">
-            <span className="text-sm text-muted-foreground">Total Rows:</span>
+            <span className="text-sm text-muted-foreground">{t("totalRows")}:</span>
             <span className="font-semibold">{totalRows}</span>
           </div>
           <div className="flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-950 rounded-lg">
             <CheckCircle className="h-4 w-4 text-green-600" />
-            <span className="text-sm text-muted-foreground">Valid:</span>
+            <span className="text-sm text-muted-foreground">{t("valid")}:</span>
             <span className="font-semibold text-green-600">{validRows}</span>
           </div>
           {invalidRows > 0 && (
             <div className="flex items-center gap-2 px-4 py-2 bg-red-50 dark:bg-red-950 rounded-lg">
               <XCircle className="h-4 w-4 text-red-600" />
-              <span className="text-sm text-muted-foreground">Invalid:</span>
+              <span className="text-sm text-muted-foreground">{t("invalid")}:</span>
               <span className="font-semibold text-red-600">{invalidRows}</span>
             </div>
           )}
         </div>
 
-        {/* Duplicate Warnings */}
         {duplicateSlugs.length > 0 && (
           <Alert className="mb-4 border-yellow-500/50 text-yellow-800 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/20">
             <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
             <AlertDescription>
-              Duplicate slugs found in file: {duplicateSlugs.join(", ")}
+              {t("duplicateSlugs", { slugs: duplicateSlugs.join(", ") })}
             </AlertDescription>
           </Alert>
         )}
 
-        {/* Preview Table */}
         <div className="flex-1 overflow-auto border rounded-lg">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-16">Row</TableHead>
-                <TableHead className="w-16">Status</TableHead>
-                <TableHead>URL</TableHead>
-                <TableHead>Slug</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Tags</TableHead>
-                <TableHead>Issues</TableHead>
+                <TableHead className="w-16">{t("row")}</TableHead>
+                <TableHead className="w-16">{t("status")}</TableHead>
+                <TableHead>{t("url")}</TableHead>
+                <TableHead>{t("slug")}</TableHead>
+                <TableHead>{t("title")}</TableHead>
+                <TableHead>{t("tags")}</TableHead>
+                <TableHead>{t("issues")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -129,14 +128,14 @@ export function ImportPreviewModal({
                   </TableCell>
                   <TableCell>
                     {row.errors.length > 0 ? (
-                      <Badge variant="destructive">Invalid</Badge>
+                      <Badge variant="destructive">{t("status")}</Badge>
                     ) : row.warnings.length > 0 ? (
                       <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100/80 dark:bg-yellow-950 dark:text-yellow-400">
-                        Warning
+                        {t("warning")}
                       </Badge>
                     ) : (
                       <Badge className="bg-green-100 text-green-800 hover:bg-green-100/80 dark:bg-green-950 dark:text-green-400">
-                        Valid
+                        {t("valid")}
                       </Badge>
                     )}
                   </TableCell>
@@ -187,13 +186,13 @@ export function ImportPreviewModal({
 
         {totalRows > 10 && (
           <p className="text-sm text-muted-foreground text-center py-2">
-            Showing first 10 rows of {totalRows} total rows
+            {t("showingRows", { total: totalRows })}
           </p>
         )}
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onCancel} disabled={isImporting}>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={onConfirm}
@@ -202,10 +201,10 @@ export function ImportPreviewModal({
             {isImporting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Importing...
+                {t("importing")}
               </>
             ) : (
-              <>Import {validRows} Links</>
+              <>{t("importCount", { count: validRows })}</>
             )}
           </Button>
         </DialogFooter>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, Button } from "@pingtome/ui";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { Download, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface ReferrerData {
   name: string;
@@ -29,12 +30,12 @@ const CHART_COLORS = [
 ];
 
 // Format referrer URL for display
-function formatReferrer(referrer: string): {
+function formatReferrer(referrer: string, directLabel: string): {
   display: string;
   url: string | null;
 } {
   if (referrer === "direct" || !referrer) {
-    return { display: "Direct / None", url: null };
+    return { display: directLabel, url: null };
   }
 
   try {
@@ -56,6 +57,7 @@ export function ReferrersChart({
   onExport,
 }: ReferrersChartProps) {
   const [expanded, setExpanded] = useState(false);
+  const t = useTranslations("dashboard.charts");
 
   const chartData = data.map((item, index) => ({
     ...item,
@@ -68,7 +70,7 @@ export function ReferrersChart({
   return (
     <Card className="overflow-hidden h-full">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-xl font-semibold">Referrers</CardTitle>
+        <CardTitle className="text-xl font-semibold">{t("referrers")}</CardTitle>
         {onExport && (
           <Button variant="ghost" size="icon" onClick={onExport}>
             <Download className="h-4 w-4 text-primary" />
@@ -101,13 +103,13 @@ export function ReferrersChart({
                 {totalClicks.toLocaleString()}
               </span>
               <span className="text-xs text-muted-foreground uppercase tracking-wider">
-                ENGAGEMENT
+                {t("engagementLabel")}
               </span>
             </div>
           </div>
           <div className="flex flex-col gap-3 mt-6 w-full">
             {chartData.slice(0, displayCount).map((item) => {
-              const { display, url } = formatReferrer(item.name);
+              const { display, url } = formatReferrer(item.name, t("directNone"));
               return (
                 <div
                   key={item.name}
@@ -151,7 +153,7 @@ export function ReferrersChart({
             })}
             {data.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No referrer data available
+                {t("noReferrerData")}
               </p>
             )}
             {hasMore && (
@@ -162,12 +164,12 @@ export function ReferrersChart({
                 {expanded ? (
                   <>
                     <ChevronUp className="h-4 w-4" />
-                    Show less
+                    {t("showLess")}
                   </>
                 ) : (
                   <>
                     <ChevronDown className="h-4 w-4" />
-                    Show {data.length - 5} more
+                    {t("showMore", { count: data.length - 5 })}
                   </>
                 )}
               </button>

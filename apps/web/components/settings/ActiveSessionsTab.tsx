@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { securityApi, Session } from "@/lib/api/security";
 import {
   Card,
@@ -53,14 +54,14 @@ const maskIpAddress = (ip?: string): string => {
   return ip;
 };
 
-const formatRelativeTime = (dateString?: string): string => {
-  if (!dateString) return "Unknown";
+const formatRelativeTime = (dateString?: string, t?: any): string => {
+  if (!dateString) return t ? t("unknown") : "Unknown";
   const date = new Date(dateString);
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
   if (diffInSeconds < 60) {
-    return "Just now";
+    return t ? t("justNow") : "Just now";
   }
   if (diffInSeconds < 3600) {
     const minutes = Math.floor(diffInSeconds / 60);
@@ -78,6 +79,7 @@ const formatRelativeTime = (dateString?: string): string => {
 };
 
 export function ActiveSessionsTab() {
+  const t = useTranslations("settings.sessions");
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [logoutSessionId, setLogoutSessionId] = useState<string | null>(null);
@@ -109,7 +111,7 @@ export function ActiveSessionsTab() {
       setSessions(sessions.filter((s) => s.id !== logoutSessionId));
       setLogoutSessionId(null);
     } catch (error: any) {
-      alert(error.message || "Failed to logout session");
+      alert(error.message || t("logoutFailed"));
     } finally {
       setLoggingOut(false);
     }
@@ -122,7 +124,7 @@ export function ActiveSessionsTab() {
       setSessions(sessions.filter((s) => s.isCurrent));
       setLogoutAllOpen(false);
     } catch (error: any) {
-      alert(error.message || "Failed to logout all sessions");
+      alert(error.message || t("logoutAllFailed"));
     } finally {
       setLoggingOutAll(false);
     }
@@ -138,9 +140,9 @@ export function ActiveSessionsTab() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-lg">Active Sessions</CardTitle>
+              <CardTitle className="text-lg">{t("title")}</CardTitle>
               <CardDescription>
-                Manage your active sessions across all devices.
+                {t("subtitle")}
               </CardDescription>
             </div>
             {otherSessions.length > 0 && (
@@ -151,7 +153,7 @@ export function ActiveSessionsTab() {
                 className="rounded-lg text-red-600 border-red-200 hover:bg-red-50"
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                Sign out all other devices
+                {t("signOutAll")}
               </Button>
             )}
           </div>
@@ -180,10 +182,10 @@ export function ActiveSessionsTab() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="font-semibold text-emerald-900">
-                    Current Session
+                    {t("currentSession")}
                   </h3>
                   <Badge className="bg-emerald-600 text-white hover:bg-emerald-600 text-xs">
-                    Active now
+                    {t("activeNow")}
                   </Badge>
                 </div>
                 <div className="space-y-2">
@@ -199,13 +201,13 @@ export function ActiveSessionsTab() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-emerald-700">
                     <Shield className="h-4 w-4" />
-                    <span>IP: {maskIpAddress(currentSession.ipAddress)}</span>
+                    <span>{t("ipLabel")} {maskIpAddress(currentSession.ipAddress)}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-emerald-700">
                     <Clock className="h-4 w-4" />
                     <span>
-                      Last active:{" "}
-                      {formatRelativeTime(currentSession.lastActiveAt)}
+                      {t("lastActive")}{" "}
+                      {formatRelativeTime(currentSession.lastActiveAt, t)}
                     </span>
                   </div>
                 </div>
@@ -218,11 +220,11 @@ export function ActiveSessionsTab() {
       {/* Other Sessions */}
       <Card className="border-slate-200 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-lg">Other Sessions</CardTitle>
+          <CardTitle className="text-lg">{t("otherSessions")}</CardTitle>
           <CardDescription>
             {otherSessions.length > 0
-              ? `You have ${otherSessions.length} other active session${otherSessions.length > 1 ? "s" : ""}`
-              : "No other active sessions"}
+              ? t("otherSessionsCount", { count: otherSessions.length })
+              : t("noOtherSessions")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -257,13 +259,13 @@ export function ActiveSessionsTab() {
                         </div>
                         <div className="flex items-center gap-2 text-sm text-slate-600">
                           <Shield className="h-3.5 w-3.5" />
-                          <span>IP: {maskIpAddress(session.ipAddress)}</span>
+                          <span>{t("ipLabel")} {maskIpAddress(session.ipAddress)}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-slate-600">
                           <Clock className="h-3.5 w-3.5" />
                           <span>
-                            Last active:{" "}
-                            {formatRelativeTime(session.lastActiveAt)}
+                            {t("lastActive")}{" "}
+                            {formatRelativeTime(session.lastActiveAt, t)}
                           </span>
                         </div>
                       </div>
@@ -275,7 +277,7 @@ export function ActiveSessionsTab() {
                       className="rounded-lg text-red-600 border-red-200 hover:bg-red-50 flex-shrink-0"
                     >
                       <LogOut className="mr-2 h-4 w-4" />
-                      Sign out
+                      {t("signOut")}
                     </Button>
                   </div>
                 );
@@ -287,10 +289,10 @@ export function ActiveSessionsTab() {
                 <Monitor className="h-8 w-8 text-slate-400" />
               </div>
               <p className="text-slate-600 font-medium mb-1">
-                No other sessions
+                {t("noOtherSessionsTitle")}
               </p>
               <p className="text-sm text-slate-500">
-                You&apos;re only signed in on this device
+                {t("noOtherSessionsDesc")}
               </p>
             </div>
           )}
@@ -306,11 +308,10 @@ export function ActiveSessionsTab() {
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-blue-900 mb-1">
-                Session Security
+                {t("sessionSecurity")}
               </h3>
               <p className="text-sm text-blue-700">
-                If you see a session you don&apos;t recognize, sign it out
-                immediately and change your password.
+                {t("sessionSecurityTip")}
               </p>
             </div>
           </div>
@@ -326,19 +327,18 @@ export function ActiveSessionsTab() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <LogOut className="h-5 w-5 text-red-600" />
-              Sign Out Session
+              {t("signOutSession")}
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to sign out this session?
+              {t("signOutConfirm")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-start gap-3 p-4 bg-amber-50 rounded-xl">
             <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
             <div>
-              <p className="font-medium text-amber-800 text-sm">Note</p>
+              <p className="font-medium text-amber-800 text-sm">{t("note")}</p>
               <p className="text-sm text-amber-600">
-                The device will be signed out and will need to log in again to
-                access your account.
+                {t("signOutNote")}
               </p>
             </div>
           </div>
@@ -356,32 +356,29 @@ export function ActiveSessionsTab() {
               disabled={loggingOut}
               className="rounded-lg"
             >
-              {loggingOut ? "Signing out..." : "Sign Out"}
+              {loggingOut ? t("signingOut") : t("signOut")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Logout All Sessions Confirmation Dialog */}
       <Dialog open={logoutAllOpen} onOpenChange={setLogoutAllOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <LogOut className="h-5 w-5" />
-              Sign Out All Other Devices
+              {t("signOutAllDevices")}
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to sign out all other sessions?
+              {t("signOutAllConfirm")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-start gap-3 p-4 bg-red-50 rounded-xl">
             <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
             <div>
-              <p className="font-medium text-red-800 text-sm">Warning</p>
+              <p className="font-medium text-red-800 text-sm">{t("warning")}</p>
               <p className="text-sm text-red-600">
-                This will sign out {otherSessions.length} other session
-                {otherSessions.length > 1 ? "s" : ""}. All other devices will
-                need to log in again.
+                {t("signOutAllWarning", { count: otherSessions.length })}
               </p>
             </div>
           </div>
@@ -399,7 +396,7 @@ export function ActiveSessionsTab() {
               disabled={loggingOutAll}
               className="rounded-lg"
             >
-              {loggingOutAll ? "Signing out..." : "Sign Out All"}
+              {loggingOutAll ? t("signingOut") : t("signOutAllButton")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   Button,
   Input,
@@ -70,6 +71,7 @@ export function QrCodeCustomizer({
   open: controlledOpen,
   onOpenChange,
 }: QrCodeCustomizerProps) {
+  const t = useTranslations("qr");
   const [internalOpen, setInternalOpen] = useState(false);
 
   // Support both controlled and uncontrolled modes
@@ -333,7 +335,7 @@ export function QrCodeCustomizer({
         {trigger || (
           <Button variant="outline" size="sm">
             <QrCode className="h-4 w-4 mr-2" />
-            Customize QR
+            {t("customizeQr")}
           </Button>
         )}
       </DialogTrigger>
@@ -342,7 +344,7 @@ export function QrCodeCustomizer({
           <DialogTitle className="flex items-center justify-between">
             <span className="flex items-center gap-2">
               <QrCode className="h-5 w-5" />
-              Customize QR Code
+              {t("customizeQrCode")}
             </span>
             {linkId && autoSaveStatus !== 'idle' && (
               <span className={`text-xs font-normal px-2 py-1 rounded-full ${
@@ -350,7 +352,7 @@ export function QrCodeCustomizer({
                   ? 'bg-yellow-100 text-yellow-700'
                   : 'bg-green-100 text-green-700'
               }`}>
-                {autoSaveStatus === 'saving' ? 'Saving...' : '✓ Saved'}
+                {autoSaveStatus === 'saving' ? t('saving') : t('saved')}
               </span>
             )}
           </DialogTitle>
@@ -363,14 +365,14 @@ export function QrCodeCustomizer({
               {qrCode ? (
                 <img
                   src={qrCode}
-                  alt="QR Code Preview"
+                  alt={t("qrCodePreview")}
                   className="max-w-full h-auto"
                   style={{ maxHeight: "250px" }}
                 />
               ) : (
                 <div className="text-center text-muted-foreground">
                   <QrCode className="h-16 w-16 mx-auto mb-2 opacity-30" />
-                  <p>Click &quot;Generate&quot; to preview</p>
+                  <p>{t("clickGenerateToPreview")}</p>
                 </div>
               )}
             </div>
@@ -393,7 +395,7 @@ export function QrCodeCustomizer({
                   variant="outline"
                   onClick={saveConfig}
                   disabled={saving || autoSaveStatus === 'saving'}
-                  title="Save configuration"
+                  title={t("saveConfiguration")}
                 >
                   {saving ? (
                     <RefreshCw className="h-4 w-4 animate-spin" />
@@ -421,7 +423,7 @@ export function QrCodeCustomizer({
                 size="sm"
                 onClick={() => downloadQrCode("svg")}
                 disabled={!qrCode || !!logo}
-                title={logo ? "SVG not available with logo" : "Download SVG"}
+                title={logo ? t("svgNotAvailableWithLogo") : t("downloadSvg")}
                 className="flex-1"
               >
                 SVG
@@ -445,7 +447,7 @@ export function QrCodeCustomizer({
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Palette className="h-4 w-4" />
-                Color Presets
+                {t("colorPresets")}
               </Label>
               <div className="flex flex-wrap gap-2">
                 {PRESET_COLORS.map((preset) => (
@@ -476,7 +478,7 @@ export function QrCodeCustomizer({
             {/* Custom Colors */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="fg-color">Foreground</Label>
+                <Label htmlFor="fg-color">{t("foreground")}</Label>
                 <div className="flex gap-2">
                   <input
                     type="color"
@@ -494,7 +496,7 @@ export function QrCodeCustomizer({
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="bg-color">Background</Label>
+                <Label htmlFor="bg-color">{t("background")}</Label>
                 <div className="flex gap-2">
                   <input
                     type="color"
@@ -517,7 +519,7 @@ export function QrCodeCustomizer({
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <ImageIcon className="h-4 w-4" />
-                Logo (optional)
+                {t("logoOptional")}
               </Label>
               <div className="flex gap-2">
                 <input
@@ -535,7 +537,7 @@ export function QrCodeCustomizer({
                       className="w-8 h-8 object-contain"
                     />
                     <span className="text-sm text-muted-foreground flex-1">
-                      Logo uploaded
+                      {t("logoUploaded")}
                     </span>
                     <Button
                       variant="ghost"
@@ -553,14 +555,14 @@ export function QrCodeCustomizer({
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Upload className="h-4 w-4 mr-2" />
-                    Upload Logo
+                    {t("uploadLogo")}
                   </Button>
                 )}
               </div>
               {logo && (
                 <div className="space-y-2">
                   <Label htmlFor="logo-size" className="text-sm">
-                    Logo Size: {logoSize}%
+                    {t("logoSize")}: {logoSize}%
                   </Label>
                   <input
                     type="range"
@@ -579,14 +581,14 @@ export function QrCodeCustomizer({
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Shield className="h-4 w-4" />
-                Error Correction
+                {t("errorCorrection")}
               </Label>
               <Select
                 value={errorCorrection}
                 onValueChange={setErrorCorrection}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select error correction" />
+                  <SelectValue placeholder={t("selectErrorCorrection")} />
                 </SelectTrigger>
                 <SelectContent>
                   {ERROR_CORRECTIONS.map((ec) => (
@@ -605,7 +607,7 @@ export function QrCodeCustomizer({
 
             {/* Border Size */}
             <div className="space-y-2">
-              <Label htmlFor="border-size">Border Size: {borderSize}</Label>
+              <Label htmlFor="border-size">{t("borderSize")}: {borderSize}</Label>
               <input
                 type="range"
                 id="border-size"
@@ -619,7 +621,7 @@ export function QrCodeCustomizer({
 
             {/* Size */}
             <div className="space-y-2">
-              <Label htmlFor="qr-size">Size: {size}px</Label>
+              <Label htmlFor="qr-size">{t("qrSize")}: {size}px</Label>
               <input
                 type="range"
                 id="qr-size"

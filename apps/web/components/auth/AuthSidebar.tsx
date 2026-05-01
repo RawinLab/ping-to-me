@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Link2, BarChart3, Globe, Zap, Shield, QrCode } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface AuthSidebarProps {
   variant?: "default" | "security" | "success";
@@ -14,6 +15,8 @@ export function AuthSidebar({
   title,
   description,
 }: AuthSidebarProps) {
+  const t = useTranslations("auth.sidebar");
+
   return (
     <div className="relative hidden h-full flex-col bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-10 text-white lg:flex overflow-hidden">
       {/* Background Pattern */}
@@ -37,7 +40,7 @@ export function AuthSidebar({
           <Link2 className="h-5 w-5" />
         </div>
         <Link href="/" className="hover:opacity-80 transition-opacity">
-          PingTO.Me
+          {t("brand")}
         </Link>
       </div>
 
@@ -55,20 +58,19 @@ export function AuthSidebar({
 
         {!title && !description && (
           <>
-            <h2 className="text-2xl font-bold">Shorten, Share, Track, Grow</h2>
+            <h2 className="text-2xl font-bold">{t("defaultTitle")}</h2>
             <p className="text-blue-100 text-lg leading-relaxed">
-              Transform long URLs into powerful short links with detailed
-              analytics, custom domains, and QR codes.
+              {t("defaultDescription")}
             </p>
           </>
         )}
 
         {/* Features */}
         <div className="grid grid-cols-2 gap-3 pt-4">
-          <FeatureItem icon={BarChart3} text="Real-time Analytics" />
-          <FeatureItem icon={Globe} text="Custom Domains" />
-          <FeatureItem icon={Zap} text="Lightning Fast" />
-          <FeatureItem icon={QrCode} text="QR Codes" />
+          <FeatureItem icon={BarChart3} text={t("featureAnalytics")} />
+          <FeatureItem icon={Globe} text={t("featureDomains")} />
+          <FeatureItem icon={Zap} text={t("featureFast")} />
+          <FeatureItem icon={QrCode} text={t("featureQr")} />
         </div>
       </div>
     </div>
@@ -93,16 +95,18 @@ function FeatureItem({
 }
 
 function AuthIllustration({ variant }: { variant: string }) {
+  const t = useTranslations("auth.sidebar.illustration");
+
   if (variant === "security") {
-    return <SecurityIllustration />;
+    return <SecurityIllustration t={t} />;
   }
   if (variant === "success") {
-    return <SuccessIllustration />;
+    return <SuccessIllustration t={t} />;
   }
-  return <DefaultIllustration />;
+  return <DefaultIllustration t={t} />;
 }
 
-function DefaultIllustration() {
+function DefaultIllustration({ t }: { t: any }) {
   return (
     <div className="relative w-full max-w-md">
       {/* Main Card - URL Shortener */}
@@ -122,7 +126,7 @@ function DefaultIllustration() {
         {/* URL Input */}
         <div className="space-y-4">
           <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-            <div className="text-xs text-white/40 mb-1">Original URL</div>
+            <div className="text-xs text-white/40 mb-1">{t("originalUrl")}</div>
             <div className="text-sm text-white/80 truncate">
               https://example.com/very-long-url-that-needs-shortening
             </div>
@@ -148,7 +152,7 @@ function DefaultIllustration() {
           </div>
 
           <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-lg p-3 border border-green-400/30">
-            <div className="text-xs text-green-300 mb-1">Short URL</div>
+            <div className="text-xs text-green-300 mb-1">{t("shortUrl")}</div>
             <div className="text-sm font-medium text-green-100 flex items-center gap-2">
               <Link2 className="w-4 h-4" />
               pingto.me/abc123
@@ -158,9 +162,9 @@ function DefaultIllustration() {
 
         {/* Stats Preview */}
         <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-3 gap-2">
-          <StatItem value="12.5K" label="Clicks" />
-          <StatItem value="89" label="Countries" />
-          <StatItem value="94%" label="Mobile" />
+          <StatItem value="12.5K" label={t("clicks")} />
+          <StatItem value="89" label={t("countries")} />
+          <StatItem value="94%" label={t("mobile")} />
         </div>
       </div>
 
@@ -168,7 +172,7 @@ function DefaultIllustration() {
       <div className="absolute -right-4 top-8 bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20 shadow-xl transform rotate-3 hover:rotate-0 transition-transform">
         <div className="flex items-center gap-2 mb-2">
           <BarChart3 className="w-4 h-4 text-green-400" />
-          <span className="text-xs font-medium">Analytics</span>
+          <span className="text-xs font-medium">{t("analytics")}</span>
         </div>
         <div className="flex gap-1 items-end h-8">
           {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
@@ -185,7 +189,7 @@ function DefaultIllustration() {
       <div className="absolute -left-4 bottom-12 bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20 shadow-xl transform -rotate-3 hover:rotate-0 transition-transform">
         <div className="flex items-center gap-2 mb-2">
           <QrCode className="w-4 h-4 text-purple-400" />
-          <span className="text-xs font-medium">QR Code</span>
+          <span className="text-xs font-medium">{t("qrCode")}</span>
         </div>
         <div className="w-12 h-12 bg-white rounded-md p-1">
           <div className="w-full h-full grid grid-cols-5 gap-0.5">
@@ -206,7 +210,7 @@ function DefaultIllustration() {
   );
 }
 
-function SecurityIllustration() {
+function SecurityIllustration({ t }: { t: any }) {
   return (
     <div className="relative w-full max-w-md">
       <div className="relative bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 shadow-2xl">
@@ -214,9 +218,9 @@ function SecurityIllustration() {
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
             <Shield className="w-10 h-10 text-white" />
           </div>
-          <h3 className="text-xl font-semibold">Secure Access</h3>
+          <h3 className="text-xl font-semibold">{t("secureAccess")}</h3>
           <p className="text-blue-100 text-sm">
-            Your account is protected with enterprise-grade security
+            {t("secureDescription")}
           </p>
           <div className="flex gap-3 pt-2">
             <div className="px-3 py-1.5 rounded-full bg-white/10 text-xs">
@@ -232,7 +236,7 @@ function SecurityIllustration() {
   );
 }
 
-function SuccessIllustration() {
+function SuccessIllustration({ t }: { t: any }) {
   return (
     <div className="relative w-full max-w-md">
       <div className="relative bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 shadow-2xl">
@@ -252,9 +256,9 @@ function SuccessIllustration() {
               />
             </svg>
           </div>
-          <h3 className="text-xl font-semibold">Almost There!</h3>
+          <h3 className="text-xl font-semibold">{t("almostThere")}</h3>
           <p className="text-blue-100 text-sm">
-            Complete the verification to unlock all features
+            {t("almostDescription")}
           </p>
         </div>
       </div>

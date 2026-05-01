@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Label, cn } from "@pingtome/ui";
 import { LayoutList, LayoutGrid, LayoutDashboard, Check, Minus, SquareStack } from "lucide-react";
 
@@ -11,17 +12,18 @@ interface LayoutSelectorProps {
 }
 
 export function LayoutSelector({ value, onChange }: LayoutSelectorProps) {
+  const t = useTranslations("bio");
   const layouts: {
     value: Layout;
-    label: string;
-    subtitle: string;
+    labelKey: string;
+    subtitleKey: string;
     icon: typeof LayoutList;
     preview: React.ReactNode;
   }[] = [
     {
       value: "stacked",
-      label: "Stacked",
-      subtitle: "Traditional vertical list",
+      labelKey: "stacked",
+      subtitleKey: "stackedSubtitle",
       icon: LayoutList,
       preview: (
         <div className="flex flex-col gap-2 w-full">
@@ -33,8 +35,8 @@ export function LayoutSelector({ value, onChange }: LayoutSelectorProps) {
     },
     {
       value: "grid",
-      label: "Grid",
-      subtitle: "Compact two-column layout",
+      labelKey: "grid",
+      subtitleKey: "gridSubtitle",
       icon: LayoutGrid,
       preview: (
         <div className="grid grid-cols-2 gap-2 w-full">
@@ -47,8 +49,8 @@ export function LayoutSelector({ value, onChange }: LayoutSelectorProps) {
     },
     {
       value: "minimal",
-      label: "Minimal",
-      subtitle: "Simple and clean centered design",
+      labelKey: "minimal",
+      subtitleKey: "minimalSubtitle",
       icon: Minus,
       preview: (
         <div className="flex flex-col gap-3 w-full items-center">
@@ -60,8 +62,8 @@ export function LayoutSelector({ value, onChange }: LayoutSelectorProps) {
     },
     {
       value: "cards",
-      label: "Cards",
-      subtitle: "Card-style links with shadows",
+      labelKey: "cards",
+      subtitleKey: "cardsSubtitle",
       icon: SquareStack,
       preview: (
         <div className="flex flex-col gap-2 w-full">
@@ -80,11 +82,11 @@ export function LayoutSelector({ value, onChange }: LayoutSelectorProps) {
         <div className="flex items-center gap-2">
           <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
           <Label className="text-sm font-semibold text-foreground">
-            Choose Layout
+            {t("chooseLayout")}
           </Label>
         </div>
         <p className="text-xs text-muted-foreground">
-          Select how your links will be displayed on your bio page
+          {t("layoutDescription")}
         </p>
       </div>
 
@@ -140,10 +142,10 @@ export function LayoutSelector({ value, onChange }: LayoutSelectorProps) {
                     isSelected ? "text-primary" : "text-foreground",
                   )}
                 >
-                  {layout.label}
+                  {t(layout.labelKey)}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {layout.subtitle}
+                  {t(layout.subtitleKey)}
                 </div>
               </div>
             </button>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useTranslations } from "next-intl";
 import { apiRequest } from "@/lib/api";
 import {
   Dialog,
@@ -33,17 +34,11 @@ import {
   FolderOpen,
 } from "lucide-react";
 
-const editLinkSchema = z.object({
-  originalUrl: z.string().url("Please enter a valid URL"),
-  title: z.string().optional(),
-  campaignId: z.string().optional(),
-  expirationDate: z.string().optional(),
-  maxClicks: z.string().optional(),
-});
-
-type EditLinkFormData = z.infer<typeof editLinkSchema>;
-
-interface EditLinkModalProps {
+export function EditLinkModal({
+  link,
+  onSuccess,
+  children,
+}: {
   link: {
     id: string;
     originalUrl: string;
@@ -55,13 +50,8 @@ interface EditLinkModalProps {
   };
   onSuccess?: () => void;
   children?: React.ReactNode;
-}
-
-export function EditLinkModal({
-  link,
-  onSuccess,
-  children,
-}: EditLinkModalProps) {
+}) {
+  const t = useTranslations("links.edit");
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [campaigns, setCampaigns] = useState<{ id: string; name: string }[]>(
@@ -72,6 +62,16 @@ export function EditLinkModal({
   >([]);
   const [selectedTags, setSelectedTags] = useState<string[]>(link.tags || []);
   const [newTagInput, setNewTagInput] = useState("");
+
+  const editLinkSchema = z.object({
+    originalUrl: z.string().url(t("pleaseEnterValidUrl")),
+    title: z.string().optional(),
+    campaignId: z.string().optional(),
+    expirationDate: z.string().optional(),
+    maxClicks: z.string().optional(),
+  });
+
+  type EditLinkFormData = z.infer<typeof editLinkSchema>;
 
   const form = useForm<EditLinkFormData>({
     resolver: zodResolver(editLinkSchema),
@@ -88,7 +88,6 @@ export function EditLinkModal({
     if (open) {
       fetchCampaigns();
       fetchTags();
-      // Reset form values when modal opens
       form.reset({
         originalUrl: link.originalUrl || "",
         title: link.title || "",
@@ -147,7 +146,7 @@ export function EditLinkModal({
       setOpen(false);
       onSuccess?.();
     } catch (error) {
-      alert("Failed to update link");
+      alert(t("failedToUpdate"));
     } finally {
       setSaving(false);
     }
@@ -164,17 +163,16 @@ export function EditLinkModal({
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Edit Link</DialogTitle>
+          <DialogTitle>{t("editLink")}</DialogTitle>
           <DialogDescription>
-            Update link details, tags, and settings.
+            {t("editLinkDesc")}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-          {/* Destination URL */}
           <div className="space-y-2">
             <Label htmlFor="originalUrl" className="flex items-center gap-2">
               <Link2 className="h-4 w-4 text-slate-500" />
-              Destination URL
+              {t("destinationUrl")}
             </Label>
             <Input
               id="originalUrl"
@@ -191,9 +189,8 @@ export function EditLinkModal({
             )}
           </div>
 
-          {/* Title */}
           <div className="space-y-2">
-            <Label htmlFor="title">Title (optional)</Label>
+            <Label htmlFor="title">{t("titleOptional")}</Label>
             <Input
               id="title"
               placeholder="My Link"
@@ -201,11 +198,10 @@ export function EditLinkModal({
             />
           </div>
 
-          {/* Tags */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2">
               <Tag className="h-4 w-4 text-slate-500" />
-              Tags
+              {t("tags")}
             </Label>
             <div className="flex flex-wrap gap-2 mb-2">
               {selectedTags.map((tag) => (
@@ -233,7 +229,7 @@ export function EditLinkModal({
                 }}
               >
                 <SelectTrigger className="flex-1">
-                  <SelectValue placeholder="Select existing tag" />
+                  <SelectValue placeholder={t("selectExistingTag")} />
                 </SelectTrigger>
                 <SelectContent>
                   {availableTags
@@ -247,7 +243,7 @@ export function EditLinkModal({
               </Select>
               <div className="flex gap-1">
                 <Input
-                  placeholder="New tag"
+                  placeholder={t("newTag")}
                   value={newTagInput}
                   onChange={(e) => setNewTagInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -271,21 +267,20 @@ export function EditLinkModal({
             </div>
           </div>
 
-          {/* Campaign */}
           <div className="space-y-2">
             <Label htmlFor="campaignId" className="flex items-center gap-2">
               <FolderOpen className="h-4 w-4 text-slate-500" />
-              Campaign
+              {t("campaign")}
             </Label>
             <Select
               value={form.watch("campaignId")}
               onValueChange={(value) => form.setValue("campaignId", value)}
             >
               <SelectTrigger id="campaignId">
-                <SelectValue placeholder="Select a campaign" />
+                <SelectValue placeholder={t("selectCampaign")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">No Campaign</SelectItem>
+                <SelectItem value="none">{t("noCampaign")}</SelectItem>
                 {campaigns.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name}
@@ -295,11 +290,10 @@ export function EditLinkModal({
             </Select>
           </div>
 
-          {/* Expiration Date */}
           <div className="space-y-2">
             <Label htmlFor="expirationDate" className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-slate-500" />
-              Expiration Date (optional)
+              {t("expirationDateOptional")}
             </Label>
             <Input
               id="expirationDate"
@@ -308,20 +302,19 @@ export function EditLinkModal({
             />
           </div>
 
-          {/* Click Limit */}
           <div className="space-y-2">
             <Label htmlFor="maxClicks">
-              Click Limit <span className="text-muted-foreground">(optional)</span>
+              {t("clickLimit")} <span className="text-muted-foreground">{t("optional")}</span>
             </Label>
             <Input
               type="number"
               id="maxClicks"
               min="1"
-              placeholder="Unlimited"
+              placeholder={t("unlimited")}
               {...form.register("maxClicks")}
             />
             <p className="text-xs text-muted-foreground">
-              Automatically disable the link after reaching this number of clicks
+              {t("clickLimitHelp")}
             </p>
           </div>
 
@@ -331,10 +324,10 @@ export function EditLinkModal({
               variant="outline"
               onClick={() => setOpen(false)}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={saving}>
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? t("saving") : t("saveChanges")}
             </Button>
           </DialogFooter>
         </form>

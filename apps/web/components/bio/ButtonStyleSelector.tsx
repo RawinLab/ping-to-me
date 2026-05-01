@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Label, Switch, Card, CardContent } from "@pingtome/ui";
 import { cn } from "@pingtome/ui";
 import { Check, Layers, MousePointer2 } from "lucide-react";
@@ -20,27 +21,28 @@ export function ButtonStyleSelector({
   buttonShadow,
   onChange,
 }: ButtonStyleSelectorProps) {
+  const t = useTranslations("bio");
   const styles: {
     value: ButtonStyle;
-    label: string;
+    labelKey: string;
     roundedClass: string;
     gradientClass: string;
   }[] = [
     {
       value: "rounded",
-      label: "Rounded",
+      labelKey: "rounded",
       roundedClass: "rounded-md",
       gradientClass: "bg-gradient-to-r from-blue-500 to-purple-600",
     },
     {
       value: "square",
-      label: "Square",
+      labelKey: "square",
       roundedClass: "rounded-none",
       gradientClass: "bg-gradient-to-r from-emerald-500 to-teal-600",
     },
     {
       value: "pill",
-      label: "Pill",
+      labelKey: "pill",
       roundedClass: "rounded-full",
       gradientClass: "bg-gradient-to-r from-pink-500 to-rose-600",
     },
@@ -53,11 +55,11 @@ export function ButtonStyleSelector({
         <div className="flex items-center gap-2">
           <MousePointer2 className="h-4 w-4 text-primary" />
           <h3 className="text-base font-semibold text-gray-900">
-            Button Style
+            {t("buttonStyle")}
           </h3>
         </div>
         <p className="text-sm text-muted-foreground">
-          Choose how your buttons should look on your bio page
+          {t("buttonStyleDescription")}
         </p>
       </div>
 
@@ -87,7 +89,7 @@ export function ButtonStyleSelector({
                 buttonShadow && "shadow-md",
               )}
             >
-              Preview
+              {t("preview")}
             </div>
 
             {/* Label */}
@@ -99,7 +101,7 @@ export function ButtonStyleSelector({
                   : "text-gray-700 group-hover:text-gray-900",
               )}
             >
-              {style.label}
+              {t(style.labelKey)}
             </span>
 
             {/* Selected Indicator - Animated Checkmark */}
@@ -137,10 +139,10 @@ export function ButtonStyleSelector({
                   htmlFor="button-shadow"
                   className="text-sm font-semibold cursor-pointer text-gray-900"
                 >
-                  Button Shadow
+                  {t("buttonShadow")}
                 </Label>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Add depth with a subtle shadow effect
+                  {t("addDepthWithShadow")}
                 </p>
               </div>
             </div>

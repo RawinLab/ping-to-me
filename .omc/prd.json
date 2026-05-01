@@ -1,0 +1,71 @@
+{
+  "project": "PingToMe E2E Test Suite — Production Grade",
+  "version": "1.0.0",
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "Fix link-analytics.spec.ts — 20 tests passing",
+      "priority": 1,
+      "passes": true,
+      "acceptanceCriteria": [
+        "All 20 tests in link-analytics.spec.ts pass when run individually",
+        "Route interception pattern injects x-organization-id header for analytics, link detail, and QR analytics API calls",
+        "No serial mode — tests run independently"
+      ]
+    },
+    {
+      "id": "US-002",
+      "title": "Fix org-crud.spec.ts — 3 remaining failures",
+      "priority": 2,
+      "passes": false,
+      "acceptanceCriteria": [
+        "All 14 tests in org-crud.spec.ts pass: logo upload, org switch, create new org",
+        "Route interception or proper org context setup before sub-page navigation",
+        "Full file passes when run individually"
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "Fix links/ test files — 6 remaining failures",
+      "priority": 2,
+      "passes": false,
+      "acceptanceCriteria": [
+        "delete-link.spec.ts: DL-001 passes (delete via action menu)",
+        "edit-link.spec.ts: ED-006 passes (toggle redirect type to 302)",
+        "link-status.spec.ts: LS-001 passes (newly created link has ACTIVE status)",
+        "link-variants.spec.ts: AB-002 passes (add first variant)",
+        "redirect-rules.spec.ts: RR-003 passes (add country-based rule)",
+        "bulk-operations.spec.ts: BO-003 passes (bulk tag selected links)",
+        "All 6 files pass completely when run individually"
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "Fix remaining individual failures — 7 files",
+      "priority": 3,
+      "passes": false,
+      "acceptanceCriteria": [
+        "api-keys.spec.ts: revoke/delete test passes",
+        "notifications.spec.ts: NOTIF-002 bell click opens panel",
+        "bio-links.spec.ts: all tests pass",
+        "sessions.spec.ts: all tests pass",
+        "dashboard-analytics.spec.ts: all 16 tests pass",
+        "domain-management.spec.ts: all tests pass",
+        "qr-generation.spec.ts: PDF download passes"
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "Full suite verification — 100% pass rate",
+      "priority": 5,
+      "passes": false,
+      "acceptanceCriteria": [
+        "Full suite runs to completion without hanging",
+        "link-analytics runs standalone: 20/20 pass",
+        "All other tests run as a group with workers=2: 100% pass rate",
+        "Zero test failures across all 344 executed tests",
+        "Total: 344 tests executed, 0 failed, 0 skipped (except intentional skips)"
+      ]
+    }
+  ]
+}

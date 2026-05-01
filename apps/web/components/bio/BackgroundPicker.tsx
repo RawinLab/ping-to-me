@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import {
   Tabs,
   TabsContent,
@@ -152,6 +153,7 @@ export function BackgroundPicker({
   backgroundImage,
   onChange,
 }: BackgroundPickerProps) {
+  const t = useTranslations("bio");
   const [gradientConfig, setGradientConfig] = React.useState<GradientConfig>(
     () => parseGradient(backgroundGradient),
   );
@@ -254,21 +256,21 @@ export function BackgroundPicker({
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="solid" className="gap-2">
             <Palette className="h-4 w-4" />
-            <span className="hidden sm:inline">Solid</span>
+            <span className="hidden sm:inline">{t("solid")}</span>
           </TabsTrigger>
           <TabsTrigger value="gradient" className="gap-2">
             <Sparkles className="h-4 w-4" />
-            <span className="hidden sm:inline">Gradient</span>
+            <span className="hidden sm:inline">{t("gradient")}</span>
           </TabsTrigger>
           <TabsTrigger value="image" className="gap-2">
             <ImageIcon className="h-4 w-4" />
-            <span className="hidden sm:inline">Image</span>
+            <span className="hidden sm:inline">{t("image")}</span>
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="solid" className="space-y-6 mt-6">
           <ColorPicker
-            label="Background Color"
+            label={t("backgroundColor")}
             value={backgroundColor}
             onChange={handleSolidColorChange}
           />
@@ -294,7 +296,7 @@ export function BackgroundPicker({
           <div className="space-y-6">
             {/* Gradient Presets */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Preset Gradients</Label>
+              <Label className="text-sm font-medium">{t("presetGradients")}</Label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {GRADIENT_PRESETS.map((preset) => (
                   <button
@@ -331,10 +333,10 @@ export function BackgroundPicker({
 
             {/* Custom Gradient Controls */}
             <div className="space-y-4 pt-2 border-t">
-              <Label className="text-sm font-medium">Custom Gradient</Label>
+              <Label className="text-sm font-medium">{t("customGradient")}</Label>
 
               <ColorPicker
-                label="Start Color"
+                label={t("startColor")}
                 value={gradientConfig.startColor}
                 onChange={(color) =>
                   handleGradientChange({ startColor: color })
@@ -342,7 +344,7 @@ export function BackgroundPicker({
               />
 
               <ColorPicker
-                label="End Color"
+                label={t("endColor")}
                 value={gradientConfig.endColor}
                 onChange={(color) => handleGradientChange({ endColor: color })}
               />
@@ -352,7 +354,7 @@ export function BackgroundPicker({
                   htmlFor="gradient-direction"
                   className="text-sm font-medium"
                 >
-                  Direction
+                  {t("direction")}
                 </Label>
                 <div className="grid grid-cols-3 gap-2">
                   <button
@@ -369,7 +371,7 @@ export function BackgroundPicker({
                     )}
                   >
                     <ArrowDown className="h-5 w-5" />
-                    <span className="text-xs font-medium">Vertical</span>
+                    <span className="text-xs font-medium">{t("vertical")}</span>
                   </button>
                   <button
                     type="button"
@@ -385,7 +387,7 @@ export function BackgroundPicker({
                     )}
                   >
                     <ArrowRight className="h-5 w-5" />
-                    <span className="text-xs font-medium">Horizontal</span>
+                    <span className="text-xs font-medium">{t("horizontal")}</span>
                   </button>
                   <button
                     type="button"
@@ -401,7 +403,7 @@ export function BackgroundPicker({
                     )}
                   >
                     <ArrowDownRight className="h-5 w-5" />
-                    <span className="text-xs font-medium">Diagonal</span>
+                    <span className="text-xs font-medium">{t("diagonal")}</span>
                   </button>
                 </div>
               </div>
@@ -411,7 +413,7 @@ export function BackgroundPicker({
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <Eye className="h-4 w-4 text-muted-foreground" />
-                <Label>Preview</Label>
+                <Label>{t("preview")}</Label>
               </div>
               <Card className="shadow-sm border-2 transition-shadow hover:shadow-md">
                 <CardContent className="p-6">
@@ -432,7 +434,7 @@ export function BackgroundPicker({
             {/* Image URL Input */}
             <div className="space-y-3">
               <Label htmlFor="image-url" className="text-sm font-medium">
-                Image URL
+                {t("imageUrl")}
               </Label>
               <div className="space-y-2">
                 <Input
@@ -450,11 +452,11 @@ export function BackgroundPicker({
                 {imageError ? (
                   <p className="text-xs text-destructive flex items-center gap-1">
                     <span className="inline-block w-1 h-1 rounded-full bg-destructive" />
-                    Failed to load image. Please check the URL.
+                    {t("failedToLoadImage")}
                   </p>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    Enter a URL to an image (JPEG, PNG, GIF, WebP)
+                    {t("imageFormatHint")}
                   </p>
                 )}
               </div>
@@ -463,7 +465,7 @@ export function BackgroundPicker({
             {/* Image Opacity Slider */}
             <div className="space-y-3">
               <Label htmlFor="image-opacity" className="text-sm font-medium">
-                Overlay Opacity
+                {t("overlayOpacity")}
               </Label>
               <div className="space-y-3">
                 <div className="flex items-center gap-4">
@@ -490,8 +492,7 @@ export function BackgroundPicker({
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Add a dark overlay to improve text readability (0% = fully
-                  visible, 100% = no overlay)
+                  {t("opacityDescription")}
                 </p>
               </div>
             </div>
@@ -500,7 +501,7 @@ export function BackgroundPicker({
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <Eye className="h-4 w-4 text-muted-foreground" />
-                <Label>Preview</Label>
+                <Label>{t("preview")}</Label>
               </div>
               <Card className="shadow-sm border-2 transition-shadow hover:shadow-md">
                 <CardContent className="p-6">
@@ -528,8 +529,8 @@ export function BackgroundPicker({
                           <ImageIcon className="h-10 w-10 mx-auto text-muted-foreground/50" />
                           <p className="text-sm text-muted-foreground">
                             {imageError
-                              ? "Unable to load image"
-                              : "Enter an image URL to see preview"}
+                              ? t("unableToLoadImage")
+                              : t("enterImageUrlPreview")}
                           </p>
                         </div>
                       </div>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useTranslations } from "next-intl";
 import { Button } from "@pingtome/ui";
 import { Input } from "@pingtome/ui";
 import { Label } from "@pingtome/ui";
@@ -11,24 +12,25 @@ import { Alert, AlertDescription } from "@pingtome/ui";
 import { apiRequest } from "@/lib/api";
 import { CreateLinkDto, LinkResponse } from "@pingtome/types";
 
-const createLinkSchema = z.object({
-  originalUrl: z.string().url("Please enter a valid URL"),
-  slug: z.string().optional(),
-  title: z.string().optional(),
-  tags: z.string().optional(), // Comma separated
-  expirationDate: z.string().optional(),
-  password: z.string().optional(),
-});
-
-type CreateLinkFormData = z.infer<typeof createLinkSchema>;
-
 export function CreateLinkForm({
   onSuccess,
 }: {
   onSuccess?: (link: LinkResponse) => void;
 }) {
+  const t = useTranslations("links.create");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const createLinkSchema = z.object({
+    originalUrl: z.string().url(t("pleaseEnterValidUrl")),
+    slug: z.string().optional(),
+    title: z.string().optional(),
+    tags: z.string().optional(),
+    expirationDate: z.string().optional(),
+    password: z.string().optional(),
+  });
+
+  type CreateLinkFormData = z.infer<typeof createLinkSchema>;
 
   const {
     register,
@@ -60,7 +62,7 @@ export function CreateLinkForm({
       reset();
       if (onSuccess) onSuccess(link as LinkResponse);
     } catch (err: any) {
-      setError(err.message || "Failed to create link");
+      setError(err.message || t("failedToCreateLink"));
     } finally {
       setLoading(false);
     }
@@ -75,7 +77,7 @@ export function CreateLinkForm({
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="originalUrl">Destination URL</Label>
+        <Label htmlFor="originalUrl">{t("destinationUrl")}</Label>
         <Input
           id="originalUrl"
           placeholder="https://example.com/long-url"
@@ -88,11 +90,11 @@ export function CreateLinkForm({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="slug">Custom Slug (Optional)</Label>
+          <Label htmlFor="slug">{t("customSlug")}</Label>
           <Input id="slug" placeholder="my-link" {...register("slug")} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="title">Title (Optional)</Label>
+          <Label htmlFor="title">{t("titleOptional")}</Label>
           <Input
             id="title"
             placeholder="My Awesome Link"
@@ -102,17 +104,17 @@ export function CreateLinkForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="tags">Tags (Comma separated)</Label>
+        <Label htmlFor="tags">{t("tagsOptional")}</Label>
         <Input
           id="tags"
-          placeholder="marketing, social"
+          placeholder={t("tagsPlaceholder")}
           {...register("tags")}
         />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="expirationDate">Expiration Date</Label>
+          <Label htmlFor="expirationDate">{t("expirationDate")}</Label>
           <Input
             type="datetime-local"
             id="expirationDate"
@@ -120,13 +122,13 @@ export function CreateLinkForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">Password (Optional)</Label>
-          <Input type="password" id="password" {...register("password")} />
+          <Label htmlFor="password">{t("passwordProtection")}</Label>
+          <Input type="password" id="password" placeholder={t("passwordPlaceholder")} {...register("password")} />
         </div>
       </div>
 
       <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? "Creating..." : "Create Short Link"}
+        {loading ? t("creating") : t("createShortLink")}
       </Button>
     </form>
   );

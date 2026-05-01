@@ -7,6 +7,7 @@ import {
   uploadBioPageAvatar,
   deleteBioPageAvatar,
 } from "@/lib/api/biopages";
+import { useTranslations } from "next-intl";
 
 interface AvatarUploaderProps {
   bioPageId: string;
@@ -26,6 +27,7 @@ export function AvatarUploader({
   onDeleteSuccess,
   className,
 }: AvatarUploaderProps) {
+  const t = useTranslations("bio");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(currentAvatar || null);
   const [isDragging, setIsDragging] = useState(false);
@@ -35,10 +37,10 @@ export function AvatarUploader({
 
   const validateFile = (file: File): string | null => {
     if (!ALLOWED_TYPES.includes(file.type)) {
-      return "Please upload a PNG, JPEG, or WebP image";
+      return t("pleaseUploadImage");
     }
     if (file.size > MAX_FILE_SIZE) {
-      return "File size must be less than 2MB";
+      return t("fileSizeLimit");
     }
     return null;
   };
@@ -66,7 +68,7 @@ export function AvatarUploader({
         setPreview(result.avatarUrl);
         onUploadSuccess?.(result.avatarUrl);
       } catch (err: any) {
-        setError(err.message || "Failed to upload avatar");
+        setError(err.message || t("failedToUploadAvatar"));
         setPreview(currentAvatar || null);
       } finally {
         setIsUploading(false);
@@ -113,7 +115,7 @@ export function AvatarUploader({
   );
 
   const handleDelete = async () => {
-    if (!preview || !confirm("Are you sure you want to remove the avatar?"))
+    if (!preview || !confirm(t("removeAvatarConfirm")))
       return;
 
     setIsDeleting(true);
@@ -124,7 +126,7 @@ export function AvatarUploader({
       setPreview(null);
       onDeleteSuccess?.();
     } catch (err: any) {
-      setError(err.message || "Failed to delete avatar");
+      setError(err.message || t("failedToDeleteAvatar"));
     } finally {
       setIsDeleting(false);
     }
@@ -182,14 +184,14 @@ export function AvatarUploader({
               <Upload className="h-4 w-4" />
               <span>
                 {isDragging
-                  ? "Drop image here"
+                  ? t("dropImageHere")
                   : preview
-                    ? "Click or drag to replace"
-                    : "Click or drag to upload"}
+                    ? t("clickOrDragToReplace")
+                    : t("clickOrDragToUpload")}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              PNG, JPEG, or WebP up to 2MB
+              {t("imageFormatSize")}
             </p>
           </div>
         </div>
@@ -212,7 +214,7 @@ export function AvatarUploader({
           ) : (
             <X className="h-4 w-4 mr-2" />
           )}
-          Remove Avatar
+          {t("removeAvatar")}
         </Button>
       )}
 

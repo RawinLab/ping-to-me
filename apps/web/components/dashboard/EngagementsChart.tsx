@@ -12,6 +12,7 @@ import {
   Legend,
 } from "recharts";
 import { Download } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface EngagementsChartProps {
   data: Array<{
@@ -31,6 +32,7 @@ const CHART_COLORS = {
 };
 
 export function EngagementsChart({ data, onExport }: EngagementsChartProps) {
+  const t = useTranslations("dashboard.charts");
   // Check if we have detailed breakdown or just total clicks
   const hasDetailedData = data.some(
     (d) => d.linkClicks !== undefined || d.qrScans !== undefined,
@@ -40,7 +42,7 @@ export function EngagementsChart({ data, onExport }: EngagementsChartProps) {
     <Card className="overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-xl font-semibold">
-          Engagements over time
+          {t("engagementsOverTime")}
         </CardTitle>
         {onExport && (
           <Button variant="ghost" size="icon" onClick={onExport}>
@@ -84,21 +86,21 @@ export function EngagementsChart({ data, onExport }: EngagementsChartProps) {
                     stackId="a"
                     fill={CHART_COLORS.blue}
                     radius={[0, 0, 0, 0]}
-                    name="Link clicks"
+                    name={t("linkClicks")}
                   />
                   <Bar
                     dataKey="qrScans"
                     stackId="a"
                     fill={CHART_COLORS.indigo}
                     radius={[0, 0, 0, 0]}
-                    name="QR Code scans"
+                    name={t("qrCodeScans")}
                   />
                   <Bar
                     dataKey="bioPageClicks"
                     stackId="a"
                     fill={CHART_COLORS.cyan}
                     radius={[4, 4, 0, 0]}
-                    name="Bio page clicks"
+                    name={t("bioPageClicks")}
                   />
                 </>
               ) : (
@@ -106,7 +108,7 @@ export function EngagementsChart({ data, onExport }: EngagementsChartProps) {
                   dataKey="clicks"
                   fill={CHART_COLORS.blue}
                   radius={[4, 4, 0, 0]}
-                  name="Clicks"
+                  name={t("clicks")}
                 />
               )}
             </BarChart>
@@ -119,7 +121,7 @@ export function EngagementsChart({ data, onExport }: EngagementsChartProps) {
                 className="w-4 h-4 rounded"
                 style={{ backgroundColor: CHART_COLORS.blue }}
               />
-              <span className="text-sm text-muted-foreground">Link clicks</span>
+              <span className="text-sm text-muted-foreground">{t("linkClicks")}</span>
             </div>
             <div className="flex items-center gap-2">
               <div
@@ -127,7 +129,7 @@ export function EngagementsChart({ data, onExport }: EngagementsChartProps) {
                 style={{ backgroundColor: CHART_COLORS.indigo }}
               />
               <span className="text-sm text-muted-foreground">
-                QR Code scans
+                {t("qrCodeScans")}
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -136,7 +138,7 @@ export function EngagementsChart({ data, onExport }: EngagementsChartProps) {
                 style={{ backgroundColor: CHART_COLORS.cyan }}
               />
               <span className="text-sm text-muted-foreground">
-                Bio page clicks
+                {t("bioPageClicks")}
               </span>
             </div>
           </div>

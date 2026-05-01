@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { apiRequest } from "@/lib/api";
 import { Card, CardContent, Button } from "@pingtome/ui";
@@ -13,6 +14,7 @@ interface TwoFactorEnforcementBannerProps {
 export function TwoFactorEnforcementBanner({
   className = "",
 }: TwoFactorEnforcementBannerProps) {
+  const t = useTranslations("shared");
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -72,12 +74,10 @@ export function TwoFactorEnforcementBanner({
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="font-semibold text-amber-900 mb-1">
-                  Two-Factor Authentication Required
+                  {t("twoFactorTitle")}
                 </h3>
                 <p className="text-sm text-amber-700 mb-4">
-                  Your organization requires all members to enable two-factor
-                  authentication. Please set it up now to continue accessing
-                  your account securely.
+                  {t("twoFactorDescription")}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Link href="/dashboard/settings/two-factor">
@@ -86,7 +86,7 @@ export function TwoFactorEnforcementBanner({
                       className="bg-amber-600 hover:bg-amber-700 text-white rounded-lg"
                     >
                       <Shield className="mr-2 h-4 w-4" />
-                      Set up 2FA now
+                      {t("setUp2fa")}
                     </Button>
                   </Link>
                   <Button
@@ -95,7 +95,7 @@ export function TwoFactorEnforcementBanner({
                     onClick={handleDismiss}
                     className="text-amber-700 hover:bg-amber-100 rounded-lg"
                   >
-                    Dismiss for now
+                    {t("dismissForNow")}
                   </Button>
                 </div>
               </div>

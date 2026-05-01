@@ -1,0 +1,590 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import {
+  Card,
+  CardContent,
+  Button,
+  Badge,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@pingtome/ui";
+import {
+  Plus,
+  Trash2,
+  RefreshCw,
+  CheckCircle,
+  Globe,
+  ExternalLink,
+  Shield,
+  Copy,
+  Check,
+  AlertTriangle,
+  Sparkles,
+  Clock,
+  XCircle,
+  Star,
+  Eye,
+  Loader2,
+  Search,
+} from "lucide-react";
+import { format } from "date-fns";
+import { AddDomainModal } from "@/components/domains/AddDomainModal";
+import { SslStatusBadge } from "@/components/domains/SslStatusBadge";
+import { domainsApi, Domain, DomainStatus, SslStatus } from "@/lib/api/domains";
+import { PermissionGate } from "@/components/PermissionGate";
+import { useTranslations } from "next-intl";
+
+export default function DomainsPage() {
+  const t = useTranslations("domains");
+  const router = useRouter();
+  const { currentOrg, isLoading: orgLoading } = useOrganization();
+  const [domains, setDomains] = useState<Domain[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<DomainStatus | 'all'>('all');
+
+  useEffect(() => {
+    if (!orgLoading && currentOrg) {
+      fetchDomains();
+    }
+  }, [orgLoading, currentOrg]);
+
+  // Auto-refresh for pending domains every 30 seconds
+  useEffect(() => {
+    const hasPendingDomains = domains.some(
+      (d) => d.status === 'PENDING' || d.status === 'VERIFYING'
+    );
+
+    if (!hasPendingDomains || loading) return;
+
+    const interval = setInterval(() => {
+      fetchDomains();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [domains, loading]);
+
+  const fetchDomains = async () => {
+    if (!currentOrg?.id) return;
+    try {
+      const res = await domainsApi.list(currentOrg.id);
+      setDomains(res);
+    } catch (err) {
+      console.error("Failed to load domains", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string, hostname: string) => {
+    if (!currentOrg?.id) return;
+    if (!confirm(t("deleteConfirm", { hostname }))) return;
+    setActionLoading(id);
+    try {
+      await domainsApi.delete(currentOrg.id, id);
+      fetchDomains();
+    } catch (err) {
+      alert(t("failedToDeleteDomain"));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleVerify = async (id: string, verificationType?: "txt" | "cname") => {
+    if (!currentOrg?.id) return;
+    setActionLoading(id);
+    try {
+      await domainsApi.verify(currentOrg.id, id, verificationType);
+      fetchDomains();
+    } catch (err: any) {
+      alert(err?.message || t("verificationFailed"));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleSetDefault = async (id: string, hostname: string) => {
+    if (!currentOrg?.id) return;
+    if (!confirm(t("setDefaultConfirm", { hostname }))) return;
+    setActionLoading(id);
+    try {
+      await domainsApi.setDefault(currentOrg.id, id);
+      fetchDomains();
+    } catch (err) {
+      alert(t("failedToSetDefault"));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleProvisionSsl = async (id: string) => {
+    if (!currentOrg?.id) return;
+    setActionLoading(id);
+    try {
+      await domainsApi.provisionSsl(currentOrg.id, id);
+      fetchDomains();
+    } catch (err) {
+      alert(t("failedToProvisionSsl"));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleToggleAutoRenew = async (id: string, autoRenew: boolean) => {
+    if (!currentOrg?.id) return;
+    setActionLoading(id);
+    try {
+      await domainsApi.updateSsl(currentOrg.id, id, autoRenew);
+      fetchDomains();
+    } catch (err) {
+      alert(t("failedToUpdateSsl"));
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  // Filter domains based on search and status
+  const filteredDomains = domains.filter((d) => {
+    const matchesSearch = d.hostname.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const getStatusBadge = (status: DomainStatus, verificationAttempts: number) => {
+    switch (status) {
+      case "VERIFIED":
+        return (
+          <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-0">
+            <CheckCircle className="mr-1 h-3 w-3" /> {t("verified")}
+          </Badge>
+        );
+      case "VERIFYING":
+        return (
+          <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-0">
+            <Loader2 className="mr-1 h-3 w-3 animate-spin" /> {t("verifying")}
+          </Badge>
+        );
+      case "FAILED":
+        return (
+          <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-0">
+            <XCircle className="mr-1 h-3 w-3" /> {t("failed")}
+          </Badge>
+        );
+      case "PENDING":
+      default:
+        return (
+          <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-0">
+            <Clock className="mr-1 h-3 w-3" /> {t("pending")}
+            {verificationAttempts > 0 && (
+                <span className="ml-1">{t("attemptsCount", { count: verificationAttempts })}</span>
+            )}
+          </Badge>
+        );
+    }
+  };
+
+  if (loading || orgLoading || !currentOrg) {
+    return (
+      <div className="p-6 lg:p-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-slate-200 rounded w-48" />
+            <div className="h-4 bg-slate-200 rounded w-72" />
+            <div className="grid gap-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-24 bg-slate-100 rounded-xl" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 lg:p-8 space-y-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl lg:text-3xl font-bold tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
+              {t("title")}
+            </h1>
+            <p className="text-slate-500 mt-1">
+              {t("subtitle")}
+            </p>
+          </div>
+          <PermissionGate resource="domain" action="create">
+            <AddDomainModal orgId={currentOrg.id} onSuccess={fetchDomains}>
+              <Button className="h-10 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
+                <Plus className="mr-2 h-4 w-4" /> {t("addDomain")}
+              </Button>
+            </AddDomainModal>
+          </PermissionGate>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Card className="border-slate-200 bg-gradient-to-br from-emerald-50 to-teal-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                  <CheckCircle className="h-5 w-5 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-emerald-700">
+                    {domains.filter((d) => d.isVerified).length}
+                  </p>
+                  <p className="text-sm text-emerald-600">{t("verified")}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-slate-200 bg-gradient-to-br from-amber-50 to-orange-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                  <RefreshCw className="h-5 w-5 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-amber-700">
+                    {domains.filter((d) => !d.isVerified).length}
+                  </p>
+                  <p className="text-sm text-amber-600">{t("pending")}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-slate-200 bg-gradient-to-br from-blue-50 to-indigo-50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                  <Globe className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-blue-700">
+                    {domains.length}
+                  </p>
+                  <p className="text-sm text-blue-600">{t("totalDomains")}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Search & Filter */}
+        {domains.length > 0 && (
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder={t("searchDomains")}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 rounded-xl"
+                data-testid="domain-search"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as DomainStatus | 'all')}>
+              <SelectTrigger className="w-[180px] rounded-xl" data-testid="status-filter">
+                <SelectValue placeholder={t("allStatuses")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("allStatuses")}</SelectItem>
+                <SelectItem value="VERIFIED" data-testid="status-verified">{t("verified")}</SelectItem>
+                <SelectItem value="PENDING">{t("pending")}</SelectItem>
+                <SelectItem value="VERIFYING">{t("verifying")}</SelectItem>
+                <SelectItem value="FAILED">{t("failed")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Filter Results Count */}
+        {(search || statusFilter !== 'all') && (
+          <p className="text-sm text-slate-500">
+            {t("showingCount", { filtered: filteredDomains.length, total: domains.length })}
+          </p>
+        )}
+
+        {/* Domains List */}
+        {domains.length === 0 ? (
+          <Card className="border-slate-200 border-dashed">
+            <CardContent className="py-16">
+              <div className="text-center">
+                <div className="mx-auto h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center mb-4">
+                  <Globe className="h-8 w-8 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                  {t("noCustomDomains")}
+                </h3>
+                <p className="text-slate-500 mb-6 max-w-sm mx-auto">
+                  {t("noDomainsDescription")}
+                </p>
+                <PermissionGate resource="domain" action="create">
+                  <AddDomainModal orgId={currentOrg.id} onSuccess={fetchDomains}>
+                    <Button className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25">
+                      <Plus className="mr-2 h-4 w-4" /> {t("addFirstDomain")}
+                    </Button>
+                  </AddDomainModal>
+                </PermissionGate>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {filteredDomains.map((domain) => (
+              <Card
+                key={domain.id}
+                className="border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
+              >
+                <CardContent className="p-0">
+                  <div className="flex flex-col gap-4 p-5">
+                    {/* Domain Info */}
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div
+                          className={`h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                            domain.isVerified
+                              ? "bg-gradient-to-br from-emerald-100 to-teal-100"
+                              : "bg-gradient-to-br from-amber-100 to-orange-100"
+                          }`}
+                        >
+                          {domain.isVerified ? (
+                            <Shield className="h-6 w-6 text-emerald-600" />
+                          ) : (
+                            <AlertTriangle className="h-6 w-6 text-amber-600" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <h3 className="font-semibold text-slate-900 truncate">
+                              {domain.hostname}
+                            </h3>
+                            {domain.isDefault && (
+                              <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-0">
+                                <Star className="mr-1 h-3 w-3 fill-blue-700" />{" "}
+                                {t("default")}
+                              </Badge>
+                            )}
+                            <button
+                              onClick={() =>
+                                copyToClipboard(domain.hostname, domain.id)
+                              }
+                              className="text-slate-400 hover:text-slate-600 transition-colors"
+                            >
+                              {copiedId === domain.id ? (
+                                <Check className="h-4 w-4 text-emerald-500" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </button>
+                            <a
+                              href={`https://${domain.hostname}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-slate-400 hover:text-blue-600 transition-colors"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-slate-500 flex-wrap">
+                            <span>
+                              {t("added")}{" "}
+                              {format(new Date(domain.createdAt), "MMM d, yyyy")}
+                            </span>
+                            {getStatusBadge(domain.status, domain.verificationAttempts)}
+                            <SslStatusBadge
+                              status={domain.sslStatus}
+                              expiresAt={domain.sslExpiresAt}
+                              issuedAt={domain.sslIssuedAt}
+                              compact
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {domain.isVerified && !domain.isDefault && (
+                          <PermissionGate resource="domain" action="update">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                handleSetDefault(domain.id, domain.hostname)
+                              }
+                              disabled={actionLoading === domain.id}
+                              className="rounded-lg border-blue-200 text-blue-600 hover:bg-blue-50"
+                            >
+                              {actionLoading === domain.id ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <Star className="mr-2 h-4 w-4" />
+                              )}
+                              {t("setDefault")}
+                            </Button>
+                          </PermissionGate>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => router.push(`/dashboard/domains/${domain.id}`)}
+                          className="rounded-lg"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <PermissionGate resource="domain" action="delete">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(domain.id, domain.hostname)}
+                            disabled={actionLoading === domain.id}
+                            className="rounded-lg text-red-500 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </PermissionGate>
+                      </div>
+                    </div>
+
+                    {/* DNS Instructions for Non-Verified Domains */}
+                    {!domain.isVerified && (
+                      <div className="border-t border-slate-100 bg-slate-50 rounded-lg p-4 -mb-5 -mx-5 mt-2">
+                        <div className="flex items-start justify-between gap-4 mb-3">
+                          <div>
+                            <p className="text-sm font-medium text-slate-700 mb-1">
+                              {t("dnsConfigurationRequired")}
+                            </p>
+                            <p className="text-sm text-slate-500">
+                              {t("dnsConfigDescription")}
+                            </p>
+                          </div>
+                          <PermissionGate resource="domain" action="verify">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleVerify(domain.id, domain.verificationType as any)}
+                              disabled={actionLoading === domain.id}
+                              className="rounded-lg border-blue-200 text-blue-600 hover:bg-blue-50 flex-shrink-0"
+                            >
+                              {actionLoading === domain.id ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : domain.status === "FAILED" ? (
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                              ) : (
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                              )}
+                              {domain.status === "FAILED" ? t("retry") : t("verifyNow")}
+                            </Button>
+                          </PermissionGate>
+                        </div>
+
+                        {domain.verificationType === "txt" && domain.verificationToken && (
+                          <div className="flex items-center gap-2 bg-white rounded-lg border border-slate-200 p-3 font-mono text-sm">
+                            <span className="text-slate-400 flex-shrink-0">TXT</span>
+                            <span className="text-slate-900 flex-shrink-0">
+                              _pingto-verify
+                            </span>
+                            <span className="text-slate-400">→</span>
+                            <span className="text-blue-600 truncate flex-1 min-w-0">
+                              {domain.verificationToken}
+                            </span>
+                            <button
+                              onClick={() =>
+                                copyToClipboard(
+                                  domain.verificationToken!,
+                                  `token-${domain.id}`
+                                )
+                              }
+                              className="ml-auto text-slate-400 hover:text-slate-600 flex-shrink-0"
+                            >
+                              {copiedId === `token-${domain.id}` ? (
+                                <Check className="h-4 w-4 text-emerald-500" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </button>
+                          </div>
+                        )}
+
+                        {(!domain.verificationType || domain.verificationType === "cname") && (
+                          <div className="flex items-center gap-2 bg-white rounded-lg border border-slate-200 p-3 font-mono text-sm">
+                            <span className="text-slate-400 flex-shrink-0">CNAME</span>
+                            <span className="text-slate-900 truncate flex-1">
+                              {domain.hostname}
+                            </span>
+                            <span className="text-slate-400">→</span>
+                            <span className="text-blue-600 flex-shrink-0">
+                              redirect.pingto.me
+                            </span>
+                            <button
+                              onClick={() =>
+                                copyToClipboard(
+                                  "redirect.pingto.me",
+                                  `cname-${domain.id}`
+                                )
+                              }
+                              className="ml-auto text-slate-400 hover:text-slate-600 flex-shrink-0"
+                            >
+                              {copiedId === `cname-${domain.id}` ? (
+                                <Check className="h-4 w-4 text-emerald-500" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </button>
+                          </div>
+                        )}
+
+                        {domain.status === "FAILED" && domain.verificationError && (
+                          <div className="mt-3 text-xs text-red-700 bg-red-50 rounded px-3 py-2 border border-red-200">
+                            {domain.verificationError}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Pro Feature Promo */}
+        <Card className="border-indigo-200 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/25">
+                <Sparkles className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-slate-900 mb-1">
+                  {t("unlockMoreDomains")}
+                </h3>
+                <p className="text-sm text-slate-600">
+                  {t("upgradeToProDescription")}
+                </p>
+              </div>
+              <Button className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/25 whitespace-nowrap">
+                {t("upgradeToPro")}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+    </div>
+  );
+}

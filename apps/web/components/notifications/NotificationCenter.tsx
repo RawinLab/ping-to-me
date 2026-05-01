@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Bell, Check, Info, AlertTriangle, AlertCircle } from "lucide-react";
 import {
   Button,
@@ -48,6 +49,7 @@ function getNotificationStyle(type: "INFO" | "WARNING" | "ERROR") {
 }
 
 export function NotificationCenter() {
+  const t = useTranslations("notifications");
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -108,7 +110,7 @@ export function NotificationCenter() {
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
         <div className="flex items-center justify-between p-4 border-b">
-          <h4 className="font-semibold">Notifications</h4>
+          <h4 className="font-semibold">{t("title")}</h4>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
@@ -116,14 +118,14 @@ export function NotificationCenter() {
               className="text-xs h-auto p-1"
               onClick={markAllAsRead}
             >
-              Mark all read
+              {t("markAllRead")}
             </Button>
           )}
         </div>
         <ScrollArea className="h-[300px]">
           {notifications.length === 0 ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
-              No notifications
+              {t("noNotifications")}
             </div>
           ) : (
             <div className="divide-y">

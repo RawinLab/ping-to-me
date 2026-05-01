@@ -18,6 +18,7 @@ import {
 } from "@pingtome/ui";
 import { Copy, Check, AlertCircle, Loader2 } from "lucide-react";
 import { domainsApi, VerificationType } from "@/lib/api/domains";
+import { useTranslations } from "next-intl";
 
 const formSchema = z.object({
   hostname: z
@@ -37,6 +38,7 @@ export function AddDomainModal({
   onSuccess,
   orgId,
 }: AddDomainModalProps) {
+  const t = useTranslations("domains");
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<"input" | "instruction">("input");
   const [domainData, setDomainData] = useState<any>(null);
@@ -62,7 +64,7 @@ export function AddDomainModal({
       setStep("instruction");
       onSuccess();
     } catch (err: any) {
-      setError(err?.message || "Failed to add domain. Please try again.");
+      setError(err?.message || t("failedToAddDomain"));
       console.error("Failed to add domain:", err);
     } finally {
       setIsSubmitting(false);
@@ -93,12 +95,12 @@ export function AddDomainModal({
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
           <DialogTitle>
-            {step === "input" ? "Add Custom Domain" : "Verify Domain Ownership"}
+            {step === "input" ? t("addCustomDomain") : t("verifyDomainOwnership")}
           </DialogTitle>
           <DialogDescription>
             {step === "input"
-              ? "Enter your domain name and choose a verification method."
-              : "Add the DNS record below to verify ownership of your domain."}
+              ? t("enterDomainDescription")
+              : t("verifyDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -106,7 +108,7 @@ export function AddDomainModal({
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             {/* Hostname Input */}
             <div className="space-y-2">
-              <Label htmlFor="hostname">Domain Name</Label>
+              <Label htmlFor="hostname">{t("domainName")}</Label>
               <Input
                 id="hostname"
                 placeholder="links.example.com"
@@ -120,13 +122,13 @@ export function AddDomainModal({
                 </p>
               )}
               <p className="text-xs text-slate-500">
-                Enter your custom domain or subdomain (e.g., go.yourdomain.com)
+                {t("domainNameHint")}
               </p>
             </div>
 
             {/* Verification Method Selector */}
             <div className="space-y-3">
-              <Label>Verification Method</Label>
+              <Label>{t("verificationMethod")}</Label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
@@ -151,10 +153,10 @@ export function AddDomainModal({
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-sm text-slate-900">
-                        TXT Record
+                        {t("txtRecord")}
                       </p>
                       <p className="text-xs text-slate-500 mt-1">
-                        Recommended. Add a verification token to your DNS.
+                        {t("txtRecordDescription")}
                       </p>
                     </div>
                   </div>
@@ -183,10 +185,10 @@ export function AddDomainModal({
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-sm text-slate-900">
-                        CNAME Record
+                        {t("cnameRecordOption")}
                       </p>
                       <p className="text-xs text-slate-500 mt-1">
-                        Point your domain to our redirect server.
+                        {t("cnameRecordDescription")}
                       </p>
                     </div>
                   </div>
@@ -209,16 +211,16 @@ export function AddDomainModal({
                 onClick={handleClose}
                 disabled={isSubmitting}
               >
-                Cancel
+                {t("cancel")}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Adding Domain...
+                    {t("addingDomain")}
                   </>
                 ) : (
-                  "Add Domain"
+                  t("addDomain")
                 )}
               </Button>
             </DialogFooter>
@@ -232,9 +234,9 @@ export function AddDomainModal({
                   <Check className="h-4 w-4 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-emerald-900">Domain Added!</p>
+                  <p className="font-medium text-emerald-900">{t("domainAdded")}</p>
                   <p className="text-sm text-emerald-700 mt-1">
-                    Now add the DNS record below to verify ownership.
+                    {t("dnsRecordInstruction")}
                   </p>
                 </div>
               </div>
@@ -246,13 +248,13 @@ export function AddDomainModal({
                 <>
                   <div>
                     <p className="text-sm font-medium text-slate-900 mb-2">
-                      Add this TXT record to your DNS:
+                      {t("addTxtRecord")}
                     </p>
                     <div className="bg-slate-50 rounded-lg border p-4 space-y-3">
                       <div className="grid grid-cols-3 gap-2 text-xs text-slate-500 font-medium">
-                        <span>Type</span>
-                        <span>Name</span>
-                        <span>Value</span>
+                        <span>{t("dnsType")}</span>
+                        <span>{t("dnsName")}</span>
+                        <span>{t("dnsValue")}</span>
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-sm font-mono">
                         <span className="text-slate-700">TXT</span>
@@ -284,13 +286,13 @@ export function AddDomainModal({
                 <>
                   <div>
                     <p className="text-sm font-medium text-slate-900 mb-2">
-                      Add this CNAME record to your DNS:
+                      {t("addCnameRecord")}
                     </p>
                     <div className="bg-slate-50 rounded-lg border p-4 space-y-3">
                       <div className="grid grid-cols-3 gap-2 text-xs text-slate-500 font-medium">
-                        <span>Type</span>
-                        <span>Name</span>
-                        <span>Value</span>
+                        <span>{t("dnsType")}</span>
+                        <span>{t("dnsName")}</span>
+                        <span>{t("dnsValue")}</span>
                       </div>
                       <div className="grid grid-cols-3 gap-2 text-sm font-mono">
                         <span className="text-slate-700">CNAME</span>
@@ -322,22 +324,22 @@ export function AddDomainModal({
             {/* Important Notes */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm font-medium text-blue-900 mb-2">
-                Important Notes:
+                {t("importantNotes")}
               </p>
               <ul className="text-xs text-blue-700 space-y-1 list-disc list-inside">
-                <li>DNS changes can take up to 48 hours to propagate</li>
+                <li>{t("dnsPropagationNote")}</li>
                 <li>
-                  After adding the record, return to the Domains page to verify
+                  {t("verifyReturnNote")}
                 </li>
                 <li>
-                  You can verify anytime by clicking &quot;Verify Now&quot; on your domain
+                  {t("verifyAnytimeNote")}
                 </li>
               </ul>
             </div>
 
             <DialogFooter>
               <Button onClick={handleClose} className="w-full">
-                Done
+                {t("done")}
               </Button>
             </DialogFooter>
           </div>

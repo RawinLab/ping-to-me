@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { apiRequest } from "@/lib/api";
 import {
   Card,
@@ -30,6 +31,7 @@ interface LinkedAccountsCardProps {
 }
 
 export function LinkedAccountsCard({ showMessage }: LinkedAccountsCardProps) {
+  const t = useTranslations("settings.accounts");
   const [accounts, setAccounts] = useState<LinkedAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [unlinking, setUnlinking] = useState<string | null>(null);
@@ -52,21 +54,16 @@ export function LinkedAccountsCard({ showMessage }: LinkedAccountsCardProps) {
   };
 
   const getAccessToken = () => {
-    // Get token from localStorage
     return localStorage.getItem("accessToken") || "";
   };
 
   const handleLinkAccount = (provider: string) => {
     const token = getAccessToken();
     if (!token) {
-      showMessage?.(
-        "error",
-        "Authentication error. Please log in again."
-      );
+      showMessage?.("error", t("authError"));
       return;
     }
 
-    // Redirect to OAuth linking flow with token
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
     window.location.href = `${apiUrl}/auth/oauth/link/${provider}?token=${encodeURIComponent(token)}`;
   };
@@ -78,12 +75,11 @@ export function LinkedAccountsCard({ showMessage }: LinkedAccountsCardProps) {
         method: "DELETE",
       });
 
-      // Remove from state
       setAccounts(accounts.filter((acc) => acc.provider !== provider));
 
-      showMessage?.("success", `${getProviderName(provider)} account unlinked successfully`);
+      showMessage?.("success", t("unlinked", { provider: getProviderName(provider) }));
     } catch (error: any) {
-      showMessage?.("error", error.message || "Failed to unlink account");
+      showMessage?.("error", error.message || t("unlinkFailed"));
     } finally {
       setUnlinking(null);
       setUnlinkDialogOpen(false);
@@ -137,13 +133,13 @@ export function LinkedAccountsCard({ showMessage }: LinkedAccountsCardProps) {
   const providers = [
     {
       id: "google",
-      name: "Google",
-      description: "Link your Google account for easy sign-in",
+      name: t("google"),
+      description: t("googleDesc"),
     },
     {
       id: "github",
-      name: "GitHub",
-      description: "Link your GitHub account for easy sign-in",
+      name: t("github"),
+      description: t("githubDesc"),
     },
   ];
 
@@ -168,9 +164,9 @@ export function LinkedAccountsCard({ showMessage }: LinkedAccountsCardProps) {
               <Link2 className="h-4 w-4 text-purple-600" />
             </div>
             <div>
-              <CardTitle className="text-lg">Linked Accounts</CardTitle>
+              <CardTitle className="text-lg">{t("title")}</CardTitle>
               <CardDescription>
-                Connect your social accounts for easier sign-in
+                {t("subtitle")}
               </CardDescription>
             </div>
           </div>
@@ -196,7 +192,7 @@ export function LinkedAccountsCard({ showMessage }: LinkedAccountsCardProps) {
                         {linked && (
                           <span className="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-medium">
                             <CheckCircle className="h-3 w-3" />
-                            Connected
+                            {t("connected")}
                           </span>
                         )}
                       </div>
@@ -213,7 +209,7 @@ export function LinkedAccountsCard({ showMessage }: LinkedAccountsCardProps) {
                       disabled={unlinking === provider.id}
                       className="rounded-lg text-red-600 border-red-200 hover:bg-red-50"
                     >
-                      {unlinking === provider.id ? "Unlinking..." : "Disconnect"}
+                      {unlinking === provider.id ? t("unlinking") : t("disconnect")}
                     </Button>
                   ) : (
                     <Button
@@ -222,7 +218,7 @@ export function LinkedAccountsCard({ showMessage }: LinkedAccountsCardProps) {
                       onClick={() => handleLinkAccount(provider.id)}
                       className="rounded-lg"
                     >
-                      Connect
+                      {t("connect")}
                     </Button>
                   )}
                 </div>
@@ -235,11 +231,10 @@ export function LinkedAccountsCard({ showMessage }: LinkedAccountsCardProps) {
               <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-medium text-blue-900 mb-1">
-                  Security Note
+                  {t("securityNote")}
                 </p>
                 <p className="text-xs text-blue-700">
-                  You must have at least one authentication method (password or
-                  linked account). You cannot disconnect your only sign-in method.
+                  {t("securityNoteDesc")}
                 </p>
               </div>
             </div>
@@ -247,14 +242,12 @@ export function LinkedAccountsCard({ showMessage }: LinkedAccountsCardProps) {
         </CardContent>
       </Card>
 
-      {/* Unlink Confirmation Dialog */}
       <AlertDialog open={unlinkDialogOpen} onOpenChange={setUnlinkDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Disconnect {providerToUnlink && getProviderName(providerToUnlink)}?</AlertDialogTitle>
+            <AlertDialogTitle>{t("disconnectTitle", { provider: providerToUnlink ? getProviderName(providerToUnlink) : "" })}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to disconnect your {providerToUnlink && getProviderName(providerToUnlink)} account?
-              You will no longer be able to sign in using {providerToUnlink && getProviderName(providerToUnlink)}.
+              {t("disconnectDesc", { provider: providerToUnlink ? getProviderName(providerToUnlink) : "" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -263,7 +256,7 @@ export function LinkedAccountsCard({ showMessage }: LinkedAccountsCardProps) {
               onClick={() => providerToUnlink && handleUnlinkAccount(providerToUnlink)}
               className="bg-red-600 hover:bg-red-700"
             >
-              Disconnect
+              {t("disconnect")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

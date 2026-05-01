@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -49,6 +50,7 @@ export function ExportOptionsDialog({
   onExport,
   isExporting = false,
 }: ExportOptionsDialogProps) {
+  const t = useTranslations("links.export");
   const [scope, setScope] = React.useState<ExportScope>("all");
   const [exportFormat, setExportFormat] = React.useState<ExportFormat>("csv");
   const [startDate, setStartDate] = React.useState<Date | undefined>();
@@ -78,16 +80,15 @@ export function ExportOptionsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Export Links</DialogTitle>
+          <DialogTitle>{t("exportLinks")}</DialogTitle>
           <p className="text-sm text-slate-500 mt-1">
-            Choose your export options below.
+            {t("exportOptions")}
           </p>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Export Scope */}
           <div className="space-y-3">
-            <Label>Export Scope</Label>
+            <Label>{t("exportScope")}</Label>
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <input
@@ -103,7 +104,7 @@ export function ExportOptionsDialog({
                   htmlFor="all"
                   className="font-normal cursor-pointer text-sm"
                 >
-                  All links ({totalCount})
+                  {t("allLinks", { count: totalCount })}
                 </Label>
               </div>
               {filteredCount > 0 && filteredCount !== totalCount && (
@@ -121,7 +122,7 @@ export function ExportOptionsDialog({
                     htmlFor="filtered"
                     className="font-normal cursor-pointer text-sm"
                   >
-                    Filtered links ({filteredCount})
+                    {t("filteredLinks", { count: filteredCount })}
                   </Label>
                 </div>
               )}
@@ -140,16 +141,15 @@ export function ExportOptionsDialog({
                     htmlFor="selected"
                     className="font-normal cursor-pointer text-sm"
                   >
-                    Selected links ({selectedCount})
+                    {t("selectedLinks", { count: selectedCount })}
                   </Label>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Export Format */}
           <div className="space-y-3">
-            <Label>Format</Label>
+            <Label>{t("format")}</Label>
             <Select
               value={exportFormat}
               onValueChange={(value) => setExportFormat(value as ExportFormat)}
@@ -164,9 +164,8 @@ export function ExportOptionsDialog({
             </Select>
           </div>
 
-          {/* Date Range Filter (optional) */}
           <div className="space-y-3">
-            <Label>Date Range (optional)</Label>
+            <Label>{t("dateRangeOptional")}</Label>
             <div className="flex gap-2">
               <Popover>
                 <PopoverTrigger asChild>
@@ -178,7 +177,7 @@ export function ExportOptionsDialog({
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, "PP") : "Start date"}
+                    {startDate ? format(startDate, "PP") : t("startDate")}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -201,7 +200,7 @@ export function ExportOptionsDialog({
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {endDate ? format(endDate, "PP") : "End date"}
+                    {endDate ? format(endDate, "PP") : t("endDate")}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -223,7 +222,7 @@ export function ExportOptionsDialog({
                   setEndDate(undefined);
                 }}
               >
-                Clear dates
+                {t("clearDates")}
               </Button>
             )}
           </div>
@@ -235,7 +234,7 @@ export function ExportOptionsDialog({
             onClick={() => onOpenChange(false)}
             disabled={isExporting}
           >
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={handleExport}
@@ -244,12 +243,12 @@ export function ExportOptionsDialog({
             {isExporting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Exporting...
+                {t("exporting")}
               </>
             ) : (
               <>
                 <Download className="mr-2 h-4 w-4" />
-                Export {getExportCount()} Links
+                {t("exportCount", { count: getExportCount() })}
               </>
             )}
           </Button>
