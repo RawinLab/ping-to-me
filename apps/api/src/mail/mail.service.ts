@@ -37,7 +37,8 @@ export class MailService {
   }
 
   async sendVerificationEmail(email: string, token: string) {
-    const url = `${this.configService.get("NEXTAUTH_URL")}/verify-email?token=${token}`;
+    const appUrl = this.configService.get("FRONTEND_URL") || this.configService.get("NEXT_PUBLIC_APP_URL");
+    const url = `${appUrl}/verify-email?token=${token}`;
 
     await this.sendMail({
       to: email,
@@ -48,7 +49,8 @@ export class MailService {
   }
 
   async sendPasswordResetEmail(email: string, token: string) {
-    const url = `${this.configService.get("NEXTAUTH_URL")}/reset-password?token=${token}`;
+    const appUrl = this.configService.get("FRONTEND_URL") || this.configService.get("NEXT_PUBLIC_APP_URL");
+    const url = `${appUrl}/reset-password?token=${token}`;
 
     await this.sendMail({
       to: email,
@@ -59,7 +61,8 @@ export class MailService {
   }
 
   async sendLoginVerificationEmail(email: string, token: string) {
-    const url = `${this.configService.get("NEXTAUTH_URL")}/verify-login?token=${token}`;
+    const appUrl = this.configService.get("FRONTEND_URL") || this.configService.get("NEXT_PUBLIC_APP_URL");
+    const url = `${appUrl}/verify-login?token=${token}`;
 
     await this.sendMail({
       to: email,
@@ -88,7 +91,7 @@ export class MailService {
     personalMessage?: string;
     expiresAt: Date;
   }) {
-    const appUrl = this.configService.get("NEXTAUTH_URL");
+    const appUrl = this.configService.get("FRONTEND_URL") || this.configService.get("NEXT_PUBLIC_APP_URL");
     const acceptUrl = `${appUrl}/invitations/${params.token}`;
     const declineUrl = `${appUrl}/invitations/${params.token}?action=decline`;
 

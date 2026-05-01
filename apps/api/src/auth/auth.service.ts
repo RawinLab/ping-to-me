@@ -810,6 +810,22 @@ export class AuthService {
     return { message: "Verification email sent successfully" };
   }
 
+  async getUserProfile(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        image: true,
+        emailVerified: true,
+        twoFactorEnabled: true,
+        createdAt: true,
+      },
+    });
+    return user;
+  }
+
   async getLinkedAccounts(userId: string) {
     const accounts = await this.prisma.account.findMany({
       where: { userId },
