@@ -87,37 +87,44 @@ jobs:
     needs: build-and-test
     environment:
       name: uat
-      url: https://uat-api.pingto.me
+      url: https://uat.pingto.me
 
     steps:
-      - name: Trigger Coolify webhook
+      - name: Trigger Coolify deploy
+        env:
+          COOLIFY_API_URL: ${{ secrets.COOLIFY_API_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_UAT_UUID: ${{ secrets.COOLIFY_UAT_UUID }}
         run: |
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X POST "${{ secrets.COOLIFY_UAT_WEBHOOK_URL }}")
-          echo "Coolify webhook response: $HTTP_STATUS"
+            -X POST \
+            -H "Authorization: Bearer $COOLIFY_TOKEN" \
+            -H "Content-Type: application/json" \
+            "$COOLIFY_API_URL/api/v1/deploy?uuid=$COOLIFY_UAT_UUID")
+          echo "Coolify deploy response: $HTTP_STATUS"
           if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
-            echo "ERROR: Coolify webhook returned status $HTTP_STATUS"
+            echo "ERROR: Coolify deploy returned status $HTTP_STATUS"
             exit 1
           fi
-          echo "Coolify deploy triggered successfully"
+          echo "Coolify UAT deploy triggered successfully"
 
-      - name: Wait for deployment to start
-        run: sleep 30
+      - name: Wait for build & deploy
+        run: sleep 120
 
       - name: Health check
         run: |
-          for i in 1 2 3; do
-            echo "Health check attempt $i/3..."
+          for i in $(seq 1 10); do
+            echo "Health check attempt $i/10..."
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-              -f https://uat-api.pingto.me/health || echo "000")
+              https://uat-api.pingto.me/health || echo "000")
             if [ "$STATUS" = "200" ]; then
               echo "Health check passed"
               exit 0
             fi
-            echo "Status: $STATUS, retrying in 15s..."
-            sleep 15
+            echo "Status: $STATUS, retrying in 30s..."
+            sleep 30
           done
-          echo "Health check failed after 3 attempts"
+          echo "Health check failed after 10 attempts"
           exit 1
 
   deploy-redirector-uat:

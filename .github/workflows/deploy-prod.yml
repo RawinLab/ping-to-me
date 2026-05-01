@@ -108,34 +108,41 @@ jobs:
       url: https://api.pingto.me
 
     steps:
-      - name: Trigger Coolify API webhook
+      - name: Trigger Coolify API deploy
+        env:
+          COOLIFY_API_URL: ${{ secrets.COOLIFY_API_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_PROD_API_UUID: ${{ secrets.COOLIFY_PROD_API_UUID }}
         run: |
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X POST "${{ secrets.COOLIFY_PROD_API_WEBHOOK_URL }}")
-          echo "Coolify API webhook response: $HTTP_STATUS"
+            -X POST \
+            -H "Authorization: Bearer $COOLIFY_TOKEN" \
+            -H "Content-Type: application/json" \
+            "$COOLIFY_API_URL/api/v1/deploy?uuid=$COOLIFY_PROD_API_UUID")
+          echo "Coolify API deploy response: $HTTP_STATUS"
           if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
-            echo "ERROR: Coolify webhook returned status $HTTP_STATUS"
+            echo "ERROR: Coolify deploy returned status $HTTP_STATUS"
             exit 1
           fi
-          echo "Coolify API deploy triggered successfully"
+          echo "Coolify PROD API deploy triggered successfully"
 
-      - name: Wait for deployment to start
-        run: sleep 30
+      - name: Wait for build & deploy
+        run: sleep 120
 
       - name: Health check
         run: |
-          for i in 1 2 3; do
-            echo "Health check attempt $i/3..."
+          for i in $(seq 1 10); do
+            echo "Health check attempt $i/10..."
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-              -f https://api.pingto.me/health || echo "000")
+              https://api.pingto.me/health || echo "000")
             if [ "$STATUS" = "200" ]; then
               echo "Health check passed"
               exit 0
             fi
-            echo "Status: $STATUS, retrying in 15s..."
-            sleep 15
+            echo "Status: $STATUS, retrying in 30s..."
+            sleep 30
           done
-          echo "Health check failed after 3 attempts"
+          echo "Health check failed after 10 attempts"
           exit 1
 
   deploy-web:
@@ -147,34 +154,41 @@ jobs:
       url: https://pingto.me
 
     steps:
-      - name: Trigger Coolify Web webhook
+      - name: Trigger Coolify Web deploy
+        env:
+          COOLIFY_API_URL: ${{ secrets.COOLIFY_API_URL }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+          COOLIFY_PROD_WEB_UUID: ${{ secrets.COOLIFY_PROD_WEB_UUID }}
         run: |
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            -X POST "${{ secrets.COOLIFY_PROD_WEB_WEBHOOK_URL }}")
-          echo "Coolify Web webhook response: $HTTP_STATUS"
+            -X POST \
+            -H "Authorization: Bearer $COOLIFY_TOKEN" \
+            -H "Content-Type: application/json" \
+            "$COOLIFY_API_URL/api/v1/deploy?uuid=$COOLIFY_PROD_WEB_UUID")
+          echo "Coolify Web deploy response: $HTTP_STATUS"
           if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
-            echo "ERROR: Coolify webhook returned status $HTTP_STATUS"
+            echo "ERROR: Coolify deploy returned status $HTTP_STATUS"
             exit 1
           fi
-          echo "Coolify Web deploy triggered successfully"
+          echo "Coolify PROD Web deploy triggered successfully"
 
-      - name: Wait for deployment to start
-        run: sleep 30
+      - name: Wait for build & deploy
+        run: sleep 120
 
       - name: Health check
         run: |
-          for i in 1 2 3; do
-            echo "Health check attempt $i/3..."
+          for i in $(seq 1 10); do
+            echo "Health check attempt $i/10..."
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-              -f https://pingto.me || echo "000")
+              https://pingto.me || echo "000")
             if [ "$STATUS" = "200" ] || [ "$STATUS" = "301" ]; then
               echo "Health check passed"
               exit 0
             fi
-            echo "Status: $STATUS, retrying in 15s..."
-            sleep 15
+            echo "Status: $STATUS, retrying in 30s..."
+            sleep 30
           done
-          echo "Health check failed after 3 attempts"
+          echo "Health check failed after 10 attempts"
           exit 1
 
   deploy-redirector:
