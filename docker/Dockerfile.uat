@@ -49,10 +49,11 @@ RUN apk add --no-cache dumb-init supervisor curl
 RUN addgroup -g 1001 -S appgroup && adduser -S appuser -u 1001 -G appgroup
 
 COPY --chown=appuser:appgroup docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-RUN mkdir -p /var/log/supervisor && chown -R appuser:appgroup /var/log/supervisor
+COPY --chown=appuser:appgroup docker/entrypoint-uat.sh /app/entrypoint-uat.sh
+RUN chmod +x /app/entrypoint-uat.sh && mkdir -p /var/log/supervisor && chown -R appuser:appgroup /var/log/supervisor
 
 USER appuser
 
 EXPOSE 3001 3010
 
-CMD ["dumb-init", "supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/app/entrypoint-uat.sh"]
