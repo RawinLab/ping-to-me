@@ -56,10 +56,8 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5434/pingtome_test
         run: pnpm --filter @pingtome/database db:push
-      - name: Build API
-        run: pnpm --filter api build
-      - name: Build Web
-        run: pnpm --filter web build
+      - name: Build all packages
+        run: pnpm build
       - name: Run API unit tests
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5434/pingtome_test
