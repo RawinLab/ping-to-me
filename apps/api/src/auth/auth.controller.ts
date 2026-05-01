@@ -127,8 +127,11 @@ export class AuthController {
   @UseGuards(AuthGuard("jwt-refresh"))
   @Post("refresh")
   async refresh(@Req() req, @Res({ passthrough: true }) res: Response) {
-    // Get old refresh token from cookie
-    const oldRefreshToken = req.cookies?.refresh_token;
+    // Get old refresh token from cookie (handle duplicate cookies from domain migration)
+    let oldRefreshToken = req.cookies?.refresh_token;
+    if (Array.isArray(oldRefreshToken)) {
+      oldRefreshToken = oldRefreshToken[oldRefreshToken.length - 1];
+    }
 
     if (!oldRefreshToken) {
       throw new BadRequestException('Refresh token not found');
