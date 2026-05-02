@@ -232,10 +232,10 @@ function selectVariant(variants: LinkVariant[]): LinkVariant | null {
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-app.get("/:slug", async (c) => {
+app.get("/s/:slug", async (c) => {
+  const slug = c.req.param("slug");
   const url = new URL(c.req.url);
   const hostname = url.hostname;
-  const slug = url.pathname.slice(1); // remove leading slash
 
   const kv = c.env.LINKS_KV;
   const apiUrl = c.env.API_URL || "http://localhost:3000";
@@ -444,6 +444,12 @@ app.get("/:slug", async (c) => {
   }
 
   return c.text("Link not found", 404);
+});
+
+app.get("/:slug", async (c) => {
+  const url = new URL(c.req.url);
+  const redirectUrl = new URL(`/s/${c.req.param("slug")}`, url.origin);
+  return c.redirect(redirectUrl.toString(), 301);
 });
 
 export default app;

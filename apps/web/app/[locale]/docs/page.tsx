@@ -129,7 +129,7 @@ export default function DocsPage() {
 // Response
 {
   "id": "abc123",
-  "shortUrl": "https://pingto.me/custom-slug",
+  "shortUrl": "https://pingto.me/s/custom-slug",
   "originalUrl": "https://example.com/long-url"
 }`}
                   </pre>

@@ -310,7 +310,7 @@ export class LinksService {
               id: link.id,
               slug: link.slug,
               originalUrl: link.originalUrl,
-              shortUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${link.slug}`,
+              shortUrl: `${process.env.NEXT_PUBLIC_APP_URL}/s/${link.slug}`,
               title: link.title,
               description: link.description,
               tags: link.tags,
@@ -878,7 +878,7 @@ export class LinksService {
               id: updated.id,
               slug: updated.slug,
               originalUrl: updated.originalUrl,
-              shortUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${updated.slug}`,
+              shortUrl: `${process.env.NEXT_PUBLIC_APP_URL}/s/${updated.slug}`,
               title: updated.title,
               description: updated.description,
               tags: updated.tags,
@@ -901,7 +901,7 @@ export class LinksService {
     link: any,
     qrOptions?: { qrColor?: string; qrLogo?: string; generateQrCode?: boolean },
   ): Promise<LinkResponse> {
-    const shortUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${link.slug}`;
+    const shortUrl = `${process.env.NEXT_PUBLIC_APP_URL}/s/${link.slug}`;
     let qrCode: string | undefined;
 
     // Check if QR code generation is disabled

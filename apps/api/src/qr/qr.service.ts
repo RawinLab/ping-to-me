@@ -600,7 +600,7 @@ export class QrCodeService {
       // Process each link
       const processLinks = async () => {
         for (const link of links) {
-          const shortUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3010"}/${link.slug}`;
+          const shortUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3010"}/s/${link.slug}`;
           const config = link.qrCode;
 
           try {

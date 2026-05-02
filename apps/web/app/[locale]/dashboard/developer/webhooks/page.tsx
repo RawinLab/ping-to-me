@@ -170,7 +170,7 @@ export default function WebhooksPage() {
     "id": "abc123",
     "slug": "my-link",
     "originalUrl": "https://example.com",
-    "shortUrl": "https://pingto.me/my-link"
+    "shortUrl": "https://pingto.me/s/my-link"
   }
 }`;
     navigator.clipboard.writeText(payload);
@@ -534,7 +534,7 @@ export default function WebhooksPage() {
                     </span>
                     {`: `}
                     <span className="text-emerald-400">
-                      &quot;https://pingto.me/my-link&quot;
+                      &quot;https://pingto.me/s/my-link&quot;
                     </span>
                     {`
   }
